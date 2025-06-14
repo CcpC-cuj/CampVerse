@@ -1,1 +1,17 @@
+** Event Recommendation **
+
+#Approach
+  Recommend events based on the users' previour records and interactions.
+
+
+#Data Needed
+  1. The most liked domain of the user
+  2. Previous search or explored history 
+  3. Attended events
+  4. Wishlist or liked events
+
+
+#Entities
+      1. User (Input)
+      2. Events (Output)
 
