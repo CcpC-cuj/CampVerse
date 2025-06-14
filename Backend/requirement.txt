@@ -1,1 +1,10 @@
 ****Use code {git pull origin main} to get updated code if any commit done ****
+***Work flow of signup page ***
+*{ User submits signup form -->server Sends otp to user's Email
+          ⬇️                                                 ⬇️
+          ⬇️                                                 ⬇️
+          ⬇️                                                 ⬇️
+Server Store in Redis +otp in redis                          ⬇️
+                                                        User Submits otp { Verify otp
+                                                        if otp match store data in the
+                                                        main database*}
