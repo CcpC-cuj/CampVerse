@@ -1,0 +1,31 @@
+{
+  "name": "campverse",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Backend/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon Backend/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CcpC-cuj/CampVerse.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CcpC-cuj/CampVerse/issues"
+  },
+  "homepage": "https://github.com/CcpC-cuj/CampVerse#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.15.2",
+    "nodemailer": "^7.0.3",
+    "nodemon": "^3.1.10",
+    "redis": "^5.5.6"
+  }
+}
