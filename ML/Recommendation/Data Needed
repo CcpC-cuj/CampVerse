@@ -1,0 +1,7 @@
+Data Needed 
+●   The most liked domain of the user ( taken as an input at the time of 
+user registration ) 
+●   Last 10 previous search or explored history  (from user database 
+that will stores this information) 
+●   Attended events  (from user database) 
+●   Wishlist or liked events  (optional)
