@@ -21,3 +21,4 @@
 "liked_events": [ "e101", "e205"],
   "attended_events": ["e101", "v123],
 }
+]
