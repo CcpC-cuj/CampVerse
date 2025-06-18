@@ -1,0 +1,39 @@
+[  
+
+{
+  "event_id": "e111",
+  "title": "Deep Learning Bootcamp",
+  "description": "Hands-on deep learning with transformers and PyTorch.",
+  "tags": ["AI", "ML", "Workshop", "deep learning", "transformers", "PyTorch", "NLP", "image classification", "generative modeling", "machine learning", "neural networks"],
+  "location": "Delhi",
+  "duration": 1 day/ 24 hr,
+  "organizer_name": "CcpC",
+  "event_type": "Workshop",
+  "domain" : " Artificial Intelligence "
+  "price": 499.0,
+  "free_entry": false,
+  "Expected_attendance": 100,
+}
+
+
+{
+  "event_id": "e112",
+  "title": "Deep Learning Bootcamp",
+  "description": "Join us for an intensive, hands-on Deep Learning Bootcamp designed for intermediate to advanced learners. This workshop will explore the latest advances in deep learning, with a special focus on transformer architectures and their real-world applications. Participants will gain practical experience using PyTorch to build and train neural networks for tasks such as image classification, natural language processing (NLP), and generative modeling. The bootcamp includes expert-led sessions, live coding exercises, and guided projects to help solidify key concepts. Whether you're an aspiring machine learning engineer or a researcher looking to expand your toolkit, this event is perfect for sharpening your deep learning skills and networking with like-minded professionals in the AI community."
+,
+  "tags": ["AI", "ML", "Workshop"],
+  "location": "Ranchi",
+  "duration": 0.5 day/ 12 hr,
+  "organizer_name": "TechX India",
+  "event_type": "Workshop",
+  "domain" : " Artificial Intelligence "
+  "price": 990.0,
+  "free_entry": false,
+  "Expected_attendance": 600,
+}
+
+
+
+
+
+]

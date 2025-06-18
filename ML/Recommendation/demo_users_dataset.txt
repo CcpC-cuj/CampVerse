@@ -1,0 +1,23 @@
+[
+
+{
+  "user_id": "u123",
+  "name": "Abc Kumar ",
+  "preferred_domains": ["Artificial Intelligence", "Web Development", "Startups & Entrepreneurship"],
+  "interests_tags": ["deep learning", "react.js", "pitching", "transformers", "founders", "LLM"],
+  "location": "Bengaluru",
+  "explored_history": [ "e701", "e285"],
+"liked_events": [ "e101", "e205"],
+  "attended_events": ["e101", "v123],
+}
+
+{
+  "user_id": "u223",
+  "name": "Shcde Singh  ",
+  "preferred_domains": ["Artificial Intelligence", "Web Development", "Competitions"],
+  "interests_tags": ["deep learning", "react.js", "transformers", "LLM"],
+  "location": "Delhi",
+  "explored_history": [ "e701", "e285"],
+"liked_events": [ "e101", "e205"],
+  "attended_events": ["e101", "v123],
+}
