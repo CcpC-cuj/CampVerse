@@ -1,0 +1,1876 @@
+[
+  {
+    "event_id": "e111",
+    "title": "Deep Learning Bootcamp",
+    "description": "Hands-on deep learning with transformers and PyTorch.",
+    "tags": [
+      "AI",
+      "ML",
+      "Workshop",
+      "deep learning",
+      "transformers",
+      "PyTorch",
+      "NLP",
+      "image classification",
+      "generative modeling",
+      "machine learning",
+      "neural networks"
+    ],
+    "location": "Delhi",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "CcpC",
+    "event_type": "Workshop",
+    "domain": " Artificial Intelligence ",
+    "price": 499.0,
+    "free_entry": false,
+    "Expected_attendance": 100
+  },
+  {
+    "event_id": "e113",
+    "title": "AI in Healthcare Symposium",
+    "description": "Explore the transformative impact of AI in healthcare at this symposium. Experts will discuss AI applications in diagnostics, personalized medicine, and patient care. Join us to learn about the latest innovations and network with industry leaders.",
+    "tags": [
+      "AI",
+      "Healthcare",
+      "Symposium"
+    ],
+    "location": "Bangalore",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "HealthTech Innovations",
+    "event_type": "Symposium",
+    "domain": " Artificial Intelligence ",
+    "price": 750.0,
+    "free_entry": false,
+    "Expected_attendance": 300
+  },
+  {
+    "event_id": "e114",
+    "title": "AI for Social Good Conference",
+    "description": "Join us for a conference focused on leveraging AI for social impact. This event will feature talks from leading experts in AI ethics, sustainability, and social innovation. Attendees will explore how AI can address global challenges such as climate change, poverty, and education.",
+    "tags": [
+      "AI",
+      "Social Good",
+      "Conference"
+    ],
+    "location": "Mumbai",
+    "duration": "2 days / 16 hr",
+    "organizer_name": "Global AI Alliance",
+    "event_type": "Conference",
+    "domain": " Artificial Intelligence ",
+    "price": 1200.0,
+    "free_entry": false,
+    "Expected_attendance": 500
+  },
+  {
+    "event_id": "e115",
+    "title": "AI Ethics and Governance Workshop",
+    "description": "This workshop will delve into the ethical implications of AI technologies and the importance of governance frameworks. Participants will engage in discussions on bias, transparency, and accountability in AI systems. The event aims to equip attendees with the knowledge to navigate the complex landscape of AI ethics.",
+    "tags": [
+      "AI",
+      "Ethics",
+      "Governance",
+      "Workshop"
+    ],
+    "location": "Chennai",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "Ethical AI Consortium",
+    "event_type": "Workshop",
+    "domain": " Artificial Intelligence ",
+    "price": 600.0,
+    "free_entry": false,
+    "Expected_attendance": 200
+  },
+  {
+    "event_id": "e116",
+    "title": "AI and Robotics Expo",
+    "description": "Discover the latest advancements in AI and robotics at this expo. Featuring live demonstrations, keynote speeches from industry leaders, and networking opportunities, this event is a must-attend for anyone interested in the future of technology.",
+    "tags": [
+      "AI",
+      "Robotics",
+      "Expo"
+    ],
+    "location": "Hyderabad",
+    "duration": "3 days / 24 hr",
+    "organizer_name": "Tech Innovators",
+    "event_type": "Expo",
+    "domain": " Artificial Intelligence ",
+    "price": 1500.0,
+    "free_entry": false,
+    "Expected_attendance": 1000
+  },
+  {
+    "event_id": "e117",
+    "title": "AI in Finance Summit",
+    "description": "This summit will explore the role of AI in transforming the finance industry. Topics will include algorithmic trading, risk management, and fraud detection. Attendees will gain insights from financial experts and AI practitioners.",
+    "tags": [
+      "AI",
+      "Finance",
+      "Summit"
+    ],
+    "location": "Kolkata",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "FinTech Leaders",
+    "event_type": "Summit",
+    "domain": " Artificial Intelligence ",
+    "price": 800.0,
+    "free_entry": false,
+    "Expected_attendance": 400
+  },
+  {
+    "event_id": "e118",
+    "title": "AI and Big Data Analytics Workshop",
+    "description": "This workshop will focus on the integration of AI and big data analytics. Participants will learn how to leverage AI techniques to extract insights from large datasets. The event includes hands-on sessions with real-world data applications.",
+    "tags": [
+      "AI",
+      "Big Data",
+      "Analytics",
+      "Workshop"
+    ],
+    "location": "Pune",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "Data Science Hub",
+    "event_type": "Workshop",
+    "domain": " Artificial Intelligence ",
+    "price": 700.0,
+    "free_entry": false,
+    "Expected_attendance": 250
+  },
+  {
+    "event_id": "e119",
+    "title": "AI in Education Forum",
+    "description": "Join educators and technologists to discuss the impact of AI on education. This forum will cover AI-driven personalized learning, assessment tools, and the future of educational technology. Attendees will share best practices and explore innovative solutions.",
+    "tags": [
+      "AI",
+      "Education",
+      "Forum"
+    ],
+    "location": "Ahmedabad",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "EdTech Innovators",
+    "event_type": "Forum",
+    "domain": " Artificial Intelligence ",
+    "price": 500.0,
+    "free_entry": false,
+    "Expected_attendance": 300
+  },
+  {
+    "event_id": "e120",
+    "title": "AI and Cybersecurity Conference",
+    "description": "This conference will address the intersection of AI and cybersecurity. Experts will discuss AI-driven security solutions, threat detection, and the future of cybersecurity in an AI-powered world. Attendees will gain insights into protecting digital assets against evolving threats.",
+    "tags": [
+      "AI",
+      "Cybersecurity",
+      "Conference"
+    ],
+    "location": "Noida",
+    "duration": "2 days / 16 hr",
+    "organizer_name": "CyberTech Alliance",
+    "event_type": "Conference",
+    "domain": " Artificial Intelligence ",
+    "price": 1100.0,
+    "free_entry": false,
+    "Expected_attendance": 600
+  },
+  {
+    "event_id": "e112",
+    "title": "Deep Learning Bootcamp",
+    "description": "Join us for an intensive, hands-on Deep Learning Bootcamp designed for intermediate to advanced learners. This workshop will explore the latest advances in deep learning, with a special focus on transformer architectures and their real-world applications. Participants will gain practical experience using PyTorch to build and train neural networks for tasks such as image classification, natural language processing (NLP), and generative modeling. The bootcamp includes expert-led sessions, live coding exercises, and guided projects to help solidify key concepts. Whether you're an aspiring machine learning engineer or a researcher looking to expand your toolkit, this event is perfect for sharpening your deep learning skills and networking with like-minded professionals in the AI community.",
+    "tags": [
+      "AI",
+      "ML",
+      "Workshop"
+    ],
+    "location": "Ranchi",
+    "duration": " 0.5 day/ 12 hr",
+    "organizer_name": "TechX India",
+    "event_type": "Workshop",
+    "domain": " Artificial Intelligence ",
+    "price": 990.0,
+    "free_entry": false,
+    "Expected_attendance": 600
+  },
+  {
+    "event_id": "e200",
+    "title": "E-commerce Hackathon",
+    "description": "A detailed and hands-on hackathon about e-commerce conducted by VR Explorers.",
+    "tags": [
+      "Hackathon",
+      "E-commerce",
+      "e-commerce"
+    ],
+    "location": "Ranchi",
+    "duration": "1 day / 4 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Hackathon",
+    "domain": "E-commerce",
+    "price": 917.15,
+    "free_entry": false,
+    "Expected_attendance": 115
+  },
+  {
+    "event_id": "e201",
+    "title": "Cloud Computing Workshop",
+    "description": "A detailed and hands-on workshop about cloud computing conducted by Tech Titans.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Workshop"
+    ],
+    "location": "Surat",
+    "duration": "2 day / 12 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Workshop",
+    "domain": "Cloud Computing",
+    "price": 991.96,
+    "free_entry": false,
+    "Expected_attendance": 283
+  },
+  {
+    "event_id": "e202",
+    "title": "UI/UX Design Symposium",
+    "description": "A detailed and hands-on symposium about ui/ux design conducted by IoT Visionaries.",
+    "tags": [
+      "ui/ux",
+      "UI/UX",
+      "design",
+      "Symposium"
+    ],
+    "location": "Gurgaon",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Symposium",
+    "domain": "UI/UX Design",
+    "price": 848.66,
+    "free_entry": false,
+    "Expected_attendance": 127
+  },
+  {
+    "event_id": "e203",
+    "title": "HealthTech Conference",
+    "description": "A detailed and hands-on conference about healthtech conducted by Tech Titans.",
+    "tags": [
+      "HealthTech",
+      "healthtech",
+      "Conference"
+    ],
+    "location": "Chennai",
+    "duration": "2 day / 6 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Conference",
+    "domain": "HealthTech",
+    "price": 501.08,
+    "free_entry": false,
+    "Expected_attendance": 471
+  },
+  {
+    "event_id": "e204",
+    "title": "EdTech Conference",
+    "description": "A detailed and hands-on conference about edtech conducted by Design Gurus.",
+    "tags": [
+      "EdTech",
+      "edtech",
+      "Conference"
+    ],
+    "location": "Surat",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Conference",
+    "domain": "EdTech",
+    "price": 1068.99,
+    "free_entry": false,
+    "Expected_attendance": 366
+  },
+  {
+    "event_id": "e205",
+    "title": "Internet of Things Workshop",
+    "description": "A detailed and hands-on workshop about internet of things conducted by Design Gurus.",
+    "tags": [
+      "Internet",
+      "things",
+      "Workshop",
+      "of",
+      "internet"
+    ],
+    "location": "Noida",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Workshop",
+    "domain": "Internet of Things",
+    "price": 1144.82,
+    "free_entry": false,
+    "Expected_attendance": 992
+  },
+  {
+    "event_id": "e206",
+    "title": "Quantum Computing Conference",
+    "description": "A detailed and hands-on conference about quantum computing conducted by Tech Titans.",
+    "tags": [
+      "computing",
+      "Quantum",
+      "quantum",
+      "Conference"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Conference",
+    "domain": "Quantum Computing",
+    "price": 1412.92,
+    "free_entry": false,
+    "Expected_attendance": 210
+  },
+  {
+    "event_id": "e207",
+    "title": "Augmented Reality Conference",
+    "description": "A detailed and hands-on conference about augmented reality conducted by Cloud Ninjas.",
+    "tags": [
+      "augmented",
+      "reality",
+      "Augmented",
+      "Conference"
+    ],
+    "location": "Bhopal",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "Cloud Ninjas",
+    "event_type": "Conference",
+    "domain": "Augmented Reality",
+    "price": 1471.29,
+    "free_entry": false,
+    "Expected_attendance": 690
+  },
+  {
+    "event_id": "e208",
+    "title": "HealthTech Forum",
+    "description": "A detailed and hands-on forum about healthtech conducted by Blockchain Hub.",
+    "tags": [
+      "HealthTech",
+      "Forum",
+      "healthtech"
+    ],
+    "location": "Bhopal",
+    "duration": "1 day / 6 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Forum",
+    "domain": "HealthTech",
+    "price": 1312.59,
+    "free_entry": false,
+    "Expected_attendance": 70
+  },
+  {
+    "event_id": "e209",
+    "title": "UI/UX Design Webinar",
+    "description": "A detailed and hands-on webinar about ui/ux design conducted by Tech Titans.",
+    "tags": [
+      "ui/ux",
+      "UI/UX",
+      "design",
+      "Webinar"
+    ],
+    "location": "Ahmedabad",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Webinar",
+    "domain": "UI/UX Design",
+    "price": 686.14,
+    "free_entry": false,
+    "Expected_attendance": 491
+  },
+  {
+    "event_id": "e210",
+    "title": "E-commerce Forum",
+    "description": "A detailed and hands-on forum about e-commerce conducted by Tech Titans.",
+    "tags": [
+      "E-commerce",
+      "Forum",
+      "e-commerce"
+    ],
+    "location": "Gurgaon",
+    "duration": "2 day / 12 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Forum",
+    "domain": "E-commerce",
+    "price": 1308.82,
+    "free_entry": false,
+    "Expected_attendance": 758
+  },
+  {
+    "event_id": "e211",
+    "title": "DevOps Forum",
+    "description": "A detailed and hands-on forum about devops conducted by Code Wizards.",
+    "tags": [
+      "DevOps",
+      "devops",
+      "Forum"
+    ],
+    "location": "Chandigarh",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Forum",
+    "domain": "DevOps",
+    "price": 403.47,
+    "free_entry": false,
+    "Expected_attendance": 762
+  },
+  {
+    "event_id": "e212",
+    "title": "Cloud Computing Bootcamp",
+    "description": "A detailed and hands-on bootcamp about cloud computing conducted by VR Explorers.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Bootcamp"
+    ],
+    "location": "Chennai",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Bootcamp",
+    "domain": "Cloud Computing",
+    "price": 802.84,
+    "free_entry": false,
+    "Expected_attendance": 300
+  },
+  {
+    "event_id": "e213",
+    "title": "Internet of Things Expo",
+    "description": "A detailed and hands-on expo about internet of things conducted by Quantum Leap India.",
+    "tags": [
+      "Internet",
+      "Expo",
+      "things",
+      "of",
+      "internet"
+    ],
+    "location": "Jaipur",
+    "duration": "1 day / 6 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Expo",
+    "domain": "Internet of Things",
+    "price": 1147.12,
+    "free_entry": false,
+    "Expected_attendance": 991
+  },
+  {
+    "event_id": "e214",
+    "title": "DevOps Workshop",
+    "description": "A detailed and hands-on workshop about devops conducted by VR Explorers.",
+    "tags": [
+      "DevOps",
+      "devops",
+      "Workshop"
+    ],
+    "location": "Surat",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Workshop",
+    "domain": "DevOps",
+    "price": 1300.22,
+    "free_entry": false,
+    "Expected_attendance": 330
+  },
+  {
+    "event_id": "e215",
+    "title": "Virtual Reality Forum",
+    "description": "A detailed and hands-on forum about virtual reality conducted by Blockchain Hub.",
+    "tags": [
+      "Virtual",
+      "reality",
+      "virtual",
+      "Forum"
+    ],
+    "location": "Bhopal",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Forum",
+    "domain": "Virtual Reality",
+    "price": 436.1,
+    "free_entry": false,
+    "Expected_attendance": 572
+  },
+  {
+    "event_id": "e216",
+    "title": "Augmented Reality Expo",
+    "description": "A detailed and hands-on expo about augmented reality conducted by NextGen Coders.",
+    "tags": [
+      "augmented",
+      "Expo",
+      "reality",
+      "Augmented"
+    ],
+    "location": "Indore",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Expo",
+    "domain": "Augmented Reality",
+    "price": 339.78,
+    "free_entry": false,
+    "Expected_attendance": 353
+  },
+  {
+    "event_id": "e217",
+    "title": "Game Development Webinar",
+    "description": "A detailed and hands-on webinar about game development conducted by Design Gurus.",
+    "tags": [
+      "game",
+      "Game",
+      "development",
+      "Webinar"
+    ],
+    "location": "Chandigarh",
+    "duration": "3 day / 16 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Webinar",
+    "domain": "Game Development",
+    "price": 1011.15,
+    "free_entry": false,
+    "Expected_attendance": 67
+  },
+  {
+    "event_id": "e218",
+    "title": "Cybersecurity Forum",
+    "description": "A detailed and hands-on forum about cybersecurity conducted by IoT Visionaries.",
+    "tags": [
+      "cybersecurity",
+      "Forum",
+      "Cybersecurity"
+    ],
+    "location": "Lucknow",
+    "duration": "2 day / 8 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Forum",
+    "domain": "Cybersecurity",
+    "price": 1069.01,
+    "free_entry": false,
+    "Expected_attendance": 360
+  },
+  {
+    "event_id": "e219",
+    "title": "Blockchain Summit",
+    "description": "A detailed and hands-on summit about blockchain conducted by Blockchain Hub.",
+    "tags": [
+      "blockchain",
+      "Blockchain",
+      "Summit"
+    ],
+    "location": "Chandigarh",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Summit",
+    "domain": "Blockchain",
+    "price": 803.31,
+    "free_entry": false,
+    "Expected_attendance": 225
+  },
+  {
+    "event_id": "e220",
+    "title": "HealthTech Webinar",
+    "description": "A detailed and hands-on webinar about healthtech conducted by VR Explorers.",
+    "tags": [
+      "HealthTech",
+      "Webinar",
+      "healthtech"
+    ],
+    "location": "Ahmedabad",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Webinar",
+    "domain": "HealthTech",
+    "price": 1243.63,
+    "free_entry": false,
+    "Expected_attendance": 822
+  },
+  {
+    "event_id": "e221",
+    "title": "Cloud Computing Conference",
+    "description": "A detailed and hands-on conference about cloud computing conducted by NextGen Coders.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Conference"
+    ],
+    "location": "Mumbai",
+    "duration": "2 day / 6 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Conference",
+    "domain": "Cloud Computing",
+    "price": 1348.57,
+    "free_entry": false,
+    "Expected_attendance": 359
+  },
+  {
+    "event_id": "e222",
+    "title": "Data Science Conference",
+    "description": "A detailed and hands-on conference about data science conducted by IoT Visionaries.",
+    "tags": [
+      "science",
+      "Data",
+      "data",
+      "Conference"
+    ],
+    "location": "Noida",
+    "duration": "2 day / 16 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Conference",
+    "domain": "Data Science",
+    "price": 785.75,
+    "free_entry": false,
+    "Expected_attendance": 633
+  },
+  {
+    "event_id": "e223",
+    "title": "Data Science Expo",
+    "description": "A detailed and hands-on expo about data science conducted by Cloud Ninjas.",
+    "tags": [
+      "science",
+      "Data",
+      "Expo",
+      "data"
+    ],
+    "location": "Bangalore",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "Cloud Ninjas",
+    "event_type": "Expo",
+    "domain": "Data Science",
+    "price": 1097.4,
+    "free_entry": false,
+    "Expected_attendance": 652
+  },
+  {
+    "event_id": "e224",
+    "title": "Data Science Workshop",
+    "description": "A detailed and hands-on workshop about data science conducted by VR Explorers.",
+    "tags": [
+      "science",
+      "Data",
+      "Workshop",
+      "data"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Workshop",
+    "domain": "Data Science",
+    "price": 1304.53,
+    "free_entry": false,
+    "Expected_attendance": 448
+  },
+  {
+    "event_id": "e225",
+    "title": "Mobile Development Workshop",
+    "description": "A detailed and hands-on workshop about mobile development conducted by VR Explorers.",
+    "tags": [
+      "mobile",
+      "Workshop",
+      "development",
+      "Mobile"
+    ],
+    "location": "Bangalore",
+    "duration": "2 day / 8 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Workshop",
+    "domain": "Mobile Development",
+    "price": 1404.0,
+    "free_entry": false,
+    "Expected_attendance": 310
+  },
+  {
+    "event_id": "e226",
+    "title": "Quantum Computing Meetup",
+    "description": "A detailed and hands-on meetup about quantum computing conducted by Blockchain Hub.",
+    "tags": [
+      "Meetup",
+      "computing",
+      "Quantum",
+      "quantum"
+    ],
+    "location": "Nagpur",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Meetup",
+    "domain": "Quantum Computing",
+    "price": 307.5,
+    "free_entry": false,
+    "Expected_attendance": 289
+  },
+  {
+    "event_id": "e227",
+    "title": "Cloud Computing Workshop",
+    "description": "A detailed and hands-on workshop about cloud computing conducted by NextGen Coders.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Workshop"
+    ],
+    "location": "Mumbai",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Workshop",
+    "domain": "Cloud Computing",
+    "price": 1336.58,
+    "free_entry": false,
+    "Expected_attendance": 996
+  },
+  {
+    "event_id": "e228",
+    "title": "Cybersecurity Bootcamp",
+    "description": "A detailed and hands-on bootcamp about cybersecurity conducted by Code Wizards.",
+    "tags": [
+      "cybersecurity",
+      "Bootcamp",
+      "Cybersecurity"
+    ],
+    "location": "Nagpur",
+    "duration": "1 day / 4 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Bootcamp",
+    "domain": "Cybersecurity",
+    "price": 676.69,
+    "free_entry": false,
+    "Expected_attendance": 685
+  },
+  {
+    "event_id": "e229",
+    "title": "Cloud Computing Meetup",
+    "description": "A detailed and hands-on meetup about cloud computing conducted by Tech Titans.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Meetup"
+    ],
+    "location": "Patna",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Meetup",
+    "domain": "Cloud Computing",
+    "price": 1058.03,
+    "free_entry": false,
+    "Expected_attendance": 187
+  },
+  {
+    "event_id": "e230",
+    "title": "Cybersecurity Webinar",
+    "description": "A detailed and hands-on webinar about cybersecurity conducted by NextGen Coders.",
+    "tags": [
+      "cybersecurity",
+      "Webinar",
+      "Cybersecurity"
+    ],
+    "location": "Hyderabad",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Webinar",
+    "domain": "Cybersecurity",
+    "price": 1287.12,
+    "free_entry": false,
+    "Expected_attendance": 833
+  },
+  {
+    "event_id": "e231",
+    "title": "Cloud Computing Summit",
+    "description": "A detailed and hands-on summit about cloud computing conducted by Blockchain Hub.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Summit"
+    ],
+    "location": "Bangalore",
+    "duration": "2 day / 6 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Summit",
+    "domain": "Cloud Computing",
+    "price": 624.87,
+    "free_entry": false,
+    "Expected_attendance": 116
+  },
+  {
+    "event_id": "e232",
+    "title": "DevOps Symposium",
+    "description": "A detailed and hands-on symposium about devops conducted by Design Gurus.",
+    "tags": [
+      "DevOps",
+      "devops",
+      "Symposium"
+    ],
+    "location": "Chandigarh",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Symposium",
+    "domain": "DevOps",
+    "price": 439.21,
+    "free_entry": false,
+    "Expected_attendance": 390
+  },
+  {
+    "event_id": "e233",
+    "title": "Blockchain Summit",
+    "description": "A detailed and hands-on summit about blockchain conducted by Quantum Leap India.",
+    "tags": [
+      "blockchain",
+      "Blockchain",
+      "Summit"
+    ],
+    "location": "Lucknow",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Summit",
+    "domain": "Blockchain",
+    "price": 666.3,
+    "free_entry": false,
+    "Expected_attendance": 521
+  },
+  {
+    "event_id": "e234",
+    "title": "Cloud Computing Expo",
+    "description": "A detailed and hands-on expo about cloud computing conducted by IoT Visionaries.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Expo",
+      "Cloud"
+    ],
+    "location": "Jaipur",
+    "duration": "2 day / 12 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Expo",
+    "domain": "Cloud Computing",
+    "price": 716.92,
+    "free_entry": false,
+    "Expected_attendance": 623
+  },
+  {
+    "event_id": "e235",
+    "title": "Quantum Computing Hackathon",
+    "description": "A detailed and hands-on hackathon about quantum computing conducted by Code Wizards.",
+    "tags": [
+      "Hackathon",
+      "computing",
+      "Quantum",
+      "quantum"
+    ],
+    "location": "Pune",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Hackathon",
+    "domain": "Quantum Computing",
+    "price": 1034.36,
+    "free_entry": false,
+    "Expected_attendance": 834
+  },
+  {
+    "event_id": "e236",
+    "title": "Data Science Hackathon",
+    "description": "A detailed and hands-on hackathon about data science conducted by Tech Titans.",
+    "tags": [
+      "Hackathon",
+      "science",
+      "Data",
+      "data"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 16 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Hackathon",
+    "domain": "Data Science",
+    "price": 379.99,
+    "free_entry": false,
+    "Expected_attendance": 130
+  },
+  {
+    "event_id": "e237",
+    "title": "Internet of Things Expo",
+    "description": "A detailed and hands-on expo about internet of things conducted by Cloud Ninjas.",
+    "tags": [
+      "Internet",
+      "Expo",
+      "things",
+      "of",
+      "internet"
+    ],
+    "location": "Kolkata",
+    "duration": "2 day / 12 hr",
+    "organizer_name": "Cloud Ninjas",
+    "event_type": "Expo",
+    "domain": "Internet of Things",
+    "price": 876.78,
+    "free_entry": false,
+    "Expected_attendance": 794
+  },
+  {
+    "event_id": "e238",
+    "title": "HealthTech Forum",
+    "description": "A detailed and hands-on forum about healthtech conducted by Blockchain Hub.",
+    "tags": [
+      "HealthTech",
+      "Forum",
+      "healthtech"
+    ],
+    "location": "Mumbai",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Forum",
+    "domain": "HealthTech",
+    "price": 768.95,
+    "free_entry": false,
+    "Expected_attendance": 638
+  },
+  {
+    "event_id": "e239",
+    "title": "DevOps Expo",
+    "description": "A detailed and hands-on expo about devops conducted by IoT Visionaries.",
+    "tags": [
+      "DevOps",
+      "Expo",
+      "devops"
+    ],
+    "location": "Goa",
+    "duration": "1 day / 4 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Expo",
+    "domain": "DevOps",
+    "price": 754.67,
+    "free_entry": false,
+    "Expected_attendance": 405
+  },
+  {
+    "event_id": "e240",
+    "title": "Augmented Reality Expo",
+    "description": "A detailed and hands-on expo about augmented reality conducted by Tech Titans.",
+    "tags": [
+      "augmented",
+      "Expo",
+      "reality",
+      "Augmented"
+    ],
+    "location": "Surat",
+    "duration": "2 day / 24 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Expo",
+    "domain": "Augmented Reality",
+    "price": 481.04,
+    "free_entry": false,
+    "Expected_attendance": 955
+  },
+  {
+    "event_id": "e241",
+    "title": "Game Development Conference",
+    "description": "A detailed and hands-on conference about game development conducted by IoT Visionaries.",
+    "tags": [
+      "game",
+      "Game",
+      "development",
+      "Conference"
+    ],
+    "location": "Mumbai",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Conference",
+    "domain": "Game Development",
+    "price": 898.39,
+    "free_entry": false,
+    "Expected_attendance": 74
+  },
+  {
+    "event_id": "e242",
+    "title": "Quantum Computing Meetup",
+    "description": "A detailed and hands-on meetup about quantum computing conducted by Design Gurus.",
+    "tags": [
+      "Meetup",
+      "computing",
+      "Quantum",
+      "quantum"
+    ],
+    "location": "Chennai",
+    "duration": "2 day / 24 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Meetup",
+    "domain": "Quantum Computing",
+    "price": 1342.88,
+    "free_entry": false,
+    "Expected_attendance": 884
+  },
+  {
+    "event_id": "e243",
+    "title": "Cybersecurity Bootcamp",
+    "description": "A detailed and hands-on bootcamp about cybersecurity conducted by Blockchain Hub.",
+    "tags": [
+      "cybersecurity",
+      "Bootcamp",
+      "Cybersecurity"
+    ],
+    "location": "Patna",
+    "duration": "1 day / 6 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Bootcamp",
+    "domain": "Cybersecurity",
+    "price": 885.64,
+    "free_entry": false,
+    "Expected_attendance": 73
+  },
+  {
+    "event_id": "e244",
+    "title": "Game Development Conference",
+    "description": "A detailed and hands-on conference about game development conducted by VR Explorers.",
+    "tags": [
+      "game",
+      "Game",
+      "development",
+      "Conference"
+    ],
+    "location": "Patna",
+    "duration": "2 day / 8 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Conference",
+    "domain": "Game Development",
+    "price": 1494.56,
+    "free_entry": false,
+    "Expected_attendance": 377
+  },
+  {
+    "event_id": "e245",
+    "title": "Internet of Things Conference",
+    "description": "A detailed and hands-on conference about internet of things conducted by Blockchain Hub.",
+    "tags": [
+      "Internet",
+      "things",
+      "of",
+      "internet",
+      "Conference"
+    ],
+    "location": "Patna",
+    "duration": "3 day / 16 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Conference",
+    "domain": "Internet of Things",
+    "price": 960.68,
+    "free_entry": false,
+    "Expected_attendance": 336
+  },
+  {
+    "event_id": "e246",
+    "title": "DevOps Bootcamp",
+    "description": "A detailed and hands-on bootcamp about devops conducted by VR Explorers.",
+    "tags": [
+      "Bootcamp",
+      "DevOps",
+      "devops"
+    ],
+    "location": "Chennai",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Bootcamp",
+    "domain": "DevOps",
+    "price": 1307.81,
+    "free_entry": false,
+    "Expected_attendance": 886
+  },
+  {
+    "event_id": "e247",
+    "title": "Data Science Webinar",
+    "description": "A detailed and hands-on webinar about data science conducted by AI Circle.",
+    "tags": [
+      "science",
+      "Data",
+      "Webinar",
+      "data"
+    ],
+    "location": "Ranchi",
+    "duration": "2 day / 24 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Webinar",
+    "domain": "Data Science",
+    "price": 1014.86,
+    "free_entry": false,
+    "Expected_attendance": 604
+  },
+  {
+    "event_id": "e248",
+    "title": "Web Development Bootcamp",
+    "description": "A detailed and hands-on bootcamp about web development conducted by Blockchain Hub.",
+    "tags": [
+      "web",
+      "Bootcamp",
+      "development",
+      "Web"
+    ],
+    "location": "Hyderabad",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Bootcamp",
+    "domain": "Web Development",
+    "price": 1050.14,
+    "free_entry": false,
+    "Expected_attendance": 825
+  },
+  {
+    "event_id": "e249",
+    "title": "Game Development Expo",
+    "description": "A detailed and hands-on expo about game development conducted by AI Circle.",
+    "tags": [
+      "game",
+      "Expo",
+      "Game",
+      "development"
+    ],
+    "location": "Hyderabad",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Expo",
+    "domain": "Game Development",
+    "price": 388.99,
+    "free_entry": false,
+    "Expected_attendance": 54
+  },
+  {
+    "event_id": "e250",
+    "title": "EdTech Symposium",
+    "description": "A detailed and hands-on symposium about edtech conducted by Quantum Leap India.",
+    "tags": [
+      "EdTech",
+      "edtech",
+      "Symposium"
+    ],
+    "location": "Goa",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Symposium",
+    "domain": "EdTech",
+    "price": 604.8,
+    "free_entry": false,
+    "Expected_attendance": 532
+  },
+  {
+    "event_id": "e251",
+    "title": "Cloud Computing Forum",
+    "description": "A detailed and hands-on forum about cloud computing conducted by VR Explorers.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Forum"
+    ],
+    "location": "Surat",
+    "duration": "3 day / 6 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Forum",
+    "domain": "Cloud Computing",
+    "price": 1400.24,
+    "free_entry": false,
+    "Expected_attendance": 115
+  },
+  {
+    "event_id": "e252",
+    "title": "Internet of Things Summit",
+    "description": "A detailed and hands-on summit about internet of things conducted by Quantum Leap India.",
+    "tags": [
+      "Internet",
+      "things",
+      "Summit",
+      "of",
+      "internet"
+    ],
+    "location": "Chennai",
+    "duration": "2 day / 16 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Summit",
+    "domain": "Internet of Things",
+    "price": 1021.26,
+    "free_entry": false,
+    "Expected_attendance": 790
+  },
+  {
+    "event_id": "e253",
+    "title": "E-commerce Forum",
+    "description": "A detailed and hands-on forum about e-commerce conducted by NextGen Coders.",
+    "tags": [
+      "E-commerce",
+      "Forum",
+      "e-commerce"
+    ],
+    "location": "Bhopal",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Forum",
+    "domain": "E-commerce",
+    "price": 812.58,
+    "free_entry": false,
+    "Expected_attendance": 179
+  },
+  {
+    "event_id": "e254",
+    "title": "UI/UX Design Expo",
+    "description": "A detailed and hands-on expo about ui/ux design conducted by AI Circle.",
+    "tags": [
+      "Expo",
+      "ui/ux",
+      "UI/UX",
+      "design"
+    ],
+    "location": "Gurgaon",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Expo",
+    "domain": "UI/UX Design",
+    "price": 578.36,
+    "free_entry": false,
+    "Expected_attendance": 829
+  },
+  {
+    "event_id": "e255",
+    "title": "E-commerce Hackathon",
+    "description": "A detailed and hands-on hackathon about e-commerce conducted by Quantum Leap India.",
+    "tags": [
+      "Hackathon",
+      "E-commerce",
+      "e-commerce"
+    ],
+    "location": "Gurgaon",
+    "duration": "2 day / 6 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Hackathon",
+    "domain": "E-commerce",
+    "price": 1191.67,
+    "free_entry": false,
+    "Expected_attendance": 337
+  },
+  {
+    "event_id": "e256",
+    "title": "Blockchain Expo",
+    "description": "A detailed and hands-on expo about blockchain conducted by IoT Visionaries.",
+    "tags": [
+      "blockchain",
+      "Blockchain",
+      "Expo"
+    ],
+    "location": "Bangalore",
+    "duration": "1 day / 4 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Expo",
+    "domain": "Blockchain",
+    "price": 364.91,
+    "free_entry": false,
+    "Expected_attendance": 410
+  },
+  {
+    "event_id": "e257",
+    "title": "EdTech Summit",
+    "description": "A detailed and hands-on summit about edtech conducted by NextGen Coders.",
+    "tags": [
+      "EdTech",
+      "Summit",
+      "edtech"
+    ],
+    "location": "Jaipur",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Summit",
+    "domain": "EdTech",
+    "price": 899.63,
+    "free_entry": false,
+    "Expected_attendance": 151
+  },
+  {
+    "event_id": "e258",
+    "title": "Mobile Development Meetup",
+    "description": "A detailed and hands-on meetup about mobile development conducted by Blockchain Hub.",
+    "tags": [
+      "Meetup",
+      "mobile",
+      "development",
+      "Mobile"
+    ],
+    "location": "Mumbai",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Meetup",
+    "domain": "Mobile Development",
+    "price": 691.56,
+    "free_entry": false,
+    "Expected_attendance": 154
+  },
+  {
+    "event_id": "e259",
+    "title": "Internet of Things Symposium",
+    "description": "A detailed and hands-on symposium about internet of things conducted by VR Explorers.",
+    "tags": [
+      "Internet",
+      "things",
+      "Symposium",
+      "of",
+      "internet"
+    ],
+    "location": "Noida",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Symposium",
+    "domain": "Internet of Things",
+    "price": 847.81,
+    "free_entry": false,
+    "Expected_attendance": 965
+  },
+  {
+    "event_id": "e260",
+    "title": "DevOps Summit",
+    "description": "A detailed and hands-on summit about devops conducted by Blockchain Hub.",
+    "tags": [
+      "DevOps",
+      "devops",
+      "Summit"
+    ],
+    "location": "Noida",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "Blockchain Hub",
+    "event_type": "Summit",
+    "domain": "DevOps",
+    "price": 957.27,
+    "free_entry": false,
+    "Expected_attendance": 606
+  },
+  {
+    "event_id": "e261",
+    "title": "Quantum Computing Expo",
+    "description": "A detailed and hands-on expo about quantum computing conducted by Tech Titans.",
+    "tags": [
+      "computing",
+      "Expo",
+      "Quantum",
+      "quantum"
+    ],
+    "location": "Goa",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Expo",
+    "domain": "Quantum Computing",
+    "price": 1437.67,
+    "free_entry": false,
+    "Expected_attendance": 238
+  },
+  {
+    "event_id": "e262",
+    "title": "Data Science Expo",
+    "description": "A detailed and hands-on expo about data science conducted by AI Circle.",
+    "tags": [
+      "science",
+      "Data",
+      "Expo",
+      "data"
+    ],
+    "location": "Nagpur",
+    "duration": "2 day / 24 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Expo",
+    "domain": "Data Science",
+    "price": 1001.63,
+    "free_entry": false,
+    "Expected_attendance": 688
+  },
+  {
+    "event_id": "e263",
+    "title": "Blockchain Symposium",
+    "description": "A detailed and hands-on symposium about blockchain conducted by IoT Visionaries.",
+    "tags": [
+      "blockchain",
+      "Blockchain",
+      "Symposium"
+    ],
+    "location": "Bangalore",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Symposium",
+    "domain": "Blockchain",
+    "price": 602.66,
+    "free_entry": false,
+    "Expected_attendance": 389
+  },
+  {
+    "event_id": "e264",
+    "title": "Cloud Computing Conference",
+    "description": "A detailed and hands-on conference about cloud computing conducted by Code Wizards.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Conference"
+    ],
+    "location": "Kolkata",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Conference",
+    "domain": "Cloud Computing",
+    "price": 962.18,
+    "free_entry": false,
+    "Expected_attendance": 847
+  },
+  {
+    "event_id": "e265",
+    "title": "Mobile Development Conference",
+    "description": "A detailed and hands-on conference about mobile development conducted by NextGen Coders.",
+    "tags": [
+      "mobile",
+      "development",
+      "Mobile",
+      "Conference"
+    ],
+    "location": "Kolkata",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "NextGen Coders",
+    "event_type": "Conference",
+    "domain": "Mobile Development",
+    "price": 1086.23,
+    "free_entry": false,
+    "Expected_attendance": 679
+  },
+  {
+    "event_id": "e266",
+    "title": "UI/UX Design Bootcamp",
+    "description": "A detailed and hands-on bootcamp about ui/ux design conducted by VR Explorers.",
+    "tags": [
+      "Bootcamp",
+      "ui/ux",
+      "UI/UX",
+      "design"
+    ],
+    "location": "Chennai",
+    "duration": "3 day / 16 hr",
+    "organizer_name": "VR Explorers",
+    "event_type": "Bootcamp",
+    "domain": "UI/UX Design",
+    "price": 1312.2,
+    "free_entry": false,
+    "Expected_attendance": 426
+  },
+  {
+    "event_id": "e267",
+    "title": "HealthTech Hackathon",
+    "description": "A detailed and hands-on hackathon about healthtech conducted by AI Circle.",
+    "tags": [
+      "HealthTech",
+      "Hackathon",
+      "healthtech"
+    ],
+    "location": "Hyderabad",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Hackathon",
+    "domain": "HealthTech",
+    "price": 551.3,
+    "free_entry": false,
+    "Expected_attendance": 972
+  },
+  {
+    "event_id": "e268",
+    "title": "DevOps Bootcamp",
+    "description": "A detailed and hands-on bootcamp about devops conducted by IoT Visionaries.",
+    "tags": [
+      "Bootcamp",
+      "DevOps",
+      "devops"
+    ],
+    "location": "Gurgaon",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Bootcamp",
+    "domain": "DevOps",
+    "price": 871.06,
+    "free_entry": false,
+    "Expected_attendance": 734
+  },
+  {
+    "event_id": "e269",
+    "title": "Mobile Development Forum",
+    "description": "A detailed and hands-on forum about mobile development conducted by Tech Titans.",
+    "tags": [
+      "mobile",
+      "Forum",
+      "development",
+      "Mobile"
+    ],
+    "location": "Bhopal",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Forum",
+    "domain": "Mobile Development",
+    "price": 918.47,
+    "free_entry": false,
+    "Expected_attendance": 292
+  },
+  {
+    "event_id": "e270",
+    "title": "E-commerce Meetup",
+    "description": "A detailed and hands-on meetup about e-commerce conducted by Design Gurus.",
+    "tags": [
+      "Meetup",
+      "E-commerce",
+      "e-commerce"
+    ],
+    "location": "Gurgaon",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Meetup",
+    "domain": "E-commerce",
+    "price": 551.32,
+    "free_entry": false,
+    "Expected_attendance": 736
+  },
+  {
+    "event_id": "e271",
+    "title": "Quantum Computing Symposium",
+    "description": "A detailed and hands-on symposium about quantum computing conducted by IoT Visionaries.",
+    "tags": [
+      "computing",
+      "Quantum",
+      "quantum",
+      "Symposium"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Symposium",
+    "domain": "Quantum Computing",
+    "price": 442.99,
+    "free_entry": false,
+    "Expected_attendance": 703
+  },
+  {
+    "event_id": "e272",
+    "title": "Data Science Meetup",
+    "description": "A detailed and hands-on meetup about data science conducted by IoT Visionaries.",
+    "tags": [
+      "Meetup",
+      "science",
+      "Data",
+      "data"
+    ],
+    "location": "Ranchi",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "IoT Visionaries",
+    "event_type": "Meetup",
+    "domain": "Data Science",
+    "price": 494.69,
+    "free_entry": false,
+    "Expected_attendance": 921
+  },
+  {
+    "event_id": "e273",
+    "title": "Virtual Reality Hackathon",
+    "description": "A detailed and hands-on hackathon about virtual reality conducted by Tech Titans.",
+    "tags": [
+      "Virtual",
+      "reality",
+      "virtual",
+      "Hackathon"
+    ],
+    "location": "Pune",
+    "duration": "2 day / 16 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Hackathon",
+    "domain": "Virtual Reality",
+    "price": 1426.4,
+    "free_entry": false,
+    "Expected_attendance": 679
+  },
+  {
+    "event_id": "e274",
+    "title": "Cloud Computing Meetup",
+    "description": "A detailed and hands-on meetup about cloud computing conducted by Tech Titans.",
+    "tags": [
+      "cloud",
+      "computing",
+      "Cloud",
+      "Meetup"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Meetup",
+    "domain": "Cloud Computing",
+    "price": 865.67,
+    "free_entry": false,
+    "Expected_attendance": 137
+  },
+  {
+    "event_id": "e275",
+    "title": "Game Development Hackathon",
+    "description": "A detailed and hands-on hackathon about game development conducted by AI Circle.",
+    "tags": [
+      "Hackathon",
+      "game",
+      "Game",
+      "development"
+    ],
+    "location": "Nagpur",
+    "duration": "2 day / 4 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Hackathon",
+    "domain": "Game Development",
+    "price": 956.28,
+    "free_entry": false,
+    "Expected_attendance": 461
+  },
+  {
+    "event_id": "e276",
+    "title": "Mobile Development Bootcamp",
+    "description": "A detailed and hands-on bootcamp about mobile development conducted by Tech Titans.",
+    "tags": [
+      "Bootcamp",
+      "mobile",
+      "development",
+      "Mobile"
+    ],
+    "location": "Patna",
+    "duration": "3 day / 4 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Bootcamp",
+    "domain": "Mobile Development",
+    "price": 867.72,
+    "free_entry": false,
+    "Expected_attendance": 198
+  },
+  {
+    "event_id": "e277",
+    "title": "Internet of Things Webinar",
+    "description": "A detailed and hands-on webinar about internet of things conducted by Quantum Leap India.",
+    "tags": [
+      "Internet",
+      "things",
+      "Webinar",
+      "of",
+      "internet"
+    ],
+    "location": "Delhi",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Webinar",
+    "domain": "Internet of Things",
+    "price": 1382.91,
+    "free_entry": false,
+    "Expected_attendance": 608
+  },
+  {
+    "event_id": "e278",
+    "title": "Game Development Meetup",
+    "description": "A detailed and hands-on meetup about game development conducted by Tech Titans.",
+    "tags": [
+      "Meetup",
+      "game",
+      "Game",
+      "development"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Meetup",
+    "domain": "Game Development",
+    "price": 889.69,
+    "free_entry": false,
+    "Expected_attendance": 482
+  },
+  {
+    "event_id": "e279",
+    "title": "Data Science Summit",
+    "description": "A detailed and hands-on summit about data science conducted by Code Wizards.",
+    "tags": [
+      "science",
+      "Data",
+      "Summit",
+      "data"
+    ],
+    "location": "Ahmedabad",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Summit",
+    "domain": "Data Science",
+    "price": 735.92,
+    "free_entry": false,
+    "Expected_attendance": 861
+  },
+  {
+    "event_id": "e280",
+    "title": "Mobile Development Summit",
+    "description": "A detailed and hands-on summit about mobile development conducted by Design Gurus.",
+    "tags": [
+      "mobile",
+      "Summit",
+      "development",
+      "Mobile"
+    ],
+    "location": "Noida",
+    "duration": "3 day / 12 hr",
+    "organizer_name": "Design Gurus",
+    "event_type": "Summit",
+    "domain": "Mobile Development",
+    "price": 721.17,
+    "free_entry": false,
+    "Expected_attendance": 266
+  },
+  {
+    "event_id": "e281",
+    "title": "E-commerce Conference",
+    "description": "A detailed and hands-on conference about e-commerce conducted by Code Wizards.",
+    "tags": [
+      "E-commerce",
+      "e-commerce",
+      "Conference"
+    ],
+    "location": "Bhopal",
+    "duration": "1 day / 24 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Conference",
+    "domain": "E-commerce",
+    "price": 311.27,
+    "free_entry": false,
+    "Expected_attendance": 70
+  },
+  {
+    "event_id": "e282",
+    "title": "EdTech Bootcamp",
+    "description": "A detailed and hands-on bootcamp about edtech conducted by Code Wizards.",
+    "tags": [
+      "Bootcamp",
+      "EdTech",
+      "edtech"
+    ],
+    "location": "Nagpur",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Bootcamp",
+    "domain": "EdTech",
+    "price": 1203.42,
+    "free_entry": false,
+    "Expected_attendance": 311
+  },
+  {
+    "event_id": "e283",
+    "title": "E-commerce Expo",
+    "description": "A detailed and hands-on expo about e-commerce conducted by AI Circle.",
+    "tags": [
+      "E-commerce",
+      "Expo",
+      "e-commerce"
+    ],
+    "location": "Ahmedabad",
+    "duration": "1 day / 8 hr",
+    "organizer_name": "AI Circle",
+    "event_type": "Expo",
+    "domain": "E-commerce",
+    "price": 1126.8,
+    "free_entry": false,
+    "Expected_attendance": 853
+  },
+  {
+    "event_id": "e284",
+    "title": "Game Development Hackathon",
+    "description": "A detailed and hands-on hackathon about game development conducted by Code Wizards.",
+    "tags": [
+      "Hackathon",
+      "game",
+      "Game",
+      "development"
+    ],
+    "location": "Jaipur",
+    "duration": "3 day / 8 hr",
+    "organizer_name": "Code Wizards",
+    "event_type": "Hackathon",
+    "domain": "Game Development",
+    "price": 605.13,
+    "free_entry": false,
+    "Expected_attendance": 284
+  },
+  {
+    "event_id": "e285",
+    "title": "DevOps Meetup",
+    "description": "A detailed and hands-on meetup about devops conducted by Tech Titans.",
+    "tags": [
+      "Meetup",
+      "DevOps",
+      "devops"
+    ],
+    "location": "Gurgaon",
+    "duration": "1 day / 16 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Meetup",
+    "domain": "DevOps",
+    "price": 652.37,
+    "free_entry": false,
+    "Expected_attendance": 726
+  },
+  {
+    "event_id": "e286",
+    "title": "Blockchain Forum",
+    "description": "A detailed and hands-on forum about blockchain conducted by Tech Titans.",
+    "tags": [
+      "blockchain",
+      "Blockchain",
+      "Forum"
+    ],
+    "location": "Chennai",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Forum",
+    "domain": "Blockchain",
+    "price": 1179.1,
+    "free_entry": false,
+    "Expected_attendance": 940
+  },
+  {
+    "event_id": "e287",
+    "title": "Augmented Reality Workshop",
+    "description": "A detailed and hands-on workshop about augmented reality conducted by Cloud Ninjas.",
+    "tags": [
+      "augmented",
+      "reality",
+      "Workshop",
+      "Augmented"
+    ],
+    "location": "Gurgaon",
+    "duration": "1 day / 12 hr",
+    "organizer_name": "Cloud Ninjas",
+    "event_type": "Workshop",
+    "domain": "Augmented Reality",
+    "price": 1441.01,
+    "free_entry": false,
+    "Expected_attendance": 849
+  },
+  {
+    "event_id": "e288",
+    "title": "Game Development Bootcamp",
+    "description": "A detailed and hands-on bootcamp about game development conducted by Quantum Leap India.",
+    "tags": [
+      "Bootcamp",
+      "game",
+      "Game",
+      "development"
+    ],
+    "location": "Pune",
+    "duration": "2 day / 6 hr",
+    "organizer_name": "Quantum Leap India",
+    "event_type": "Bootcamp",
+    "domain": "Game Development",
+    "price": 304.86,
+    "free_entry": false,
+    "Expected_attendance": 662
+  },
+  {
+    "event_id": "e289",
+    "title": "Web Development Symposium",
+    "description": "A detailed and hands-on symposium about web development conducted by Tech Titans.",
+    "tags": [
+      "web",
+      "development",
+      "Web",
+      "Symposium"
+    ],
+    "location": "Gurgaon",
+    "duration": "3 day / 24 hr",
+    "organizer_name": "Tech Titans",
+    "event_type": "Symposium",
+    "domain": "Web Development",
+    "price": 0.0,
+    "free_entry": true,
+    "Expected_attendance": 449
+  }
+]
