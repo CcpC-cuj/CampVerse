@@ -1,0 +1,851 @@
+[
+  {
+    "user_id": "u123",
+    "name": "Abc Kumar ",
+    "preferred_domains": [
+      "Artificial Intelligence",
+      "Web Development",
+      "Startups & Entrepreneurship"
+    ],
+    "interests_tags": [
+      "deep learning",
+      "react.js",
+      "pitching",
+      "transformers",
+      "founders",
+      "LLM"
+    ],
+    "location": "Bengaluru",
+    "explored_history": [
+      "e701",
+      "e285"
+    ],
+    "liked_events": [
+      "e101",
+      "e205"
+    ],
+    "attended_events": [
+      "e101",
+      "v123"
+    ]
+  },
+  {
+    "user_id": "u223",
+    "name": "Shcde Singh  ",
+    "preferred_domains": [
+      "Artificial Intelligence",
+      "Web Development",
+      "Competitions"
+    ],
+    "interests_tags": [
+      "deep learning",
+      "react.js",
+      "transformers",
+      "LLM"
+    ],
+    "location": "Delhi",
+    "explored_history": [
+      "e701",
+      "e285"
+    ],
+    "liked_events": [
+      "e101",
+      "e205"
+    ],
+    "attended_events": [
+      "e101",
+      "v123"
+    ]
+  },
+  {
+    "user_id": "u300",
+    "name": "Riya Singh",
+    "preferred_domains": [
+      "FinTech",
+      "DevOps",
+      "Startups & Entrepreneurship"
+    ],
+    "interests_tags": [
+      "founders",
+      "deep learning",
+      "node.js",
+      "transformers",
+      "gaming",
+      "LLM"
+    ],
+    "location": "Mumbai",
+    "explored_history": [
+      "e734",
+      "e320",
+      "e344"
+    ],
+    "liked_events": [
+      "e234"
+    ],
+    "attended_events": [
+      "e172"
+    ]
+  },
+  {
+    "user_id": "u301",
+    "name": "Riya Reddy",
+    "preferred_domains": [
+      "Artificial Intelligence",
+      "EdTech",
+      "Startups & Entrepreneurship"
+    ],
+    "interests_tags": [
+      "vue.js",
+      "docker",
+      "transformers",
+      "startups",
+      "python"
+    ],
+    "location": "Chennai",
+    "explored_history": [
+      "e554",
+      "e679"
+    ],
+    "liked_events": [
+      "e638"
+    ],
+    "attended_events": [
+      "e778"
+    ]
+  },
+  {
+    "user_id": "u302",
+    "name": "Ravi Khan",
+    "preferred_domains": [
+      "Web Development",
+      "Blockchain",
+      "Cybersecurity"
+    ],
+    "interests_tags": [
+      "docker",
+      "transformers",
+      "react.js",
+      "deep learning",
+      "finance",
+      "cloud"
+    ],
+    "location": "Chennai",
+    "explored_history": [
+      "e483",
+      "e896",
+      "e672"
+    ],
+    "liked_events": [
+      "e414",
+      "e461"
+    ],
+    "attended_events": [
+      "e554",
+      "e388"
+    ]
+  },
+  {
+    "user_id": "u303",
+    "name": "Aisha Khan",
+    "preferred_domains": [
+      "Artificial Intelligence",
+      "Startups & Entrepreneurship",
+      "Blockchain"
+    ],
+    "interests_tags": [
+      "vue.js",
+      "gaming",
+      "pitching",
+      "node.js",
+      "finance",
+      "docker"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e687"
+    ],
+    "liked_events": [
+      "e437"
+    ],
+    "attended_events": [
+      "e901",
+      "e338"
+    ]
+  },
+  {
+    "user_id": "u304",
+    "name": "Karan Reddy",
+    "preferred_domains": [
+      "DevOps",
+      "Artificial Intelligence",
+      "Blockchain"
+    ],
+    "interests_tags": [
+      "pitching",
+      "vue.js",
+      "docker",
+      "deep learning",
+      "finance",
+      "founders"
+    ],
+    "location": "Gurgaon",
+    "explored_history": [
+      "e514"
+    ],
+    "liked_events": [
+      "e637"
+    ],
+    "attended_events": [
+      "e681",
+      "e794"
+    ]
+  },
+  {
+    "user_id": "u305",
+    "name": "Priya Patel",
+    "preferred_domains": [
+      "Blockchain",
+      "Cloud Computing",
+      "FinTech"
+    ],
+    "interests_tags": [
+      "cloud",
+      "python",
+      "founders",
+      "LLM",
+      "node.js"
+    ],
+    "location": "Hyderabad",
+    "explored_history": [
+      "e863",
+      "e438",
+      "e708"
+    ],
+    "liked_events": [
+      "e260"
+    ],
+    "attended_events": [
+      "e468",
+      "e874"
+    ]
+  },
+  {
+    "user_id": "u306",
+    "name": "Neha Mishra",
+    "preferred_domains": [
+      "Cloud Computing",
+      "Cybersecurity",
+      "FinTech"
+    ],
+    "interests_tags": [
+      "pitching",
+      "ethics",
+      "startups",
+      "python"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e980",
+      "e183"
+    ],
+    "liked_events": [
+      "e296"
+    ],
+    "attended_events": [
+      "e345",
+      "e404"
+    ]
+  },
+  {
+    "user_id": "u307",
+    "name": "Karan Verma",
+    "preferred_domains": [
+      "EdTech",
+      "Blockchain",
+      "Artificial Intelligence"
+    ],
+    "interests_tags": [
+      "gaming",
+      "cloud",
+      "node.js",
+      "transformers",
+      "founders"
+    ],
+    "location": "Mumbai",
+    "explored_history": [
+      "e682",
+      "e663"
+    ],
+    "liked_events": [
+      "e913"
+    ],
+    "attended_events": [
+      "e234"
+    ]
+  },
+  {
+    "user_id": "u308",
+    "name": "Priya Khan",
+    "preferred_domains": [
+      "FinTech",
+      "Game Development",
+      "DevOps"
+    ],
+    "interests_tags": [
+      "pitching",
+      "deep learning",
+      "docker",
+      "cloud"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e892",
+      "e519"
+    ],
+    "liked_events": [
+      "e445"
+    ],
+    "attended_events": [
+      "e145",
+      "e671"
+    ]
+  },
+  {
+    "user_id": "u309",
+    "name": "Karan Iyer",
+    "preferred_domains": [
+      "Web Development",
+      "Startups & Entrepreneurship",
+      "DevOps"
+    ],
+    "interests_tags": [
+      "finance",
+      "react.js",
+      "docker",
+      "gaming",
+      "cloud",
+      "pitching"
+    ],
+    "location": "Pune",
+    "explored_history": [
+      "e539",
+      "e143"
+    ],
+    "liked_events": [
+      "e421",
+      "e134"
+    ],
+    "attended_events": [
+      "e223",
+      "e148"
+    ]
+  },
+  {
+    "user_id": "u310",
+    "name": "Riya Das",
+    "preferred_domains": [
+      "EdTech",
+      "Cybersecurity",
+      "Artificial Intelligence"
+    ],
+    "interests_tags": [
+      "node.js",
+      "pitching",
+      "python",
+      "docker"
+    ],
+    "location": "Pune",
+    "explored_history": [
+      "e831"
+    ],
+    "liked_events": [
+      "e447",
+      "e371"
+    ],
+    "attended_events": [
+      "e720"
+    ]
+  },
+  {
+    "user_id": "u311",
+    "name": "Sneha Iyer",
+    "preferred_domains": [
+      "EdTech",
+      "Game Development",
+      "Cloud Computing"
+    ],
+    "interests_tags": [
+      "vue.js",
+      "finance",
+      "deep learning",
+      "LLM",
+      "ethics",
+      "founders"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e722"
+    ],
+    "liked_events": [
+      "e309"
+    ],
+    "attended_events": [
+      "e538"
+    ]
+  },
+  {
+    "user_id": "u312",
+    "name": "Priya Reddy",
+    "preferred_domains": [
+      "Cloud Computing",
+      "FinTech",
+      "Web Development"
+    ],
+    "interests_tags": [
+      "deep learning",
+      "transformers",
+      "pitching",
+      "founders",
+      "LLM",
+      "node.js"
+    ],
+    "location": "Hyderabad",
+    "explored_history": [
+      "e265"
+    ],
+    "liked_events": [
+      "e846"
+    ],
+    "attended_events": [
+      "e337",
+      "e368"
+    ]
+  },
+  {
+    "user_id": "u313",
+    "name": "Aryan Reddy",
+    "preferred_domains": [
+      "Cybersecurity",
+      "DevOps",
+      "FinTech"
+    ],
+    "interests_tags": [
+      "founders",
+      "finance",
+      "gaming",
+      "startups",
+      "react.js",
+      "deep learning"
+    ],
+    "location": "Bengaluru",
+    "explored_history": [
+      "e767",
+      "e123",
+      "e521"
+    ],
+    "liked_events": [
+      "e960"
+    ],
+    "attended_events": [
+      "e278"
+    ]
+  },
+  {
+    "user_id": "u314",
+    "name": "Tanmay Singh",
+    "preferred_domains": [
+      "Cloud Computing",
+      "DevOps",
+      "Game Development"
+    ],
+    "interests_tags": [
+      "ethics",
+      "node.js",
+      "react.js",
+      "deep learning",
+      "cloud"
+    ],
+    "location": "Pune",
+    "explored_history": [
+      "e761"
+    ],
+    "liked_events": [
+      "e518"
+    ],
+    "attended_events": [
+      "e147"
+    ]
+  },
+  {
+    "user_id": "u315",
+    "name": "Ankit Sharma",
+    "preferred_domains": [
+      "Cloud Computing",
+      "EdTech",
+      "Startups & Entrepreneurship"
+    ],
+    "interests_tags": [
+      "docker",
+      "deep learning",
+      "cloud",
+      "LLM"
+    ],
+    "location": "Chennai",
+    "explored_history": [
+      "e173"
+    ],
+    "liked_events": [
+      "e482",
+      "e733"
+    ],
+    "attended_events": [
+      "e328",
+      "e398"
+    ]
+  },
+  {
+    "user_id": "u316",
+    "name": "Riya Iyer",
+    "preferred_domains": [
+      "Blockchain",
+      "Startups & Entrepreneurship",
+      "EdTech"
+    ],
+    "interests_tags": [
+      "founders",
+      "gaming",
+      "ethics",
+      "cloud"
+    ],
+    "location": "Noida",
+    "explored_history": [
+      "e252",
+      "e554",
+      "e501"
+    ],
+    "liked_events": [
+      "e589",
+      "e968"
+    ],
+    "attended_events": [
+      "e542",
+      "e374"
+    ]
+  },
+  {
+    "user_id": "u317",
+    "name": "Ravi Verma",
+    "preferred_domains": [
+      "EdTech",
+      "FinTech",
+      "Cloud Computing"
+    ],
+    "interests_tags": [
+      "finance",
+      "pitching",
+      "vue.js",
+      "python",
+      "node.js"
+    ],
+    "location": "Bengaluru",
+    "explored_history": [
+      "e274"
+    ],
+    "liked_events": [
+      "e511"
+    ],
+    "attended_events": [
+      "e679",
+      "e610"
+    ]
+  },
+  {
+    "user_id": "u318",
+    "name": "Ravi Gupta",
+    "preferred_domains": [
+      "Cloud Computing",
+      "Startups & Entrepreneurship",
+      "EdTech"
+    ],
+    "interests_tags": [
+      "deep learning",
+      "cloud",
+      "finance",
+      "LLM"
+    ],
+    "location": "Delhi",
+    "explored_history": [
+      "e355",
+      "e928",
+      "e156"
+    ],
+    "liked_events": [
+      "e227"
+    ],
+    "attended_events": [
+      "e775",
+      "e820"
+    ]
+  },
+  {
+    "user_id": "u319",
+    "name": "Priya Sharma",
+    "preferred_domains": [
+      "Startups & Entrepreneurship",
+      "Game Development",
+      "Cybersecurity"
+    ],
+    "interests_tags": [
+      "docker",
+      "LLM",
+      "founders",
+      "cloud",
+      "node.js"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e620",
+      "e777"
+    ],
+    "liked_events": [
+      "e974"
+    ],
+    "attended_events": [
+      "e623"
+    ]
+  },
+  {
+    "user_id": "u320",
+    "name": "Aryan Khan",
+    "preferred_domains": [
+      "Startups & Entrepreneurship",
+      "FinTech",
+      "Web Development"
+    ],
+    "interests_tags": [
+      "react.js",
+      "docker",
+      "startups",
+      "vue.js",
+      "finance"
+    ],
+    "location": "Delhi",
+    "explored_history": [
+      "e282",
+      "e904"
+    ],
+    "liked_events": [
+      "e950"
+    ],
+    "attended_events": [
+      "e476",
+      "e609"
+    ]
+  },
+  {
+    "user_id": "u321",
+    "name": "Aisha Iyer",
+    "preferred_domains": [
+      "FinTech",
+      "Startups & Entrepreneurship",
+      "Web Development"
+    ],
+    "interests_tags": [
+      "finance",
+      "founders",
+      "python",
+      "cloud",
+      "gaming",
+      "react.js"
+    ],
+    "location": "Hyderabad",
+    "explored_history": [
+      "e377",
+      "e164"
+    ],
+    "liked_events": [
+      "e671"
+    ],
+    "attended_events": [
+      "e801",
+      "e574"
+    ]
+  },
+  {
+    "user_id": "u322",
+    "name": "Neha Khan",
+    "preferred_domains": [
+      "EdTech",
+      "Blockchain",
+      "Artificial Intelligence"
+    ],
+    "interests_tags": [
+      "founders",
+      "cloud",
+      "node.js",
+      "LLM",
+      "gaming"
+    ],
+    "location": "Chennai",
+    "explored_history": [
+      "e196",
+      "e726",
+      "e171"
+    ],
+    "liked_events": [
+      "e133",
+      "e775"
+    ],
+    "attended_events": [
+      "e933"
+    ]
+  },
+  {
+    "user_id": "u323",
+    "name": "Neha Sharma",
+    "preferred_domains": [
+      "Startups & Entrepreneurship",
+      "DevOps",
+      "Game Development"
+    ],
+    "interests_tags": [
+      "react.js",
+      "LLM",
+      "vue.js",
+      "cloud",
+      "startups",
+      "gaming"
+    ],
+    "location": "Hyderabad",
+    "explored_history": [
+      "e914",
+      "e144",
+      "e943"
+    ],
+    "liked_events": [
+      "e726",
+      "e202"
+    ],
+    "attended_events": [
+      "e965"
+    ]
+  },
+  {
+    "user_id": "u324",
+    "name": "Priya Singh",
+    "preferred_domains": [
+      "Web Development",
+      "Cloud Computing",
+      "FinTech"
+    ],
+    "interests_tags": [
+      "react.js",
+      "finance",
+      "vue.js",
+      "node.js",
+      "LLM",
+      "cloud"
+    ],
+    "location": "Kolkata",
+    "explored_history": [
+      "e862",
+      "e412"
+    ],
+    "liked_events": [
+      "e976",
+      "e283"
+    ],
+    "attended_events": [
+      "e827"
+    ]
+  },
+  {
+    "user_id": "u325",
+    "name": "Riya Khan",
+    "preferred_domains": [
+      "Game Development",
+      "Cybersecurity",
+      "Web Development"
+    ],
+    "interests_tags": [
+      "transformers",
+      "startups",
+      "ethics",
+      "docker",
+      "LLM"
+    ],
+    "location": "Gurgaon",
+    "explored_history": [
+      "e194",
+      "e493",
+      "e675"
+    ],
+    "liked_events": [
+      "e484",
+      "e506"
+    ],
+    "attended_events": [
+      "e403"
+    ]
+  },
+  {
+    "user_id": "u326",
+    "name": "Ravi Verma",
+    "preferred_domains": [
+      "DevOps",
+      "Artificial Intelligence",
+      "Startups & Entrepreneurship"
+    ],
+    "interests_tags": [
+      "LLM",
+      "cloud",
+      "finance",
+      "transformers",
+      "gaming",
+      "node.js"
+    ],
+    "location": "Mumbai",
+    "explored_history": [
+      "e731",
+      "e613",
+      "e294"
+    ],
+    "liked_events": [
+      "e540",
+      "e764"
+    ],
+    "attended_events": [
+      "e658"
+    ]
+  },
+  {
+    "user_id": "u327",
+    "name": "Neha Mishra",
+    "preferred_domains": [
+      "Startups & Entrepreneurship",
+      "Cloud Computing",
+      "Game Development"
+    ],
+    "interests_tags": [
+      "docker",
+      "transformers",
+      "deep learning",
+      "react.js",
+      "LLM",
+      "finance"
+    ],
+    "location": "Hyderabad",
+    "explored_history": [
+      "e688",
+      "e273",
+      "e447"
+    ],
+    "liked_events": [
+      "e149"
+    ],
+    "attended_events": [
+      "e878",
+      "e288"
+    ]
+  }
+]
