@@ -21,7 +21,6 @@
  * @requires process.env.email - Sender's Gmail address.
  * @requires process.env.EMAIL_PASSWORD - Gmail app password.
  */
-
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 dotenv.config();
