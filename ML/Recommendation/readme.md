@@ -2,7 +2,7 @@
 
 create an environment 
 
-pip intstall requirements.txt
+pip intstall -r requirements.txt
 
 run main.py
 
