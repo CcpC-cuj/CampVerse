@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verification</title>
+
+  <!-- Tailwind CDN (keep using your own build if you have one) -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <style>
+    body{
+      background:#0f0c29;
+      background-image:linear-gradient(315deg,#0f0c29 0%,#302b63 74%);
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+    }
+    .glow-box{
+      box-shadow:0 0 15px 4px rgba(147,51,234,.7);
+      border:1px solid rgba(147,51,234,.6);
+      background:rgba(255,255,255,.03);
+      backdrop-filter:blur(8px);
+      border-radius:1rem;
+    }
+    .otp-box input{
+      background:transparent;
+      border:1px solid #9333ea;
+      width:3rem;height:3rem;text-align:center;
+      font-size:1.25rem;border-radius:.5rem;color:#fff;
+    }
+    .otp-box input:focus{
+      outline:none;border-color:#c084fc;
+      box-shadow:0 0 5px #9333ea;
+    }
+    .astronaut{position:absolute;top:-60px;right:-20px;width:100px;}
+
+    @keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+  </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen text-white relative">
+
+  <div class="glow-box p-8 w-full max-w-md text-center relative">
+    <img src="Astronaut-removebg-preview.png" alt="Astronaut" class="astronaut">
+
+    <h2 class="text-2xl font-bold mb-2">Verify Your Email</h2>
+    <p class="text-sm mb-6">
+      Enter the 6‑digit code we just sent to<br>
+      <span class="text-purple-300">your.name@college.edu</span>
+    </p>
+
+    <!-- OTP inputs -->
+    <div id="otpBox" class="otp-box flex justify-center gap-2 mb-6">
+      <input type="text" inputmode="numeric" maxlength="1" />
+      <input type="text" inputmode="numeric" maxlength="1" />
+      <input type="text" inputmode="numeric" maxlength="1" />
+      <input type="text" inputmode="numeric" maxlength="1" />
+      <input type="text" inputmode="numeric" maxlength="1" />
+      <input type="text" inputmode="numeric" maxlength="1" />
+    </div>
+
+    <button class="bg-purple-700 hover:bg-purple-800 px-6 py-2 rounded-full font-semibold transition">
+      Verify &#10003;
+    </button>
+
+    <div class="flex justify-between text-sm text-purple-300 mt-4">
+      <span id="resend">Resend OTP (30s)</span>
+      <a href="#" class="hover:underline">Edit Email</a>
+    </div>
+  </div>
+
+  <!-- 🪄 Auto‑focus & paste logic -->
+  <script>
+    // timer for “Resend OTP”
+    let countdown = 30;
+    const resend = document.getElementById("resend");
+    const timer = setInterval(() => {
+      resend.textContent = countdown ? `Resend OTP (${--countdown}s)` : (clearInterval(timer), "Resend OTP");
+    }, 1000);
+
+    // Auto‑focus logic
+    const inputs = document.querySelectorAll("#otpBox input");
+
+    inputs.forEach((input, idx) => {
+      input.addEventListener("input", e => {
+        const value = e.target.value;
+        if (value.length === 1 && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
+        }
+      });
+
+      input.addEventListener("keydown", e => {
+        if (e.key === "Backspace" && !e.target.value && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      });
+
+      // Support pasting the full code
+      input.addEventListener("paste", e => {
+        e.preventDefault();
+        const paste = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "");
+        paste.split("").slice(0, inputs.length).forEach((ch, i) => {
+          inputs[i].value = ch;
+        });
+        const next = paste.length >= inputs.length ? inputs[inputs.length - 1] : inputs[paste.length];
+        next?.focus();
+      });
+    });
+  </script>
+</body>
+</html>
