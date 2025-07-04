@@ -12,8 +12,13 @@ Code used for intialization of the project.
  ```bash
     cd Frontend
 ```
- then paste this code in the terminal.
+2. paste this code in the terminal.
 ```bash
 npm create vite@latest . -- --template react
 ```
+3. install the packages.
+```bash 
+npm install
+```
+4. 
 
