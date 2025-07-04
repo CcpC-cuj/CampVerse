@@ -20,5 +20,9 @@ npm create vite@latest . -- --template react
 ```bash 
 npm install
 ```
-4. 
+4. Install tailwind Css 
+``` bash
+npm install tailwindcss @tailwindcss/vite
+```
+
 
