@@ -25,4 +25,28 @@ npm install
 npm install tailwindcss @tailwindcss/vite
 ```
 
+5. Install ESLint and React plugin
+```bash
+npm install -D eslint eslint-plugin-react eslint-plugin-react-hooks
+```
+6. Initialize ESLint config
+```bash
+npx eslint --init
+```
+
+### Use these answers during setup:
+
+❓ Use ESLint to: Check syntax, find problems, and enforce code style
+
+❓ Module type: JavaScript modules (import/export)
+
+❓ Framework: React
+
+❓ TypeScript: No (unless you use it)
+
+❓ Environment: Browser
+
+❓ Style guide: Airbnb (most popular)
+
+❓ Config format: JavaScript
 
