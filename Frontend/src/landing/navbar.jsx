@@ -32,7 +32,7 @@ const Navbar = () => {
           </button>
 
           <button
-            className="px-5 py-2 rounded-full text-white bg-primary hover:bg-primary/80 hover:scale-105 transition duration-300"
+            className="px-5 py-2 rounded-full text-white bg-primary hover:bg-primary/80 hover:bg-white/10 hover:scale-105 transition duration-300"
             onMouseEnter={() => setHovered("signup")}
             onMouseLeave={() => setHovered(null)}
           >
