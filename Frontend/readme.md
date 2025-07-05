@@ -1,12 +1,51 @@
-# React + Vite
+# Frontend - CAMPVERSE
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the **frontend** of **CAMPVERSE** — an event personalization web application at your footsteps to RSVP for events whenever you wish to attend.
 
-Currently, two official plugins are available:
+## ✨ About CAMPVERSE
+**CAMPVERSE** is designed to make event participation seamless and personalized. Browse, discover, and RSVP to events with just a few clicks.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Expanding the ESLint configuration
+Code used for intialization of the project.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Open the folder directory in the terminal.
+ ```bash
+    cd Frontend
+```
+2. paste this code in the terminal.
+```bash
+npm create vite@latest . -- --template react
+```
+3. install the packages.
+```bash 
+npm install
+```
+4. Install tailwind Css 
+``` bash
+npm install tailwindcss @tailwindcss/vite
+```
+
+5. Install ESLint and React plugin
+```bash
+npm install -D eslint eslint-plugin-react eslint-plugin-react-hooks
+```
+6. Initialize ESLint config
+```bash
+npx eslint --init
+```
+
+### Use these answers during setup:
+
+❓ Use ESLint to: Check syntax, find problems, and enforce code style
+
+❓ Module type: JavaScript modules (import/export)
+
+❓ Framework: React
+
+❓ TypeScript: No (unless you use it)
+
+❓ Environment: Browser
+
+❓ Style guide: Airbnb (most popular)
+
+❓ Config format: JavaScript
