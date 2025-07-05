@@ -1,6 +1,5 @@
 import React from "react";
-import logo from ""; // adjust path as per your assets folder
-
+import logo from "";
 const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-8 py-4 bg-gradient-to-r from-primary to-secondary shadow-md">
