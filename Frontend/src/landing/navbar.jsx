@@ -1,5 +1,4 @@
 import React from "react";
-
 const Navbar = () => {
   return (
     <nav className="relative z-10 px-6 py-4 border-b border-gray-800 bg-[#0b0f2b]">
