@@ -12,24 +12,23 @@ Code used for intialization of the project.
  ```bash
     cd Frontend
 ```
-2. paste this code in the terminal.
-```bash
-npm create vite@latest . -- --template react
-```
-3. install the packages.
+2. install the packages.
 ```bash 
 npm install
 ```
-4. Install tailwind Css 
+3. Install tailwind Css 
 ``` bash
 npm install tailwindcss @tailwindcss/vite
 ```
 
-5. Install ESLint and React plugin
+
+Wait before here until we discuss about it
+
+4. Install ESLint and React plugin
 ```bash
 npm install -D eslint eslint-plugin-react eslint-plugin-react-hooks
 ```
-6. Initialize ESLint config
+5. Initialize ESLint config
 ```bash
 npx eslint --init
 ```
