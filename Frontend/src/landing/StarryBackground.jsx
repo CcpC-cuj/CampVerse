@@ -17,28 +17,27 @@ export default function StarryUniverse() {
       opacity: Math.random(),
     }));
 
-    function drawGradientBackground() {
-      // Draw galaxy gradient
-      const gradient = ctx.createRadialGradient(
-        width / 2,
-        height / 2,
-        100,
-        width / 2,
-        height / 2,
-        width
-      );
-      gradient.addColorStop(0, '#1a0025');   // inner purple
-      gradient.addColorStop(0.3, '#0b0033'); // dark blue
-      gradient.addColorStop(1, '#000010');   // deep black
-      ctx.fillStyle = gradient;
+    function drawNebulaBackground() {
+      ctx.fillStyle = '#000010';
       ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < 100; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const radius = Math.random() * 200 + 50;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, `rgba(${100 + Math.random() * 155}, 0, ${100 + Math.random() * 155}, ${0.1 + Math.random() * 0.2})`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+      }
     }
 
     function drawStars() {
-      stars.forEach((star) => {
+      stars.forEach(({ x, y, radius, opacity }) => {
         ctx.beginPath();
-        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
         ctx.shadowBlur = 5;
         ctx.shadowColor = '#ffffff';
         ctx.fill();
@@ -46,13 +45,8 @@ export default function StarryUniverse() {
       });
     }
 
-    function animate() {
-      drawGradientBackground();
-      drawStars();
-      requestAnimationFrame(animate);
-    }
-
-    animate();
+    drawNebulaBackground();
+    drawStars();
   }, []);
 
   return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full z-[-1]" />;
