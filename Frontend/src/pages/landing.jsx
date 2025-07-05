@@ -1,11 +1,13 @@
 import React from "react";
-import Navbar from "..pages/landing/Navbar"; // adjust path as per folder structure
+import Navbar from "../landing/navbar";
+import Hero from "../landing/hero";
 
 const Landing = () => {
   return (
     <div>
       <Navbar />
-      {/* Other landing sections will go here */}
+      <Hero/>
+      {/* Other sections go here */}
     </div>
   );
 };
