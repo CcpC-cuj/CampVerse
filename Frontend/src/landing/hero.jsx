@@ -5,10 +5,7 @@ const Hero = () => {
     <section
       className="hero-bg relative z-0 py-20 md:py-32"
       style={{
-        backgroundImage: `linear-gradient(rgba(11, 15, 43, 0.7), rgba(11, 15, 43, 0.9)),
-          url("https://readdy.ai/api/search-image?query=dark%2520space%2520background%2520with%2520stars%2520and%2520galaxies%252C%2520cosmic%2520nebula%252C%2520deep%2520space%2520exploration%252C%2520universe%2520with%2520twinkling%2520stars%252C%2520dark%2520blue%2520and%2520purple%2520cosmic%2520clouds%252C%2520high%2520quality%252C%2520high%2520resolution%252C%2520detailed%2520cosmic%2520scene&width=1920&height=1080&seq=space1&orientation=landscape")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        
       }}
     >
       <div className="container mx-auto px-6 w-full">
