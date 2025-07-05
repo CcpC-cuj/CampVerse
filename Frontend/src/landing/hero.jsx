@@ -15,9 +15,13 @@ const Hero = () => {
         <div className="flex flex-col md:flex-row items-center">
           {/* Left Content */}
           <div className="md:w-1/2 mb-10 md:mb-0">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight glow-text">
-              Uniting Campuses.<br />Empowering Talent.
+            <h1
+            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white"
+            style={{ textShadow: "0 0 10px rgba(155, 93, 229, 0.7)" }}
+            >
+                 Uniting Campuses.<br />Empowering Talent.
             </h1>
+
             <p className="text-xl text-gray-300 mb-8 max-w-lg">
               Discover, register, and participate in cultural, technical, and
               academic events across colleges in India with just a few clicks.
