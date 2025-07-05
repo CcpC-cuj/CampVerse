@@ -14,10 +14,16 @@ const Navbar = () => {
         </a>
 
         <div className="hidden md:flex space-x-10">
-          <a href="#features" className="text-gray-300 hover:text-white transition-colors duration-300">Features</a>
-          <a href="#events" className="text-gray-300 hover:text-white transition-colors duration-300">Events</a>
-          <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors duration-300">Testimonials</a>
-          <a href="#faq" className="text-gray-300 hover:text-white transition-colors duration-300">FAQ</a>
+        <a
+          href="#features"
+          className="relative text-gray-300 hover:text-white transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full"
+        >
+          Features
+        </a>
+
+          <a href="#events" className="relative text-gray-300 hover:text-white transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full">Events</a>
+          <a href="#testimonials" className="relative text-gray-300 hover:text-white transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full">Testimonials</a>
+          <a href="#faq" className="relative text-gray-300 hover:text-white transition-colors duration-300 after:content-[''] after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-0 after:bg-white after:transition-all after:duration-300 hover:after:w-full">FAQ</a>
         </div>
 
         <div className="flex items-center space-x-4">
