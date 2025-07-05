@@ -4,7 +4,7 @@ const Navbar = () => {
   const [hovered, setHovered] = useState(null); // null | 'login' | 'signup'
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-20 backdrop-blur-md bg-[#0b0f2b]/70 border-b border-gray-800 transition-all duration-300">
+    <nav className="fixed top-0 left-0 w-full z-20 backdrop-blur-md bg-[#0b0f2b]/70 border-b border-gray-300 transition-all duration-300">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
         <a
           href="#"
