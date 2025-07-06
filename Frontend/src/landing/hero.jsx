@@ -1,33 +1,39 @@
+// src/landing/hero.jsx
 import React from "react";
 
-const Hero = () => {
+// Accept onSignupClick prop
+const Hero = ({ onSignupClick }) => {
   return (
-    <section
-      className="hero-bg relative z-0 py-20 md:py-32"
-      style={{
-        
-      }}
-    >
+    <section className="hero-bg relative z-0 py-20 md:py-32">
       <div className="container mx-auto px-6 w-full">
         <div className="flex flex-col md:flex-row items-center">
           {/* Left Content */}
           <div className="md:w-1/2 mb-10 md:mb-0">
             <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white"
-            style={{ textShadow: "0 0 10px rgba(155, 93, 229, 0.7)" }}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-white"
+              style={{ textShadow: "0 0 10px rgba(155, 93, 229, 0.7)" }}
             >
-                 Uniting Campuses.<br />Empowering Talent.
+              Uniting Campuses.<br />Empowering Talent.
             </h1>
 
             <p className="text-xl text-gray-300 mb-8 max-w-lg">
               Discover, register, and participate in cultural, technical, and
               academic events across colleges in India with just a few clicks.
             </p>
+
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <button className="px-6 py-3 bg-secondary text-white rounded text-lg font-medium hover:bg-secondary/80 transition-colors glow-pink whitespace-nowrap">
+              {/* Join button */}
+              <button
+                onClick={onSignupClick}
+                className="px-6 py-3 bg-primary text-white rounded-full text-lg font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
+              >
                 Join with College Email
               </button>
-              <button className="px-6 py-3 border border-primary text-white rounded text-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
+
+              {/* Explore button */}
+              <button
+                className="px-6 py-3 border border-primary text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
+              >
                 Explore Events
               </button>
             </div>

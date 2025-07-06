@@ -7,13 +7,14 @@ import LoginModal from "./LoginModal";
 import SignupModal from "./SignupModal";
 
 const Landing = () => {
-  // ← initialize both to false so no modal shows on load
+  // Both start closed
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
   return (
     <div>
       <StarryBackground />
+
       <Navbar
         onLoginClick={() => {
           setShowSignup(false);
@@ -24,9 +25,15 @@ const Landing = () => {
           setShowSignup(true);
         }}
       />
-      <Hero />
 
-      {/* Render modals only when their flag is true */}
+      {/* Pass the signup-trigger into Hero */}
+      <Hero
+        onSignupClick={() => {
+          setShowLogin(false);
+          setShowSignup(true);
+        }}
+      />
+
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       {showSignup && <SignupModal onClose={() => setShowSignup(false)} />}
     </div>
