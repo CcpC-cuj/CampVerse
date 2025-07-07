@@ -113,6 +113,7 @@ const SignupModal = ({ onClose }) => {
           <span
             onClick={() => {
               onClose();
+              //Add function for login..
             }}
             className="hover:underline cursor-pointer text-white"
           >

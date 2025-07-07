@@ -74,7 +74,7 @@ const LoginModal = ({ onClose }) => {
           <span
             onClick={() => {
               onClose();
-              // trigger signup externally if you wish
+              // Add function for signup..
             }}
             className="text-white hover:underline cursor-pointer"
           >
