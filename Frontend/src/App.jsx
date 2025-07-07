@@ -4,6 +4,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Only import Landing now
 import Landing from "./pages/landing";
+import "remixicon/fonts/remixicon.css";
+
 
 function App() {
   return (
