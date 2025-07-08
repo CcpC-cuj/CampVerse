@@ -1,7 +1,7 @@
 // src/pages/LoginModal.jsx
 import React, { useState } from "react";
 
-const LoginModal = ({ onClose }) => {
+const LoginModal = ({ onClose, onSwitchToSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -11,7 +11,9 @@ const LoginModal = ({ onClose }) => {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-300 hover:text-white text-2xl"
-        >&times;</button>
+        >
+          &times;
+        </button>
 
         {/* Header */}
         <div className="text-center mb-6">
@@ -74,7 +76,7 @@ const LoginModal = ({ onClose }) => {
           <span
             onClick={() => {
               onClose();
-              // Add function for signup..
+              onSwitchToSignup(); // ← Switch to Signup modal
             }}
             className="text-white hover:underline cursor-pointer"
           >

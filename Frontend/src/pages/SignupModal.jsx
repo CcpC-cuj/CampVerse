@@ -1,22 +1,19 @@
 // src/pages/SignupModal.jsx
 import React, { useState } from "react";
 
-const SignupModal = ({ onClose }) => {
+const SignupModal = ({ onClose, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div
-        className="relative w-full max-w-md p-8
-                   bg-[rgba(21,23,41,0.85)] border border-purple-600
-                   backdrop-blur-lg rounded-2xl shadow-xl
-                   overflow-hidden"        // ← ensure no internal scroll
-      >
-        {/* Close */}
+      <div className="relative w-full max-w-md p-8 bg-[rgba(21,23,41,0.85)] border border-purple-600 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
+        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-300 hover:text-white text-2xl"
-        >&times;</button>
+        >
+          &times;
+        </button>
 
         {/* Header */}
         <div className="text-center mb-6">
@@ -102,18 +99,18 @@ const SignupModal = ({ onClose }) => {
           Continue with Google
         </button>
 
-        {/* Footer */}
+        {/* Terms */}
         <p className="text-xs text-center text-purple-300 mt-4">
           By continuing, you agree to CampVerse’s Terms of Service and Privacy Policy.
         </p>
 
-        {/* Updated contrast here: */}
+        {/* Footer */}
         <p className="text-sm text-center mt-3 text-purple-400">
           Already a member?{" "}
           <span
             onClick={() => {
               onClose();
-              //Add function for login..
+              onSwitchToLogin(); // ← Switch to Login modal
             }}
             className="hover:underline cursor-pointer text-white"
           >

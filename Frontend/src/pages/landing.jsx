@@ -37,17 +37,34 @@ const Landing = () => {
           setShowSignup(true);
         }}
       />
-      <DashboardPreview/>
-      <Testimonials/>
-      <FaqCta/>
-      <Footer/>
 
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
-      {showSignup && <SignupModal onClose={() => setShowSignup(false)} />}
+      <DashboardPreview />
+      <Testimonials />
+      <FaqCta />
+      <Footer />
+
+      {/* Show modals with switching logic */}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onSwitchToSignup={() => {
+            setShowLogin(false);
+            setShowSignup(true);
+          }}
+        />
+      )}
+
+      {showSignup && (
+        <SignupModal
+          onClose={() => setShowSignup(false)}
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+            setShowLogin(true);
+          }}
+        />
+      )}
     </div>
-    
   );
-  
 };
 
 export default Landing;
