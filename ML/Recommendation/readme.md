@@ -1,6 +1,7 @@
 **Recommendation system**
 ______________________________________
 
+**Content Based**
 
 create an environment 
 
@@ -17,6 +18,8 @@ python main.py
 
 To use pre build model:-
 use models from folder name **Models**
+____________________________________________________________________________________________________________
 
 
+**Collaborative filtering**
  
