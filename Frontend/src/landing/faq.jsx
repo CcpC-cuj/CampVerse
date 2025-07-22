@@ -105,7 +105,7 @@ const FaqCta = () => {
               your interests and aspirations.
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <button className="px-8 py-4 bg-secondary text-white rounded-button text-lg font-medium hover:bg-secondary/80 transition-colors whitespace-nowrap">
+              <button className="px-8 py-4 border border-primary text-white rounded-button text-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
                 Create Account
               </button>
               <button className="px-8 py-4 border border-primary text-white rounded-button text-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
@@ -132,7 +132,7 @@ const FaqCta = () => {
               your next creative challenge, CampVerse connects you with endless
               possibilities.
             </p>
-            <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="grid md:grid-cols-3 gap-8 mb-12 text-white">
               {[
                 {
                   icon: "ri-rocket-line",
@@ -166,7 +166,7 @@ const FaqCta = () => {
               ))}
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <button className="px-8 py-4 bg-secondary text-white rounded-button text-lg font-medium hover:bg-secondary/80 transition-colors glow-pink flex items-center whitespace-nowrap" >
+              <button className="px-8 py-4 bg-gray-800/40 backdrop-blur-sm text-white rounded-button text-lg font-medium hover:bg-gray-800/60 transition-colors flex items-center whitespace-nowrap" >
                  <i className="ri-rocket-line ri-lg mr-2"></i>
                      Launch Your Journey
                 </button>

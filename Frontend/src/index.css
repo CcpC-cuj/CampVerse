@@ -10,3 +10,19 @@ body {
 footer p,ul{
    font-family: 'Poppins', sans-serif;
 }
+/* e.g. in src/index.css or global styles */
+.glow-pink {
+  box-shadow: 0 0 10px rgba(255, 0, 150, 0.5), 0 0 20px rgba(255, 0, 150, 0.4);
+}
+.grid{
+  font-family: 'Poppins', sans-serif;
+}
+.py-20 p{
+font-family: 'Poppins', sans-serif;
+}
+.max-w-3xl,.text-xl{
+  font-family: 'Poppins', sans-serif;
+}
+.font-bold{
+  font-family: 'Orbitron', sans-serif;
+}

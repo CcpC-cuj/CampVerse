@@ -7,6 +7,7 @@ import Landing from "./pages/landing";
 import "remixicon/fonts/remixicon.css";
 
 
+
 function App() {
   return (
     <Router>

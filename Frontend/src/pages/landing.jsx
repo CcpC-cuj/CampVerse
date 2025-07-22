@@ -9,6 +9,7 @@ import DashboardPreview from "../landing/dashboard";
 import Testimonials from "../landing/testimonial";
 import FaqCta from "../landing/faq";
 import Footer from "../landing/footer";
+import FeaturesSection from "../landing/features";
 
 const Landing = () => {
   // Both start closed
@@ -38,6 +39,7 @@ const Landing = () => {
         }}
       />
 
+      <FeaturesSection/>
       <DashboardPreview />
       <Testimonials />
       <FaqCta />
