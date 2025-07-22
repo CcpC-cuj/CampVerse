@@ -25,7 +25,7 @@ const Hero = ({ onSignupClick }) => {
               {/* Join button */}
               <button
                 onClick={onSignupClick}
-                className="px-6 py-3 bg-primary text-white rounded-full text-lg font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
+                className="px-6 py-3 border border-primary text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
               >
                 Join with College Email
               </button>
