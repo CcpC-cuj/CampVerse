@@ -47,7 +47,9 @@ const userSchema = new mongoose.Schema({
   eventHistory: eventHistorySchema,
   lastLogin: Date,
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  deletionRequestedAt: { type: Date },
+  deletionScheduledFor: { type: Date },
 });
 
 userSchema.pre('save', function (next) {

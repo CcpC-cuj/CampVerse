@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  frontend:
+    build: ./Frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - campverse
+
+  backend:
+    build: ./Backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/campverse
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - campverse
+
+  ml:
+    build: ./ML/Recommendation
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+    networks:
+      - campverse
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - campverse
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - campverse
+
+volumes:
+  mongo_data:
+
+networks:
+  campverse:
+    driver: bridge 

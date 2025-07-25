@@ -16,7 +16,8 @@ const {
   updateMe,
   forgotPassword,
   resetPassword,
-  grantVerifierAccess
+  grantVerifierAccess,
+  getDashboard
 } = require('../controllers/userController');
 
 const {
@@ -36,6 +37,7 @@ router.post('/forgot-password', forgotPassword); // Request password reset
 router.post('/reset-password', resetPassword); // Reset password with token
 
 // Authenticated user routes
+router.get('/', authenticateToken, getDashboard); // User dashboard summary
 router.get('/me', authenticateToken, getMe);
 router.post('/updatePreferences', authenticateToken, updatePreferences);
 router.patch('/me', authenticateToken, updateMe); // Update own profile

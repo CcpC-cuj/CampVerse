@@ -110,3 +110,13 @@ graph TD
 
 ### 🔑 Password Reset Flow
 - `
+
+---
+
+### 🆕 User Dashboard & Account Deletion
+- `GET /` — User dashboard summary (stats: events, certificates, achievements, referrals, profile completion, roles, etc.)
+- **Account Deletion:**
+  - Users can request deletion of their own profile; account is scheduled for deletion in 30 days (`deletionRequestedAt`, `deletionScheduledFor` tracked)
+  - Admins can delete any user immediately
+
+---

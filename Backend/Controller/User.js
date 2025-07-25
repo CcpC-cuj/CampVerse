@@ -291,15 +291,46 @@ async function updateUserById(req, res) {
   }
 }
 
-// Delete user (DELETE /:id)
-async function deleteUser(req, res) {
+/**
+ * GET /me/dashboard — User dashboard stats
+ */
+async function getDashboard(req, res) {
   try {
-    const deleted = await User.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'User not found.' });
-    return res.json({ message: 'User deleted.' });
+    const user = await User.findById(req.user.id)
+      .populate('eventHistory.hosted')
+      .populate('eventHistory.attended')
+      .populate('eventHistory.saved')
+      .populate('eventHistory.waitlisted')
+      .select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    // Profile completion calculation
+    const requiredFields = ['name', 'email', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber'];
+    let filled = 0;
+    requiredFields.forEach(f => { if (user[f]) filled++; });
+    const profileCompletion = Math.round((filled / requiredFields.length) * 100);
+
+    // Stats
+    const stats = {
+      totalAttended: user.eventHistory.attended.length,
+      totalHosted: user.eventHistory.hosted.length,
+      totalSaved: user.eventHistory.saved.length,
+      totalWaitlisted: user.eventHistory.waitlisted.length,
+      certificates: user.certificates ? user.certificates.length : 0, // If certificates are embedded
+      achievements: user.achievements ? user.achievements.length : 0, // If achievements are embedded
+      referralStats: user.referralStats,
+      profileCompletion,
+      isHost: user.roles.includes('host'),
+      isVerifier: user.roles.includes('verifier'),
+      hostEligibilityStatus: user.hostEligibilityStatus,
+      verifierEligibilityStatus: user.verifierEligibilityStatus,
+      lastLogin: user.lastLogin,
+      accountCreated: user.createdAt
+    };
+    return res.json({ user, stats });
   } catch (err) {
-    logger.error('DeleteUser error:', err);
-    return res.status(500).json({ error: 'Server error deleting user.' });
+    logger.error('GetDashboard error:', err);
+    return res.status(500).json({ error: 'Server error fetching dashboard.' });
   }
 }
 
@@ -447,6 +478,76 @@ async function resetPassword(req, res) {
   }
 }
 
+// Update deleteUser: if user deletes self, mark for deletion in 30 days
+async function deleteUser(req, res) {
+  try {
+    // If admin, allow immediate delete
+    if (req.user.roles.includes('platformAdmin')) {
+      const deleted = await User.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ error: 'User not found.' });
+      return res.json({ message: 'User deleted.' });
+    }
+    // If user is deleting self, mark for deletion in 30 days
+    if (req.user.id === req.params.id) {
+      const user = await User.findById(req.params.id);
+      if (!user) return res.status(404).json({ error: 'User not found.' });
+      user.deletionRequestedAt = new Date();
+      user.deletionScheduledFor = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+      await user.save();
+      return res.json({ message: 'Account deletion requested. Your profile will be deleted in 30 days.' });
+    }
+    return res.status(403).json({ error: 'Forbidden: only admin or self can delete.' });
+  } catch (err) {
+    logger.error('DeleteUser error:', err);
+    return res.status(500).json({ error: 'Server error deleting user.' });
+  }
+}
+
+// Get certificates of user (GET /:id/certificates)
+async function getUserCertificates(req, res) {
+  try {
+    const certificates = await Certificate.find({ userId: req.params.id });
+    return res.json(certificates);
+  } catch (err) {
+    logger.error('GetUserCertificates error:', err);
+    return res.status(500).json({ error: 'Server error fetching certificates.' });
+  }
+}
+
+// Get achievements of user (GET /:id/achievements)
+async function getUserAchievements(req, res) {
+  try {
+    const achievements = await Achievement.find({ userId: req.params.id });
+    return res.json(achievements);
+  } catch (err) {
+    logger.error('GetUserAchievements error:', err);
+    return res.status(500).json({ error: 'Server error fetching achievements.' });
+  }
+}
+
+// Get events related to user (hosted, attended, saved, waitlisted) (GET /:id/events)
+async function getUserEvents(req, res) {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('eventHistory.hosted')
+      .populate('eventHistory.attended')
+      .populate('eventHistory.saved')
+      .populate('eventHistory.waitlisted');
+
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    return res.json({
+      hosted: user.eventHistory.hosted,
+      attended: user.eventHistory.attended,
+      saved: user.eventHistory.saved,
+      waitlisted: user.eventHistory.waitlisted
+    });
+  } catch (err) {
+    logger.error('GetUserEvents error:', err);
+    return res.status(500).json({ error: 'Server error fetching user events.' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -464,5 +565,6 @@ module.exports = {
   grantVerifierAccess,
   googleSignIn,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  getDashboard
 };

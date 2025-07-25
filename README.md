@@ -68,6 +68,28 @@ Your CI/CD can loop through these or trigger based on changes.
 
 ---
 
+## 🚀 Local Development with Docker Compose
+
+1. **Build and start all services:**
+   ```bash
+   docker-compose up --build
+   ```
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5000
+   - ML Service: http://localhost:8000
+   - MongoDB: localhost:27017
+   - Redis: localhost:6379
+
+2. **Environment Variables:**
+   - Copy `.env.example` to `.env` in each service directory and fill in secrets as needed.
+
+3. **Stopping services:**
+   ```bash
+   docker-compose down
+   ```
+
+---
+
 # How security & RBAC fits in
 
 - JWTs issued by `/backend` (user service).
