@@ -54,34 +54,46 @@ graph TD
 ## 🚀 User Module: API Endpoints & Flows
 
 ### **Authentication & Registration**
-- `POST /register` — Register with academic email, phone, password (OTP sent to email)
-- `POST /verify` — Verify OTP and complete registration/login
-- `POST /login` — Login with email and password
-- `POST /google-signin` — Login/Register with Google (academic email only)
+| Endpoint            | Method | Request Body / Params                                                                 | Success Response Example                                                                 | Error Response Example                  |
+|---------------------|--------|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|-----------------------------------------|
+| `/register`         | POST   | `{ name, email, phone, password }`                                                   | `{ message: 'OTP sent to email.' }`                                                      | `{ error: 'All fields ... required.' }` |
+| `/verify`           | POST   | `{ email, otp }`                                                                     | `{ message: 'Registration successful, logged in.', token, user }`                        | `{ error: 'Invalid OTP.' }`             |
+| `/login`            | POST   | `{ email, password }`                                                                | `{ token, user }`                                                                        | `{ error: 'Incorrect password.' }`      |
+| `/google-signin`    | POST   | `{ token }` (Google ID token)                                                        | `{ message: 'Google login successful', token, user }`                                    | `{ error: 'Google login failed.' }`     |
 
 ### **Profile & Preferences**
-- `GET /me` — Get logged-in user profile
-- `PATCH /me` — Update own profile (name, phone, gender, DOB, profile photo, college ID, interests, skills, learning goals, badges)
-- `POST /updatePreferences` — Update user preferences (collegeIdNumber, interests, skills, learningGoals, badges, location)
+| Endpoint            | Method | Request Body / Params                                                                 | Success Response Example                                                                 | Error Response Example                  |
+|---------------------|--------|-------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|-----------------------------------------|
+| `/me`               | GET    | JWT in Authorization header                                                          | `user` object                                                                            | `{ error: 'User not found.' }`          |
+| `/me`               | PATCH  | Any of: `{ name, phone, Gender, DOB, profilePhoto, collegeIdNumber, interests, ...}` | `{ message: 'Profile updated.', user }`                                                  | `{ error: 'No valid fields to update.' }`|
+| `/updatePreferences`| POST   | `{ collegeIdNumber, interests, skills, learningGoals, badges, location }`            | `{ message: 'Preferences updated.', user }`                                              | `{ error: 'Server error ...' }`         |
 
 ### **User Dashboard & Statistics**
-- `GET /` — User dashboard summary (events attended/hosted/saved/waitlisted, certificates, achievements, referrals, profile completion %, host/verifier status, last login, account age)
+| Endpoint            | Method | Request Body / Params | Success Response Example | Error Response Example |
+|---------------------|--------|----------------------|-------------------------|-----------------------|
+| `/`                 | GET    | JWT in Authorization | `{ user, stats }`       | `{ error: ... }`      |
 
 ### **User Management & Roles**
-- `GET /:id` — Get user by ID (self/admin)
-- `PATCH /:id` — Update user by ID (self/admin)
-- `DELETE /:id` — Delete user (admin only, or self with 30-day delay)
-- `POST /:id/grant-host` — Grant host access (admin only)
-- `POST /:id/grant-verifier` — Grant verifier access (admin only)
+| Endpoint                | Method | Request Body / Params | Success Response Example | Error Response Example |
+|-------------------------|--------|----------------------|-------------------------|-----------------------|
+| `/:id`                  | GET    | JWT, userId param    | `user` object           | `{ error: ... }`      |
+| `/:id`                  | PATCH  | JWT, userId param, fields to update | `{ message: 'User updated.', user }` | `{ error: ... }` |
+| `/:id`                  | DELETE | JWT, userId param    | `{ message: 'User deleted.' }` (admin) or `{ message: 'Account deletion requested. Your profile will be deleted in 30 days.' }` (self) | `{ error: ... }` |
+| `/:id/grant-host`       | POST   | JWT, userId param, `{ remarks? }`   | `{ message: 'Host access granted.', user }` | `{ error: ... }` |
+| `/:id/grant-verifier`   | POST   | JWT, userId param, `{ remarks? }`   | `{ message: 'Verifier access granted.', user }` | `{ error: ... }` |
 
 ### **Certificates, Achievements, Events**
-- `GET /:id/certificates` — Get user certificates
-- `GET /:id/achievements` — Get user achievements
-- `GET /:id/events` — Get user event history (hosted, attended, saved, waitlisted)
+| Endpoint                | Method | Request Body / Params | Success Response Example | Error Response Example |
+|-------------------------|--------|----------------------|-------------------------|-----------------------|
+| `/:id/certificates`     | GET    | JWT, userId param    | `[ ...certificates ]`   | `{ error: ... }`      |
+| `/:id/achievements`     | GET    | JWT, userId param    | `[ ...achievements ]`   | `{ error: ... }`      |
+| `/:id/events`           | GET    | JWT, userId param    | `{ hosted, attended, saved, waitlisted }` | `{ error: ... }` |
 
 ### **Password Reset**
-- `POST /forgot-password` — Request a password reset (email with token sent if user exists)
-- `POST /reset-password` — Reset password using the token from the email link
+| Endpoint            | Method | Request Body / Params | Success Response Example | Error Response Example |
+|---------------------|--------|----------------------|-------------------------|-----------------------|
+| `/forgot-password`  | POST   | `{ email }`          | `{ message: 'If the email exists, a reset link has been sent.' }` | `{ error: ... }` |
+| `/reset-password`   | POST   | `{ token, password }`| `{ message: 'Password reset successful.' }` | `{ error: ... }` |
 
 ---
 
