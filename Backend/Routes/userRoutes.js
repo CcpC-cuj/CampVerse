@@ -18,7 +18,7 @@ const {
   resetPassword,
   grantVerifierAccess,
   getDashboard
-} = require('../controllers/userController');
+} = require('../Controller/User');
 
 const {
   authenticateToken,

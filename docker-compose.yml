@@ -12,7 +12,7 @@ services:
   backend:
     build: ./Backend
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - MONGO_URI=mongodb://mongo:27017/campverse
       - REDIS_URL=redis://redis:6379
@@ -22,14 +22,14 @@ services:
     networks:
       - campverse
 
-  ml:
-    build: ./ML/Recommendation
-    ports:
-      - "8000:8000"
-    depends_on:
-      - mongo
-    networks:
-      - campverse
+  # ml:
+  #   build: ./ML/Recommendation
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - campverse
 
   mongo:
     image: mongo:6

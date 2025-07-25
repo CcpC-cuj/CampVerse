@@ -1,10 +1,10 @@
-const User = require('../models/User');
-const Certificate = require('../models/Certificate');
-const Achievement = require('../models/Achievement');
+const User = require('../Models/User');
+const Certificate = require('../Models/Certificate');
+const Achievement = require('../Models/Achievement');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { otpgenrater } = require('../services/otp');
-const { emailsender } = require('../services/email');
+const { otpgenrater } = require('../Services/otp');
+const { emailsender } = require('../Services/email');
 const { createClient } = require('redis');
 const { OAuth2Client } = require('google-auth-library');
 const winston = require('winston');
@@ -25,7 +25,7 @@ const isAcademicEmail = (email) => /@[\w.-]+\.(ac|edu)\.in$/i.test(email);
 
 const redisClient = createClient({
   socket: {
-    host: process.env.REDIS_HOST || '127.0.0.1',
+    host: process.env.REDIS_HOST || 'redis', // Use Docker Compose service name
     port: process.env.REDIS_PORT || 6379
   }
 });
