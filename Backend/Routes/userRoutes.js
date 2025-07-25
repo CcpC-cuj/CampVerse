@@ -11,14 +11,19 @@ const {
   getUserCertificates,
   getUserAchievements,
   getUserEvents,
-  grantHostAccess
+  grantHostAccess,
+  googleSignIn,
+  updateMe,
+  forgotPassword,
+  resetPassword,
+  grantVerifierAccess
 } = require('../controllers/userController');
 
 const {
   authenticateToken,
   requireRole,
   requireSelfOrRole
-} = require('../Middleware/auth');
+} = require('../Middleware/Auth');
 
 const router = express.Router();
 
@@ -26,10 +31,14 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/verify', verifyOtp);
 router.post('/login', login);
+router.post('/google-signin', googleSignIn); // Google OAuth2 sign-in
+router.post('/forgot-password', forgotPassword); // Request password reset
+router.post('/reset-password', resetPassword); // Reset password with token
 
 // Authenticated user routes
 router.get('/me', authenticateToken, getMe);
 router.post('/updatePreferences', authenticateToken, updatePreferences);
+router.patch('/me', authenticateToken, updateMe); // Update own profile
 
 // User profile and updates (only self or admin)
 router.get('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), getUserById);
@@ -45,5 +54,7 @@ router.get('/:id/events', authenticateToken, requireSelfOrRole(['platformAdmin',
 
 // Host access - only platformAdmin can assign
 router.post('/:id/grant-host', authenticateToken, requireRole('platformAdmin'), grantHostAccess);
+// Verifier access - only platformAdmin can assign
+router.post('/:id/grant-verifier', authenticateToken, requireRole('platformAdmin'), grantVerifierAccess);
 
 module.exports = router;

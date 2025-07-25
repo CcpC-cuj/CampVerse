@@ -1,83 +1,468 @@
-/**
- * Module dependencies and Redis client initialization.
- *
- * This module:
- * - Imports required dependencies for Express, Redis, and custom services.
- * - Creates and connects a Redis client for use across the application.
- * - Loads OTP generation and email sending utility functions.
- *
- * @module Setup
- *
- * @requires express - The Express framework for HTTP server handling.
- * @requires redis.createClient - Used to initialize a Redis client.
- * @requires ../Services/otp.otpgenrater - Custom OTP generation function.
- * @requires ../Services/email.emailsender - Custom function to send email via nodemailer.
- *
- * @const {RedisClient} client - A Redis client instance created using `createClient()`.
- *                               Automatically attempts to connect on load.
- *
- * @throws Logs an error if Redis connection fails.
- */
-const express = require('express');
-const {createClient} = require('redis');
-const client = createClient();
-const {otpgenrater} = require('../Services/otp');
-const {emailsender} = require('../Services/email');
-client.connect().catch(console.error);
-const Login = (req , res)=> {
-    try{
-    }catch(err){
-        console.log(err);
+const User = require('../models/User');
+const Certificate = require('../models/Certificate');
+const Achievement = require('../models/Achievement');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { otpgenrater } = require('../services/otp');
+const { emailsender } = require('../services/email');
+const { createClient } = require('redis');
+const { OAuth2Client } = require('google-auth-library');
+const winston = require('winston');
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.Console(),
+  ],
+});
+const crypto = require('crypto');
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// Academic email domain check (.ac.in or .edu.in, flexible for subdomains)
+const isAcademicEmail = (email) => /@[\w.-]+\.(ac|edu)\.in$/i.test(email);
+
+const redisClient = createClient({
+  socket: {
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    port: process.env.REDIS_PORT || 6379
+  }
+});
+redisClient.on('error', err => console.error('Redis Client Error', err));
+(async () => {
+  if (!redisClient.isOpen) await redisClient.connect();
+  console.log('Redis connected');
+})();
+
+// ---------------- Google Sign-In ----------------
+async function googleSignIn(req, res) {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'Google token missing.' });
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
+
+    if (!isAcademicEmail(email)) {
+      return res.status(400).json({ error: 'Only academic emails (.ac.in or .edu.in) are allowed.' });
     }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        name,
+        email,
+        phone: '',
+        profilePhoto: picture,
+        passwordHash: '',
+        roles: ['student'],
+        isVerified: true,
+        canHost: false,
+        createdAt: new Date()
+      });
+      await user.save();
+    }
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const jwtToken = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    return res.json({
+      message: 'Google login successful',
+      token: jwtToken,
+      user: sanitizeUser(user)
+    });
+
+  } catch (err) {
+    logger.error('Google Login Error:', err);
+    return res.status(500).json({ error: 'Google login failed.' });
+  }
+}
+
+// ---------------- Register ----------------
+async function register(req, res) {
+  try {
+    const { name, email, phone, password } = req.body;
+
+    if (!name || !email || !phone || !password)
+      return res.status(400).json({ error: 'All fields (name, email, phone, password) required.' });
+
+    if (!isAcademicEmail(email))
+      return res.status(400).json({ error: 'Only academic emails (.ac.in or .edu.in) are allowed.' });
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ error: 'User already exists.' });
+
+    const otp = otpgenrater();
+    await emailsender(name, email, otp);
+
+    const tempData = { name, phone, password, otp };
+    await redisClient.setEx(email, 600, JSON.stringify(tempData));
+
+    return res.status(200).json({ message: 'OTP sent to email.' });
+  } catch (err) {
+    logger.error('Register error:', err);
+    return res.status(500).json({ error: 'Server error during registration.' });
+  }
+}
+// Verify OTP
+async function verifyOtp(req, res) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP required.' });
+
+    const tempStr = await redisClient.get(email);
+    if (!tempStr) return res.status(400).json({ error: 'OTP expired or invalid.' });
+
+    const tempData = JSON.parse(tempStr);
+    if (tempData.otp !== otp) return res.status(400).json({ error: 'Invalid OTP.' });
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // Existing user login
+      await redisClient.del(email);
+      const token = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      return res.json({
+        message: 'OTP verified, logged in.',
+        token,
+        user: sanitizeUser(user)
+      });
+    }
+
+    // New user registration
+    const passwordHash = await bcrypt.hash(tempData.password, 10);
+    user = new User({
+      name: tempData.name,
+      email,
+      phone: tempData.phone,
+      passwordHash,
+      roles: ['student'],
+      isVerified: false,
+      canHost: false,
+      createdAt: new Date()
+    });
+
+    await user.save();
+    await redisClient.del(email);
+
+    const token = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    return res.status(201).json({
+      message: 'Registration successful, logged in.',
+      token,
+      user: sanitizeUser(user)
+    });
+  } catch (err) {
+    logger.error('Verify OTP error:', err);
+    return res.status(500).json({ error: 'Server error during OTP verification.' });
+  }
+}
+
+// Login with email & password
+async function login(req, res) {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: 'Email and password required.' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'User not found.' });
+
+    const validPass = await bcrypt.compare(password, user.passwordHash);
+    if (!validPass) return res.status(400).json({ error: 'Incorrect password.' });
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    return res.json({
+      token,
+      user: sanitizeUser(user)
+    });
+  } catch (err) {
+    logger.error('Login error:', err);
+    return res.status(500).json({ error: 'Server error during login.' });
+  }
+}
+
+// Update user preferences (POST /updatePreferences)
+async function updatePreferences(req, res) {
+  try {
+    const userId = req.user.id;
+    const updates = req.body;
+
+    // Only allow specific fields update
+    const allowedFields = ['collegeIdNumber', 'interests', 'skills', 'learningGoals', 'badges', 'location'];
+    const filteredUpdates = {};
+    for (const key of allowedFields) {
+      if (key in updates) filteredUpdates[key] = updates[key];
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, filteredUpdates, {
+      new: true,
+      runValidators: true
+    }).select('-passwordHash');
+
+    if (!updatedUser) return res.status(404).json({ error: 'User not found.' });
+
+    return res.json({ message: 'Preferences updated.', user: updatedUser });
+  } catch (err) {
+    logger.error('Update preferences error:', err);
+    return res.status(500).json({ error: 'Server error updating preferences.' });
+  }
+}
+
+// Get logged in user profile (GET /me)
+async function getMe(req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    return res.json(user);
+  } catch (err) {
+    logger.error('GetMe error:', err);
+    return res.status(500).json({ error: 'Server error fetching profile.' });
+  }
+}
+
+// PATCH /me — update own profile
+async function updateMe(req, res) {
+  try {
+    const userId = req.user.id;
+    const updates = req.body;
+    // Only allow safe fields to be updated
+    const allowedFields = ['name', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber', 'interests', 'skills', 'learningGoals', 'badges'];
+    const filteredUpdates = {};
+    for (const key of allowedFields) {
+      if (key in updates) filteredUpdates[key] = updates[key];
+    }
+    if (Object.keys(filteredUpdates).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update.' });
+    }
+    const updatedUser = await User.findByIdAndUpdate(userId, filteredUpdates, {
+      new: true,
+      runValidators: true
+    }).select('-passwordHash');
+    if (!updatedUser) return res.status(404).json({ error: 'User not found.' });
+    return res.json({ message: 'Profile updated.', user: updatedUser });
+  } catch (err) {
+    logger.error('UpdateMe error:', err);
+    return res.status(500).json({ error: 'Server error updating profile.' });
+  }
+}
+
+// Get user by id (GET /:id)
+async function getUserById(req, res) {
+  try {
+    const user = await User.findById(req.params.id).select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    return res.json(user);
+  } catch (err) {
+    logger.error('GetUserById error:', err);
+    return res.status(500).json({ error: 'Server error fetching user.' });
+  }
+}
+
+// Update user by id (PATCH /:id)
+async function updateUserById(req, res) {
+  try {
+    const updates = req.body;
+    // For security, don't allow password or roles update here unless you want to
+    if ('passwordHash' in updates) delete updates.passwordHash;
+
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true
+    }).select('-passwordHash');
+
+    if (!updatedUser) return res.status(404).json({ error: 'User not found.' });
+    return res.json({ message: 'User updated.', user: updatedUser });
+  } catch (err) {
+    logger.error('UpdateUserById error:', err);
+    return res.status(500).json({ error: 'Server error updating user.' });
+  }
+}
+
+// Delete user (DELETE /:id)
+async function deleteUser(req, res) {
+  try {
+    const deleted = await User.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'User not found.' });
+    return res.json({ message: 'User deleted.' });
+  } catch (err) {
+    logger.error('DeleteUser error:', err);
+    return res.status(500).json({ error: 'Server error deleting user.' });
+  }
+}
+
+// Get certificates of user (GET /:id/certificates)
+async function getUserCertificates(req, res) {
+  try {
+    const certificates = await Certificate.find({ userId: req.params.id });
+    return res.json(certificates);
+  } catch (err) {
+    logger.error('GetUserCertificates error:', err);
+    return res.status(500).json({ error: 'Server error fetching certificates.' });
+  }
+}
+
+// Get achievements of user (GET /:id/achievements)
+async function getUserAchievements(req, res) {
+  try {
+    const achievements = await Achievement.find({ userId: req.params.id });
+    return res.json(achievements);
+  } catch (err) {
+    logger.error('GetUserAchievements error:', err);
+    return res.status(500).json({ error: 'Server error fetching achievements.' });
+  }
+}
+
+// Get events related to user (hosted, attended, saved, waitlisted) (GET /:id/events)
+async function getUserEvents(req, res) {
+  try {
+    const user = await User.findById(req.params.id)
+      .populate('eventHistory.hosted')
+      .populate('eventHistory.attended')
+      .populate('eventHistory.saved')
+      .populate('eventHistory.waitlisted');
+
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    return res.json({
+      hosted: user.eventHistory.hosted,
+      attended: user.eventHistory.attended,
+      saved: user.eventHistory.saved,
+      waitlisted: user.eventHistory.waitlisted
+    });
+  } catch (err) {
+    logger.error('GetUserEvents error:', err);
+    return res.status(500).json({ error: 'Server error fetching user events.' });
+  }
+}
+
+// Grant host access (POST /:id/grant-host) — only platformAdmin middleware should protect
+async function grantHostAccess(req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    user.canHost = true;
+    if (!user.roles.includes('host')) {
+      user.roles.push('host');
+    }
+    user.hostEligibilityStatus = {
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+      remarks: req.body.remarks || 'Approved by platform admin'
+    };
+
+    await user.save();
+
+    return res.json({ message: 'Host access granted.', user: sanitizeUser(user) });
+  } catch (err) {
+    logger.error('GrantHostAccess error:', err);
+    return res.status(500).json({ error: 'Server error granting host access.' });
+  }
+}
+
+// Grant verifier access (POST /:id/grant-verifier) — only platformAdmin middleware should protect
+async function grantVerifierAccess(req, res) {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    if (!user.roles.includes('verifier')) {
+      user.roles.push('verifier');
+    }
+    user.verifierEligibilityStatus = {
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+      remarks: req.body.remarks || 'Approved by platform admin'
+    };
+
+    await user.save();
+
+    return res.json({ message: 'Verifier access granted.', user: sanitizeUser(user) });
+  } catch (err) {
+    logger.error('GrantVerifierAccess error:', err);
+    return res.status(500).json({ error: 'Server error granting verifier access.' });
+  }
+}
+
+// Helper to remove sensitive fields before sending user
+function sanitizeUser(user) {
+  const obj = user.toObject();
+  delete obj.passwordHash;
+  return obj;
+}
+
+/**
+ * POST /forgot-password
+ * Initiate password reset: send email with reset token
+ */
+async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required.' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' }); // Don't reveal user existence
+    const token = crypto.randomBytes(32).toString('hex');
+    await redisClient.setEx(`reset:${token}`, 3600, email); // 1 hour expiry
+    // Send email with reset link (replace with your frontend URL)
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    await emailsender(user.name, user.email, `Reset your password: ${resetUrl}`);
+    return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+  } catch (err) {
+    logger.error('ForgotPassword error:', err);
+    return res.status(500).json({ error: 'Server error during password reset request.' });
+  }
 }
 /**
- * @function signup
- * @description
- * Handles the first step of user registration. It validates user input, generates an OTP,
- * sends the OTP to the user's email, and temporarily stores the user's data in Redis for verification.
- *
- * This function does NOT save the user to the main database. It only prepares and stores
- * the necessary data until OTP verification is complete.
- *
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - The request payload containing user signup data.
- * @param {string} req.body.name - User's full name.
- * @param {string} req.body.email - User's email address (must contain "@ac.in").
- * @param {string} req.body.university_name - Name of the user's university.
- * @param {string} req.body.domain - User's domain or department.
- * @param {string} req.body.password - User's password (should be hashed before saving to DB).
- *
- * @param {Object} res - Express response object.
- *
- * @returns {void} Sends a response with HTTP 400 for validation errors,
- * and HTTP 501 for unexpected server issues.
- *
- * @sideEffects
- * - Sends an OTP email to the provided address.
- * - Stores user data and OTP in Redis with a 10-minute expiration.
- *
- * @throws Will return HTTP 400 if required fields are missing or the email format is invalid.
- * Will return HTTP 501 if an unexpected server error occurs.
+ * POST /reset-password
+ * Reset password using token
  */
-const signup = async function(req,res){
-    try{
-        const {name , email , university_name  , password} = req.body;
-        if(!name || !email || !university_name  || !password){
-            return res.status(400).send({error: 'Please fill  all marked fields'});
-        }
-        if (!email.includes('@')){
-            return res.status(400).send({error: 'Please enter a valid email'});
-        }
-        if (!email.includes('ac.in')){
-            return res.status(400).send({error: 'Please enter an University email'});
-        }
-        const otp = otpgenrater();
-        await emailsender(name , email , otp)
-        await client.setEx(email, 600, JSON.stringify({ name, password, otp }))
-    }catch(err){
-        res.status(501).send({error: 'something went wrong'});
-        console.log(err);
-    }
+async function resetPassword(req, res) {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and new password required.' });
+    const email = await redisClient.get(`reset:${token}`);
+    if (!email) return res.status(400).json({ error: 'Invalid or expired token.' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: 'User not found.' });
+    user.passwordHash = await bcrypt.hash(password, 10);
+    await user.save();
+    await redisClient.del(`reset:${token}`);
+    return res.status(200).json({ message: 'Password reset successful.' });
+  } catch (err) {
+    logger.error('ResetPassword error:', err);
+    return res.status(500).json({ error: 'Server error during password reset.' });
+  }
 }
-module.exports = {Login , signup};
+
+module.exports = {
+  register,
+  verifyOtp,
+  login,
+  updatePreferences,
+  getMe,
+  updateMe,
+  getUserById,
+  updateUserById,
+  deleteUser,
+  getUserCertificates,
+  getUserAchievements,
+  getUserEvents,
+  grantHostAccess,
+  grantVerifierAccess,
+  googleSignIn,
+  forgotPassword,
+  resetPassword
+};

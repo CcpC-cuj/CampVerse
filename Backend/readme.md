@@ -71,3 +71,42 @@ graph TD
   P --> Q
   Q --> R
   Q --> S
+
+---
+
+## 🚀 User Module Endpoints
+
+### Authentication & Registration
+- `POST /register` — Register with academic email, phone, password (OTP sent to email)
+- `POST /verify` — Verify OTP and complete registration/login
+- `POST /login` — Login with email and password
+- `POST /google-signin` — Login/Register with Google (academic email only)
+
+### Profile & Preferences
+- `GET /me` — Get logged-in user profile
+- `PATCH /me` — Update own profile (name, phone, gender, DOB, profile photo, college ID, interests, skills, learning goals, badges)
+- `POST /updatePreferences` — Update user preferences (collegeIdNumber, interests, skills, learningGoals, badges, location)
+
+### User Management
+- `GET /:id` — Get user by ID (self/admin)
+- `PATCH /:id` — Update user by ID (self/admin)
+- `DELETE /:id` — Delete user (admin only)
+- `POST /:id/grant-host` — Grant host access (admin only)
+
+### Certificates, Achievements, Events
+- `GET /:id/certificates` — Get user certificates
+- `GET /:id/achievements` — Get user achievements
+- `GET /:id/events` — Get user event history (hosted, attended, saved, waitlisted)
+
+---
+
+### 🆕 Verifier Role & Access
+- Users can be assigned the 'verifier' role by platformAdmin (developer group) only.
+- `POST /:id/grant-verifier` — Assigns verifier role to a user (admin only)
+- Verifier eligibility status is tracked (who approved, when, remarks)
+- Only platformAdmin can assign host or verifier roles (`grant-host`, `grant-verifier`)
+
+---
+
+### 🔑 Password Reset Flow
+- `

@@ -18,6 +18,12 @@ const referralStatsSchema = new mongoose.Schema({
   successfulSignups: { type: Number, default: 0 }
 }, { _id: false });
 
+const verifierEligibilityStatusSchema = new mongoose.Schema({
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  approvedAt: Date,
+  remarks: String,
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$/ },
@@ -32,6 +38,7 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   canHost: { type: Boolean, default: false },
   hostEligibilityStatus: hostEligibilityStatusSchema,
+  verifierEligibilityStatus: verifierEligibilityStatusSchema,
   interests: [String],
   skills: [String],
   learningGoals: [String],
