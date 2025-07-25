@@ -68,6 +68,42 @@ Your CI/CD can loop through these or trigger based on changes.
 
 ---
 
+## 🐳 Running Frontend & Backend with Docker Compose
+
+### 1. Build and Start All Services
+```bash
+docker-compose up --build
+```
+- This will build and start the frontend, backend, MongoDB, and Redis containers.
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5001 (or port you mapped)
+
+### 2. Stop All Services
+```bash
+docker-compose down
+```
+
+### 3. Rebuild a Specific Service (if you change code)
+```bash
+docker-compose build backend
+# or
+docker-compose build frontend
+```
+
+### 4. View Logs
+```bash
+docker-compose logs backend
+# or
+docker-compose logs frontend
+```
+
+### 5. Troubleshooting
+- If you see port errors, make sure ports 3000 (frontend) and 5001 (backend) are free.
+- If you see module or connection errors, check that all import paths match the case of your folders/files (Linux is case-sensitive).
+- If you change Dockerfile, nginx.conf, or package.json, always rebuild the image.
+
+---
+
 ## 🚀 Local Development with Docker Compose
 
 1. **Build and start all services:**
