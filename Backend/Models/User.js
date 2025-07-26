@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
 const hostEligibilityStatusSchema = new mongoose.Schema({
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  requestedAt: Date,
   approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   approvedAt: Date,
   remarks: String,
@@ -33,6 +35,7 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   profilePhoto: { type: String },
   institutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Institution' },
+  institutionVerificationStatus: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
   collegeIdNumber: { type: String },
   roles: { type: [String], default: ['student'] },
   isVerified: { type: Boolean, default: false },

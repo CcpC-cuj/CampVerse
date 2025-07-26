@@ -10,6 +10,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const { createClient } = require('redis');
 const userRoutes = require('./Routes/userRoutes');
+const hostRoutes = require('./Routes/hostRoutes');
 const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const swaggerUi = require('swagger-ui-express');
@@ -49,6 +50,10 @@ const swaggerOptions = {
 };
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
 // Enable CORS for local frontend development
 app.use(cors({
@@ -87,6 +92,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/hosts', hostRoutes);
 
 // Apply rate limiter to sensitive routes
 app.use('/api/users/register', authLimiter);
