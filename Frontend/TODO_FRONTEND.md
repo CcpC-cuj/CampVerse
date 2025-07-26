@@ -1,106 +1,81 @@
 # CampVerse Frontend TODO
 
-This document lists all essential tasks for the frontend/UI team, based on the backend API, MVP requirements, and project structure. Use this as a checklist for UI development and integration.
+> **Note:** This document only specifies what UI screens, forms, fields, and flows are required for the CampVerse frontend. It does **not** prescribe or suggest any visual design, layout, responsiveness, branding, or style. All design decisions are left to the frontend team.
 
 ---
 
-## 🟢 **Phase 1: User Module (MVP)**
+## Required UI Screens & Flows
 
-### 1. **User Registration & Authentication**
-- [ ] Registration page (name, email, phone, password)
-  - Required: name, email (.ac.in/.edu.in), phone, password
-- [ ] OTP verification page (email, OTP input)
-  - Required: email, OTP
-- [ ] Login page (email, password)
-  - Required: email, password
-- [ ] Google OAuth2 login integration (academic email enforcement)
-- [ ] Password reset (forgot/reset password flows)
-  - Required: email (forgot), token + new password (reset)
+### 1. User Registration & Authentication
+- Registration screen (fields: name, email, phone, password)
+- OTP verification screen (fields: email, OTP)
+- Login screen (fields: email, password)
+- Google OAuth2 login flow (enforce academic email)
+- Password reset flow (screens for forgot and reset, fields: email, token, new password)
 
-### 2. **User Dashboard & Profile**
-- [ ] Dashboard page (show stats: events, certificates, achievements, profile completion)
-- [ ] Profile page (view/edit profile fields)
-  - Editable: name, phone, Gender, DOB, profile photo, collegeIdNumber, interests, skills, learning goals
-- [ ] Update preferences (interests, skills, learning goals, badges, location)
-- [ ] View badges and achievements
-- [ ] View notifications (in-app)
+### 2. User Dashboard & Profile
+- Dashboard screen (must display user stats: events, certificates, achievements, profile completion)
+- Profile screen (view/edit fields: name, phone, Gender, DOB, profile photo, collegeIdNumber, interests, skills, learning goals)
+- Preferences update flow (fields: interests, skills, learning goals, badges, location)
+- Badges and achievements view
+- Notifications view (in-app)
 
----
+### 3. Host Workflow
+- Host request form (field: remarks, submit action)
+- Host request status display (pending/approved/rejected)
+- Verifier dashboard (for verifiers):
+  - List of pending host requests
+  - Approve/reject actions (field: remarks)
+- Host dashboard (must show analytics: total events, participants, upcoming events)
+- List of events hosted by user
+- Event creation form (fields: title, description, tags, type, schedule [start/end], isPaid [default: false])
+- Event edit form (fields as above)
+- Event delete action (confirmation required)
+- Event participants view
+- Event approval status display (pending/approved/rejected)
 
-## 🟧 **Phase 2: Host Workflow**
+### 4. General Application Flows
+- Navigation (must provide access to all required screens based on user role)
+- Error message display for failed API calls
+- Success message display for successful actions
+- Loading indicator for async actions
+- JWT token storage and usage for API calls
+- Route protection (redirect to login if not authenticated)
+- Role-based access (show/hide screens and actions based on user role)
 
-### 3. **Host Request & Approval**
-- [ ] Host request form (remarks input, submit button)
-  - Required: remarks
-- [ ] Show host request status (pending/approved/rejected)
-- [ ] Verifier dashboard (for verifiers only):
-  - List pending host requests
-  - Approve/reject host requests (remarks input)
-
-### 4. **Host Event Management**
-- [ ] Host dashboard (analytics: total events, participants, upcoming events)
-- [ ] List all events hosted by user
-- [ ] Event creation form
-  - Required: title, description, tags, type, schedule (start/end), isPaid (default: false)
-- [ ] Event edit form (update event fields)
-- [ ] Delete event (confirmation dialog)
-- [ ] View event participants
-- [ ] Show event approval status (pending/approved/rejected)
-
----
-
-## 🟡 **Phase 3: General UI/UX**
-
-### 5. **Navigation & Layout**
-- [ ] Responsive navigation bar (role-based links: student, host, verifier, admin)
-- [ ] Sidebar/dashboard navigation for hosts and verifiers
-- [ ] Consistent theming and branding (CampVerse colors, logo, etc)
-
-### 6. **Error Handling & Feedback**
-- [ ] Show clear error messages for all failed API calls
-- [ ] Show success notifications for actions (registration, event creation, etc)
-- [ ] Loading spinners and disabled states for async actions
-
-### 7. **Security & Access Control**
-- [ ] JWT token storage (secure, httpOnly if possible)
-- [ ] Route protection (redirect to login if not authenticated)
-- [ ] Role-based UI rendering (hide/show features based on user role)
+### 5. Future/Optional Features
+- Event participation/registration flow (for students)
+- Certificate download/view flow
+- Paid event/payment flow (hide for now, but support "Free" event type)
+- Institution statistics view (for institution users)
+- Event search/filter flow
+- Admin analytics view
 
 ---
 
-## 🟣 **Phase 4: Future Features (Optional/Planned)**
-- [ ] Event participation/registration UI (for students)
-- [ ] Certificate download/view UI
-- [ ] Paid event/payment UI (hide for now, show "Free" badge)
-- [ ] Institution statistics panel (for institution users)
-- [ ] Advanced search/filter for events
-- [ ] Analytics dashboard (admin)
+## Required Input Fields by Flow
 
----
-
-## 📋 **Required Input Fields by Flow**
-
-### **Registration:**
+### Registration
 - name (string, required)
 - email (string, required, must be .ac.in/.edu.in)
 - phone (string, required)
 - password (string, required, min 6 chars)
 
-### **OTP Verification:**
+### OTP Verification
 - email (string, required)
 - otp (string, required, 6 digits)
 
-### **Login:**
+### Login
 - email (string, required)
 - password (string, required)
 
-### **Profile Update:**
-- name, phone, Gender, DOB, profilePhoto, collegeIdNumber, interests, skills, learningGoals (all optional, but at least one required for update)
+### Profile Update
+- name, phone, Gender, DOB, profilePhoto, collegeIdNumber, interests, skills, learningGoals (all optional, at least one required for update)
 
-### **Host Request:**
+### Host Request
 - remarks (string, required)
 
-### **Event Creation:**
+### Event Creation
 - title (string, required)
 - description (string, required)
 - tags (array of strings, optional)
@@ -108,10 +83,10 @@ This document lists all essential tasks for the frontend/UI team, based on the b
 - schedule (object, required: start [datetime], end [datetime])
 - isPaid (boolean, required, default: false)
 
-### **Event Edit:**
+### Event Edit
 - Any event field (see above)
 
-### **Password Reset:**
+### Password Reset
 - email (string, required for forgot)
 - token (string, required for reset)
 - new password (string, required for reset)
@@ -119,6 +94,5 @@ This document lists all essential tasks for the frontend/UI team, based on the b
 ---
 
 **Status:**
-- MVP features must be completed before adding advanced features.
-- Focus on clean, responsive UI and robust error handling.
+- All listed screens, forms, and flows are required for MVP unless marked as future/optional.
 - Coordinate with backend team for any API changes or clarifications. 
