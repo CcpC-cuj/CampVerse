@@ -112,6 +112,31 @@ graph TD
 
 ---
 
+## 📚 API Documentation (Swagger UI)
+
+### **Interactive API Docs for CampVerse Backend**
+
+All backend API endpoints are documented and testable via an interactive Swagger UI.
+
+### **How to Access**
+- Open your browser and go to:  
+  **[http://localhost:5001/api-docs/](http://localhost:5001/api-docs/)**
+
+### **Features & Benefits**
+- **Interactive:** Try out any API endpoint directly from the browser.
+- **Visual:** Endpoints are grouped by module (User, Host, etc.) for easy navigation.
+- **Self-updating:** Docs update automatically as new endpoints and comments are added.
+- **Frontend-friendly:** See exactly what data to send and what to expect in responses.
+- **Authentication:** Add your JWT token in the UI to test protected routes.
+
+### **Tips for Use**
+- Use the "Try it out" button to send real requests and see live responses.
+- All required fields, request/response formats, and error codes are shown for each endpoint.
+- If you add new routes or update Swagger comments, **restart the backend server** (or Docker containers) to refresh the docs.
+- The docs are helpful for both backend and frontend teams to ensure smooth integration.
+
+---
+
 ## 📝 Example API Flows
 
 ### **User Registration (OTP)**
@@ -160,3 +185,40 @@ graph TD
   { "error": "Only academic emails (.ac.in or .edu.in) are allowed.", "forceLogout": true }
   ```
 - The frontend should handle these cases and provide a way for the user to log out or try again.
+
+---
+
+## 🎪 Host & Event Management API (For UI Development)
+
+### **Host Workflow**
+| Endpoint | Method | Request Body / Params | What UI Should Send | What UI Should Expect (Output) |
+|----------|--------|----------------------|--------------------|-------------------------------|
+| `/users/me/request-host` | POST | `{ remarks }` | Remarks for why user wants to be a host | `{ message, user: { hostEligibilityStatus } }` (status: pending/approved/rejected) |
+| `/users/host-requests/pending` | GET | JWT (verifier) | None (verifier only) | Array of users with pending host requests |
+| `/users/host-requests/:id/approve` | POST | `{ remarks }` (verifier only) | Remarks for approval | `{ message, user }` (host status updated) |
+| `/users/host-requests/:id/reject` | POST | `{ remarks }` (verifier only) | Remarks for rejection | `{ message, user }` (host status updated) |
+
+### **Host Event Management**
+| Endpoint | Method | Request Body / Params | What UI Should Send | What UI Should Expect (Output) |
+|----------|--------|----------------------|--------------------|-------------------------------|
+| `/hosts/dashboard` | GET | JWT (host) | None | Host analytics: `{ totalEvents, totalParticipants, upcomingEvents, events }` |
+| `/hosts/my-events` | GET | JWT (host) | None | Array of all events hosted by user |
+| `/hosts/events` | POST | Event details: `{ title, description, tags, type, schedule, isPaid }` | Event creation form data | Event object (created event) |
+| `/hosts/events/:id` | PATCH | Event fields to update | Edit event form data | Updated event object |
+| `/hosts/events/:id` | DELETE | None | None (delete button) | `{ message: 'Event deleted.' }` |
+| `/hosts/events/:id/participants` | GET | None | None (view participants) | `{ participants: [...] }` |
+
+### **Host Capabilities**
+- Hosts can create **multiple events** (no limit)
+- Hosts can **edit** or **delete** their own events
+- Hosts can view analytics and participants for each event
+- All event CRUD operations are available to hosts
+
+### **Event Types**
+- **Free Events:** Supported now. No payment required. UI should show "Free" badge and allow direct registration.
+- **Paid Events:** (Planned) UI should show price and payment button. Payment integration will be added in the future. For now, only free events are allowed.
+
+> **Note for UI:**
+> - For event creation, always set `isPaid: false` for now.
+> - Hide or disable payment-related UI until payment system is implemented.
+> - Show clear status for host requests (pending/approved/rejected) and event approval (pending/approved/rejected).
