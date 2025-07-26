@@ -1,8 +1,80 @@
 // src/pages/LoginModal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { googleSignIn, login } from "../api";
+import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginModal = ({ onClose, onSwitchToSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const { login: authLogin, logout: authLogout } = useAuth();
+  const [forceLogout, setForceLogout] = useState(false);
+
+  useEffect(() => {
+    initializeGoogleAuth();
+  }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      const response = await login(formData);
+      
+      if (response.token) {
+        authLogin(response.token, response.user);
+        onClose();
+        window.location.href = '/dashboard';
+      } else {
+        alert(response.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setForceLogout(false);
+    try {
+      setIsLoading(true);
+      const token = await getGoogleToken();
+      const response = await googleSignIn({ token });
+
+      if (response.token) {
+        authLogin(response.token, response.user);
+        onClose();
+        window.location.href = "/dashboard";
+      } else if (response.error) {
+        if (response.forceLogout) {
+          authLogout();
+          setForceLogout(true);
+        }
+        if (response.error.includes("academic emails")) {
+          setError("Please use your institute email (ending with .ac.in or .edu.in) to sign in.");
+        } else {
+          setError(response.error);
+        }
+      } else {
+        setError("Google sign-in failed. Please try again.");
+      }
+    } catch (error) {
+      setError("Google sign-in failed: " + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -21,11 +93,28 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
           <p className="text-sm text-purple-300">Log in to continue</p>
         </div>
 
+        {error && (
+          <div className="text-red-500 text-center mb-2">
+            {error}
+            {forceLogout && (
+              <button
+                className="ml-2 underline text-purple-400 hover:text-purple-600"
+                onClick={() => { authLogout(); onClose(); }}
+              >
+                Logout
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Form */}
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
+            name="email"
             placeholder="College Email"
+            value={formData.email}
+            onChange={handleInputChange}
             className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
             required
           />
@@ -33,7 +122,10 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              name="password"
               placeholder="Password"
+              value={formData.password}
+              onChange={handleInputChange}
               className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 pr-10"
               required
             />
@@ -47,9 +139,10 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
 
           <button
             type="submit"
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition"
+            disabled={isLoading}
+            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Log In
+            {isLoading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
 
@@ -61,13 +154,17 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
         </div>
 
         {/* OAuth Buttons */}
-        <button className="w-full flex items-center justify-center gap-2 border border-white/30 py-2 rounded-full text-white hover:bg-white/10 transition mb-2">
+        <button 
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 border border-white/30 py-2 rounded-full text-white hover:bg-white/10 transition mb-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google"
             className="w-5 h-5"
           />
-          Continue with Google
+          {isLoading ? 'Signing in...' : 'Continue with Google'}
         </button>
 
         {/* Footer */}

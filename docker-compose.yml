@@ -12,10 +12,15 @@ services:
   backend:
     build: ./Backend
     ports:
-      - "5001:5000"
+      - "5001:5001"
     environment:
       - MONGO_URI=mongodb://mongo:27017/campverse
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=48hJ9dKf
+      - email=imkkrish05@gmail.com
+      - EMAIL_PASSWORD=znbafaztvcqjkskd
+      - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
+      - FRONTEND_URL=http://localhost:3000
     depends_on:
       - mongo
       - redis

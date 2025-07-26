@@ -1,8 +1,79 @@
 // src/pages/SignupModal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { googleSignIn, register } from "../api";
+import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
+import { useAuth } from "../contexts/AuthContext";
 
 const SignupModal = ({ onClose, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    phone: '', 
+    password: '' 
+  });
+  const [error, setError] = useState('');
+  const { login: authLogin } = useAuth();
+
+  useEffect(() => {
+    initializeGoogleAuth();
+  }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      const response = await register(formData);
+      
+      if (response.message && response.otp) {
+        alert(`OTP sent to your email: ${response.otp}`);
+        // In a real app, you'd redirect to OTP verification page
+        onClose();
+      } else {
+        alert(response.error || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Registration failed: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    try {
+      setIsLoading(true);
+      const token = await getGoogleToken();
+      const response = await googleSignIn({ token });
+
+      if (response.token) {
+        authLogin(response.token, response.user);
+        onClose();
+        window.location.href = '/dashboard';
+      } else if (response.error) {
+        if (response.error.includes('academic emails')) {
+          setError('Please use your institute email (ending with .ac.in or .edu.in) to sign in.');
+        } else {
+          setError(response.error);
+        }
+      } else {
+        setError('Google sign-in failed. Please try again.');
+      }
+    } catch (error) {
+      setError('Google sign-in failed: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -21,18 +92,38 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           <p className="text-sm text-purple-300">Find new ideas to try</p>
         </div>
 
+        {error && (
+          <div className="text-red-500 text-center mb-2">{error}</div>
+        )}
+
         {/* Form */}
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
+            name="name"
             placeholder="Full Name"
+            value={formData.name}
+            onChange={handleInputChange}
             className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
             required
           />
 
           <input
             type="email"
+            name="email"
             placeholder="College Email"
+            value={formData.email}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            required
+          />
+
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleInputChange}
             className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
             required
           />
@@ -40,7 +131,10 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
+              name="password"
               placeholder="Create a password"
+              value={formData.password}
+              onChange={handleInputChange}
               className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 pr-10"
               required
             />
@@ -55,30 +149,12 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
             </p>
           </div>
 
-          <input
-            type="date"
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
-            required
-          />
-
-          <select
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
-            required
-          >
-            <option value="" disabled className="text-gray-400">
-              Select Gender
-            </option>
-            <option className="text-black">Male</option>
-            <option className="text-black">Female</option>
-            <option className="text-black">Other</option>
-            <option className="text-black">Prefer not to say</option>
-          </select>
-
           <button
             type="submit"
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition"
+            disabled={isLoading}
+            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continue
+            {isLoading ? 'Creating Account...' : 'Continue'}
           </button>
         </form>
 
@@ -90,13 +166,17 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
         </div>
 
         {/* OAuth */}
-        <button className="w-full flex items-center justify-center gap-2 border border-white/30 py-2 rounded-full text-white hover:bg-white/10 transition mb-4">
+        <button 
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-2 border border-white/30 py-2 rounded-full text-white hover:bg-white/10 transition mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
             alt="Google"
             className="w-5 h-5"
           />
-          Continue with Google
+          {isLoading ? 'Signing in...' : 'Continue with Google'}
         </button>
 
         {/* Terms */}

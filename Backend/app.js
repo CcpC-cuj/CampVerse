@@ -98,9 +98,9 @@ app.use('/api/users/verify', authLimiter);
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
-    app.listen(8080, () => {
-      console.log('Server running on port 8080');
-    });
+    app.listen(5001, '0.0.0.0', () => {
+        console.log("Server is running on port 5001");
+      });      
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
