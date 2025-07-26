@@ -578,7 +578,7 @@ async function grantVerifierAccess(req, res) {
 async function requestHostAccess(req, res) {
   try {
     const userId = req.user.id;
-    const remarks = req.body.remarks || '';
+    const remarks = (req.body && req.body.remarks) ? req.body.remarks : '';
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'User not found.' });
     if (user.hostEligibilityStatus && user.hostEligibilityStatus.status === 'pending') {
