@@ -221,7 +221,8 @@ graph TD
 ```yaml
 # docker-compose.yml
 EMAIL_USER=imkkrish05@gmail.com
-EMAIL_PASSWORD=znbafaztvcqjkskd
+EMAIL_PASSWORD=
+
 ```
 
 ### **Email Services**
