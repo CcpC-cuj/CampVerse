@@ -32,26 +32,65 @@ This document lists all remaining backend development tasks, based on the curren
 
 ---
 
-## 🟡 **Phase 2: Institution Module**
-- [ ] Institution CRUD operations (Controller/Routes)
-- [ ] Auto-detection from email domains during user registration
-- [ ] Temporary institution creation logic
-- [ ] Institution verification request system (students can request verification)
-- [ ] Institution statistics API (student/event counts, engagement)
-- [ ] Verification status management (PlatformAdmin only)
-- [ ] API documentation and tests for institution endpoints
+## 🟡 **Phase 2: Institution Module - ✅ COMPLETED**
+- [x] Institution CRUD operations (Controller/Routes)
+- [x] Auto-detection from email domains during user registration
+- [x] Temporary institution creation logic
+- [x] Institution verification request system (students can request verification)
+- [x] Institution statistics API (student/event counts, engagement)
+- [x] Verification status management (PlatformAdmin only)
+- [x] API documentation and tests for institution endpoints
+
+**Phase 2 Status: ✅ COMPLETED - All institution module features implemented, tested, and documented.**
 
 ---
 
-## 🟠 **Phase 3: Event Module**
-- [ ] Event CRUD operations (Controller/Routes)
-- [ ] Event verification workflow (verifier role)
-- [ ] Event participation system (register, waitlist, attend)
-- [ ] Event search and filtering endpoints
-- [ ] Event categories/tags support
-- [ ] Participant management (host can view/manage participants)
-- [ ] Waitlist system for events
-- [ ] API documentation and tests for event endpoints
+## 🟠 **Phase 3: Event Module (Next Steps)**
+- [ ] Event RSVP/registration endpoint (user registers for event, creates EventParticipationLog)
+- [ ] Generate unique QR code ticket on registration (encode event ID, user ID, secure token)
+- [ ] Endpoint for user to download/view QR ticket
+- [ ] Endpoint for host to scan/validate QR code and mark attendance
+- [ ] Event participation status updates (registered, attended, waitlisted, etc.)
+- [ ] Email notification on successful RSVP (with event details and QR ticket attached)
+- [ ] Google Calendar integration (generate add-to-calendar link or use API for direct add)
+- [ ] Event analytics endpoint (registrations, attendance, no-shows, participant list)
+- [ ] **Co-host nomination endpoint (main host nominates co-hosts for event)**
+- [ ] **Co-host approval/rejection endpoint (verifier approves co-hosts)**
+- [ ] **Update Event model: add coHosts (array of userIds), coHostRequests (pending nominations)**
+- [ ] **Restrict co-hosts to users with host role only**
+- [ ] **Host uploads event logo and banner images**
+- [ ] **Images are saved to drive (Google Drive or similar)**
+- [ ] **Store and return logoURL and bannerURL for rendering in frontend**
+- [ ] API documentation and tests for all new endpoints
+
+## 🟧 **Host Module (Enhancements)**
+- [ ] Host dashboard: show analytics for each event (registrations, attendance, etc.)
+- [ ] Host can view/download participant list for their events (name, email, phone, payment type/status, attendance)
+- [ ] Host-facing QR scanner UI (for event entry validation)
+- [ ] **Host can see payment type/status for each participant**
+- [ ] **Host can only generate certificates for users marked as attended (QR scanned)**
+- [ ] API documentation and tests for analytics endpoints
+
+## 🟡 **Institution Module (Enhancements)**
+- [ ] Institution analytics: aggregate event stats, student engagement, event breakdowns
+- [ ] Institution dashboard: show analytics and engagement data
+- [ ] API documentation and tests for analytics endpoints
+
+## 🟣 **Certificate System**
+- [ ] **Certificate generation logic: only for users with status 'attended' (QR scanned)**
+- [ ] **Export only attended users for ML certificate generation**
+- [ ] API documentation and tests for certificate endpoints
+
+## 🟤 **Notification Module (Enhancements)**
+- [ ] Email notification logic for event RSVP/registration (with QR ticket)
+- [ ] In-app notification for event registration/RSVP
+- [ ] Notification preferences (optional)
+- [ ] API documentation and tests for notification endpoints
+
+## 🟢 **Google Calendar Integration**
+- [ ] Add-to-calendar link generation for events
+- [ ] (Optional) Google Calendar API integration for direct event creation (OAuth2 flow)
+- [ ] API documentation and tests for calendar endpoints
 
 ---
 
@@ -101,6 +140,13 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Automated tests for all new endpoints
 - [ ] Swagger/OpenAPI documentation for all backend APIs
 - [ ] Code cleanup and refactoring as needed
+
+---
+
+## ⚙️ **Model Changes**
+- [ ] **EventParticipationLog: add paymentType, paymentStatus, attendanceTimestamp, qrToken**
+- [ ] **Event: add coHosts (array), coHostRequests (array with status, requestedBy, requestedAt, etc.)**
+- [ ] **User: (optional) add coHostedEvents if tracking is needed**
 
 ---
 

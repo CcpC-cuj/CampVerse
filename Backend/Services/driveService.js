@@ -1,5 +1,6 @@
 const { google } = require('googleapis');
 const multer = require('multer');
+const stream = require('stream');
 const path = require('path');
 
 // Google Drive API configuration
@@ -93,9 +94,45 @@ const getImageUrl = (fileId) => {
   return `https://drive.google.com/uc?export=view&id=${fileId}`;
 };
 
+/**
+ * Uploads an event image (logo or banner) to Google Drive and returns the file URL.
+ * @param {Buffer} fileBuffer - The file buffer to upload
+ * @param {String} filename - The name of the file
+ * @param {String} type - 'logo' or 'banner'
+ * @returns {Promise<String>} - The public URL of the uploaded file
+ */
+async function uploadEventImage(fileBuffer, filename, type) {
+  const folderId = type === 'logo'
+    ? process.env.DRIVE_LOGO_FOLDER_ID
+    : process.env.DRIVE_BANNER_FOLDER_ID;
+  const bufferStream = new stream.PassThrough();
+  bufferStream.end(fileBuffer);
+
+  const { data } = await drive.files.create({
+    requestBody: {
+      name: filename,
+      parents: [folderId],
+      mimeType: 'image/png', // or detect from file
+    },
+    media: {
+      mimeType: 'image/png',
+      body: bufferStream,
+    },
+    fields: 'id',
+  });
+
+  await drive.permissions.create({
+    fileId: data.id,
+    requestBody: { role: 'reader', type: 'anyone' },
+  });
+
+  return `https://drive.google.com/uc?export=view&id=${data.id}`;
+}
+
 module.exports = {
   upload,
   uploadImageToDrive,
   deleteImageFromDrive,
   getImageUrl,
+  uploadEventImage
 }; 
