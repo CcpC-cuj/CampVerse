@@ -15,6 +15,7 @@ const rateLimit = require('express-rate-limit');
 const winston = require('winston');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const institutionRoutes = require('./Routes/institutionRoutes');
 
 
 const app = express();
@@ -93,6 +94,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/hosts', hostRoutes);
+app.use('/api/institutions', institutionRoutes);
 
 // Apply rate limiter to sensitive routes
 app.use('/api/users/register', authLimiter);

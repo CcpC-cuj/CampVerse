@@ -137,6 +137,33 @@ All backend API endpoints are documented and testable via an interactive Swagger
 
 ---
 
+## 🏫 Institution Module API
+
+### **Available Endpoints**
+
+| Method | Endpoint                                      | Description                                 | Role Required         |
+|--------|-----------------------------------------------|---------------------------------------------|----------------------|
+| POST   | /api/institutions                             | Create a new institution                    | platformAdmin        |
+| GET    | /api/institutions                             | Get all institutions                        | platformAdmin        |
+| GET    | /api/institutions/:id                         | Get institution by ID                       | platformAdmin/self   |
+| PATCH  | /api/institutions/:id                         | Update institution                          | platformAdmin        |
+| DELETE | /api/institutions/:id                         | Delete institution                          | platformAdmin        |
+| POST   | /api/institutions/:id/request-verification    | Request institution verification            | student              |
+| POST   | /api/institutions/:id/approve-verification    | Approve institution verification            | platformAdmin        |
+| POST   | /api/institutions/:id/reject-verification     | Reject institution verification             | platformAdmin        |
+| GET    | /api/institutions/:id/analytics               | Get institution analytics (students/events) | platformAdmin/self   |
+
+- **All endpoints require JWT authentication.**
+- Role-based access enforced for all routes.
+- Analytics endpoint returns student and event counts for the institution.
+
+### **Tested Endpoints**
+- All institution endpoints have been tested for correct access, validation, and response.
+- Analytics endpoint returns correct stats (studentCount, eventCount).
+- Verification workflow (request, approve) is functional.
+
+---
+
 ## 📝 Example API Flows
 
 ### **User Registration (OTP)**
