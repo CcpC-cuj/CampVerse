@@ -88,6 +88,24 @@ Frontend/
 
 ---
 
+## 🔐 Google OAuth, Academic Email Enforcement & Error Handling
+- **Google Sign-In** is integrated via the backend `/google-signin` endpoint.
+- Only academic emails (`.ac.in` or `.edu.in`) are allowed for Google login. If a non-academic email is used, the user will see an error and a Logout/Back button.
+- The **OAuthCallback** page handles the Google OAuth redirect, exchanges the access token for a JWT, and redirects to the dashboard on success.
+- If an error occurs (e.g., non-academic email, invalid token), the UI displays a clear error message and provides a Logout and Back button for user recovery.
+- All debug and info console logs have been removed from production code; only errors are logged in the console.
+
+---
+
+## 🛠️ Error Handling in the UI
+- If Google login fails due to a non-academic email, the user is shown:
+  - A clear error message
+  - A **Logout** button (logs out and returns to landing page)
+  - A **Back** button (returns to landing page)
+- All error handling is robust and user-friendly.
+
+---
+
 ## 🛠️ Linting & Code Quality
 - ESLint is set up with Airbnb config for consistent, error-free code.
 - Run `npm run lint` before committing code.

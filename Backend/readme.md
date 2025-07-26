@@ -137,3 +137,26 @@ graph TD
 - For production, set all required environment variables and configure Docker/K8s as needed.
 
 ---
+
+## 🔐 Google OAuth & Academic Email Enforcement
+- **Google Sign-In** now uses the Google OAuth **access token** (not ID token) to fetch user info from Google's userinfo endpoint.
+- Only academic emails (`.ac.in` or `.edu.in`) are allowed for registration/login via Google.
+- If a non-academic email is used, the backend responds with:
+  ```json
+  { "error": "Only academic emails (.ac.in or .edu.in) are allowed.", "forceLogout": true }
+  ```
+- The frontend should log out the user and show a clear error message with a logout/back option.
+- All debug and test console logs have been removed from production code.
+
+---
+
+## 🛠️ Error Handling for Google Sign-In
+- If the Google token is invalid or expired, returns:
+  ```json
+  { "error": "Invalid Google token." }
+  ```
+- If the email is not academic, returns:
+  ```json
+  { "error": "Only academic emails (.ac.in or .edu.in) are allowed.", "forceLogout": true }
+  ```
+- The frontend should handle these cases and provide a way for the user to log out or try again.

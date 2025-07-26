@@ -52,9 +52,6 @@ __________________________________________________________________________
              +-----------------------------------------+
 
 
-```
-
-
 #  Responsibilities mapped to your repo
 
 | Folder     | Description      | What it handles                                        |
@@ -68,22 +65,22 @@ Your CI/CD can loop through these or trigger based on changes.
 
 ---
 
-## 🐳 Running Frontend & Backend with Docker Compose
+## 🚀 Quick Start with Docker Compose
 
 ### 1. Build and Start All Services
 ```bash
 docker-compose up --build
 ```
-- This will build and start the frontend, backend, MongoDB, and Redis containers.
+- Builds and starts frontend, backend, MongoDB, and Redis containers.
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:5001 (or port you mapped)
+- Backend API: http://localhost:5001
 
 ### 2. Stop All Services
 ```bash
 docker-compose down
 ```
 
-### 3. Rebuild a Specific Service (if you change code)
+### 3. Rebuild a Specific Service
 ```bash
 docker-compose build backend
 # or
@@ -98,9 +95,22 @@ docker-compose logs frontend
 ```
 
 ### 5. Troubleshooting
-- If you see port errors, make sure ports 3000 (frontend) and 5001 (backend) are free.
-- If you see module or connection errors, check that all import paths match the case of your folders/files (Linux is case-sensitive).
+- Ensure ports 3000 (frontend) and 5001 (backend) are free.
 - If you change Dockerfile, nginx.conf, or package.json, always rebuild the image.
+
+---
+
+## 🔐 Google OAuth & Academic Email Enforcement
+- Google login uses the OAuth **access token** to fetch user info from Google.
+- Only academic emails (`.ac.in` or `.edu.in`) are allowed for Google login.
+- If a non-academic email is used, the user will see an error and a Logout/Back button in the UI.
+- All debug logs have been removed from production code; only errors are logged.
+
+---
+
+## 🛠️ Error Handling & User Experience
+- All authentication errors are clearly shown in the UI.
+- If Google login fails (invalid token, non-academic email), the user is prompted to log out or go back and try again.
 
 ---
 
