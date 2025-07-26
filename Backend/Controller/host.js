@@ -1,19 +1,46 @@
 const Event = require('../Models/Event');
 const User = require('../Models/User');
+const EventParticipationLog = require('../Models/EventParticipationLog');
 
-// Host dashboard: list events and basic analytics
+// Host dashboard: list events and detailed analytics
 async function getHostDashboard(req, res) {
   try {
     const userId = req.user.id;
     const events = await Event.find({ hostUserId: userId });
     const totalEvents = events.length;
     const upcomingEvents = events.filter(e => e.schedule && e.schedule.start > new Date());
-    const totalParticipants = events.reduce((sum, e) => sum + (e.participants ? e.participants.length : 0), 0);
+    
+    // Get detailed analytics for each event
+    const eventsWithAnalytics = await Promise.all(events.map(async (event) => {
+      const logs = await EventParticipationLog.find({ eventId: event._id });
+      const totalRegistered = logs.length;
+      const totalAttended = logs.filter(l => l.status === 'attended').length;
+      const totalWaitlisted = logs.filter(l => l.status === 'waitlisted').length;
+      const totalPaid = logs.filter(l => l.paymentType === 'paid').length;
+      const totalFree = logs.filter(l => l.paymentType === 'free').length;
+      
+      return {
+        ...event.toObject(),
+        analytics: {
+          totalRegistered,
+          totalAttended,
+          totalWaitlisted,
+          totalPaid,
+          totalFree,
+          attendanceRate: totalRegistered > 0 ? (totalAttended / totalRegistered * 100).toFixed(2) : 0
+        }
+      };
+    }));
+    
+    const totalParticipants = eventsWithAnalytics.reduce((sum, e) => sum + e.analytics.totalRegistered, 0);
+    const totalAttended = eventsWithAnalytics.reduce((sum, e) => sum + e.analytics.totalAttended, 0);
+    
     return res.json({
       totalEvents,
       totalParticipants,
+      totalAttended,
       upcomingEvents: upcomingEvents.length,
-      events
+      events: eventsWithAnalytics
     });
   } catch (err) {
     return res.status(500).json({ error: 'Server error fetching host dashboard.' });
@@ -81,9 +108,24 @@ async function getEventParticipants(req, res) {
   try {
     const userId = req.user.id;
     const eventId = req.params.id;
-    const event = await Event.findOne({ _id: eventId, hostUserId: userId }).populate('participants');
+    const event = await Event.findOne({ _id: eventId, hostUserId: userId });
     if (!event) return res.status(404).json({ error: 'Event not found or not owned by user.' });
-    return res.json({ participants: event.participants });
+    
+    // Get detailed participant information from EventParticipationLog
+    const logs = await EventParticipationLog.find({ eventId }).populate('userId', 'name email phone');
+    const participants = logs.map(log => ({
+      userId: log.userId._id,
+      name: log.userId.name,
+      email: log.userId.email,
+      phone: log.userId.phone,
+      status: log.status,
+      paymentType: log.paymentType,
+      paymentStatus: log.paymentStatus,
+      attendanceTimestamp: log.attendanceTimestamp,
+      timestamp: log.timestamp
+    }));
+    
+    return res.json({ participants });
   } catch (err) {
     return res.status(500).json({ error: 'Server error fetching participants.' });
   }

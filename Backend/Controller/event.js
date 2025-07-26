@@ -99,6 +99,8 @@ async function rsvpEvent(req, res) {
 async function sendQrEmail(to, qrImage, eventTitle) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
@@ -160,7 +162,21 @@ async function getEventAnalytics(req, res) {
     const totalRegistered = logs.length;
     const totalAttended = logs.filter(l => l.status === 'attended').length;
     const totalWaitlisted = logs.filter(l => l.status === 'waitlisted').length;
-    res.json({ totalRegistered, totalAttended, totalWaitlisted });
+    const totalPaid = logs.filter(l => l.paymentType === 'paid').length;
+    const totalFree = logs.filter(l => l.paymentType === 'free').length;
+    const paymentSuccess = logs.filter(l => l.paymentStatus === 'success').length;
+    const paymentPending = logs.filter(l => l.paymentStatus === 'pending').length;
+    
+    res.json({ 
+      totalRegistered, 
+      totalAttended, 
+      totalWaitlisted,
+      totalPaid,
+      totalFree,
+      paymentSuccess,
+      paymentPending,
+      attendanceRate: totalRegistered > 0 ? (totalAttended / totalRegistered * 100).toFixed(2) : 0
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching analytics.' });
   }

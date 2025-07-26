@@ -18,7 +18,7 @@
  *
  * @requires nodemailer
  * @requires dotenv - To load environment variables from .env file.
- * @requires process.env.email - Sender's Gmail address.
+ * @requires process.env.EMAIL_USER - Sender's Gmail address.
  * @requires process.env.EMAIL_PASSWORD - Gmail app password.
  */
 const nodemailer = require('nodemailer');
@@ -30,7 +30,7 @@ async function emailsender(name , email , otp){
         port: 465,
         secure: true, // true for 465, false for other ports
         auth: {
-            user: process.env.email,
+            user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD,
         },
     });

@@ -45,31 +45,32 @@ This document lists all remaining backend development tasks, based on the curren
 
 ---
 
-## 🟠 **Phase 3: Event Module (Next Steps)**
-- [ ] Event RSVP/registration endpoint (user registers for event, creates EventParticipationLog)
-- [ ] Generate unique QR code ticket on registration (encode event ID, user ID, secure token)
-- [ ] Endpoint for user to download/view QR ticket
-- [ ] Endpoint for host to scan/validate QR code and mark attendance
-- [ ] Event participation status updates (registered, attended, waitlisted, etc.)
-- [ ] Email notification on successful RSVP (with event details and QR ticket attached)
-- [ ] Google Calendar integration (generate add-to-calendar link or use API for direct add)
-- [ ] Event analytics endpoint (registrations, attendance, no-shows, participant list)
-- [ ] **Co-host nomination endpoint (main host nominates co-hosts for event)**
-- [ ] **Co-host approval/rejection endpoint (verifier approves co-hosts)**
-- [ ] **Update Event model: add coHosts (array of userIds), coHostRequests (pending nominations)**
-- [ ] **Restrict co-hosts to users with host role only**
-- [ ] **Host uploads event logo and banner images**
-- [ ] **Images are saved to drive (Google Drive or similar)**
-- [ ] **Store and return logoURL and bannerURL for rendering in frontend**
-- [ ] API documentation and tests for all new endpoints
+## 🟠 **Phase 3: Event Module - ✅ COMPLETED**
+- [x] Event CRUD operations (Controller/Routes)
+- [x] File upload for logo/banner (Google Drive integration, multer middleware)
+- [x] RSVP/registration endpoint (creates EventParticipationLog, generates QR code)
+- [x] Waitlist logic (users are waitlisted if event is full)
+- [x] Email notification with QR code (sent to user on RSVP)
+- [x] QR code ticketing and attendance marking (host/co-host scans QR, marks attendance)
+- [x] **Event analytics endpoint (registrations, attendance, waitlist, participant details)**
+- [x] Co-host nomination and approval workflow (main host nominates, verifier approves/rejects)
+- [x] Event verification workflow (verifier approves/rejects event)
+- [x] Google Calendar integration (endpoint returns add-to-calendar link)
+- [x] **Participant details for host (name, email, phone, payment, attendance)**
+- [x] Swagger docs for all endpoints
+- [x] Role-based access control for all routes
 
-## 🟧 **Host Module (Enhancements)**
-- [ ] Host dashboard: show analytics for each event (registrations, attendance, etc.)
-- [ ] Host can view/download participant list for their events (name, email, phone, payment type/status, attendance)
-- [ ] Host-facing QR scanner UI (for event entry validation)
-- [ ] **Host can see payment type/status for each participant**
-- [ ] **Host can only generate certificates for users marked as attended (QR scanned)**
-- [ ] API documentation and tests for analytics endpoints
+**Phase 3 Status: ✅ COMPLETED - All event module features implemented, tested, and documented. Ready for API testing and frontend integration.**
+
+---
+
+## 🟧 **Host Module (Enhancements) - ✅ COMPLETED**
+- [x] Host dashboard: show analytics for each event (registrations, attendance, etc.)
+- [x] Host can view/download participant list for their events (name, email, phone, payment type/status, attendance)
+- [x] Host-facing QR scanner UI (for event entry validation)
+- [x] **Host can see payment type/status for each participant**
+- [x] **Host can only generate certificates for users marked as attended (QR scanned)**
+- [x] API documentation and tests for analytics endpoints
 
 ## 🟡 **Institution Module (Enhancements)**
 - [ ] Institution analytics: aggregate event stats, student engagement, event breakdowns

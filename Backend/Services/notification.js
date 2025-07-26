@@ -80,7 +80,7 @@ async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) 
       port: 465,
       secure: true,
       auth: {
-        user: process.env.email,
+        user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
     });
@@ -117,7 +117,7 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
       port: 465,
       secure: true,
       auth: {
-        user: process.env.email,
+        user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
     });
