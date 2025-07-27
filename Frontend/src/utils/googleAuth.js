@@ -39,48 +39,22 @@ export const getGoogleToken = () => {
       return;
     }
 
-    // Real Google OAuth implementation
+    // Real Google OAuth implementation (redirect in same tab)
     const redirectUri = `${window.location.origin}/oauth-callback`;
     const scope = 'email profile';
-    
-    // Create a popup window for Google OAuth
-    const popup = window.open(
+    const oauthUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `scope=${encodeURIComponent(scope)}&` +
       `response_type=token&` +
-      `prompt=select_account`,
-      'google-oauth',
-      'width=500,height=600,scrollbars=yes,resizable=yes'
-    );
+      `prompt=select_account`;
 
-    // Listen for the popup to close or receive message
-    const checkClosed = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(checkClosed);
-        reject(new Error('Authentication cancelled'));
-      }
-    }, 1000);
-
-    // Listen for message from popup
-    const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
-      
-      if (event.data.type === 'GOOGLE_OAUTH_SUCCESS') {
-        clearInterval(checkClosed);
-        popup.close();
-        window.removeEventListener('message', handleMessage);
-        resolve(event.data.token);
-      } else if (event.data.type === 'GOOGLE_OAUTH_ERROR') {
-        clearInterval(checkClosed);
-        popup.close();
-        window.removeEventListener('message', handleMessage);
-        reject(new Error(event.data.error));
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
+    // Store a flag in sessionStorage to indicate OAuth is in progress
+    sessionStorage.setItem('google_oauth_in_progress', '1');
+    // Redirect in the same tab
+    window.location.href = oauthUrl;
+    // The promise will not resolve here; it should be handled in the OAuthCallback page/component after redirect
   });
 };
 

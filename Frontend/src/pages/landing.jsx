@@ -82,12 +82,33 @@ const Landing = () => {
         <OtpModal
           email={otpEmail}
           onClose={() => setShowOtp(false)}
-          onVerifyOtp={(code) => {
-            // call your verify-OTP API with (otpEmail, code)
-            // on success: navigate to dashboard or show success
+          onVerifyOtp={async (code) => {
+            // Call verifyOtp API
+            try {
+              const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
+              if (res.token) {
+                alert('Email verified successfully!');
+                setShowOtp(false);
+                window.location.href = '/dashboard';
+              } else {
+                alert(res.error || 'OTP verification failed.');
+              }
+            } catch (err) {
+              alert('Error verifying OTP: ' + err.message);
+            }
           }}
-          onResendOtp={() => {
-            // call your resend-OTP API with otpEmail
+          onResendOtp={async () => {
+            try {
+              const res = await import('../api').then(m => m.resendOtp({ email: otpEmail }));
+              if (res.message) {
+                alert('OTP resent to your email.');
+                // The timer reset is handled inside OtpModal via setTimer(30)
+              } else {
+                alert(res.error || 'Failed to resend OTP.');
+              }
+            } catch (err) {
+              alert('Error resending OTP: ' + err.message);
+            }
           }}
         />
       )}

@@ -938,6 +938,31 @@ async function getUserEvents(req, res) {
   }
 }
 
+// ---------------- Resend OTP ----------------
+async function resendOtp(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+    const tempStr = await redisClient.get(email);
+    if (!tempStr) return res.status(400).json({ error: 'No pending registration found for this email.' });
+
+    const tempData = JSON.parse(tempStr);
+    const otp = otpgenrater();
+    try {
+      await emailsender(tempData.name, email, otp);
+    } catch (emailError) {
+      console.log('Email sending failed, but continuing with OTP storage:', emailError.message);
+    }
+    tempData.otp = otp;
+    await redisClient.setEx(email, 600, JSON.stringify(tempData));
+    return res.status(200).json({ message: 'OTP resent to email.' });
+  } catch (err) {
+    logger.error('Resend OTP error:', err);
+    return res.status(500).json({ error: 'Server error during OTP resend. Please try again.' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -962,5 +987,6 @@ module.exports = {
   requestHostAccess,
   approveHostRequest,
   rejectHostRequest,
-  listPendingHostRequests
+  listPendingHostRequests,
+  resendOtp
 };
