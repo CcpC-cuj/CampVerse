@@ -4,16 +4,20 @@ import { googleSignIn, register } from "../api";
 import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
 import { useAuth } from "../contexts/AuthContext";
 
-const SignupModal = ({ onClose, onSwitchToLogin }) => {
+const SignupModal = ({
+  onClose,
+  onSwitchToLogin,
+  onSignupSuccess // ← New prop for OTP
+}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    email: '', 
-    phone: '', 
-    password: '' 
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: ""
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { login: authLogin } = useAuth();
 
   useEffect(() => {
@@ -29,27 +33,29 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       setIsLoading(true);
       const response = await register(formData);
-      
+
       if (response.message && response.otp) {
-        alert(`OTP sent to your email: ${response.otp}`);
-        // In a real app, you'd redirect to OTP verification page
-        onClose();
+        // OTP has been sent successfully
+        alert(`OTP sent to your email.`); 
+        onClose(); // close signup modal
+        onSignupSuccess(formData.email); // open OTP modal with email
       } else {
-        alert(response.error || 'Registration failed');
+        setError(response.error || "Registration failed");
       }
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('Registration failed: ' + error.message);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setError("Registration failed: " + err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    setError('');
+    setError("");
     try {
       setIsLoading(true);
       const token = await getGoogleToken();
@@ -58,18 +64,19 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = '/dashboard';
+        window.location.href = "/dashboard";
       } else if (response.error) {
-        if (response.error.includes('academic emails')) {
-          setError('Please use your institute email (ending with .ac.in or .edu.in) to sign in.');
+        if (response.error.includes("academic emails")) {
+          setError("Please use your institute email (ending with .ac.in or .edu.in).");
         } else {
           setError(response.error);
         }
       } else {
-        setError('Google sign-in failed. Please try again.');
+        setError("Google sign-in failed. Please try again.");
       }
-    } catch (error) {
-      setError('Google sign-in failed: ' + error.message);
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError("Google sign-in failed: " + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -92,15 +99,13 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           <p className="text-sm text-purple-300">Find new ideas to try</p>
         </div>
 
-        {error && (
-          <div className="text-red-500 text-center mb-2">{error}</div>
-        )}
+        {error && <div className="text-red-500 text-center mb-2">{error}</div>}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            type="text"
             name="name"
+            type="text"
             placeholder="Full Name"
             value={formData.name}
             onChange={handleInputChange}
@@ -109,8 +114,8 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           />
 
           <input
-            type="email"
             name="email"
+            type="email"
             placeholder="College Email"
             value={formData.email}
             onChange={handleInputChange}
@@ -119,8 +124,8 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           />
 
           <input
-            type="tel"
             name="phone"
+            type="tel"
             placeholder="Phone Number"
             value={formData.phone}
             onChange={handleInputChange}
@@ -130,8 +135,8 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
 
           <div className="relative">
             <input
-              type={showPassword ? "text" : "password"}
               name="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Create a password"
               value={formData.password}
               onChange={handleInputChange}
@@ -144,9 +149,6 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
             >
               {showPassword ? "Hide" : "Show"}
             </span>
-            <p className="text-xs mt-1 text-purple-300">
-              Use 8 or more letters, numbers and symbols
-            </p>
           </div>
 
           <button
@@ -154,7 +156,7 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
             disabled={isLoading}
             className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating Account...' : 'Continue'}
+            {isLoading ? "Creating Account..." : "Continue"}
           </button>
         </form>
 
@@ -166,7 +168,7 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
         </div>
 
         {/* OAuth */}
-        <button 
+        <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
           className="w-full flex items-center justify-center gap-2 border border-white/30 py-2 rounded-full text-white hover:bg-white/10 transition mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -176,7 +178,7 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
             alt="Google"
             className="w-5 h-5"
           />
-          {isLoading ? 'Signing in...' : 'Continue with Google'}
+          {isLoading ? "Signing in..." : "Continue with Google"}
         </button>
 
         {/* Terms */}
@@ -190,7 +192,7 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
           <span
             onClick={() => {
               onClose();
-              onSwitchToLogin(); // ← Switch to Login modal
+              onSwitchToLogin();
             }}
             className="hover:underline cursor-pointer text-white"
           >
@@ -199,7 +201,6 @@ const SignupModal = ({ onClose, onSwitchToLogin }) => {
         </p>
       </div>
     </div>
-  );
-};
-
+);
+}
 export default SignupModal;
