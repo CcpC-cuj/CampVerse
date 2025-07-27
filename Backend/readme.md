@@ -1085,7 +1085,7 @@ POST /api/events/rsvp
 #### **Phase 2: QR Code Structure**
 **QR Token Format**: `{eventId}_{userId}_{timestamp}`
 
-**Example**: `6885120d43d1aaf63e636c76_6885122843d1aaf63e636c7d_1732560000000`
+**Example**: `event_id_here_user_id_here_timestamp_here`
 
 #### **Phase 3: QR Scan & Attendance Marking**
 ```bash
