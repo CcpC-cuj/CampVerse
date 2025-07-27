@@ -325,11 +325,6 @@ router.post('/forgot-password', forgotPassword);
  *         description: Server error
  */
 router.post('/reset-password', resetPassword);
-router.post('/verify', verifyOtp);
-router.post('/login', login);
-router.post('/google-signin', googleSignIn); // Google OAuth2 sign-in
-router.post('/forgot-password', forgotPassword); // Request password reset
-router.post('/reset-password', resetPassword); // Reset password with token
 
 /**
  * @swagger
