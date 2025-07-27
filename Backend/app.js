@@ -17,6 +17,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const institutionRoutes = require('./Routes/institutionRoutes');
 const eventRoutes = require('./Routes/eventRoutes');
+const certificateRoutes = require('./Routes/certificateRoutes');
 
 
 const app = express();
@@ -97,6 +98,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/hosts', hostRoutes);
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/certificates', certificateRoutes);
 
 // Apply rate limiter to sensitive routes
 app.use('/api/users/register', authLimiter);

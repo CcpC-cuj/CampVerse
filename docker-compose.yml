@@ -19,6 +19,8 @@ services:
       - JWT_SECRET=48hJ9dKf
       - EMAIL_USER=imkkrish05@gmail.com
       - EMAIL_PASSWORD=znbafaztvcqjkskd
+      - ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
+      - ML_API_KEY=your_ml_api_key_here
       - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
       - FRONTEND_URL=http://localhost:3000
     depends_on:
