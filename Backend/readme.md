@@ -57,12 +57,15 @@ graph TD
 - **Phase 1: User Module** - ✅ COMPLETED
 - **Phase 2: Institution Module** - ✅ COMPLETED  
 - **Phase 3: Event Module** - ✅ COMPLETED
+- **Phase 4: Certificate System** - ✅ COMPLETED
 
 ### **🔄 Current Status**
 - **Enhanced Analytics**: ✅ Working
 - **Email Configuration**: ✅ Fixed and Working
 - **QR Code System**: ✅ Working
 - **Host Workflow**: ✅ Working
+- **Certificate System**: ✅ Working
+- **ML API Integration**: ✅ Ready for ML team
 - **API Documentation**: ✅ Complete
 
 ---
@@ -424,6 +427,79 @@ All backend API endpoints are documented and testable via an interactive Swagger
 
 ---
 
+## 🏆 Certificate Module API
+
+### **Available Endpoints**
+
+| Method | Endpoint                                      | Description                                 | Role Required         |
+|--------|-----------------------------------------------|---------------------------------------------|----------------------|
+| POST   | /api/certificates/generate                    | Generate certificate for attended user      | host/co-host/admin   |
+| GET    | /api/certificates/my                          | Get user's certificates                     | authenticated        |
+| GET    | /api/certificates/user/:userId                | Get certificates for specific user          | admin/host           |
+| GET    | /api/certificates/:id                         | Get certificate by ID                       | authenticated        |
+| POST   | /api/certificates/verify                      | Verify certificate using QR code            | public               |
+| GET    | /api/certificates/export-attended/:eventId    | Export attended users for ML generation     | host/co-host/admin   |
+| POST   | /api/certificates/:certificateId/retry        | Retry failed certificate generation         | host/co-host/admin   |
+| GET    | /api/certificates/stats                       | Get certificate statistics                  | authenticated        |
+
+### **Certificate Generation Workflow**
+
+1. **User attends event** (QR code scanned, status marked as 'attended')
+2. **Host generates certificate** (sends data to ML API)
+3. **ML API processes** and returns certificate URL
+4. **Certificate stored** with status 'generated'
+5. **User can view/download** their certificates
+
+### **ML API Integration**
+
+The certificate system integrates with the ML team's certificate generation API:
+
+- **Data Sent to ML API**: User details, event information, QR codes, skills, interests
+- **Expected Response**: Certificate URL and generation status
+- **Error Handling**: Graceful fallback when ML API is unavailable
+- **Retry Mechanism**: Automatic retry for failed generations
+
+### **Certificate Types**
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `participant` | Event participation | Default for attendees |
+| `winner` | Event winner | For competition winners |
+| `organizer` | Event organizer | For event hosts |
+| `co-organizer` | Co-organizer | For co-hosts |
+
+### **QR Code Verification**
+
+Each certificate includes a QR code for verification:
+- **QR Data**: Certificate ID, user ID, event ID, issue date
+- **Verification**: Public endpoint for certificate authenticity
+- **Security**: Tamper-proof verification system
+
+### **Environment Variables**
+
+```yaml
+# docker-compose.yml
+ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
+ML_API_KEY=your_ml_api_key_here
+```
+
+### **Tested Features**
+- ✅ Certificate generation workflow
+- ✅ ML API integration (with fallback)
+- ✅ QR code generation and verification
+- ✅ Export attended users for batch processing
+- ✅ Certificate statistics and analytics
+- ✅ Retry mechanism for failed generations
+
+> **Note for UI:**
+> - Show certificate generation status (pending/generated/failed)
+> - Display QR codes for certificate verification
+> - Implement certificate download functionality
+> - Show certificate statistics in user dashboard
+> - Provide retry option for failed certificate generations
+
+---
+
 ## 📚 Further Reading & Next Steps
 - See `/api-docs` for full API documentation and try endpoints interactively.
 - For event, certificate, and notification modules, see their respective documentation.
@@ -475,6 +551,10 @@ docker compose up --build -d
 - **Email System**: ✅ Working
 - **File Upload**: ✅ Working
 - **Co-Host Management**: ✅ Working
+- **Certificate Generation**: ✅ Working
+- **ML API Integration**: ✅ Working (with fallback)
+- **Certificate Verification**: ✅ Working
+- **Export Attended Users**: ✅ Working
 
 ### **📈 Performance Metrics**
 - **API Response Time**: < 200ms average
