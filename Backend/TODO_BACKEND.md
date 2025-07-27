@@ -77,8 +77,12 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Institution dashboard: show analytics and engagement data
 - [ ] API documentation and tests for analytics endpoints
 
+## 🟠 **Event Attendance & Co-host Workflow (NEW)**
+- [ ] **RSVP attendance tracking:** When a user RSVPs for an event, they receive a QR code (via email and in-app). The QR code must be scanned and verified by the host or an approved co-host at the event to mark attendance. Only after verification will the user be eligible for a certificate.
+- [ ] **Co-host workflow:** Host can invite co-hosts for their event. Co-host invitations must be reviewed and approved by a verifier before co-hosts can verify attendance or manage the event.
+
 ## 🟣 **Certificate System**
-- [ ] **Certificate generation logic: only for users with status 'attended' (QR scanned)**
+- [ ] **Restrict certificate generation:** Host can generate and share certificates only for users whose attendance has been verified (QR scanned). Backend must ensure only eligible users are sent for certificate generation (ML team handles actual generation).
 - [ ] **Export only attended users for ML certificate generation**
 - [ ] API documentation and tests for certificate endpoints
 
@@ -119,7 +123,7 @@ This document lists all remaining backend development tasks, based on the curren
 
 ---
 
-## 💳 **Phase 6: Payment System (Future Implementation)**
+## 💳 **Phase 6: Payment System (Last Phase)**
 - [ ] Payment gateway integration (Razorpay/Stripe)
 - [ ] Host bank account verification system
 - [ ] Payment processing for paid events
@@ -131,7 +135,7 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Payment security and fraud prevention
 - [ ] API documentation and tests for payment endpoints
 
-**Note: Currently focusing on FREE EVENTS only. Payment system will be implemented after core features are complete.**
+**Note: Payment system will be implemented after all core event, attendance, and certificate features are complete.**
 
 ---
 

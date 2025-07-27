@@ -67,6 +67,8 @@ graph TD
 - **Certificate System**: ✅ Working
 - **ML API Integration**: ✅ Ready for ML team
 - **API Documentation**: ✅ Complete
+- **Payment System**: ❌ Not implemented yet (planned for future phase)
+- **Notification System**: 🚧 Basic email notifications only; in-app notifications planned
 
 ---
 
@@ -427,6 +429,11 @@ All backend API endpoints are documented and testable via an interactive Swagger
 ---
 
 ## 🏆 Certificate Module API
+
+### **Eligibility & Generation**
+- **Eligibility**: Only users whose attendance is marked as 'attended' (QR scanned at event) are eligible for certificate generation.
+- **Host/Co-host Control**: Hosts and approved co-hosts can generate certificates for attended users only.
+- **ML API Integration**: Certificate generation is integrated with the ML team's API. The backend ensures only eligible users are sent for certificate generation.
 
 ### **Available Endpoints**
 
@@ -1067,35 +1074,8 @@ All documented features have been tested and validated:
 
 ---
 
-## 🚀 Quick Start
-
-### **Prerequisites**
-- Docker and Docker Compose
-- Node.js 18+ (for local development)
-- MongoDB (via Docker)
-- Redis (via Docker)
-
-### **Environment Setup**
-```bash
-# Clone the repository
-git clone <repository-url>
-cd CampVerse
-
-# Start all services
-docker compose up --build -d
-
-# Access the application
-# Backend API: http://localhost:5001
-# Frontend: http://localhost:3000
-# API Docs: http://localhost:5001/api-docs
-```
-
-### **Testing the API**
-1. **Register a user**: `POST /api/users/register`
-2. **Verify OTP**: `POST /api/users/verify`
-3. **Request host access**: `POST /api/users/me/request-host`
-4. **Create an event**: `POST /api/hosts/events`
-5. **RSVP for event**: `POST /api/events/rsvp`
+## 🚀 Quick Start (Note)
+- Payment and advanced notification systems are not yet implemented. All event and certificate features are available for testing.
 
 ---
 
