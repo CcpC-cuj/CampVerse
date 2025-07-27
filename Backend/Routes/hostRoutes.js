@@ -232,11 +232,4 @@ router.delete('/events/:id', authenticateToken, requireRole('host'), deleteEvent
  */
 router.get('/events/:id/participants', authenticateToken, requireRole('host'), getEventParticipants);
 
-router.get('/dashboard', authenticateToken, requireRole('host'), getHostDashboard);
-router.get('/my-events', authenticateToken, requireRole('host'), getMyEvents);
-router.post('/events', authenticateToken, requireRole('host'), createEvent);
-router.patch('/events/:id', authenticateToken, requireRole('host'), updateEvent);
-router.delete('/events/:id', authenticateToken, requireRole('host'), deleteEvent);
-router.get('/events/:id/participants', authenticateToken, requireRole('host'), getEventParticipants);
-
 module.exports = router; 
