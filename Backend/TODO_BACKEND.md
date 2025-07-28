@@ -71,9 +71,9 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] **Host can only generate certificates for users marked as attended (QR scanned)**
 
 ## 🟡 **Institution Module (Enhancements)**
-- [ ] Institution analytics: aggregate event stats, student engagement, event breakdowns
-- [ ] Institution dashboard: show analytics and engagement data
-- [ ] API documentation for analytics endpoints (testing later)
+- [x] Institution analytics: aggregate event stats, student engagement, event breakdowns
+- [x] Institution dashboard: show analytics and engagement data
+- [x] API documentation for analytics/dashboard endpoints
 
 ## 🟠 **Event Attendance & Co-host Workflow (NEW)**
 - [ ] **RSVP attendance tracking:** When a user RSVPs for an event, they receive a QR code (via email and in-app). The QR code must be scanned and verified by the host or an approved co-host at the event to mark attendance. Only after verification will the user be eligible for a certificate.
