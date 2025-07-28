@@ -23,7 +23,8 @@ const {
   requestHostAccess,
   listPendingHostRequests,
   approveHostRequest,
-  rejectHostRequest
+  rejectHostRequest,
+  resendOtp
 } = require('../Controller/User');
 
 const {
@@ -325,6 +326,33 @@ router.post('/forgot-password', forgotPassword);
  *         description: Server error
  */
 router.post('/reset-password', resetPassword);
+
+/**
+ * @swagger
+ * /api/users/resend-otp:
+ *   post:
+ *     summary: Resend OTP to user's email
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: OTP resent
+ *       400:
+ *         description: User not found or already verified
+ *       500:
+ *         description: Server error
+ */
+router.post('/resend-otp', resendOtp);
 
 /**
  * @swagger

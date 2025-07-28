@@ -58,4 +58,13 @@ export async function googleSignIn({ token }) {
   return data;
 }
 
+export async function resendOtp({ email }) {
+  const res = await fetch(`${API_URL}/api/users/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  return res.json();
+}
+
 // Add more API functions as needed (e.g., getProfile, updateProfile, etc.) 
