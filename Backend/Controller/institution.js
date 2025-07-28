@@ -1,6 +1,8 @@
 const Institution = require('../Models/Institution');
 const User = require('../Models/User');
 const Event = require('../Models/Event');
+const EventParticipationLog = require('../Models/EventParticipationLog');
+const Certificate = require('../Models/Certificate');
 
 // Create a new institution (admin only)
 async function createInstitution(req, res) {
@@ -109,6 +111,96 @@ async function getInstitutionAnalytics(req, res) {
   }
 }
 
+// Get institution dashboard (institution or admin)
+async function getInstitutionDashboard(req, res) {
+  try {
+    const institutionId = req.params.id;
+    // Total students
+    const studentCount = await User.countDocuments({ institutionId });
+    // Total events
+    const eventCount = await Event.countDocuments({ institutionId });
+    // Total event participations
+    const participationLogs = await EventParticipationLog.find({ eventId: { $in: (await Event.find({ institutionId }, '_id')).map(e => e._id) } });
+    const participationCount = participationLogs.length;
+    // Participation rate
+    const participationRate = studentCount > 0 ? participationCount / studentCount : 0;
+    // Certificates issued
+    const certificateCount = await Certificate.countDocuments({ eventId: { $in: (await Event.find({ institutionId }, '_id')).map(e => e._id) } });
+    // Active students (participated in at least one event)
+    const activeStudentIds = [...new Set(participationLogs.map(log => log.userId.toString()))];
+    const activeStudents = activeStudentIds.length;
+    // Inactive students
+    const inactiveStudents = studentCount - activeStudents;
+    // Recent/upcoming events
+    const now = new Date();
+    const recentEvents = await Event.find({ institutionId }).sort({ 'schedule.start': -1 }).limit(5);
+    // Event participation breakdown
+    const eventBreakdown = await Promise.all(
+      recentEvents.map(async (event) => {
+        const logs = participationLogs.filter(log => log.eventId.toString() === event._id.toString());
+        return {
+          id: event._id,
+          title: event.title,
+          registered: logs.length,
+          attended: logs.filter(l => l.status === 'attended').length,
+          waitlisted: logs.filter(l => l.status === 'waitlisted').length
+        };
+      })
+    );
+    // Top events (by participation)
+    const topEvents = eventBreakdown.sort((a, b) => b.registered - a.registered).slice(0, 3);
+    // Top students (by participations/certificates)
+    const studentParticipationMap = {};
+    participationLogs.forEach(log => {
+      const id = log.userId.toString();
+      studentParticipationMap[id] = (studentParticipationMap[id] || 0) + 1;
+    });
+    const topStudents = Object.entries(studentParticipationMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([id, participations]) => ({
+        id,
+        participations
+      }));
+    // Event types breakdown
+    const events = await Event.find({ institutionId });
+    const eventTypes = {};
+    events.forEach(event => {
+      eventTypes[event.type] = (eventTypes[event.type] || 0) + 1;
+    });
+    // Pending verifications (students/events)
+    const pendingStudentVerifications = await User.countDocuments({ institutionId, isVerified: false });
+    const pendingEventVerifications = await Event.countDocuments({ institutionId, verificationStatus: { $ne: 'approved' } });
+    // Feedback/ratings (if available)
+    // Placeholder: If you have a Feedback model, aggregate here
+    const feedback = {
+      averageRating: null,
+      recentComments: []
+    };
+    res.json({
+      studentCount,
+      eventCount,
+      participationCount,
+      participationRate,
+      certificateCount,
+      activeStudents,
+      inactiveStudents,
+      recentEvents,
+      eventBreakdown,
+      topEvents,
+      topStudents,
+      eventTypes,
+      pendingVerifications: {
+        students: pendingStudentVerifications,
+        events: pendingEventVerifications
+      },
+      feedback
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching dashboard.' });
+  }
+}
+
 module.exports = {
   createInstitution,
   getInstitutions,
@@ -118,5 +210,6 @@ module.exports = {
   requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
-  getInstitutionAnalytics
+  getInstitutionAnalytics,
+  getInstitutionDashboard
 }; 

@@ -1,5 +1,7 @@
 # CampVerse Backend TODO
 
+> **Note:** Payment system (backend and frontend) and all testing will be implemented at the very end, after all core features are complete. Testing will be done in a separate branch.
+
 This document lists all remaining backend development tasks, based on the current DEVELOPMENT_APPROACH.md. Use this as a checklist for backend progress.
 
 ---
@@ -12,7 +14,6 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] Implement referral/badge logic (backend logic for awards)
 - [x] Scheduled account deletion and user notification
 - [x] Robust error handling and validation for all user endpoints
-- [x] Automated tests and Swagger docs for user endpoints
 
 **Phase 1 Status: ✅ COMPLETED - All user module features implemented with enhanced validation, dashboard stats, referral system, and error handling.**
 
@@ -26,7 +27,6 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] Notification to user when host status is granted/denied
 - [x] Host dashboard endpoints (list of events hosted, host analytics)
 - [x] Event creation/management endpoints for hosts
-- [x] API documentation and tests for all host-related endpoints
 
 **Host Role/Workflow Status: ✅ COMPLETED - All host-related features implemented with notifications, dashboard, event management, and comprehensive API documentation.**
 
@@ -39,7 +39,6 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] Institution verification request system (students can request verification)
 - [x] Institution statistics API (student/event counts, engagement)
 - [x] Verification status management (PlatformAdmin only)
-- [x] API documentation and tests for institution endpoints
 
 **Phase 2 Status: ✅ COMPLETED - All institution module features implemented, tested, and documented.**
 
@@ -70,12 +69,11 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] Host-facing QR scanner UI (for event entry validation)
 - [x] **Host can see payment type/status for each participant**
 - [x] **Host can only generate certificates for users marked as attended (QR scanned)**
-- [x] API documentation and tests for analytics endpoints
 
 ## 🟡 **Institution Module (Enhancements)**
 - [ ] Institution analytics: aggregate event stats, student engagement, event breakdowns
 - [ ] Institution dashboard: show analytics and engagement data
-- [ ] API documentation and tests for analytics endpoints
+- [ ] API documentation for analytics endpoints (testing later)
 
 ## 🟠 **Event Attendance & Co-host Workflow (NEW)**
 - [ ] **RSVP attendance tracking:** When a user RSVPs for an event, they receive a QR code (via email and in-app). The QR code must be scanned and verified by the host or an approved co-host at the event to mark attendance. Only after verification will the user be eligible for a certificate.
@@ -84,18 +82,18 @@ This document lists all remaining backend development tasks, based on the curren
 ## 🟣 **Certificate System**
 - [ ] **Restrict certificate generation:** Host can generate and share certificates only for users whose attendance has been verified (QR scanned). Backend must ensure only eligible users are sent for certificate generation (ML team handles actual generation).
 - [ ] **Export only attended users for ML certificate generation**
-- [ ] API documentation and tests for certificate endpoints
+- [ ] API documentation for certificate endpoints (testing later)
 
 ## 🟤 **Notification Module (Enhancements)**
 - [ ] Email notification logic for event RSVP/registration (with QR ticket)
 - [ ] In-app notification for event registration/RSVP
 - [ ] Notification preferences (optional)
-- [ ] API documentation and tests for notification endpoints
+- [ ] API documentation for notification endpoints (testing later)
 
 ## 🟢 **Google Calendar Integration**
 - [ ] Add-to-calendar link generation for events
 - [ ] (Optional) Google Calendar API integration for direct event creation (OAuth2 flow)
-- [ ] API documentation and tests for calendar endpoints
+- [ ] API documentation for calendar endpoints (testing later)
 
 ---
 
@@ -104,7 +102,6 @@ This document lists all remaining backend development tasks, based on the curren
 - [x] Certificate storage and retrieval endpoints
 - [x] Certificate verification endpoint (QR code based)
 - [x] Certificate templates (basic) - ML API integration
-- [x] API documentation and tests for certificate endpoints
 - [x] ML API integration for certificate generation
 - [x] Export attended users for ML certificate generation
 - [x] Certificate retry mechanism for failed generations
@@ -119,11 +116,12 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Email notification logic (event reminders, role assignments, etc.)
 - [ ] In-app notification endpoints
 - [ ] Notification preferences (optional)
-- [ ] API documentation and tests for notification endpoints
+- [ ] API documentation for notification endpoints (testing later)
 
 ---
 
 ## 💳 **Phase 6: Payment System (Last Phase)**
+> **Note:** Payment system (backend and frontend) will be implemented at the very end, after all other core features are complete.
 - [ ] Payment gateway integration (Razorpay/Stripe)
 - [ ] Host bank account verification system
 - [ ] Payment processing for paid events
@@ -133,9 +131,7 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Tax calculation and reporting
 - [ ] Host payout system
 - [ ] Payment security and fraud prevention
-- [ ] API documentation and tests for payment endpoints
-
-**Note: Payment system will be implemented after all core event, attendance, and certificate features are complete.**
+- [ ] API documentation for payment endpoints (testing later)
 
 ---
 
@@ -143,14 +139,13 @@ This document lists all remaining backend development tasks, based on the curren
 - [ ] Search analytics collection (track user searches)
 - [ ] Event/user search endpoints (advanced filtering)
 - [ ] Platform insights/statistics endpoints
-- [ ] API documentation and tests for analytics endpoints
+- [ ] API documentation for analytics endpoints (testing later)
 
 ---
 
 ## ⚪ **General Backend Tasks**
 - [ ] Comprehensive error handling and input validation across all modules
-- [ ] Automated tests for all new endpoints
-- [ ] Swagger/OpenAPI documentation for all backend APIs
+- [ ] Swagger/OpenAPI documentation for all backend APIs (testing later)
 - [ ] Code cleanup and refactoring as needed
 
 ---

@@ -201,17 +201,52 @@ graph TD
 |--------|-----------------------------------------------|---------------------------------------------|----------------------|
 | POST   | /api/institutions                             | Create a new institution                    | platformAdmin        |
 | GET    | /api/institutions                             | Get all institutions                        | platformAdmin        |
-| GET    | /api/institutions/:id                         | Get institution by ID                       | platformAdmin/self   |
+| GET    | /api/institutions/:id                         | Get institution by ID                       | platformAdmin/self/institution |
 | PATCH  | /api/institutions/:id                         | Update institution                          | platformAdmin        |
 | DELETE | /api/institutions/:id                         | Delete institution                          | platformAdmin        |
 | POST   | /api/institutions/:id/request-verification    | Request institution verification            | student              |
 | POST   | /api/institutions/:id/approve-verification    | Approve institution verification            | platformAdmin        |
 | POST   | /api/institutions/:id/reject-verification     | Reject institution verification             | platformAdmin        |
-| GET    | /api/institutions/:id/analytics               | Get institution analytics (students/events) | platformAdmin/self   |
+| GET    | /api/institutions/:id/analytics               | Get institution analytics (students/events) | platformAdmin/institution/self |
+| GET    | /api/institutions/:id/dashboard               | Get institution dashboard (summary, engagement, breakdowns) | platformAdmin/institution/self |
 
 - **All endpoints require JWT authentication.**
 - Role-based access enforced for all routes.
-- Analytics endpoint returns student and event counts for the institution.
+- The analytics endpoint returns student and event counts for the institution.
+- The dashboard endpoint returns a rich summary and breakdown for the institution (see below).
+
+### **Example Responses**
+
+#### **GET /api/institutions/:id/analytics**
+```json
+{
+  "studentCount": 2,
+  "eventCount": 0
+}
+```
+
+#### **GET /api/institutions/:id/dashboard**
+```json
+{
+  "studentCount": 2,
+  "eventCount": 0,
+  "participationCount": 0,
+  "participationRate": 0,
+  "certificateCount": 0,
+  "activeStudents": 0,
+  "inactiveStudents": 2,
+  "recentEvents": [],
+  "eventBreakdown": [],
+  "topEvents": [],
+  "topStudents": [],
+  "eventTypes": {},
+  "pendingVerifications": { "students": 2, "events": 0 },
+  "feedback": { "averageRating": null, "recentComments": [] }
+}
+```
+
+- The dashboard endpoint is ideal for powering institution analytics and summary cards in the frontend.
+- The analytics endpoint is a lightweight version for simple stats.
 
 ### **Tested Endpoints**
 - All institution endpoints have been tested for correct access, validation, and response.

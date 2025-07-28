@@ -8,7 +8,8 @@ const {
   requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
-  getInstitutionAnalytics
+  getInstitutionAnalytics,
+  getInstitutionDashboard
 } = require('../Controller/institution');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
@@ -199,5 +200,25 @@ router.post('/:id/reject-verification', authenticateToken, requireRole('platform
  *       403: { description: Forbidden }
  */
 router.get('/:id/analytics', authenticateToken, getInstitutionAnalytics);
+
+/**
+ * @swagger
+ * /api/institutions/{id}/dashboard:
+ *   get:
+ *     summary: Get institution dashboard (institution or admin)
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: Institution dashboard }
+ *       403: { description: Forbidden }
+ */
+router.get('/:id/dashboard', authenticateToken, getInstitutionDashboard);
 
 module.exports = router; 
