@@ -149,7 +149,30 @@ const getUserActivityTimeline = async (req, res) => {
 
 // Platform growth trends (new users/events/certificates per month)
 const getGrowthTrends = async (req, res) => {
-  res.json({ message: 'Platform growth trends endpoint (placeholder)' });
+  try {
+    const userGrowth = await User.aggregate([
+      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const eventGrowth = await Event.aggregate([
+      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const certificateGrowth = await Certificate.aggregate([
+      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    res.json({
+      userGrowth,
+      eventGrowth,
+      certificateGrowth
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching growth trends.' });
+  }
 };
 
 // Zero-result searches (admin only)
