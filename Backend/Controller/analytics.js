@@ -144,7 +144,21 @@ const getAdvancedEventAnalytics = async (req, res) => {
 
 // User activity timeline (participation over time)
 const getUserActivityTimeline = async (req, res) => {
-  res.json({ message: 'User activity timeline endpoint (placeholder)' });
+  try {
+    const userId = req.params.userId;
+    const logs = await EventParticipationLog.find({ userId }).sort({ timestamp: 1 });
+    if (!logs.length) return res.status(404).json({ error: 'No activity found for the user.' });
+    
+    const timeline = logs.map(log => ({
+      eventId: log.eventId,
+      status: log.status,
+      timestamp: log.timestamp
+    }));
+    
+    res.json({ userId, timeline });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching user activity timeline.' });
+  }
 };
 
 // Platform growth trends (new users/events/certificates per month)
