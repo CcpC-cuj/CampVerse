@@ -1,3 +1,21 @@
+/*
+ * ML Integration & Drive Structure (Planned/Current):
+ *
+ * 1. Event Recommendation:
+ *    - Endpoint will call external ML API to fetch personalized event recommendations for users (for dashboard).
+ *    - Fallback logic should be present if ML API is unavailable.
+ *
+ * 2. Certificate Generation:
+ *    - Host selects/uploads certificate template for event.
+ *    - Certificate generation endpoint will call ML API, restricted to users marked as 'attended'.
+ *    - Generated certificates will be stored and linked to users.
+ *    - (Planned) All certificates for an event will be stored in a Drive folder named after the event.
+ *
+ * 3. Event Images:
+ *    - Logos and banners are uploaded to separate Drive folders (see driveService.js for details).
+ *
+ * These comments are for documentation and planning only; they do not affect code execution.
+ */
 const User = require('../Models/User');
 const Certificate = require('../Models/Certificate');
 const Achievement = require('../Models/Achievement');
