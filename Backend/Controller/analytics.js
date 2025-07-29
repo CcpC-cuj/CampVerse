@@ -33,16 +33,18 @@ const advancedEventSearch = async (req, res) => {
     const skip = (parsedPage > 0 ? parsedPage - 1 : 0) * (parsedLimit > 0 ? parsedLimit : 10);
     const sortField = sort === 'date' ? 'schedule.start' : sort;
     const sortOrder = order === 'asc' ? 1 : -1;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const validatedPage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const validatedLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
+    const skip = (validatedPage - 1) * validatedLimit;
     const total = await Event.countDocuments(filter);
     const events = await Event.find(filter)
       .sort({ [sortField]: sortOrder })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(validatedLimit);
     res.json({
       total,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: validatedPage,
+      limit: validatedLimit,
       events
     });
   } catch (err) {
