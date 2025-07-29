@@ -23,6 +23,7 @@ const { uploadEventImage } = require('../Services/driveService');
 const qrcode = require('qrcode');
 const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
+const { notifyUser, notifyUsers } = require('../Services/notification');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
@@ -121,6 +122,30 @@ async function rsvpEvent(req, res) {
     await sendQrEmail(req.user.email, qrImage, event.title);
     console.log(`[AUDIT] RSVP: user ${userId} for event ${eventId} as ${status}`);
     res.status(201).json({ message: `RSVP successful. Status: ${status}. QR code sent to email.`, qrImage });
+    // Notify user (confirmation)
+    await notifyUser({
+      userId,
+      type: 'rsvp',
+      message: `You have successfully registered for ${event.title}.`,
+      data: { eventId, eventTitle: event.title },
+      emailOptions: {
+        to: req.user.email,
+        subject: `RSVP Confirmation for ${event.title}`,
+        html: `<p>Hi ${req.user.name},<br>You have successfully registered for <b>${event.title}</b>.</p>`
+      }
+    });
+    // Notify host/co-hosts (new registration)
+    const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])]
+      .filter(id => id != null) // Remove null/undefined values
+      .map(id => String(id)) // Safely convert to string
+      .filter(id => id !== userId); // Exclude the current user
+    await notifyUsers({
+      userIds: hostAndCoHosts,
+      type: 'rsvp',
+      message: `${req.user.name} has registered for your event: ${event.title}.`,
+      data: { eventId, userId },
+      emailOptionsFn: async (hostId) => null // Only in-app for hosts/co-hosts for now
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error registering for event.' });
   }
@@ -148,11 +173,25 @@ async function cancelRsvp(req, res) {
         if (nextLog) {
           nextLog.status = 'registered';
           await nextLog.save();
+          // Notify promoted user
+          const promotedUser = await User.findById(nextUserId);
+          if (promotedUser) {
+            await notifyUser({
+              userId: nextUserId,
+              type: 'rsvp',
+              message: `You have been promoted from waitlist to registered for ${event.title}.`,
+              data: { eventId, eventTitle: event.title },
+              emailOptions: {
+                to: promotedUser.email,
+                subject: `You're Registered for ${event.title}!`,
+                html: `<p>Hi ${promotedUser.name},<br>You have been promoted from the waitlist and are now registered for <b>${event.title}</b>!</p>`
+              }
+            });
+          }
         }
         // Remove from waitlist
         event.waitlist = event.waitlist.slice(1);
         await event.save();
-        // (Optional) Notify the promoted user by email
       }
     }
     console.log(`[AUDIT] Cancel RSVP: user ${userId} for event ${eventId}`);
@@ -236,15 +275,17 @@ async function scanQr(req, res) {
     // Fetch participant user for notification
     const participant = await User.findById(log.userId);
     if (participant) {
-      try {
-        await emailService.sendMail({
+      await notifyUser({
+        userId: log.userId,
+        type: 'attendance',
+        message: `Your attendance for ${event.title} has been marked. Thank you for participating!`,
+        data: { eventId, eventTitle: event.title },
+        emailOptions: {
           to: participant.email,
           subject: `Attendance Marked for ${event.title}`,
           html: `<p>Hi ${participant.name},<br>Your attendance for <b>${event.title}</b> has been successfully marked. Thank you for participating!</p>`
-        });
-      } catch (e) {
-        console.error('Failed to send attendance email:', e.message);
-      }
+        }
+      });
     }
     // Audit log
     console.log(`[AUDIT] Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}`);
@@ -305,16 +346,34 @@ async function nominateCoHost(req, res) {
     // Notify nominated user
     const nominatedUser = await User.findById(userId);
     if (nominatedUser) {
-      try {
-        await emailService.sendMail({
+      await notifyUser({
+        userId,
+        type: 'cohost',
+        message: `You have been nominated as a co-host for ${event.title}. Please wait for verifier approval.`,
+        data: { eventId, eventTitle: event.title },
+        emailOptions: {
           to: nominatedUser.email,
-          subject: `You have been nominated as a co-host for ${event.title}`,
-          html: `<p>Hi ${nominatedUser.name},<br>You have been nominated as a co-host for the event <b>${event.title}</b>. Please wait for approval from a verifier.</p>`
-        });
-      } catch (e) {
-        console.error('Failed to send co-host nomination email:', e.message);
-      }
+          subject: `Co-host Nomination for ${event.title}`,
+          html: `<p>Hi ${nominatedUser.name},<br>You have been nominated as a co-host for <b>${event.title}</b>. Please wait for approval from a verifier.</p>`
+        }
+      });
     }
+    // Notify verifiers (approval needed)
+    const verifiers = await User.find({ roles: 'verifier' });
+    await notifyUsers({
+      userIds: verifiers.map(v => v._id),
+      type: 'cohost',
+      message: `A new co-host nomination for event: ${event.title} requires your approval.`,
+      data: { eventId, userId },
+      emailOptionsFn: async (verifierId) => {
+        const verifier = verifiers.find(v => v._id.toString() === verifierId.toString());
+        return verifier ? {
+          to: verifier.email,
+          subject: `Co-host Nomination Approval Needed for ${event.title}`,
+          html: `<p>Hi ${verifier.name},<br>A new co-host nomination for <b>${event.title}</b> requires your approval.</p>`
+        } : null;
+      }
+    });
     // Audit log
     console.log(`[AUDIT] Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}`);
     res.json({ message: 'Co-host nomination submitted.' });
@@ -350,15 +409,17 @@ async function approveCoHost(req, res) {
     // Notify approved user
     const approvedUser = await User.findById(userId);
     if (approvedUser) {
-      try {
-        await emailService.sendMail({
+      await notifyUser({
+        userId,
+        type: 'cohost',
+        message: `Your co-host nomination for ${event.title} has been approved.`,
+        data: { eventId, eventTitle: event.title },
+        emailOptions: {
           to: approvedUser.email,
-          subject: `You have been approved as a co-host for ${event.title}`,
-          html: `<p>Hi ${approvedUser.name},<br>Your nomination as a co-host for the event <b>${event.title}</b> has been approved. You can now help manage the event.</p>`
-        });
-      } catch (e) {
-        console.error('Failed to send co-host approval email:', e.message);
-      }
+          subject: `Co-host Nomination Approved for ${event.title}`,
+          html: `<p>Hi ${approvedUser.name},<br>Your nomination as a co-host for <b>${event.title}</b> has been approved.</p>`
+        }
+      });
     }
     // Audit log
     console.log(`[AUDIT] Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}`);
@@ -391,15 +452,17 @@ async function rejectCoHost(req, res) {
     // Notify rejected user
     const rejectedUser = await User.findById(userId);
     if (rejectedUser) {
-      try {
-        await emailService.sendMail({
+      await notifyUser({
+        userId,
+        type: 'cohost',
+        message: `Your co-host nomination for ${event.title} has been rejected.`,
+        data: { eventId, eventTitle: event.title },
+        emailOptions: {
           to: rejectedUser.email,
-          subject: `Your co-host nomination for ${event.title} was rejected` ,
-          html: `<p>Hi ${rejectedUser.name},<br>Your nomination as a co-host for the event <b>${event.title}</b> has been rejected by a verifier.</p>`
-        });
-      } catch (e) {
-        console.error('Failed to send co-host rejection email:', e.message);
-      }
+          subject: `Co-host Nomination Rejected for ${event.title}`,
+          html: `<p>Hi ${rejectedUser.name},<br>Your nomination as a co-host for <b>${event.title}</b> has been rejected by a verifier.</p>`
+        }
+      });
     }
     // Audit log
     console.log(`[AUDIT] Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}`);
@@ -418,6 +481,21 @@ async function verifyEvent(req, res) {
     event.verificationStatus = 'approved';
     await event.save();
     res.json({ message: 'Event verified.' });
+    // Notify host of event verification result
+    const host = await User.findById(event.hostUserId);
+    if (host) {
+      await notifyUser({
+        userId: event.hostUserId,
+        type: 'event_verification',
+        message: `Your event '${event.title}' has been approved.`,
+        data: { eventId: event._id, status: 'approved' },
+        emailOptions: {
+          to: host.email,
+          subject: `Event Verification Approved: ${event.title}`,
+          html: `<p>Hi ${host.name},<br>Your event <b>${event.title}</b> has been <b>approved</b> by a verifier.</p>`
+        }
+      });
+    }
   } catch (err) {
     res.status(500).json({ error: 'Error verifying event.' });
   }

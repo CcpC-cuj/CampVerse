@@ -277,7 +277,7 @@ graph TD
 ### **Event Management**
 | Endpoint | Method | Request Body / Params | Success Response Example | Error Response Example |
 |----------|--------|----------------------|-------------------------|-----------------------|
-| `/hosts/events` | POST | `{ title, description, tags, type, organizer, schedule, isPaid, price, capacity }` | Event object (created event) | `{ error: 'Server error creating event.' }` |
+| `/hosts/events` | POST | `{ title, description, tags, type, organizer, schedule, isPaid }` | Event object (created event) | `{ error: 'Server error creating event.' }` |
 | `/hosts/events/:id` | PATCH | Event fields to update | Updated event object | `{ error: 'Event not found or not owned by user.' }` |
 | `/hosts/events/:id` | DELETE | None | `{ message: 'Event deleted.' }` | `{ error: 'Event not found or not owned by user.' }` |
 

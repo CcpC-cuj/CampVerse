@@ -16,6 +16,7 @@ const {
   verifyEvent,
   getGoogleCalendarLink
 } = require('../Controller/event');
+const { advancedEventSearch, getUserAnalytics, getPlatformInsights, getSearchAnalytics, getAdvancedEventAnalytics, getUserActivityTimeline, getGrowthTrends, getZeroResultSearches } = require('../Controller/analytics');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const { requireHostOrCoHost, requireVerifier } = require('../Middleware/permissions');
 
@@ -362,5 +363,23 @@ router.post('/:id/verify', authenticateToken, requireRole('verifier'), verifyEve
  *       404: { description: Not found }
  */
 router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
+
+// Advanced event search (filter, sort, paginate)
+router.get('/search', authenticateToken, advancedEventSearch);
+// User analytics (participation stats)
+router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
+// Platform insights (global stats)
+router.get('/platform-insights', authenticateToken, requireRole('platformAdmin'), getPlatformInsights);
+// Search analytics (admin only)
+router.get('/search-analytics', authenticateToken, requireRole('platformAdmin'), getSearchAnalytics);
+
+// Advanced event analytics
+router.get('/:id/advanced-analytics', authenticateToken, getAdvancedEventAnalytics);
+// User activity timeline
+router.get('/user-activity/:userId', authenticateToken, getUserActivityTimeline);
+// Platform growth trends (admin only)
+router.get('/admin/growth-trends', authenticateToken, requireRole('platformAdmin'), getGrowthTrends);
+// Zero-result searches (admin only)
+router.get('/admin/zero-result-searches', authenticateToken, requireRole('platformAdmin'), getZeroResultSearches);
 
 module.exports = router; 

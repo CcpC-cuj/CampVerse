@@ -6,6 +6,7 @@ const Institution = require('../Models/Institution');
 const axios = require('axios');
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer'); // Added for email notifications
+const { notifyUser } = require('../Services/notification');
 
 // ML Certificate Generation API Configuration
 const ML_API_CONFIG = {
@@ -173,6 +174,21 @@ async function generateCertificate(req, res) {
     if (mlResponse.success) {
       certificate.status = 'generated';
       certificate.certificateURL = mlResponse.certificateURL;
+      // Notify user of certificate generation
+      const user = await User.findById(userId);
+      if (user) {
+        await notifyUser({
+          userId,
+          type: 'certificate',
+          message: `Your certificate for ${event.title} is ready!`,
+          data: { eventId, certificateId: certificate._id, certificateURL: certificate.certificateURL },
+          emailOptions: {
+            to: user.email,
+            subject: `Your Certificate for ${event.title} is Ready!`,
+            html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${event.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`
+          }
+        });
+      }
     } else {
       certificate.status = 'failed';
     }
@@ -665,44 +681,22 @@ async function sendCertificateNotification(req, res) {
       return res.status(400).json({ error: 'Certificate must be generated before sending notification' });
     }
 
-    // Send email notification
-    try {
-      const transporter = nodemailer.createTransporter({
-        service: 'gmail',
-        port: 465,
-        secure: true,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASSWORD,
-        },
-      });
-
-      await transporter.sendMail({
-        from: 'CampVerse <noreply@campverse.com>',
+    await notifyUser({
+      userId: certificate.userId._id,
+      type: 'certificate',
+      message: `Your certificate for ${certificate.eventId.title} is ready!`,
+      data: { eventId: certificate.eventId._id, certificateId: certificate._id, certificateURL: certificate.certificateURL },
+      emailOptions: {
         to: certificate.userId.email,
         subject: `Your Certificate for ${certificate.eventId.title} is Ready!`,
-        html: `
-          <h2>🎉 Your Certificate is Ready!</h2>
-          <p>Dear ${certificate.userId.name},</p>
-          <p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p>
-          <p><strong>Certificate Type:</strong> ${certificate.type}</p>
-          <p><strong>Issued Date:</strong> ${certificate.issuedAt ? new Date(certificate.issuedAt).toLocaleDateString() : 'N/A'}</p>
-          <br>
-          <p>You can view and download your certificate from your CampVerse dashboard.</p>
-          <br>
-          <p>Best regards,<br>CampVerse Team</p>
-        `,
-      });
+        html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${certificate.userId.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`
+      }
+    });
 
-      return res.json({ 
-        message: 'Certificate notification sent successfully',
-        recipient: certificate.userId.email
-      });
-
-    } catch (emailError) {
-      console.error('Email notification error:', emailError);
-      return res.status(500).json({ error: 'Failed to send email notification' });
-    }
+    return res.json({ 
+      message: 'Certificate notification sent successfully',
+      recipient: certificate.userId.email
+    });
 
   } catch (error) {
     console.error('Send certificate notification error:', error);
