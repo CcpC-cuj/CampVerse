@@ -110,7 +110,36 @@ const getSearchAnalytics = async (req, res) => {
 
 // Advanced event analytics (demographics, engagement, certificates, top participants)
 const getAdvancedEventAnalytics = async (req, res) => {
-  res.json({ message: 'Advanced event analytics endpoint (placeholder)' });
+  try {
+    const eventId = req.params.eventId;
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+
+    const demographics = await EventParticipationLog.aggregate([
+      { $match: { eventId } },
+      { $group: { _id: '$userId', count: { $sum: 1 } } }
+    ]);
+
+    const engagement = await EventParticipationLog.countDocuments({ eventId });
+    const certificatesIssued = await Certificate.countDocuments({ eventId });
+
+    const topParticipants = await EventParticipationLog.aggregate([
+      { $match: { eventId } },
+      { $group: { _id: '$userId', participationCount: { $sum: 1 } } },
+      { $sort: { participationCount: -1 } },
+      { $limit: 5 }
+    ]);
+
+    res.json({
+      event: { id: event._id, title: event.title },
+      demographics,
+      engagement,
+      certificatesIssued,
+      topParticipants
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching advanced event analytics.' });
+  }
 };
 
 // User activity timeline (participation over time)
