@@ -135,7 +135,10 @@ async function rsvpEvent(req, res) {
       }
     });
     // Notify host/co-hosts (new registration)
-    const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])].map(id => id.toString()).filter(id => id !== userId);
+    const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])]
+      .filter(id => id != null) // Remove null/undefined values
+      .map(id => String(id)) // Safely convert to string
+      .filter(id => id !== userId); // Exclude the current user
     await notifyUsers({
       userIds: hostAndCoHosts,
       type: 'rsvp',
