@@ -1,3 +1,23 @@
+/*
+ * Google Drive Folder Structure (Planned/Current):
+ *
+ * 1. Event Images:
+ *    - Logos are uploaded to the folder with ID process.env.DRIVE_LOGO_FOLDER_ID
+ *    - Banners are uploaded to the folder with ID process.env.DRIVE_BANNER_FOLDER_ID
+ *    - This ensures separation of logo and banner images for all events.
+ *
+ * 2. Certificates (Planned):
+ *    - For each event, a new folder will be created in Drive, named after the event (e.g., "EventName_Certificates").
+ *    - All certificates generated for that event (by ML API) will be stored in this folder.
+ *    - Each certificate file will be linked to the corresponding user in the database, so users can access/download their certificates.
+ *    - (Future) Optionally, users may be able to browse/download their certificates directly from the event-named folder in Drive.
+ *
+ * 3. ML Integration:
+ *    - Certificate generation and event recommendations will be handled by external ML APIs.
+ *    - Backend endpoints will call these ML APIs and store results (certificates, recommendations) as needed.
+ *
+ * These plans are for reference/documentation and do not affect current code execution.
+ */
 const { google } = require('googleapis');
 const multer = require('multer');
 const stream = require('stream');

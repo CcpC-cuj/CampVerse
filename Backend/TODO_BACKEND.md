@@ -77,7 +77,7 @@ This document lists all remaining backend development tasks, based on the curren
 
 ## 🟠 **Event Attendance & Co-host Workflow (NEW)**
 - [ ] **RSVP attendance tracking:** When a user RSVPs for an event, they receive a QR code (via email and in-app). The QR code must be scanned and verified by the host or an approved co-host at the event to mark attendance. Only after verification will the user be eligible for a certificate.
-- [ ] **Co-host workflow:** Host can invite co-hosts for their event. Co-host invitations must be reviewed and approved by a verifier before co-hosts can verify attendance or manage the event.
+- [x] **Co-host workflow:** Host can invite co-hosts for their event. Co-host invitations must be reviewed and approved by a verifier before co-hosts can verify attendance or manage the event. (Email notifications and audit logging implemented)
 
 ## 🟣 **Certificate System**
 - [ ] **Restrict certificate generation:** Host can generate and share certificates only for users whose attendance has been verified (QR scanned). Backend must ensure only eligible users are sent for certificate generation (ML team handles actual generation).
