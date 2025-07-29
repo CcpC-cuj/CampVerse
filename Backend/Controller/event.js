@@ -1,9 +1,28 @@
+/*
+ * ML Integration & Drive Structure (Planned/Current):
+ *
+ * 1. Event Recommendation:
+ *    - Endpoint will call external ML API to fetch personalized event recommendations for users (for dashboard).
+ *    - Fallback logic should be present if ML API is unavailable.
+ *
+ * 2. Certificate Generation:
+ *    - Host selects/uploads certificate template for event.
+ *    - Certificate generation endpoint will call ML API, restricted to users marked as 'attended'.
+ *    - Generated certificates will be stored and linked to users.
+ *    - (Planned) All certificates for an event will be stored in a Drive folder named after the event.
+ *
+ * 3. Event Images:
+ *    - Logos and banners are uploaded to separate Drive folders (see driveService.js for details).
+ *
+ * These comments are for documentation and planning only; they do not affect code execution.
+ */
 const Event = require('../Models/Event');
 const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const { uploadEventImage } = require('../Services/driveService');
 const qrcode = require('qrcode');
-const nodemailer = require('nodemailer');
+const { createEmailService } = require('../Services/email');
+const emailService = createEmailService();
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
@@ -78,7 +97,7 @@ async function rsvpEvent(req, res) {
     // Waitlist logic
     const registeredCount = await EventParticipationLog.countDocuments({ eventId, status: 'registered' });
     const isFull = event.capacity && registeredCount >= event.capacity;
-    const status = isFull ? 'waitlisted' : 'registered';
+    let status = isFull ? 'waitlisted' : 'registered';
     // Generate QR token
     const qrToken = `${eventId}_${userId}_${Date.now()}`;
     // Generate QR code image
@@ -87,26 +106,65 @@ async function rsvpEvent(req, res) {
     const log = await EventParticipationLog.create({
       userId, eventId, status, qrToken
     });
+    // Update event waitlist if waitlisted
+    if (status === 'waitlisted') {
+      if (!event.waitlist.map(id => id.toString()).includes(userId.toString())) {
+        event.waitlist.push(userId);
+        await event.save();
+      }
+    } else {
+      // If user was previously waitlisted, remove from waitlist
+      event.waitlist = event.waitlist.filter(id => id.toString() !== userId.toString());
+      await event.save();
+    }
     // Email QR code to user
     await sendQrEmail(req.user.email, qrImage, event.title);
+    console.log(`[AUDIT] RSVP: user ${userId} for event ${eventId} as ${status}`);
     res.status(201).json({ message: `RSVP successful. Status: ${status}. QR code sent to email.`, qrImage });
   } catch (err) {
     res.status(500).json({ error: 'Error registering for event.' });
   }
 }
 
+// Cancel RSVP for event (user)
+async function cancelRsvp(req, res) {
+  try {
+    const { eventId } = req.body;
+    const userId = req.user.id;
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    // Remove participation log
+    const log = await EventParticipationLog.findOneAndDelete({ eventId, userId });
+    if (!log) return res.status(404).json({ error: 'No RSVP found for this user.' });
+    // Remove from event waitlist if present
+    event.waitlist = event.waitlist.filter(id => id.toString() !== userId.toString());
+    await event.save();
+    // If user was registered, promote first waitlisted user
+    if (log.status === 'registered') {
+      if (event.waitlist.length > 0) {
+        const nextUserId = event.waitlist[0];
+        // Update their participation log
+        const nextLog = await EventParticipationLog.findOne({ eventId, userId: nextUserId, status: 'waitlisted' });
+        if (nextLog) {
+          nextLog.status = 'registered';
+          await nextLog.save();
+        }
+        // Remove from waitlist
+        event.waitlist = event.waitlist.slice(1);
+        await event.save();
+        // (Optional) Notify the promoted user by email
+      }
+    }
+    console.log(`[AUDIT] Cancel RSVP: user ${userId} for event ${eventId}`);
+    res.json({ message: 'RSVP cancelled.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error cancelling RSVP.' });
+  }
+}
+
 // Email QR code to user
 async function sendQrEmail(to, qrImage, eventTitle) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-  await transporter.sendMail({
+  await emailService.sendMail({
     from: 'CampVerse <noreply@campverse.com>',
     to,
     subject: `Your Ticket for ${eventTitle}`,
@@ -143,13 +201,56 @@ async function getParticipants(req, res) {
 async function scanQr(req, res) {
   try {
     const { eventId, qrToken } = req.body;
+    if (!eventId || !qrToken) {
+      return res.status(400).json({ error: 'eventId and qrToken are required.' });
+    }
+    // Find event and check permissions
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    const userId = req.user.id;
+    const isHost = event.hostUserId && event.hostUserId.toString() === userId;
+    const isCoHost = event.coHosts && event.coHosts.map(id => id.toString()).includes(userId);
+    if (!isHost && !isCoHost) {
+      return res.status(403).json({ error: 'Only host or approved co-host can scan attendance for this event.' });
+    }
+    // Brute-force protection (simple in-memory, per user per event)
+    if (!global.scanRateLimit) global.scanRateLimit = {};
+    const key = `${userId}_${eventId}`;
+    const now = Date.now();
+    if (global.scanRateLimit[key] && now - global.scanRateLimit[key] < 2000) {
+      return res.status(429).json({ error: 'Too many scans. Please wait a moment.' });
+    }
+    global.scanRateLimit[key] = now;
+    // Find participation log
     const log = await EventParticipationLog.findOne({ eventId, qrToken });
     if (!log) return res.status(404).json({ error: 'Invalid QR code.' });
+    if (log.status === 'attended') {
+      return res.status(409).json({ error: 'Attendance already marked for this user.' });
+    }
+    // Mark attendance
     log.status = 'attended';
     log.attendanceTimestamp = new Date();
+    log.attendanceMarkedBy = userId;
+    log.attendanceMarkedAt = new Date();
     await log.save();
+    // Fetch participant user for notification
+    const participant = await User.findById(log.userId);
+    if (participant) {
+      try {
+        await emailService.sendMail({
+          to: participant.email,
+          subject: `Attendance Marked for ${event.title}`,
+          html: `<p>Hi ${participant.name},<br>Your attendance for <b>${event.title}</b> has been successfully marked. Thank you for participating!</p>`
+        });
+      } catch (e) {
+        console.error('Failed to send attendance email:', e.message);
+      }
+    }
+    // Audit log
+    console.log(`[AUDIT] Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}`);
     res.json({ message: 'Attendance marked.' });
   } catch (err) {
+    console.error('Error in scanQr:', err);
     res.status(500).json({ error: 'Error marking attendance.' });
   }
 }
@@ -186,12 +287,40 @@ async function getEventAnalytics(req, res) {
 async function nominateCoHost(req, res) {
   try {
     const { eventId, userId } = req.body;
+    if (!eventId || !userId) {
+      return res.status(400).json({ error: 'eventId and userId are required.' });
+    }
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+    // Only host can nominate
+    if (event.hostUserId.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Only the main host can nominate co-hosts.' });
+    }
+    // Prevent duplicate nominations
+    if (event.coHostRequests.some(r => r.userId.toString() === userId && r.status === 'pending')) {
+      return res.status(400).json({ error: 'Co-host nomination already pending.' });
+    }
     event.coHostRequests.push({ userId, status: 'pending', requestedBy: req.user.id, requestedAt: new Date() });
     await event.save();
+    // Notify nominated user
+    const User = require('../Models/User');
+    const nominatedUser = await User.findById(userId);
+    if (nominatedUser) {
+      try {
+        await emailService.sendMail({
+          to: nominatedUser.email,
+          subject: `You have been nominated as a co-host for ${event.title}`,
+          html: `<p>Hi ${nominatedUser.name},<br>You have been nominated as a co-host for the event <b>${event.title}</b>. Please wait for approval from a verifier.</p>`
+        });
+      } catch (e) {
+        console.error('Failed to send co-host nomination email:', e.message);
+      }
+    }
+    // Audit log
+    console.log(`[AUDIT] Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}`);
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
+    console.error('Error in nominateCoHost:', err);
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -200,17 +329,44 @@ async function nominateCoHost(req, res) {
 async function approveCoHost(req, res) {
   try {
     const { eventId, userId } = req.body;
+    if (!eventId || !userId) {
+      return res.status(400).json({ error: 'eventId and userId are required.' });
+    }
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
-    const reqIndex = event.coHostRequests.findIndex(r => r.userId.equals(userId) && r.status === 'pending');
+    // Only verifier can approve
+    if (!req.user.roles.includes('verifier') && !req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ error: 'Only verifiers or platform admins can approve co-hosts.' });
+    }
+    const reqIndex = event.coHostRequests.findIndex(r => r.userId.toString() === userId && r.status === 'pending');
     if (reqIndex === -1) return res.status(404).json({ error: 'Co-host request not found.' });
     event.coHostRequests[reqIndex].status = 'approved';
     event.coHostRequests[reqIndex].approvedBy = req.user.id;
     event.coHostRequests[reqIndex].approvedAt = new Date();
-    event.coHosts.push(userId);
+    // Add to coHosts if not already present
+    if (!event.coHosts.map(id => id.toString()).includes(userId)) {
+      event.coHosts.push(userId);
+    }
     await event.save();
+    // Notify approved user
+    const User = require('../Models/User');
+    const approvedUser = await User.findById(userId);
+    if (approvedUser) {
+      try {
+        await emailService.sendMail({
+          to: approvedUser.email,
+          subject: `You have been approved as a co-host for ${event.title}`,
+          html: `<p>Hi ${approvedUser.name},<br>Your nomination as a co-host for the event <b>${event.title}</b> has been approved. You can now help manage the event.</p>`
+        });
+      } catch (e) {
+        console.error('Failed to send co-host approval email:', e.message);
+      }
+    }
+    // Audit log
+    console.log(`[AUDIT] Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}`);
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
+    console.error('Error in approveCoHost:', err);
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -219,16 +375,40 @@ async function approveCoHost(req, res) {
 async function rejectCoHost(req, res) {
   try {
     const { eventId, userId } = req.body;
+    if (!eventId || !userId) {
+      return res.status(400).json({ error: 'eventId and userId are required.' });
+    }
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
-    const reqIndex = event.coHostRequests.findIndex(r => r.userId.equals(userId) && r.status === 'pending');
+    // Only verifier can reject
+    if (!req.user.roles.includes('verifier') && !req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ error: 'Only verifiers or platform admins can reject co-hosts.' });
+    }
+    const reqIndex = event.coHostRequests.findIndex(r => r.userId.toString() === userId && r.status === 'pending');
     if (reqIndex === -1) return res.status(404).json({ error: 'Co-host request not found.' });
     event.coHostRequests[reqIndex].status = 'rejected';
     event.coHostRequests[reqIndex].approvedBy = req.user.id;
     event.coHostRequests[reqIndex].approvedAt = new Date();
     await event.save();
+    // Notify rejected user
+    const User = require('../Models/User');
+    const rejectedUser = await User.findById(userId);
+    if (rejectedUser) {
+      try {
+        await emailService.sendMail({
+          to: rejectedUser.email,
+          subject: `Your co-host nomination for ${event.title} was rejected` ,
+          html: `<p>Hi ${rejectedUser.name},<br>Your nomination as a co-host for the event <b>${event.title}</b> has been rejected by a verifier.</p>`
+        });
+      } catch (e) {
+        console.error('Failed to send co-host rejection email:', e.message);
+      }
+    }
+    // Audit log
+    console.log(`[AUDIT] Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}`);
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
+    console.error('Error in rejectCoHost:', err);
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -266,6 +446,7 @@ module.exports = {
   updateEvent,
   deleteEvent,
   rsvpEvent,
+  cancelRsvp,
   getParticipants,
   scanQr,
   getEventAnalytics,

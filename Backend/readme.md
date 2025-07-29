@@ -51,6 +51,146 @@ graph TD
 
 ---
 
+## 📚 API Reference & Frontend Integration Guide
+
+### Authentication & User Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/users/register` | POST | Register new user (OTP sent to email) | Public |
+| `/api/users/verify` | POST | Verify OTP and complete registration | Public |
+| `/api/users/login` | POST | Login with email/password | Public |
+| `/api/users/google-signin` | POST | Login/Register with Google | Public |
+| `/api/users/me` | GET | Get current user profile | Authenticated |
+| `/api/users/me` | PATCH | Update current user profile | Authenticated |
+| `/api/users/updatePreferences` | POST | Update user preferences | Authenticated |
+| `/api/users/:id` | GET | Get user by ID | Self/Admin |
+| `/api/users/:id` | PATCH | Update user by ID | Self/Admin |
+| `/api/users/:id` | DELETE | Delete user | Self/Admin |
+| `/api/users/forgot-password` | POST | Request password reset | Public |
+| `/api/users/reset-password` | POST | Reset password with token | Public |
+| `/api/users/me/request-host` | POST | Request host access | Authenticated |
+| `/api/users/host-requests/pending` | GET | List pending host requests | Verifier |
+| `/api/users/host-requests/:id/approve` | POST | Approve host request | Verifier |
+| `/api/users/host-requests/:id/reject` | POST | Reject host request | Verifier |
+| `/api/users/:id/grant-host` | POST | Grant host access | PlatformAdmin |
+| `/api/users/:id/grant-verifier` | POST | Grant verifier access | PlatformAdmin |
+| `/api/users/:id/certificates` | GET | Get user certificates | Self/Admin/Host |
+| `/api/users/:id/achievements` | GET | Get user achievements | Self/Admin/Host |
+| `/api/users/:id/events` | GET | Get user events | Self/Admin/Host |
+| `/api/users/:id/badges` | GET | Get user badges | Self/Admin/Host |
+| `/api/users/dashboard` | GET | Get user dashboard/stats | Authenticated |
+
+### Host Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/hosts/dashboard` | GET | Host analytics dashboard | Host |
+| `/api/hosts/my-events` | GET | List events hosted by user | Host |
+| `/api/hosts/events` | POST | Create new event | Host |
+| `/api/hosts/events/:id` | PATCH | Update event | Host |
+| `/api/hosts/events/:id` | DELETE | Delete event | Host |
+| `/api/hosts/events/:id/participants` | GET | Get event participants | Host |
+
+### Event Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/events` | POST | Create event (with files) | Host |
+| `/api/events/:id` | GET | Get event by ID | Authenticated |
+| `/api/events/:id` | PATCH | Update event (with files) | Host/Co-host |
+| `/api/events/:id` | DELETE | Delete event | Host/Co-host |
+| `/api/events/rsvp` | POST | RSVP/register for event | Authenticated |
+| `/api/events/cancel-rsvp` | POST | Cancel RSVP | Authenticated |
+| `/api/events/:id/participants` | GET | Get event participants | Host/Co-host |
+| `/api/events/scan` | POST | Scan QR to mark attendance | Host/Co-host |
+| `/api/events/:id/analytics` | GET | Event analytics | Host/Co-host |
+| `/api/events/nominate-cohost` | POST | Nominate co-host | Host |
+| `/api/events/approve-cohost` | POST | Approve co-host nomination | Verifier/Admin |
+| `/api/events/reject-cohost` | POST | Reject co-host nomination | Verifier/Admin |
+| `/api/events/:id/verify` | POST | Verify event | Verifier |
+| `/api/events/:id/calendar-link` | GET | Google Calendar link | Authenticated |
+
+### Certificate Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/certificates/generate` | POST | Generate certificate for attended user | Host/Co-host/Admin |
+| `/api/certificates/generate-batch` | POST | Batch generate certificates | Host/Co-host/Admin |
+| `/api/certificates/my` | GET | Get user's certificates | Authenticated |
+| `/api/certificates/user/:userId` | GET | Get certificates for user | Admin/Host |
+| `/api/certificates/:id` | GET | Get certificate by ID | Authenticated |
+| `/api/certificates/verify` | POST | Verify certificate QR | Public |
+| `/api/certificates/export-attended/:eventId` | GET | Export attended users | Host/Co-host/Admin |
+| `/api/certificates/:certificateId/retry` | POST | Retry failed certificate | Host/Co-host/Admin |
+| `/api/certificates/:eventId/bulk-retry` | POST | Bulk retry failed certificates | Host/Co-host/Admin |
+| `/api/certificates/dashboard` | GET | Certificate dashboard (filter, paginate) | Host/Co-host/Admin |
+| `/api/certificates/progress/:eventId` | GET | Certificate generation progress | Host/Co-host/Admin |
+| `/api/certificates/stats` | GET | Certificate stats | Authenticated |
+| `/api/certificates/:certificateId/notify` | POST | Send certificate notification | Host/Co-host/Admin |
+
+### Institution Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/institutions` | POST | Create institution | PlatformAdmin |
+| `/api/institutions` | GET | List all institutions | PlatformAdmin |
+| `/api/institutions/:id` | GET | Get institution by ID | PlatformAdmin/Self/Institution |
+| `/api/institutions/:id` | PATCH | Update institution | PlatformAdmin |
+| `/api/institutions/:id` | DELETE | Delete institution | PlatformAdmin |
+| `/api/institutions/:id/request-verification` | POST | Request institution verification | Student |
+| `/api/institutions/:id/approve-verification` | POST | Approve institution verification | PlatformAdmin |
+| `/api/institutions/:id/reject-verification` | POST | Reject institution verification | PlatformAdmin |
+| `/api/institutions/:id/analytics` | GET | Institution analytics | PlatformAdmin/Institution/Self |
+| `/api/institutions/:id/dashboard` | GET | Institution dashboard | PlatformAdmin/Institution/Self |
+
+### Recommendation Module
+| Endpoint | Method | Purpose | Access |
+|----------|--------|---------|--------|
+| `/api/recommendations/events` | GET | Personalized event recommendations | Authenticated |
+| `/api/recommendations/events/:eventId/similar` | GET | Get similar events | Authenticated |
+| `/api/recommendations/preferences` | POST | Update user preferences from event interaction | Authenticated |
+
+### Notification Module (Planned/Partial)
+- **Email notifications** are sent for OTP, host requests, certificate generation, etc.
+- **In-app notifications**: Planned for future (see `/Services/notification.js`).
+
+---
+
+### Special Flows & Frontend Integration
+
+#### Host Request & Verification
+1. User requests host access (`/users/me/request-host`).
+2. Verifier sees pending requests (`/users/host-requests/pending`).
+3. Verifier approves/rejects (`/users/host-requests/:id/approve` or `/reject`).
+4. User becomes host and can create/manage events.
+
+#### Event RSVP & Attendance
+1. User RSVPs (`/events/rsvp`), receives QR code.
+2. Host/Co-host scans QR (`/events/scan`) to mark attendance.
+3. Attendance enables certificate eligibility.
+
+#### Certificate Generation
+1. Host/Co-host/Admin generates certificates (`/certificates/generate` or `/generate-batch`).
+2. Users can view/download certificates (`/certificates/my`).
+3. QR code verification (`/certificates/verify`).
+
+#### Recommendations
+- Users get personalized event recommendations and similar events.
+
+---
+
+### Access Control
+- **JWT required** for all protected endpoints.
+- **Role-based access** enforced for sensitive actions (host, verifier, admin, etc.).
+- **Swagger UI**: Use `/api-docs` for live testing and schema details.
+
+---
+
+### For Frontend Developers
+- **All endpoints and request/response formats are available in Swagger UI.**
+- **Role-based flows:** Make sure to handle JWT and user roles in the frontend.
+- **Error handling:** All endpoints return clear error messages and status codes.
+- **Pagination, filtering, and analytics** are available for dashboards and lists.
+- **File uploads:** Use `multipart/form-data` for event creation/updating with images.
+
+---
+
 ## 🚀 Development Status
 
 ### **✅ Completed Phases**
@@ -201,17 +341,52 @@ graph TD
 |--------|-----------------------------------------------|---------------------------------------------|----------------------|
 | POST   | /api/institutions                             | Create a new institution                    | platformAdmin        |
 | GET    | /api/institutions                             | Get all institutions                        | platformAdmin        |
-| GET    | /api/institutions/:id                         | Get institution by ID                       | platformAdmin/self   |
+| GET    | /api/institutions/:id                         | Get institution by ID                       | platformAdmin/self/institution |
 | PATCH  | /api/institutions/:id                         | Update institution                          | platformAdmin        |
 | DELETE | /api/institutions/:id                         | Delete institution                          | platformAdmin        |
 | POST   | /api/institutions/:id/request-verification    | Request institution verification            | student              |
 | POST   | /api/institutions/:id/approve-verification    | Approve institution verification            | platformAdmin        |
 | POST   | /api/institutions/:id/reject-verification     | Reject institution verification             | platformAdmin        |
-| GET    | /api/institutions/:id/analytics               | Get institution analytics (students/events) | platformAdmin/self   |
+| GET    | /api/institutions/:id/analytics               | Get institution analytics (students/events) | platformAdmin/institution/self |
+| GET    | /api/institutions/:id/dashboard               | Get institution dashboard (summary, engagement, breakdowns) | platformAdmin/institution/self |
 
 - **All endpoints require JWT authentication.**
 - Role-based access enforced for all routes.
-- Analytics endpoint returns student and event counts for the institution.
+- The analytics endpoint returns student and event counts for the institution.
+- The dashboard endpoint returns a rich summary and breakdown for the institution (see below).
+
+### **Example Responses**
+
+#### **GET /api/institutions/:id/analytics**
+```json
+{
+  "studentCount": 2,
+  "eventCount": 0
+}
+```
+
+#### **GET /api/institutions/:id/dashboard**
+```json
+{
+  "studentCount": 2,
+  "eventCount": 0,
+  "participationCount": 0,
+  "participationRate": 0,
+  "certificateCount": 0,
+  "activeStudents": 0,
+  "inactiveStudents": 2,
+  "recentEvents": [],
+  "eventBreakdown": [],
+  "topEvents": [],
+  "topStudents": [],
+  "eventTypes": {},
+  "pendingVerifications": { "students": 2, "events": 0 },
+  "feedback": { "averageRating": null, "recentComments": [] }
+}
+```
+
+- The dashboard endpoint is ideal for powering institution analytics and summary cards in the frontend.
+- The analytics endpoint is a lightweight version for simple stats.
 
 ### **Tested Endpoints**
 - All institution endpoints have been tested for correct access, validation, and response.

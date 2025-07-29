@@ -13,6 +13,10 @@ const eventParticipationLogSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ['success', 'pending', 'failed'], default: 'success' },
   attendanceTimestamp: { type: Date },
   qrToken: { type: String }, // Secure token for QR code validation
+  attendanceMarkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Host/co-host who scanned
+  attendanceMarkedAt: { type: Date }, // When attendance was marked (scan time)
 });
+
+eventParticipationLogSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 
 module.exports = mongoose.model('EventParticipationLog', eventParticipationLogSchema);
