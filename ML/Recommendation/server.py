@@ -14,7 +14,7 @@ try:
     with open('model/events_similarity.pkl', 'rb') as f:
         similarity_matrix = pickle.load(f)
     print("Loaded pre-trained similarity matrix")
-except:
+except FileNotFoundError:
     similarity_matrix = None
     print("No pre-trained model found, using dynamic calculation")
 
