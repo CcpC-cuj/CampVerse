@@ -191,7 +191,33 @@ const getGrowthTrends = async (req, res) => {
 
 // Zero-result searches (admin only)
 const getZeroResultSearches = async (req, res) => {
-  res.json({ message: 'Zero-result searches endpoint (placeholder)' });
+  try {
+    // Check if the user is an admin (placeholder logic, replace with actual authentication/authorization)
+    if (!req.user || !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admins only.' });
+    }
+
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Query for zero-result searches
+    const filter = { resultsCount: 0 }; // Assuming `resultsCount` field tracks the number of results
+    const total = await SearchAnalytics.countDocuments(filter);
+    const zeroResultSearches = await SearchAnalytics.find(filter)
+      .sort({ timestamp: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
+      .populate('userId', 'name email'); // Populate user details if needed
+
+    res.json({
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      zeroResultSearches
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching zero-result searches.' });
+  }
 };
 
 module.exports = {
