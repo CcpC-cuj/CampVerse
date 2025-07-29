@@ -258,8 +258,8 @@ async function register(req, res) {
 
     const tempData = { name, phone, password, otp, institutionId: institution._id, institutionIsVerified: institution.isVerified };
     await redisClient.setEx(email, 600, JSON.stringify(tempData));
-    
-    return res.status(200).json({ message: 'OTP sent to email.', otp: otp }); // Include OTP in response for testing
+
+    // return res.status(200).json({ message: 'OTP sent to email.', otp: otp }); // Include OTP in response for testing
     return res.status(200).json({ message: 'OTP sent to email.' }); // Do NOT include OTP in response
   } catch (err) {
     logger.error('Register error:', err);
