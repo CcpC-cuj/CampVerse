@@ -18,6 +18,8 @@ const swaggerJsdoc = require('swagger-jsdoc');
 const institutionRoutes = require('./Routes/institutionRoutes');
 const eventRoutes = require('./Routes/eventRoutes');
 const certificateRoutes = require('./Routes/certificateRoutes');
+const recommendationRoutes = require('./Routes/recommendationRoutes');
+const errorHandler = require('./Middleware/errorHandler');
 
 
 const app = express();
@@ -93,18 +95,30 @@ app.use((req, res, next) => {
   next();
 });
 
+// Validate required environment variables
+['JWT_SECRET','EMAIL_USER','EMAIL_PASSWORD'].forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+});
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/hosts', hostRoutes);
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // Apply rate limiter to sensitive routes
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/google-signin', authLimiter);
 app.use('/api/users/verify', authLimiter);
+
+// Centralized error handler (should be last)
+app.use(errorHandler);
 
 // Connect MongoDB and start server
 mongoose.connect(process.env.MONGO_URI)

@@ -5,8 +5,10 @@ const EventParticipationLog = require('../Models/EventParticipationLog');
 const Event = require('../Models/Event');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { otpgenrater } = require('../Services/otp');
-const { emailsender } = require('../Services/email');
+const { otpgenrater, createOtpService } = require('../Services/otp');
+const otpService = createOtpService();
+const { createEmailService } = require('../Services/email');
+const emailService = createEmailService();
 const { notifyHostRequest, notifyHostStatusUpdate } = require('../Services/notification');
 const { createClient } = require('redis');
 const { OAuth2Client } = require('google-auth-library');
@@ -24,7 +26,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Academic email domain check (.ac.in or .edu.in, flexible for subdomains)
-const isAcademicEmail = (email) => /@[\w.-]+\.(ac|edu)\.in$/i.test(email);
+const isAcademicEmail = (email) => /@[\w.-]+\.(ac|edu)\.in$/i.test(email) || /@[\w.-]+\.edu$/i.test(email);
 
 function extractDomain(email) {
   return email.split('@')[1].toLowerCase();
@@ -94,7 +96,7 @@ async function googleSignIn(req, res) {
         mockName = mockEmail.split('@')[0].replace(/\./g, ' ').replace(/\d+/g, '').replace(/(^|\s)\S/g, l => l.toUpperCase());
       }
       if (!isAcademicEmail(mockEmail)) {
-        return res.status(400).json({ error: 'Only academic emails (.ac.in or .edu.in) are allowed.', forceLogout: true });
+        return res.status(400).json({ error: 'Only academic emails (.ac.in, .edu.in, or .edu) are allowed.', forceLogout: true });
       }
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
@@ -137,7 +139,7 @@ async function googleSignIn(req, res) {
         return res.status(400).json({ error: 'Email not provided by Google.' });
       }
       if (!isAcademicEmail(email)) {
-        return res.status(400).json({ error: 'Only academic emails (.ac.in or .edu.in) are allowed.', forceLogout: true });
+        return res.status(400).json({ error: 'Only academic emails (.ac.in, .edu.in, or .edu) are allowed.', forceLogout: true });
       }
       let user = await User.findOne({ email });
       if (!user) {
@@ -203,7 +205,7 @@ async function register(req, res) {
     }
 
     if (!isAcademicEmail(email)) {
-      return res.status(400).json({ error: 'Only academic emails (.ac.in or .edu.in) are allowed.' });
+      return res.status(400).json({ error: 'Only academic emails (.ac.in, .edu.in, or .edu) are allowed.' });
     }
 
     if (!validatePhone(phone)) {
@@ -219,12 +221,16 @@ async function register(req, res) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
 
-    const otp = otpgenrater();
+    const otp = otpService.generate();
     
     // For testing purposes, skip email sending and log OTP
     
     try {
-      await emailsender(name, email, otp);
+      await emailService.sendMail({
+        to: email,
+        subject: 'Your Verification Code',
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`
+      });
     } catch (emailError) {
       console.log('Email sending failed, but continuing with OTP storage:', emailError.message);
     }
@@ -697,7 +703,11 @@ async function forgotPassword(req, res) {
     await redisClient.setEx(`reset:${token}`, 3600, email); // 1 hour expiry
     // Send email with reset link (replace with your frontend URL)
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-    await emailsender(user.name, user.email, `Reset your password: ${resetUrl}`);
+    await emailService.sendMail({
+      to: user.email,
+      subject: 'Password Reset',
+      text: `Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
+    });
     return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (err) {
     logger.error('ForgotPassword error:', err);
@@ -948,9 +958,13 @@ async function resendOtp(req, res) {
     if (!tempStr) return res.status(400).json({ error: 'No pending registration found for this email.' });
 
     const tempData = JSON.parse(tempStr);
-    const otp = otpgenrater();
+    const otp = otpService.generate();
     try {
-      await emailsender(tempData.name, email, otp);
+      await emailService.sendMail({
+        to: email,
+        subject: 'Your Verification Code',
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`
+      });
     } catch (emailError) {
       console.log('Email sending failed, but continuing with OTP storage:', emailError.message);
     }

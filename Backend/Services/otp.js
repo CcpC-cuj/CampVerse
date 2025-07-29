@@ -3,4 +3,13 @@ function otpgenrater  (){
     const otp = randomInt(100000, 999999).toString();
     return otp;
 }
-module.exports = {otpgenrater};
+
+function createOtpService() {
+  return {
+    generate() {
+      return randomInt(100000, 999999).toString();
+    }
+  };
+}
+
+module.exports = { otpgenrater, createOtpService };

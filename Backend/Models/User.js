@@ -28,7 +28,7 @@ const verifierEligibilityStatusSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$/ },
+  email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$|\.edu$/ },
   phone: { type: String, required: true },
   Gender: { type: String },
   DOB: { type: Date },
@@ -59,5 +59,7 @@ userSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
+
+userSchema.index({ institutionId: 1 });
 
 module.exports = mongoose.model('User', userSchema);

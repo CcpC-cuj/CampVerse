@@ -6,6 +6,7 @@ const {
   updateEvent,
   deleteEvent,
   rsvpEvent,
+  cancelRsvp,
   getParticipants,
   scanQr,
   getEventAnalytics,
@@ -16,6 +17,7 @@ const {
   getGoogleCalendarLink
 } = require('../Controller/event');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
+const { requireHostOrCoHost, requireVerifier } = require('../Middleware/permissions');
 
 const router = express.Router();
 
@@ -95,7 +97,7 @@ router.get('/:id', authenticateToken, getEventById);
  *       200: { description: Event updated }
  *       403: { description: Forbidden }
  */
-router.patch('/:id', authenticateToken, requireRole('host'), upload.fields([{ name: 'logo' }, { name: 'banner' }]), updateEvent);
+router.patch('/:id', authenticateToken, requireHostOrCoHost, upload.fields([{ name: 'logo' }, { name: 'banner' }]), updateEvent);
 
 /**
  * @swagger
@@ -115,7 +117,7 @@ router.patch('/:id', authenticateToken, requireRole('host'), upload.fields([{ na
  *       200: { description: Event deleted }
  *       403: { description: Forbidden }
  */
-router.delete('/:id', authenticateToken, requireRole('host'), deleteEvent);
+router.delete('/:id', authenticateToken, requireHostOrCoHost, deleteEvent);
 
 /**
  * @swagger
@@ -142,6 +144,32 @@ router.post('/rsvp', authenticateToken, rsvpEvent);
 
 /**
  * @swagger
+ * /api/events/cancel-rsvp:
+ *   post:
+ *     summary: Cancel RSVP for event (user)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - eventId
+ *             properties:
+ *               eventId:
+ *                 type: string
+ *     responses:
+ *       200: { description: RSVP cancelled }
+ *       404: { description: No RSVP found }
+ *       500: { description: Error cancelling RSVP }
+ */
+router.post('/cancel-rsvp', authenticateToken, cancelRsvp);
+
+/**
+ * @swagger
  * /api/events/{id}/participants:
  *   get:
  *     summary: Get event participants (host/co-host)
@@ -158,7 +186,7 @@ router.post('/rsvp', authenticateToken, rsvpEvent);
  *       200: { description: List of participants }
  *       403: { description: Forbidden }
  */
-router.get('/:id/participants', authenticateToken, requireRole('host'), getParticipants);
+router.get('/:id/participants', authenticateToken, requireHostOrCoHost, getParticipants);
 
 /**
  * @swagger
@@ -182,7 +210,7 @@ router.get('/:id/participants', authenticateToken, requireRole('host'), getParti
  *       200: { description: Attendance marked }
  *       403: { description: Forbidden }
  */
-router.post('/scan', authenticateToken, requireRole('host'), scanQr);
+router.post('/scan', authenticateToken, requireHostOrCoHost, scanQr);
 
 /**
  * @swagger
@@ -208,7 +236,7 @@ router.get('/:id/analytics', authenticateToken, requireRole('host'), getEventAna
  * @swagger
  * /api/events/nominate-cohost:
  *   post:
- *     summary: Nominate co-host (main host)
+ *     summary: Nominate a co-host for an event (host only)
  *     tags: [Event]
  *     security:
  *       - bearerAuth: []
@@ -218,21 +246,28 @@ router.get('/:id/analytics', authenticateToken, requireRole('host'), getEventAna
  *         application/json:
  *           schema:
  *             type: object
- *             required: [eventId, userId]
+ *             required:
+ *               - eventId
+ *               - userId
  *             properties:
- *               eventId: { type: string }
- *               userId: { type: string }
+ *               eventId:
+ *                 type: string
+ *               userId:
+ *                 type: string
  *     responses:
  *       200: { description: Co-host nomination submitted }
- *       403: { description: Forbidden }
+ *       400: { description: Co-host nomination already pending }
+ *       403: { description: Only host can nominate }
+ *       404: { description: Event not found }
+ *       500: { description: Error nominating co-host }
  */
-router.post('/nominate-cohost', authenticateToken, requireRole('host'), nominateCoHost);
+router.post('/nominate-cohost', authenticateToken, nominateCoHost);
 
 /**
  * @swagger
  * /api/events/approve-cohost:
  *   post:
- *     summary: Approve co-host (verifier)
+ *     summary: Approve a co-host nomination (verifier/platformAdmin only)
  *     tags: [Event]
  *     security:
  *       - bearerAuth: []
@@ -242,21 +277,27 @@ router.post('/nominate-cohost', authenticateToken, requireRole('host'), nominate
  *         application/json:
  *           schema:
  *             type: object
- *             required: [eventId, userId]
+ *             required:
+ *               - eventId
+ *               - userId
  *             properties:
- *               eventId: { type: string }
- *               userId: { type: string }
+ *               eventId:
+ *                 type: string
+ *               userId:
+ *                 type: string
  *     responses:
  *       200: { description: Co-host approved }
- *       403: { description: Forbidden }
+ *       403: { description: Only verifier/platformAdmin can approve }
+ *       404: { description: Co-host request not found }
+ *       500: { description: Error approving co-host }
  */
-router.post('/approve-cohost', authenticateToken, requireRole('verifier'), approveCoHost);
+router.post('/approve-cohost', authenticateToken, requireVerifier, approveCoHost);
 
 /**
  * @swagger
  * /api/events/reject-cohost:
  *   post:
- *     summary: Reject co-host (verifier)
+ *     summary: Reject a co-host nomination (verifier/platformAdmin only)
  *     tags: [Event]
  *     security:
  *       - bearerAuth: []
@@ -266,15 +307,21 @@ router.post('/approve-cohost', authenticateToken, requireRole('verifier'), appro
  *         application/json:
  *           schema:
  *             type: object
- *             required: [eventId, userId]
+ *             required:
+ *               - eventId
+ *               - userId
  *             properties:
- *               eventId: { type: string }
- *               userId: { type: string }
+ *               eventId:
+ *                 type: string
+ *               userId:
+ *                 type: string
  *     responses:
  *       200: { description: Co-host rejected }
- *       403: { description: Forbidden }
+ *       403: { description: Only verifier/platformAdmin can reject }
+ *       404: { description: Co-host request not found }
+ *       500: { description: Error rejecting co-host }
  */
-router.post('/reject-cohost', authenticateToken, requireRole('verifier'), rejectCoHost);
+router.post('/reject-cohost', authenticateToken, requireVerifier, rejectCoHost);
 
 /**
  * @swagger

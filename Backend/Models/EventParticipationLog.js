@@ -15,4 +15,6 @@ const eventParticipationLogSchema = new mongoose.Schema({
   qrToken: { type: String }, // Secure token for QR code validation
 });
 
+eventParticipationLogSchema.index({ userId: 1, eventId: 1 }, { unique: true });
+
 module.exports = mongoose.model('EventParticipationLog', eventParticipationLogSchema);

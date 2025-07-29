@@ -40,8 +40,13 @@ const eventSchema = new mongoose.Schema({
     approvedAt: { type: Date },
     remarks: { type: String }
   }],
+  waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Explicit waitlist tracking
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
+
+eventSchema.index({ institutionId: 1 });
+eventSchema.index({ hostUserId: 1 });
+eventSchema.index({ coHosts: 1 });
 
 module.exports = mongoose.model('Event', eventSchema);
