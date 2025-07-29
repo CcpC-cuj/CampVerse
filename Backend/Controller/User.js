@@ -258,8 +258,9 @@ async function register(req, res) {
 
     const tempData = { name, phone, password, otp, institutionId: institution._id, institutionIsVerified: institution.isVerified };
     await redisClient.setEx(email, 600, JSON.stringify(tempData));
-
+    
     return res.status(200).json({ message: 'OTP sent to email.', otp: otp }); // Include OTP in response for testing
+    return res.status(200).json({ message: 'OTP sent to email.' }); // Do NOT include OTP in response
   } catch (err) {
     logger.error('Register error:', err);
     return res.status(500).json({ error: 'Server error during registration. Please try again.' });
@@ -275,7 +276,18 @@ async function verifyOtp(req, res) {
     if (!tempStr) return res.status(400).json({ error: 'OTP expired or invalid.' });
 
     const tempData = JSON.parse(tempStr);
-    if (tempData.otp !== otp) return res.status(400).json({ error: 'Invalid OTP.' });
+    if (tempData.locked) return res.status(429).json({ error: 'Too many failed attempts. Please request a new OTP.' });
+    tempData.retryCount = tempData.retryCount || 0;
+    if (tempData.otp !== otp) {
+      tempData.retryCount++;
+      if (tempData.retryCount >= 5) {
+        tempData.locked = true;
+        await redisClient.setEx(email, 600, JSON.stringify(tempData));
+        return res.status(429).json({ error: 'Too many failed attempts. Please request a new OTP.' });
+      }
+      await redisClient.setEx(email, 600, JSON.stringify(tempData));
+      return res.status(400).json({ error: 'Invalid OTP.' });
+    }
 
     let user = await User.findOne({ email });
 
