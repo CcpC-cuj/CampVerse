@@ -53,6 +53,22 @@ const userSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
   deletionRequestedAt: { type: Date },
   deletionScheduledFor: { type: Date },
+  notificationPreferences: {
+    email: {
+      rsvp: { type: Boolean, default: true },
+      certificate: { type: Boolean, default: true },
+      cohost: { type: Boolean, default: true },
+      event_verification: { type: Boolean, default: true },
+      host_request: { type: Boolean, default: true }
+    },
+    inApp: {
+      rsvp: { type: Boolean, default: true },
+      certificate: { type: Boolean, default: true },
+      cohost: { type: Boolean, default: true },
+      event_verification: { type: Boolean, default: true },
+      host_request: { type: Boolean, default: true }
+    }
+  },
 });
 
 userSchema.pre('save', function (next) {
