@@ -303,7 +303,6 @@ async function nominateCoHost(req, res) {
     event.coHostRequests.push({ userId, status: 'pending', requestedBy: req.user.id, requestedAt: new Date() });
     await event.save();
     // Notify nominated user
-    const User = require('../Models/User');
     const nominatedUser = await User.findById(userId);
     if (nominatedUser) {
       try {
@@ -349,7 +348,6 @@ async function approveCoHost(req, res) {
     }
     await event.save();
     // Notify approved user
-    const User = require('../Models/User');
     const approvedUser = await User.findById(userId);
     if (approvedUser) {
       try {
@@ -391,7 +389,6 @@ async function rejectCoHost(req, res) {
     event.coHostRequests[reqIndex].approvedAt = new Date();
     await event.save();
     // Notify rejected user
-    const User = require('../Models/User');
     const rejectedUser = await User.findById(userId);
     if (rejectedUser) {
       try {
