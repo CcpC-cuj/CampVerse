@@ -8,15 +8,29 @@ const SearchAnalytics = require('../Models/SearchAnalytics');
 const advancedEventSearch = async (req, res) => {
   try {
     const { q, tags, type, startDate, endDate, sort = 'date', order = 'desc', page = 1, limit = 10 } = req.query;
+    
+    // Input validation
+    const validSortFields = ['date', 'title', 'type']; // Add other valid fields as needed
+    const validOrderValues = ['asc', 'desc'];
     const filter = {};
-    if (q) filter.title = { $regex: q, $options: 'i' };
-    if (tags) filter.tags = { $in: Array.isArray(tags) ? tags : tags.split(',') };
-    if (type) filter.type = type;
+    
+    if (q && typeof q === 'string') filter.title = { $regex: q, $options: 'i' };
+    if (tags) {
+      const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
+      filter.tags = { $in: tagsArray.map(tag => tag.trim()).filter(tag => tag) };
+    }
+    if (type && typeof type === 'string') filter.type = type;
     if (startDate || endDate) {
       filter['schedule.start'] = {};
-      if (startDate) filter['schedule.start'].$gte = new Date(startDate);
-      if (endDate) filter['schedule.start'].$lte = new Date(endDate);
+      if (startDate && !isNaN(Date.parse(startDate))) filter['schedule.start'].$gte = new Date(startDate);
+      if (endDate && !isNaN(Date.parse(endDate))) filter['schedule.start'].$lte = new Date(endDate);
     }
+    
+    const sortField = validSortFields.includes(sort) ? (sort === 'date' ? 'schedule.start' : sort) : 'schedule.start';
+    const sortOrder = validOrderValues.includes(order) ? (order === 'asc' ? 1 : -1) : -1;
+    const parsedPage = parseInt(page);
+    const parsedLimit = parseInt(limit);
+    const skip = (parsedPage > 0 ? parsedPage - 1 : 0) * (parsedLimit > 0 ? parsedLimit : 10);
     const sortField = sort === 'date' ? 'schedule.start' : sort;
     const sortOrder = order === 'asc' ? 1 : -1;
     const skip = (parseInt(page) - 1) * parseInt(limit);
