@@ -199,8 +199,11 @@ async function markAllNotificationsAsRead(userId) {
  */
 async function notifyUser({ userId, type, message, data = {}, emailOptions = null }) {
   try {
-    const user = await User.findById(userId);
-    if (!user) return;
+    const user = await User.findById(userId).select('notificationPreferences');
+    if (!user) {
+      console.warn(`User not found: ${userId}`);
+      return;
+    }
     // Check notification preferences
     const prefs = user.notificationPreferences || {};
     const emailPref = prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : true;
@@ -222,10 +225,11 @@ async function notifyUser({ userId, type, message, data = {}, emailOptions = nul
  * Notify multiple users (e.g., all verifiers)
  */
 async function notifyUsers({ userIds, type, message, data = {}, emailOptionsFn = null }) {
-  for (const userId of userIds) {
+  const notificationPromises = userIds.map(async (userId) => {
     const emailOptions = emailOptionsFn ? await emailOptionsFn(userId) : null;
-    await notifyUser({ userId, type, message, data, emailOptions });
-  }
+    return notifyUser({ userId, type, message, data, emailOptions });
+  });
+  await Promise.allSettled(notificationPromises);
 }
 
 module.exports = {
