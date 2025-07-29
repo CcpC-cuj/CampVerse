@@ -1,5 +1,6 @@
 const { emailsender } = require('./email');
 const Notification = require('../Models/Notification');
+const User = require('../Models/User');
 
 /**
  * Create an in-app notification
@@ -193,11 +194,51 @@ async function markAllNotificationsAsRead(userId) {
   }
 }
 
+/**
+ * Generic unified notification function
+ */
+async function notifyUser({ userId, type, message, data = {}, emailOptions = null }) {
+  try {
+    const user = await User.findById(userId).select('notificationPreferences');
+    if (!user) {
+      console.warn(`User not found: ${userId}`);
+      return;
+    }
+    // Check notification preferences
+    const prefs = user.notificationPreferences || {};
+    const emailPref = prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : true;
+    const inAppPref = prefs.inApp && prefs.inApp[type] !== undefined ? prefs.inApp[type] : true;
+    // In-app notification
+    if (inAppPref) {
+      await createNotification(userId, type, message, data);
+    }
+    // Email notification
+    if (emailPref && emailOptions) {
+      await emailsender(emailOptions);
+    }
+  } catch (error) {
+    console.error('Error in notifyUser:', error);
+  }
+}
+
+/**
+ * Notify multiple users (e.g., all verifiers)
+ */
+async function notifyUsers({ userIds, type, message, data = {}, emailOptionsFn = null }) {
+  const notificationPromises = userIds.map(async (userId) => {
+    const emailOptions = emailOptionsFn ? await emailOptionsFn(userId) : null;
+    return notifyUser({ userId, type, message, data, emailOptions });
+  });
+  await Promise.allSettled(notificationPromises);
+}
+
 module.exports = {
   createNotification,
   notifyHostRequest,
   notifyHostStatusUpdate,
   getUserNotifications,
   markNotificationAsRead,
-  markAllNotificationsAsRead
+  markAllNotificationsAsRead,
+  notifyUser,
+  notifyUsers
 }; 

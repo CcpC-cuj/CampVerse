@@ -248,8 +248,8 @@ graph TD
 |-------------------------|--------|----------------------|-------------------------|-----------------------|
 | `/me/request-host`      | POST   | `{ remarks? }`       | `{ message: 'Host request submitted.', user }` | `{ error: 'Host request already pending.' }` |
 | `/host-requests/pending`| GET    | JWT (verifier)       | Array of pending requests | `{ error: 'Only verifiers can view host requests.' }` |
-| `/host-requests/:id/approve` | POST | `{ remarks? }` (verifier) | `{ message: 'Host request approved.', user }` | `{ error: 'Only verifiers can approve host requests.' }` |
-| `/host-requests/:id/reject` | POST | `{ remarks? }` (verifier) | `{ message: 'Host request rejected.', user }` | `{ error: 'Only verifiers can reject host requests.' }` |
+| `/host-requests/:id/approve` | POST | `{ remarks? }` (verifier only) | `{ message: 'Host request approved.', user }` | `{ error: 'Only verifiers can approve host requests.' }` |
+| `/host-requests/:id/reject` | POST | `{ remarks? }` (verifier only) | `{ message: 'Host request rejected.', user }` | `{ error: 'Only verifiers can reject host requests.' }` |
 
 ### **Certificates, Achievements, Events**
 | Endpoint                | Method | Request Body / Params | Success Response Example | Error Response Example |
@@ -1490,3 +1490,30 @@ const analytics = await response.json();
 > - Implement attendance marking interface for hosts
 > - Add visual indicators for attendance status
 > - Create mobile-friendly QR scanning interface
+
+---
+
+## 🆕 Recent Backend Improvements (2024)
+
+- **Async/Await Middleware:**
+  - All middleware now uses async/await for better error handling and modern JavaScript practices.
+
+- **Require Statements:**
+  - All require/import statements are now at the top of each file for consistency and performance.
+
+- **OTP Security:**
+  - OTP is no longer included in API responses after registration, improving security.
+  - OTP retry/lockout logic implemented: after 5 failed attempts, user must request a new OTP.
+
+- **Rate Limiting:**
+  - Current brute-force protection uses in-memory (global) rate limiting for development.
+  - **For production:** Use Redis or a dedicated rate-limiting library for distributed, scalable protection.
+
+- **Notification System:**
+  - In-app notification model is present for user and verifier notifications.
+  - Email notifications are sent for key actions (registration, password reset, co-host nomination, etc.).
+  - **Best Practice:** Verifiers should receive both in-app and email notifications for actions requiring their attention (e.g., co-host nominations, event verification requests).
+
+---
+
+*For more details, see the code comments and TODO files in this repository.*
