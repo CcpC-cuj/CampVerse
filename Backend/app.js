@@ -95,21 +95,22 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint for Docker and CI/CD
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Validate required environment variables
 ['JWT_SECRET','EMAIL_USER','EMAIL_PASSWORD'].forEach((key) => {
   if (!process.env[key]) {
     console.error(`Missing required environment variable: ${key}`);
     process.exit(1);
   }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
 });
 
 // Routes
@@ -142,4 +143,7 @@ mongoose.connect(process.env.MONGO_URI)
   });
   console.log('MONGO_URI:', process.env.MONGO_URI);
   console.log('REDIS_URL:', process.env.REDIS_URL);
+
+// Export app for testing
+module.exports = app;
   

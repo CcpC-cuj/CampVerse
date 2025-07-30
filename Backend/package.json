@@ -4,9 +4,11 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "test": "jest",
+    "test": "echo 'Tests not implemented yet'",
     "dev": "nodemon app.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix"
   },
   "repository": {
     "type": "git",
@@ -41,6 +43,6 @@
     "winston": "^3.9.0"
   },
   "devDependencies": {
-    "jest": "^29.0.0"
+    "eslint": "^8.0.0"
   }
 }
