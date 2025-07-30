@@ -119,14 +119,14 @@ async function googleSignIn(req, res) {
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
         // Generate a random password hash for Google users
-        const randomPassword = 'google_user_' + Date.now();
+        const randomPassword = `google_user_${  Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
           email: mockEmail,
           phone: '1234567890',
           profilePhoto: '',
-          passwordHash: passwordHash,
+          passwordHash,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -162,14 +162,14 @@ async function googleSignIn(req, res) {
       let user = await User.findOne({ email });
       if (!user) {
         // Generate a random password hash for Google users
-        const randomPassword = 'google_user_' + Date.now();
+        const randomPassword = `google_user_${  Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split('@')[0],
           email,
           phone: '',
           profilePhoto: picture || '',
-          passwordHash: passwordHash,
+          passwordHash,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -925,7 +925,7 @@ async function getUserBadges(req, res) {
     
     return res.json({
       badges: user.badges,
-      achievements: achievements
+      achievements
     });
   } catch (err) {
     logger.error('Get user badges error:', err);

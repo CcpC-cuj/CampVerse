@@ -178,18 +178,18 @@ const getUserActivityTimeline = async (req, res) => {
 const getGrowthTrends = async (req, res) => {
   try {
     const userGrowth = await User.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     const eventGrowth = await Event.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     const certificateGrowth = await Certificate.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     res.json({

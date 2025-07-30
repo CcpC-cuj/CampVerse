@@ -230,9 +230,9 @@ async function getSimilarEvents(req, res) {
         { organizer: event.organizer }
       ]
     })
-    .populate('hostUserId', 'name email')
-    .limit(parseInt(limit))
-    .sort({ 'schedule.start': 1 });
+      .populate('hostUserId', 'name email')
+      .limit(parseInt(limit))
+      .sort({ 'schedule.start': 1 });
 
     const recommendations = similarEvents.map(similarEvent => ({
       eventId: similarEvent._id,
@@ -336,8 +336,8 @@ async function updateUserPreferences(req, res) {
     }
 
     // Update user preferences based on action
-    let updatedInterests = [...(user.interests || [])];
-    let updatedSkills = [...(user.skills || [])];
+    const updatedInterests = [...(user.interests || [])];
+    const updatedSkills = [...(user.skills || [])];
 
     if (action === 'like' || action === 'attend') {
       // Add event tags to interests if not already present

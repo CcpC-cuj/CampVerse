@@ -135,14 +135,14 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
     app.listen(5001, '0.0.0.0', () => {
-        console.log("Server is running on port 5001");
-      });      
+      console.log('Server is running on port 5001');
+    });      
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
   });
-  console.log('MONGO_URI:', process.env.MONGO_URI);
-  console.log('REDIS_URL:', process.env.REDIS_URL);
+console.log('MONGO_URI:', process.env.MONGO_URI);
+console.log('REDIS_URL:', process.env.REDIS_URL);
 
 // Export app for testing
 module.exports = app;

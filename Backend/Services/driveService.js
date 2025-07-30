@@ -30,7 +30,7 @@ const FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID; // Create a folder in Driv
 // Configure multer for file upload
 const storage = multer.memoryStorage();
 const upload = multer({
-  storage: storage,
+  storage,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB limit
   },
@@ -72,7 +72,7 @@ const uploadImageToDrive = async (file, userId) => {
 
     const response = await drive.files.create({
       resource: fileMetadata,
-      media: media,
+      media,
       fields: 'id, webViewLink, webContentLink',
     });
 
@@ -88,7 +88,7 @@ const uploadImageToDrive = async (file, userId) => {
     return {
       fileId: response.data.id,
       url: `https://drive.google.com/uc?export=view&id=${response.data.id}`,
-      fileName: fileName,
+      fileName,
     };
   } catch (error) {
     console.error('Error uploading to Google Drive:', error);
@@ -100,7 +100,7 @@ const uploadImageToDrive = async (file, userId) => {
 const deleteImageFromDrive = async (fileId) => {
   try {
     await drive.files.delete({
-      fileId: fileId,
+      fileId,
     });
     return true;
   } catch (error) {
