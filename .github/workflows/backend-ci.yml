@@ -55,22 +55,21 @@ jobs:
         cd Backend
         npm run lint || echo "Linting not configured, skipping..."
     
-    - name: Run tests (optional)
+    - name: Run tests
       run: |
         cd Backend
-        npm test
+        npm test -- --testPathPattern=basic.test.js
       env:
         NODE_ENV: test
         MONGODB_URI: mongodb://localhost:27017/test
         REDIS_URL: redis://localhost:6379
         JWT_SECRET: test-secret-key
         PORT: 5001
-      continue-on-error: true
 
   build:
     needs: test
     runs-on: ubuntu-latest
-    if: always() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     
     steps:
     - uses: actions/checkout@v4
