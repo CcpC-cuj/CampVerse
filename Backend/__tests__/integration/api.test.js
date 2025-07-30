@@ -39,7 +39,7 @@ describe('API Integration Tests', () => {
     const mongoUri = mongoServer.getUri();
     process.env.MONGO_URI = mongoUri;
     
-    app = require('../app');
+    app = require('../../app');
     
     // Create test user
     const User = require('../Models/User');
