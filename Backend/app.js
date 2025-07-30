@@ -103,6 +103,15 @@ app.use((req, res, next) => {
   }
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/hosts', hostRoutes);
