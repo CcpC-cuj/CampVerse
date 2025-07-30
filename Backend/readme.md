@@ -681,5 +681,5 @@ For technical support or questions:
 
 ---
 
-*Last updated: January 2024*
+*Last updated: JUlY 2025*
 *Version: 1.0.0*
