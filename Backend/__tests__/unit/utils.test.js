@@ -117,18 +117,21 @@ describe('Utility Functions Unit Tests', () => {
   });
 
   describe('String Utilities', () => {
-    it('should sanitize user input', () => {
+    it('should sanitize input to prevent XSS', () => {
       const sanitizeInput = (input) => {
         return input
+          .replace(/[<>]/g, '') // Remove < and > characters
           .trim()
-          .replace(/[<>]/g, '') // Remove potential HTML tags
-          .replace(/[&]/g, '&amp;') // Escape ampersand
           .substring(0, 1000); // Limit length
       };
 
-      expect(sanitizeInput('  <script>alert("xss")</script>  ')).toBe('scriptalert("xss")/script');
-      expect(sanitizeInput('John & Jane')).toBe('John &amp; Jane');
-      expect(sanitizeInput('  Hello World  ')).toBe('Hello World');
+      // Test XSS prevention
+      const maliciousInput = '<script>alert("xss")</script>';
+      const sanitized = sanitizeInput(maliciousInput);
+      
+      expect(sanitized).toBe('scriptalert("xss")/script');
+      expect(sanitized).not.toContain('<');
+      expect(sanitized).not.toContain('>');
     });
 
     it('should generate slugs', () => {

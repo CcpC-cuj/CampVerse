@@ -136,15 +136,15 @@ describe('Services Unit Tests', () => {
       const mockTransporter = {
         sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' })
       };
-      
-      nodemailer.createTransporter.mockReturnValue(mockTransporter);
-      
+
+      nodemailer.createTransport.mockReturnValue(mockTransporter);
+
       // Execute
       const transporter = emailService.createEmailTransporter();
-      
+
       // Assertions
       expect(transporter).toBeDefined();
-      expect(nodemailer.createTransporter).toHaveBeenCalledWith({
+      expect(nodemailer.createTransport).toHaveBeenCalledWith({
         service: 'gmail',
         auth: {
           user: process.env.EMAIL_USER,
@@ -158,7 +158,7 @@ describe('Services Unit Tests', () => {
         sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' })
       };
       
-      nodemailer.createTransporter.mockReturnValue(mockTransporter);
+      nodemailer.createTransport.mockReturnValue(mockTransporter);
       
       // Execute
       const result = await emailService.sendOTP('test@example.com', '123456');
@@ -178,7 +178,7 @@ describe('Services Unit Tests', () => {
         sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' })
       };
       
-      nodemailer.createTransporter.mockReturnValue(mockTransporter);
+      nodemailer.createTransport.mockReturnValue(mockTransporter);
       
       // Execute
       const result = await emailService.sendWelcomeEmail('test@example.com', 'Test User');
@@ -198,7 +198,7 @@ describe('Services Unit Tests', () => {
         sendMail: jest.fn().mockRejectedValue(new Error('Email error'))
       };
       
-      nodemailer.createTransporter.mockReturnValue(mockTransporter);
+      nodemailer.createTransport.mockReturnValue(mockTransporter);
       
       // Execute
       const result = await emailService.sendOTP('test@example.com', '123456');
@@ -211,99 +211,117 @@ describe('Services Unit Tests', () => {
 
   describe('Notification Service', () => {
     it('should create notification successfully', async () => {
-      const mockNotification = {
-        _id: 'notification123',
-        userId: 'user123',
-        type: 'event_reminder',
-        title: 'Event Reminder',
-        message: 'Your event starts in 1 hour',
-        read: false,
-        save: jest.fn().mockResolvedValue(true)
-      };
+      const mongoose = require('mongoose');
+      const notificationService = require('../../Services/notification');
       
-      const Notification = require('../../Models/Notification');
-      Notification.create = jest.fn().mockResolvedValue(mockNotification);
+      // Mock data
+      const userId = new mongoose.Types.ObjectId();
+      const type = 'event_reminder';
+      const message = 'Your event starts in 1 hour';
       
       // Execute
-      const result = await notificationService.createNotification({
-        userId: 'user123',
-        type: 'event_reminder',
-        title: 'Event Reminder',
-        message: 'Your event starts in 1 hour'
-      });
+      const notification = await notificationService.createNotification(
+        userId,
+        type,
+        message
+      );
       
       // Assertions
-      expect(result).toBeDefined();
-      expect(Notification.create).toHaveBeenCalledWith({
-        userId: 'user123',
-        type: 'event_reminder',
-        title: 'Event Reminder',
-        message: 'Your event starts in 1 hour',
-        read: false
-      });
+      expect(notification).toBeDefined();
+      expect(notification.targetUserId).toEqual(userId);
+      expect(notification.type).toBe(type);
+      expect(notification.message).toBe(message);
     });
 
     it('should get user notifications', async () => {
+      const mongoose = require('mongoose');
+      const notificationService = require('../../Services/notification');
+      
+      // Mock data
+      const userId = new mongoose.Types.ObjectId();
       const mockNotifications = [
         {
           _id: 'notification1',
-          userId: 'user123',
+          targetUserId: userId,
           type: 'event_reminder',
-          title: 'Event Reminder',
-          read: false
+          message: 'Event reminder 1',
+          read: false,
+          createdAt: new Date()
         },
         {
           _id: 'notification2',
-          userId: 'user123',
-          type: 'event_update',
-          title: 'Event Updated',
-          read: true
+          targetUserId: userId,
+          type: 'event_reminder',
+          message: 'Event reminder 2',
+          read: true,
+          createdAt: new Date()
         }
       ];
       
+      // Mock Notification model
       const Notification = require('../../Models/Notification');
-      Notification.find = jest.fn().mockReturnValue({
-        sort: jest.fn().mockResolvedValue(mockNotifications)
-      });
+      const mockFind = {
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValue(mockNotifications)
+      };
+      Notification.find = jest.fn().mockReturnValue(mockFind);
       
       // Execute
-      const result = await notificationService.getUserNotifications('user123');
+      const notifications = await notificationService.getUserNotifications(userId, 10);
       
       // Assertions
-      expect(result).toEqual(mockNotifications);
-      expect(Notification.find).toHaveBeenCalledWith({ userId: 'user123' });
+      expect(notifications).toEqual(mockNotifications);
+      expect(Notification.find).toHaveBeenCalledWith({ targetUserId: userId });
+      expect(mockFind.sort).toHaveBeenCalledWith({ createdAt: -1 });
+      expect(mockFind.limit).toHaveBeenCalledWith(10);
     });
 
     it('should mark notification as read', async () => {
+      const mongoose = require('mongoose');
+      const notificationService = require('../../Services/notification');
+      
+      // Mock data
+      const notificationId = new mongoose.Types.ObjectId();
       const mockNotification = {
-        _id: 'notification123',
+        _id: notificationId,
+        targetUserId: new mongoose.Types.ObjectId(),
+        type: 'event_reminder',
+        message: 'Event reminder',
         read: false,
         save: jest.fn().mockResolvedValue(true)
       };
       
+      // Mock Notification model
       const Notification = require('../../Models/Notification');
       Notification.findById = jest.fn().mockResolvedValue(mockNotification);
       
       // Execute
-      const result = await notificationService.markAsRead('notification123');
+      const result = await notificationService.markAsRead(notificationId);
       
       // Assertions
       expect(result).toBe(true);
-      expect(Notification.findById).toHaveBeenCalledWith('notification123');
+      expect(Notification.findById).toHaveBeenCalledWith(notificationId);
       expect(mockNotification.read).toBe(true);
       expect(mockNotification.save).toHaveBeenCalled();
     });
 
     it('should handle notification not found', async () => {
+      const mongoose = require('mongoose');
+      const notificationService = require('../../Services/notification');
+      
+      // Mock data
+      const notificationId = new mongoose.Types.ObjectId();
+      
+      // Mock Notification model
       const Notification = require('../../Models/Notification');
       Notification.findById = jest.fn().mockResolvedValue(null);
       
       // Execute
-      const result = await notificationService.markAsRead('nonexistent');
+      const result = await notificationService.markAsRead(notificationId);
       
       // Assertions
       expect(result).toBe(false);
-      expect(Notification.findById).toHaveBeenCalledWith('nonexistent');
+      expect(Notification.findById).toHaveBeenCalledWith(notificationId);
     });
   });
 
