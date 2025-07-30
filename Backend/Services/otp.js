@@ -1,7 +1,7 @@
-const {randomInt} = require("crypto");
+const {randomInt} = require('crypto');
 function otpgenrater  (){
-    const otp = randomInt(100000, 999999).toString();
-    return otp;
+  const otp = randomInt(100000, 999999).toString();
+  return otp;
 }
 
 function createOtpService() {

@@ -53,11 +53,11 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       eventLocation: event.location || 'Online',
       organizerName: event.hostUserId ? event.hostUserId.name : event.organizer,
       institutionName: user.institutionId ? user.institutionId.name : 'Unknown Institution',
-      certificateType: certificateType,
+      certificateType,
       userSkills: user.skills || [],
       eventTags: event.tags || [],
       attendanceDate: participationLog.attendanceTimestamp,
-      qrCode: qrCode,
+      qrCode,
       // Additional metadata for ML processing
       eventDuration: event.schedule.end - event.schedule.start,
       userInterests: user.interests || [],
@@ -473,7 +473,7 @@ async function exportAttendedUsers(req, res) {
 
     // Prepare data for ML API
     const exportData = {
-      eventId: eventId,
+      eventId,
       eventTitle: event.title,
       eventDescription: event.description,
       eventDate: event.schedule.start,
@@ -588,7 +588,7 @@ async function getCertificateStats(req, res) {
       totalCertificates,
       generatedCertificates,
       pendingCertificates: totalCertificates - generatedCertificates,
-      stats: stats
+      stats
     });
 
   } catch (error) {

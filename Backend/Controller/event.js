@@ -98,7 +98,7 @@ async function rsvpEvent(req, res) {
     // Waitlist logic
     const registeredCount = await EventParticipationLog.countDocuments({ eventId, status: 'registered' });
     const isFull = event.capacity && registeredCount >= event.capacity;
-    let status = isFull ? 'waitlisted' : 'registered';
+    const status = isFull ? 'waitlisted' : 'registered';
     // Generate QR token
     const qrToken = `${eventId}_${userId}_${Date.now()}`;
     // Generate QR code image
@@ -506,8 +506,8 @@ async function getGoogleCalendarLink(req, res) {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
-    const start = new Date(event.schedule.start).toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const end = new Date(event.schedule.end).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    const start = new Date(event.schedule.start).toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const end = new Date(event.schedule.end).toISOString().replace(/-|:|\.\d\d\d/g, '');
     const link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.organizer)}`;
     res.json({ calendarLink: link });
   } catch (err) {

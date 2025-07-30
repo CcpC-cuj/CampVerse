@@ -26,7 +26,7 @@ dotenv.config();
 
 function createEmailService() {
   const transporter = require('nodemailer').createTransport({
-    service: "gmail",
+    service: 'gmail',
     port: 465,
     secure: true,
     auth: {
