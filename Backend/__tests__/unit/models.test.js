@@ -34,10 +34,10 @@ describe('Model Unit Tests', () => {
     it('should create a valid user', async () => {
       const userData = {
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123',
+        email: 'test@university.edu',
         phone: '1234567890',
-        role: 'user'
+        passwordHash: 'hashedPassword123',
+        roles: ['student']
       };
 
       const user = new User(userData);
@@ -46,15 +46,17 @@ describe('Model Unit Tests', () => {
       expect(savedUser._id).toBeDefined();
       expect(savedUser.name).toBe(userData.name);
       expect(savedUser.email).toBe(userData.email);
-      expect(savedUser.role).toBe(userData.role);
+      expect(savedUser.phone).toBe(userData.phone);
+      expect(savedUser.roles).toEqual(userData.roles);
       expect(savedUser.createdAt).toBeDefined();
       expect(savedUser.updatedAt).toBeDefined();
     });
 
     it('should require name field', async () => {
       const userData = {
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       };
 
       const user = new User(userData);
@@ -73,7 +75,8 @@ describe('Model Unit Tests', () => {
     it('should require email field', async () => {
       const userData = {
         name: 'Test User',
-        password: 'hashedPassword123'
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       };
 
       const user = new User(userData);
@@ -93,7 +96,8 @@ describe('Model Unit Tests', () => {
       const userData = {
         name: 'Test User',
         email: 'invalid-email',
-        password: 'hashedPassword123'
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       };
 
       const user = new User(userData);
@@ -109,24 +113,26 @@ describe('Model Unit Tests', () => {
       expect(error.errors.email).toBeDefined();
     });
 
-    it('should set default role to user', async () => {
+    it('should set default roles to student', async () => {
       const userData = {
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       };
 
       const user = new User(userData);
       const savedUser = await user.save();
 
-      expect(savedUser.role).toBe('user');
+      expect(savedUser.roles).toEqual(['student']);
     });
 
     it('should set default isVerified to false', async () => {
       const userData = {
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       };
 
       const user = new User(userData);
@@ -141,13 +147,13 @@ describe('Model Unit Tests', () => {
       const eventData = {
         title: 'Test Event',
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: new mongoose.Types.ObjectId(),
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
           end: new Date('2024-01-01T12:00:00Z')
         },
-        type: 'workshop',
-        capacity: 50
+        type: 'workshop'
       };
 
       const event = new Event(eventData);
@@ -156,16 +162,17 @@ describe('Model Unit Tests', () => {
       expect(savedEvent._id).toBeDefined();
       expect(savedEvent.title).toBe(eventData.title);
       expect(savedEvent.description).toBe(eventData.description);
+      expect(savedEvent.organizer).toBe(eventData.organizer);
       expect(savedEvent.hostUserId).toEqual(eventData.hostUserId);
       expect(savedEvent.type).toBe(eventData.type);
-      expect(savedEvent.capacity).toBe(eventData.capacity);
-      expect(savedEvent.status).toBe('upcoming');
+      expect(savedEvent.verificationStatus).toBe('pending');
       expect(savedEvent.participants).toEqual([]);
     });
 
     it('should require title field', async () => {
       const eventData = {
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: new mongoose.Types.ObjectId()
       };
 
@@ -182,10 +189,11 @@ describe('Model Unit Tests', () => {
       expect(error.errors.title).toBeDefined();
     });
 
-    it('should require hostUserId field', async () => {
+    it('should require organizer field', async () => {
       const eventData = {
         title: 'Test Event',
-        description: 'Test Description'
+        description: 'Test Description',
+        hostUserId: new mongoose.Types.ObjectId()
       };
 
       const event = new Event(eventData);
@@ -198,26 +206,28 @@ describe('Model Unit Tests', () => {
       }
 
       expect(error).toBeDefined();
-      expect(error.errors.hostUserId).toBeDefined();
+      expect(error.errors.organizer).toBeDefined();
     });
 
-    it('should set default status to upcoming', async () => {
+    it('should set default verificationStatus to pending', async () => {
       const eventData = {
         title: 'Test Event',
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: new mongoose.Types.ObjectId()
       };
 
       const event = new Event(eventData);
       const savedEvent = await event.save();
 
-      expect(savedEvent.status).toBe('upcoming');
+      expect(savedEvent.verificationStatus).toBe('pending');
     });
 
     it('should initialize participants as empty array', async () => {
       const eventData = {
         title: 'Test Event',
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: new mongoose.Types.ObjectId()
       };
 
@@ -233,9 +243,7 @@ describe('Model Unit Tests', () => {
       const certificateData = {
         userId: new mongoose.Types.ObjectId(),
         eventId: new mongoose.Types.ObjectId(),
-        title: 'Test Certificate',
-        description: 'Test Certificate Description',
-        issuedDate: new Date(),
+        type: 'participant',
         certificateURL: 'https://example.com/certificate.pdf'
       };
 
@@ -245,16 +253,16 @@ describe('Model Unit Tests', () => {
       expect(savedCertificate._id).toBeDefined();
       expect(savedCertificate.userId).toEqual(certificateData.userId);
       expect(savedCertificate.eventId).toEqual(certificateData.eventId);
-      expect(savedCertificate.title).toBe(certificateData.title);
-      expect(savedCertificate.description).toBe(certificateData.description);
-      expect(savedCertificate.issuedDate).toEqual(certificateData.issuedDate);
+      expect(savedCertificate.type).toBe(certificateData.type);
+      expect(savedCertificate.status).toBe('pending');
       expect(savedCertificate.certificateURL).toBe(certificateData.certificateURL);
+      expect(savedCertificate.issuedAt).toBeDefined();
     });
 
     it('should require userId field', async () => {
       const certificateData = {
         eventId: new mongoose.Types.ObjectId(),
-        title: 'Test Certificate'
+        type: 'participant'
       };
 
       const certificate = new Certificate(certificateData);
@@ -273,7 +281,7 @@ describe('Model Unit Tests', () => {
     it('should require eventId field', async () => {
       const certificateData = {
         userId: new mongoose.Types.ObjectId(),
-        title: 'Test Certificate'
+        type: 'participant'
       };
 
       const certificate = new Certificate(certificateData);
@@ -288,6 +296,42 @@ describe('Model Unit Tests', () => {
       expect(error).toBeDefined();
       expect(error.errors.eventId).toBeDefined();
     });
+
+    it('should require type field', async () => {
+      const certificateData = {
+        userId: new mongoose.Types.ObjectId(),
+        eventId: new mongoose.Types.ObjectId()
+      };
+
+      const certificate = new Certificate(certificateData);
+      let error;
+      
+      try {
+        await certificate.save();
+      } catch (err) {
+        error = err;
+      }
+
+      expect(error).toBeDefined();
+      expect(error.errors.type).toBeDefined();
+    });
+
+    it('should validate certificate type enum', async () => {
+      const validTypes = ['participant', 'winner', 'organizer', 'co-organizer'];
+      
+      for (const type of validTypes) {
+        const certificateData = {
+          userId: new mongoose.Types.ObjectId(),
+          eventId: new mongoose.Types.ObjectId(),
+          type: type
+        };
+
+        const certificate = new Certificate(certificateData);
+        const savedCertificate = await certificate.save();
+        
+        expect(savedCertificate.type).toBe(type);
+      }
+    });
   });
 
   describe('Achievement Model', () => {
@@ -295,9 +339,9 @@ describe('Model Unit Tests', () => {
       const achievementData = {
         userId: new mongoose.Types.ObjectId(),
         title: 'Test Achievement',
-        description: 'Test Achievement Description',
-        type: 'badge',
-        points: 100
+        badgeIcon: '🏆',
+        points: 100,
+        rank: 1
       };
 
       const achievement = new Achievement(achievementData);
@@ -306,16 +350,16 @@ describe('Model Unit Tests', () => {
       expect(savedAchievement._id).toBeDefined();
       expect(savedAchievement.userId).toEqual(achievementData.userId);
       expect(savedAchievement.title).toBe(achievementData.title);
-      expect(savedAchievement.description).toBe(achievementData.description);
-      expect(savedAchievement.type).toBe(achievementData.type);
+      expect(savedAchievement.badgeIcon).toBe(achievementData.badgeIcon);
       expect(savedAchievement.points).toBe(achievementData.points);
-      expect(savedAchievement.earnedDate).toBeDefined();
+      expect(savedAchievement.rank).toBe(achievementData.rank);
+      expect(savedAchievement.earnedAt).toBeDefined();
     });
 
     it('should require userId field', async () => {
       const achievementData = {
         title: 'Test Achievement',
-        description: 'Test Achievement Description'
+        badgeIcon: '🏆'
       };
 
       const achievement = new Achievement(achievementData);
@@ -331,18 +375,31 @@ describe('Model Unit Tests', () => {
       expect(error.errors.userId).toBeDefined();
     });
 
-    it('should set earnedDate automatically', async () => {
+    it('should set earnedAt automatically', async () => {
       const achievementData = {
         userId: new mongoose.Types.ObjectId(),
         title: 'Test Achievement',
-        description: 'Test Achievement Description'
+        badgeIcon: '🏆'
       };
 
       const achievement = new Achievement(achievementData);
       const savedAchievement = await achievement.save();
 
-      expect(savedAchievement.earnedDate).toBeDefined();
-      expect(savedAchievement.earnedDate).toBeInstanceOf(Date);
+      expect(savedAchievement.earnedAt).toBeDefined();
+      expect(savedAchievement.earnedAt).toBeInstanceOf(Date);
+    });
+
+    it('should set default points to 0', async () => {
+      const achievementData = {
+        userId: new mongoose.Types.ObjectId(),
+        title: 'Test Achievement',
+        badgeIcon: '🏆'
+      };
+
+      const achievement = new Achievement(achievementData);
+      const savedAchievement = await achievement.save();
+
+      expect(savedAchievement.points).toBe(0);
     });
   });
 
@@ -409,14 +466,16 @@ describe('Model Unit Tests', () => {
       // Create a user
       const user = await User.create({
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       });
 
       // Create an event with the user as host
       const event = await Event.create({
         title: 'Test Event',
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: user._id,
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
@@ -431,14 +490,16 @@ describe('Model Unit Tests', () => {
       // Create a user
       const user = await User.create({
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       });
 
       // Create an event
       const event = await Event.create({
         title: 'Test Event',
         description: 'Test Description',
+        organizer: 'Test Organizer',
         hostUserId: user._id,
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
@@ -450,8 +511,8 @@ describe('Model Unit Tests', () => {
       const certificate = await Certificate.create({
         userId: user._id,
         eventId: event._id,
-        title: 'Test Certificate',
-        description: 'Test Certificate Description'
+        type: 'participant',
+        certificateURL: 'https://example.com/certificate.pdf'
       });
 
       expect(certificate.userId).toEqual(user._id);
@@ -462,16 +523,18 @@ describe('Model Unit Tests', () => {
       // Create a user
       const user = await User.create({
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedPassword123'
+        email: 'test@university.edu',
+        phone: '1234567890',
+        passwordHash: 'hashedPassword123'
       });
 
       // Create an achievement
       const achievement = await Achievement.create({
         userId: user._id,
         title: 'Test Achievement',
-        description: 'Test Achievement Description',
-        type: 'badge'
+        badgeIcon: '🏆',
+        points: 100,
+        rank: 1
       });
 
       expect(achievement.userId).toEqual(user._id);
