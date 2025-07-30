@@ -30,9 +30,6 @@ const advancedEventSearch = async (req, res) => {
     const sortOrder = validOrderValues.includes(order) ? (order === 'asc' ? 1 : -1) : -1;
     const parsedPage = parseInt(page);
     const parsedLimit = parseInt(limit);
-    const skip = (parsedPage > 0 ? parsedPage - 1 : 0) * (parsedLimit > 0 ? parsedLimit : 10);
-    const sortField = sort === 'date' ? 'schedule.start' : sort;
-    const sortOrder = order === 'asc' ? 1 : -1;
     const validatedPage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
     const validatedLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
     const skip = (validatedPage - 1) * validatedLimit;
@@ -181,18 +178,18 @@ const getUserActivityTimeline = async (req, res) => {
 const getGrowthTrends = async (req, res) => {
   try {
     const userGrowth = await User.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     const eventGrowth = await Event.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     const certificateGrowth = await Certificate.aggregate([
-      { $group: { _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } }, count: { $sum: 1 } } },
-      { $sort: { "_id.year": 1, "_id.month": 1 } }
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
     res.json({

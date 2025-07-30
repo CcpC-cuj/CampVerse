@@ -77,7 +77,7 @@ async function notifyHostStatusUpdate(userId, userName, userEmail, status, remar
 async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) {
   try {
     const transporter = require('nodemailer').createTransporter({
-      service: "gmail",
+      service: 'gmail',
       port: 465,
       secure: true,
       auth: {
@@ -89,7 +89,7 @@ async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) 
     const info = await transporter.sendMail({
       from: '"CampVerse Admin" <noreply@campverse.com>',
       to: adminEmail,
-      subject: "New Host Request - Action Required",
+      subject: 'New Host Request - Action Required',
       html: `
         <h2>New Host Request</h2>
         <p>Hello ${adminName},</p>
@@ -114,7 +114,7 @@ async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) 
 async function sendHostStatusEmail(userEmail, userName, status, remarks) {
   try {
     const transporter = require('nodemailer').createTransporter({
-      service: "gmail",
+      service: 'gmail',
       port: 465,
       secure: true,
       auth: {
@@ -129,16 +129,16 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
     const info = await transporter.sendMail({
       from: '"CampVerse" <noreply@campverse.com>',
       to: userEmail,
-      subject: subject,
+      subject,
       html: `
         <h2>Host Request ${status === 'approved' ? 'Approved' : 'Rejected'}</h2>
         <p>Hello ${userName},</p>
         <p>Your request to become a host has been <strong>${statusText}</strong>.</p>
         ${remarks ? `<p><strong>Remarks:</strong> ${remarks}</p>` : ''}
         ${status === 'approved' ? 
-          '<p>You can now create and manage events on CampVerse!</p>' : 
-          '<p>You can submit a new request in the future if your circumstances change.</p>'
-        }
+    '<p>You can now create and manage events on CampVerse!</p>' : 
+    '<p>You can submit a new request in the future if your circumstances change.</p>'
+}
         <p>Best regards,<br>CampVerse Team</p>
       `
     });

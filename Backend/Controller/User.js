@@ -119,14 +119,14 @@ async function googleSignIn(req, res) {
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
         // Generate a random password hash for Google users
-        const randomPassword = 'google_user_' + Date.now();
+        const randomPassword = `google_user_${  Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
           email: mockEmail,
           phone: '1234567890',
           profilePhoto: '',
-          passwordHash: passwordHash,
+          passwordHash,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -162,14 +162,14 @@ async function googleSignIn(req, res) {
       let user = await User.findOne({ email });
       if (!user) {
         // Generate a random password hash for Google users
-        const randomPassword = 'google_user_' + Date.now();
+        const randomPassword = `google_user_${  Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split('@')[0],
           email,
           phone: '',
           profilePhoto: picture || '',
-          passwordHash: passwordHash,
+          passwordHash,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -925,7 +925,7 @@ async function getUserBadges(req, res) {
     
     return res.json({
       badges: user.badges,
-      achievements: achievements
+      achievements
     });
   } catch (err) {
     logger.error('Get user badges error:', err);
@@ -933,50 +933,7 @@ async function getUserBadges(req, res) {
   }
 }
 
-// Get certificates of user (GET /:id/certificates)
-async function getUserCertificates(req, res) {
-  try {
-    const certificates = await Certificate.find({ userId: req.params.id });
-    return res.json(certificates);
-  } catch (err) {
-    logger.error('GetUserCertificates error:', err);
-    return res.status(500).json({ error: 'Server error fetching certificates.' });
-  }
-}
 
-// Get achievements of user (GET /:id/achievements)
-async function getUserAchievements(req, res) {
-  try {
-    const achievements = await Achievement.find({ userId: req.params.id });
-    return res.json(achievements);
-  } catch (err) {
-    logger.error('GetUserAchievements error:', err);
-    return res.status(500).json({ error: 'Server error fetching achievements.' });
-  }
-}
-
-// Get events related to user (hosted, attended, saved, waitlisted) (GET /:id/events)
-async function getUserEvents(req, res) {
-  try {
-    const user = await User.findById(req.params.id)
-      .populate('eventHistory.hosted')
-      .populate('eventHistory.attended')
-      .populate('eventHistory.saved')
-      .populate('eventHistory.waitlisted');
-
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-
-    return res.json({
-      hosted: user.eventHistory.hosted,
-      attended: user.eventHistory.attended,
-      saved: user.eventHistory.saved,
-      waitlisted: user.eventHistory.waitlisted
-    });
-  } catch (err) {
-    logger.error('GetUserEvents error:', err);
-    return res.status(500).json({ error: 'Server error fetching user events.' });
-  }
-}
 
 // ---------------- Resend OTP ----------------
 async function resendOtp(req, res) {
