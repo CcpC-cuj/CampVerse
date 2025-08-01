@@ -25,18 +25,35 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 function createEmailService() {
+  // Try Gmail first, if it fails, we can switch to a different service
   const transporter = require('nodemailer').createTransport({
     service: 'gmail',
-    port: 465,
-    secure: true,
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASSWORD,
     },
+    tls: {
+      rejectUnauthorized: false
+    }
   });
+  
   return {
     async sendMail(options) {
-      return transporter.sendMail(options);
+      console.log('Sending email to:', options.to);
+      console.log('From:', options.from);
+      console.log('Subject:', options.subject);
+      
+      try {
+        const result = await transporter.sendMail(options);
+        console.log('Email sent successfully with message ID:', result.messageId);
+        return result;
+      } catch (error) {
+        console.error('Email sending failed:', error.message);
+        throw error;
+      }
     }
   };
 }

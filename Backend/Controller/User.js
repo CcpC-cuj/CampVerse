@@ -241,16 +241,29 @@ async function register(req, res) {
 
     const otp = otpService.generate();
     
-    // For testing purposes, skip email sending and log OTP
-    
     try {
       await emailService.sendMail({
+        from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your Verification Code',
-        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">CampVerse Verification Code</h2>
+            <p>Hello ${name},</p>
+            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
+            <p>Please enter this code within 5 minutes to complete your registration.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+          </div>
+        `
       });
+      console.log(`Email sent successfully to ${email}`);
     } catch (emailError) {
-      console.log('Email sending failed, but continuing with OTP storage:', emailError.message);
+      console.error('Email sending failed:', emailError.message);
+      // Don't continue if email fails - user needs the OTP
+      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
 
     const domain = extractDomain(email);
@@ -259,7 +272,6 @@ async function register(req, res) {
     const tempData = { name, phone, password, otp, institutionId: institution._id, institutionIsVerified: institution.isVerified };
     await redisClient.setEx(email, 600, JSON.stringify(tempData));
 
-    // return res.status(200).json({ message: 'OTP sent to email.', otp: otp }); // Include OTP in response for testing
     return res.status(200).json({ message: 'OTP sent to email.' }); // Do NOT include OTP in response
   } catch (err) {
     logger.error('Register error:', err);
@@ -948,12 +960,26 @@ async function resendOtp(req, res) {
     const otp = otpService.generate();
     try {
       await emailService.sendMail({
+        from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your Verification Code',
-        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">CampVerse Verification Code</h2>
+            <p>Hello ${tempData.name},</p>
+            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
+            <p>Please enter this code within 5 minutes to complete your registration.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+          </div>
+        `
       });
+      console.log(`Email resent successfully to ${email}`);
     } catch (emailError) {
-      console.log('Email sending failed, but continuing with OTP storage:', emailError.message);
+      console.error('Email sending failed:', emailError.message);
+      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
     tempData.otp = otp;
     await redisClient.setEx(email, 600, JSON.stringify(tempData));
