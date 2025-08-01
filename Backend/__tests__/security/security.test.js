@@ -44,11 +44,11 @@ describe('Security Tests', () => {
   describe('Input Validation Tests', () => {
     it('should prevent SQL injection attempts', async () => {
       const maliciousInputs = [
-        "'; DROP TABLE users; --",
+        '; DROP TABLE users; --',
         "' OR '1'='1",
-        "'; INSERT INTO users VALUES ('hacker', 'password'); --",
-        "admin'--",
-        "1' OR '1' = '1' --"
+        '; INSERT INTO users VALUES (\'hacker\', \'password\'); --',
+        'admin\'--',
+        '1\' OR \'1\' = \'1\' --'
       ];
 
       for (const maliciousInput of maliciousInputs) {

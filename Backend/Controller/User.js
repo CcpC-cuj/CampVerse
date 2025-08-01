@@ -20,10 +20,9 @@ const User = require('../Models/User');
 const Certificate = require('../Models/Certificate');
 const Achievement = require('../Models/Achievement');
 const EventParticipationLog = require('../Models/EventParticipationLog');
-const Event = require('../Models/Event');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { otpgenrater, createOtpService } = require('../Services/otp');
+const { createOtpService } = require('../Services/otp');
 const otpService = createOtpService();
 const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
@@ -41,7 +40,6 @@ const logger = winston.createLogger({
 const crypto = require('crypto');
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // Academic email domain check (.ac.in or .edu.in, flexible for subdomains)
 const isAcademicEmail = (email) => /@[\w.-]+\.(ac|edu)\.in$/i.test(email) || /@[\w.-]+\.edu$/i.test(email);
@@ -72,10 +70,10 @@ const redisClient = createClient({
     port: process.env.REDIS_PORT || 6379
   }
 });
-redisClient.on('error', err => console.error('Redis Client Error', err));
+redisClient.on('error', err => logger.error('Redis Client Error', err));
 (async () => {
   if (!redisClient.isOpen) await redisClient.connect();
-  console.log('Redis connected');
+  logger.info('Redis connected');
 })();
 
 // Input validation helper functions
@@ -259,9 +257,9 @@ async function register(req, res) {
           </div>
         `
       });
-      console.log(`Email sent successfully to ${email}`);
+      logger.info(`Email sent successfully to ${email}`);
     } catch (emailError) {
-      console.error('Email sending failed:', emailError.message);
+      logger.error('Email sending failed:', emailError.message);
       // Don't continue if email fails - user needs the OTP
       return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
@@ -491,8 +489,6 @@ async function getDashboard(req, res) {
     // Get participation logs for more detailed stats
     const participationLogs = await EventParticipationLog.find({ userId: user._id });
     const registeredEvents = participationLogs.filter(log => log.status === 'registered').length;
-    const attendedEvents = participationLogs.filter(log => log.status === 'attended').length;
-    const waitlistedEvents = participationLogs.filter(log => log.status === 'waitlisted').length;
 
     // Profile completion calculation
     const requiredFields = ['name', 'email', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber'];
@@ -807,7 +803,6 @@ async function deleteUser(req, res) {
 async function trackReferral(req, res) {
   try {
     const { referrerId } = req.body;
-    const userId = req.user.id;
     
     if (!referrerId) {
       return res.status(400).json({ error: 'Referrer ID is required.' });
