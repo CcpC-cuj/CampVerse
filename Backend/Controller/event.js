@@ -88,40 +88,59 @@ async function deleteEvent(req, res) {
   }
 }
 
-// RSVP/register for event (user)
+// RSVP for event (user)
 async function rsvpEvent(req, res) {
   try {
-    const { eventId } = req.body;
+    const { eventId, status = 'registered' } = req.body;
     const userId = req.user.id;
+
+    // Validate status
+    const validStatuses = ['registered', 'waitlisted'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status. Must be "registered" or "waitlisted"' });
+    }
+
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
-    // Waitlist logic
+
+    // Check if user is already registered
+    const existingLog = await EventParticipationLog.findOne({ eventId, userId });
+    if (existingLog) return res.status(400).json({ error: 'User already registered for this event.' });
+
+    // Check event capacity
     const registeredCount = await EventParticipationLog.countDocuments({ eventId, status: 'registered' });
-    const isFull = event.capacity && registeredCount >= event.capacity;
-    const status = isFull ? 'waitlisted' : 'registered';
-    // Generate QR token
-    const qrToken = `${eventId}_${userId}_${Date.now()}`;
-    // Generate QR code image
-    const qrImage = await qrcode.toDataURL(qrToken);
+    const isFull = registeredCount >= event.capacity;
+
+    let finalStatus = status;
+    if (status === 'registered' && isFull) {
+      finalStatus = 'waitlisted';
+    }
+
     // Create participation log
-    const log = await EventParticipationLog.create({
-      userId, eventId, status, qrToken
+    const log = new EventParticipationLog({
+      eventId,
+      userId,
+      status: finalStatus,
+      registeredAt: new Date()
     });
-    // Update event waitlist if waitlisted
-    if (status === 'waitlisted') {
-      if (!event.waitlist.map(id => id.toString()).includes(userId.toString())) {
-        event.waitlist.push(userId);
-        await event.save();
-      }
-    } else {
-      // If user was previously waitlisted, remove from waitlist
-      event.waitlist = event.waitlist.filter(id => id.toString() !== userId.toString());
+    await log.save();
+
+    // Update event waitlist if needed
+    if (finalStatus === 'waitlisted') {
+      event.waitlist.push(userId);
       await event.save();
     }
+
+    // Generate QR code for ticket
+    const qrData = `${eventId}_${userId}_${log._id}`;
+    const qrImage = await generateQRCode(qrData);
+    log.qrToken = qrData;
+    await log.save();
+
     // Email QR code to user
     await sendQrEmail(req.user.email, qrImage, event.title);
-    console.log(`[AUDIT] RSVP: user ${userId} for event ${eventId} as ${status}`);
-    res.status(201).json({ message: `RSVP successful. Status: ${status}. QR code sent to email.`, qrImage });
+    console.log(`[AUDIT] RSVP: user ${userId} for event ${eventId} as ${finalStatus}`);
+    res.status(201).json({ message: `RSVP successful. Status: ${finalStatus}. QR code sent to email.`, qrImage });
     // Notify user (confirmation)
     await notifyUser({
       userId,

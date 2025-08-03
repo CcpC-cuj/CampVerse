@@ -9,35 +9,55 @@ const advancedEventSearch = async (req, res) => {
   try {
     const { q, tags, type, startDate, endDate, sort = 'date', order = 'desc', page = 1, limit = 10 } = req.query;
     
-    // Input validation
-    const validSortFields = ['date', 'title', 'type']; // Add other valid fields as needed
+    // Input validation and type conversion
+    const validSortFields = ['date', 'title', 'type', 'createdAt', 'schedule.start'];
     const validOrderValues = ['asc', 'desc'];
-    const filter = {};
     
-    if (q && typeof q === 'string') filter.title = { $regex: q, $options: 'i' };
-    if (tags) {
-      const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
-      filter.tags = { $in: tagsArray.map(tag => tag.trim()).filter(tag => tag) };
-    }
-    if (type && typeof type === 'string') filter.type = type;
-    if (startDate || endDate) {
-      filter['schedule.start'] = {};
-      if (startDate && !isNaN(Date.parse(startDate))) filter['schedule.start'].$gte = new Date(startDate);
-      if (endDate && !isNaN(Date.parse(endDate))) filter['schedule.start'].$lte = new Date(endDate);
-    }
+    // Validate and convert pagination parameters
+    const validatedPage = Math.max(1, parseInt(page) || 1);
+    const validatedLimit = Math.min(100, Math.max(1, parseInt(limit) || 10));
     
+    // Validate sort and order
     const sortField = validSortFields.includes(sort) ? (sort === 'date' ? 'schedule.start' : sort) : 'schedule.start';
     const sortOrder = validOrderValues.includes(order) ? (order === 'asc' ? 1 : -1) : -1;
-    const parsedPage = parseInt(page);
-    const parsedLimit = parseInt(limit);
-    const validatedPage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-    const validatedLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
+    
+    const filter = {};
+    
+    // Validate and add search filters
+    if (q && typeof q === 'string' && q.trim().length > 0) {
+      filter.title = { $regex: q.trim(), $options: 'i' };
+    }
+    
+    if (tags) {
+      const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
+      const validTags = tagsArray.map(tag => tag.trim()).filter(tag => tag.length > 0);
+      if (validTags.length > 0) {
+        filter.tags = { $in: validTags };
+      }
+    }
+    
+    if (type && typeof type === 'string' && ['workshop', 'seminar', 'hackathon', 'conference', 'meetup'].includes(type)) {
+      filter.type = type;
+    }
+    
+    // Validate and add date filters
+    if (startDate || endDate) {
+      filter['schedule.start'] = {};
+      if (startDate && !isNaN(Date.parse(startDate))) {
+        filter['schedule.start'].$gte = new Date(startDate);
+      }
+      if (endDate && !isNaN(Date.parse(endDate))) {
+        filter['schedule.start'].$lte = new Date(endDate);
+      }
+    }
+    
     const skip = (validatedPage - 1) * validatedLimit;
     const total = await Event.countDocuments(filter);
     const events = await Event.find(filter)
       .sort({ [sortField]: sortOrder })
       .skip(skip)
       .limit(validatedLimit);
+      
     res.json({
       total,
       page: validatedPage,

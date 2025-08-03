@@ -29,7 +29,7 @@ const verifierEligibilityStatusSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$|\.edu$/ },
-  phone: { type: String, required: true },
+  phone: { type: String }, // Made optional for Google signup
   Gender: { type: String },
   DOB: { type: Date },
   passwordHash: { type: String, required: true },
@@ -76,6 +76,14 @@ userSchema.pre('save', function (next) {
   next();
 });
 
+// Add indexes for better performance
 userSchema.index({ institutionId: 1 });
+userSchema.index({ email: 1 });
+userSchema.index({ roles: 1 });
+userSchema.index({ isVerified: 1 });
+userSchema.index({ canHost: 1 });
+userSchema.index({ institutionVerificationStatus: 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ lastLogin: -1 });
 
 module.exports = mongoose.model('User', userSchema);

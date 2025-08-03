@@ -50,17 +50,39 @@ function extractDomain(email) {
 
 async function findOrCreateInstitution(domain) {
   const Institution = require('../Models/Institution');
-  let institution = await Institution.findOne({ emailDomain: domain });
-  if (!institution) {
-    institution = await Institution.create({
-      name: `Temporary - ${domain}`,
-      type: 'temporary',
-      emailDomain: domain,
-      isVerified: false,
-      isTemporary: true,
-      location: { city: 'Unknown', state: 'Unknown', country: 'Unknown' }
-    });
+  
+  // First, check if there's already a verified institution with this domain
+  let institution = await Institution.findOne({ 
+    emailDomain: domain, 
+    isVerified: true 
+  });
+  
+  if (institution) {
+    // If verified institution exists, use it
+    return institution;
   }
+  
+  // Check if there's already a temporary institution with this domain
+  institution = await Institution.findOne({ 
+    emailDomain: domain, 
+    isTemporary: true 
+  });
+  
+  if (institution) {
+    // If temporary institution exists, use it (don't create duplicate)
+    return institution;
+  }
+  
+  // Only create new temporary institution if none exists for this domain
+  institution = await Institution.create({
+    name: `Temporary - ${domain}`,
+    type: 'temporary',
+    emailDomain: domain,
+    isVerified: false,
+    isTemporary: true,
+    location: { city: 'Unknown', state: 'Unknown', country: 'Unknown' }
+  });
+  
   return institution;
 }
 
@@ -70,10 +92,23 @@ const redisClient = createClient({
     port: process.env.REDIS_PORT || 6379
   }
 });
-redisClient.on('error', err => logger.error('Redis Client Error', err));
+
+// Add proper error handling for Redis connection
+redisClient.on('error', err => {
+  logger.error('Redis Client Error:', err);
+});
+
+// Connect to Redis with proper error handling
 (async () => {
-  if (!redisClient.isOpen) await redisClient.connect();
-  logger.info('Redis connected');
+  try {
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+      logger.info('Redis connected');
+    }
+  } catch (err) {
+    logger.error('Redis connection failed:', err);
+    // Don't exit the process, just log the error
+  }
 })();
 
 // Input validation helper functions
@@ -116,17 +151,23 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
+        // Handle institution assignment
+        const domain = extractDomain(mockEmail);
+        const institution = await findOrCreateInstitution(domain);
+        
         // Generate a random password hash for Google users
-        const randomPassword = `google_user_${  Date.now()}`;
+        const randomPassword = `google_user_${Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
           email: mockEmail,
-          phone: '1234567890',
+          phone: '', // Allow empty phone for Google signup
           profilePhoto: '',
           passwordHash,
+          institutionId: institution._id,
+          institutionVerificationStatus: institution.isVerified ? 'verified' : 'pending',
           roles: ['student'],
-          isVerified: true,
+          isVerified: false, // Require profile completion
           canHost: false,
           createdAt: new Date()
         });
@@ -138,7 +179,8 @@ async function googleSignIn(req, res) {
       return res.json({
         message: 'Google login successful (mock)',
         token: jwtToken,
-        user: sanitizeUser(user)
+        user: sanitizeUser(user),
+        requiresProfileCompletion: !user.phone || !user.interests || user.interests.length === 0
       });
     }
 
@@ -159,17 +201,23 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email });
       if (!user) {
+        // Handle institution assignment
+        const domain = extractDomain(email);
+        const institution = await findOrCreateInstitution(domain);
+        
         // Generate a random password hash for Google users
-        const randomPassword = `google_user_${  Date.now()}`;
+        const randomPassword = `google_user_${Date.now()}`;
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split('@')[0],
           email,
-          phone: '',
+          phone: '', // Allow empty phone for Google signup
           profilePhoto: picture || '',
           passwordHash,
+          institutionId: institution._id,
+          institutionVerificationStatus: institution.isVerified ? 'verified' : 'pending',
           roles: ['student'],
-          isVerified: true,
+          isVerified: false, // Require profile completion
           canHost: false,
           createdAt: new Date()
         });
@@ -181,7 +229,8 @@ async function googleSignIn(req, res) {
       return res.json({
         message: 'Google login successful',
         token: jwtToken,
-        user: sanitizeUser(user)
+        user: sanitizeUser(user),
+        requiresProfileCompletion: !user.phone || !user.interests || user.interests.length === 0
       });
     } catch (googleError) {
       logger.error('Google token verification failed:', googleError);
@@ -191,6 +240,128 @@ async function googleSignIn(req, res) {
   } catch (err) {
     logger.error('Google Login Error:', err);
     return res.status(500).json({ error: 'Google login failed.' });
+  }
+}
+
+// ---------------- Request Institution Verification ----------------
+async function requestInstitutionVerification(req, res) {
+  try {
+    const userId = req.user.id;
+    const { institutionName, institutionType, location, collegeIdNumber } = req.body;
+
+    // Validate required fields
+    if (!institutionName) {
+      return res.status(400).json({ error: 'Institution name is required.' });
+    }
+    if (!institutionType) {
+      return res.status(400).json({ error: 'Institution type is required.' });
+    }
+    if (!location || !location.city || !location.state || !location.country) {
+      return res.status(400).json({ error: 'Complete location information is required.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check if user already has a verified institution
+    if (user.institutionVerificationStatus === 'verified') {
+      return res.status(400).json({ error: 'User already has a verified institution.' });
+    }
+
+    // Update user's institution information
+    const updateData = {
+      collegeIdNumber: collegeIdNumber || user.collegeIdNumber,
+      institutionVerificationStatus: 'pending'
+    };
+
+    // If user has a temporary institution, update it with the provided details
+    if (user.institutionId) {
+      const Institution = require('../Models/Institution');
+      const institution = await Institution.findById(user.institutionId);
+      
+      if (institution && institution.isTemporary) {
+        // Update the temporary institution with real details
+        await Institution.findByIdAndUpdate(user.institutionId, {
+          name: institutionName,
+          type: institutionType,
+          location: location,
+          isTemporary: false,
+          verificationRequested: true
+        });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true
+    });
+
+    return res.json({
+      message: 'Institution verification request submitted successfully.',
+      user: sanitizeUser(updatedUser)
+    });
+
+  } catch (err) {
+    logger.error('RequestInstitutionVerification error:', err);
+    return res.status(500).json({ error: 'Server error requesting institution verification.' });
+  }
+}
+
+// ---------------- Complete Profile (for Google signup) ----------------
+async function completeProfile(req, res) {
+  try {
+    const { phone, interests, skills, learningGoals, collegeIdNumber } = req.body;
+    const userId = req.user.id;
+
+    // Validate required fields
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+    if (!validatePhone(phone)) {
+      return res.status(400).json({ error: 'Invalid phone number format.' });
+    }
+    if (!interests || !Array.isArray(interests) || interests.length === 0) {
+      return res.status(400).json({ error: 'At least one interest is required.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Update user profile
+    const updateData = {
+      phone,
+      interests,
+      isVerified: true // Mark as verified after profile completion
+    };
+
+    // Add optional fields if provided
+    if (skills && Array.isArray(skills)) {
+      updateData.skills = skills;
+    }
+    if (learningGoals && Array.isArray(learningGoals)) {
+      updateData.learningGoals = learningGoals;
+    }
+    if (collegeIdNumber) {
+      updateData.collegeIdNumber = collegeIdNumber;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true
+    });
+
+    return res.json({
+      message: 'Profile completed successfully.',
+      user: sanitizeUser(updatedUser)
+    });
+
+  } catch (err) {
+    logger.error('CompleteProfile error:', err);
+    return res.status(500).json({ error: 'Server error completing profile.' });
   }
 }
 
@@ -232,48 +403,51 @@ async function register(req, res) {
       return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
     }
 
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
 
-    const otp = otpService.generate();
-    
-    try {
-      await emailService.sendMail({
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Your Verification Code',
-        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">CampVerse Verification Code</h2>
-            <p>Hello ${name},</p>
-            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
-            <p>Please enter this code within 5 minutes to complete your registration.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
-            <hr>
-            <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
-          </div>
-        `
-      });
-      logger.info(`Email sent successfully to ${email}`);
-    } catch (emailError) {
-      logger.error('Email sending failed:', emailError.message);
-      // Don't continue if email fails - user needs the OTP
-      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
-    }
-
+    // Handle institution assignment
     const domain = extractDomain(email);
     const institution = await findOrCreateInstitution(domain);
 
-    const tempData = { name, phone, password, otp, institutionId: institution._id, institutionIsVerified: institution.isVerified };
-    await redisClient.setEx(email, 600, JSON.stringify(tempData));
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    return res.status(200).json({ message: 'OTP sent to email.' }); // Do NOT include OTP in response
+    // Create user
+    const user = new User({
+      name,
+      email,
+      phone,
+      passwordHash,
+      institutionId: institution._id,
+      institutionVerificationStatus: institution.isVerified ? 'verified' : 'pending',
+      roles: ['student'],
+      isVerified: false, // Will be verified after OTP
+      canHost: false,
+      createdAt: new Date()
+    });
+
+    await user.save();
+
+    // Generate and send OTP
+    const otp = await otpService.generateOtp(email);
+    await emailService.sendMail({
+      to: email,
+      subject: 'Verify your CampVerse account',
+      text: `Your verification code is: ${otp}\n\nThis code will expire in 10 minutes.`
+    });
+
+    return res.status(201).json({
+      message: 'Registration successful. Please check your email for verification code.',
+      user: sanitizeUser(user)
+    });
+
   } catch (err) {
-    logger.error('Register error:', err);
-    return res.status(500).json({ error: 'Server error during registration. Please try again.' });
+    logger.error('Registration error:', err);
+    return res.status(500).json({ error: 'Server error during registration.' });
   }
 }
 // Verify OTP
@@ -282,60 +456,32 @@ async function verifyOtp(req, res) {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ error: 'Email and OTP required.' });
 
-    const tempStr = await redisClient.get(email);
-    if (!tempStr) return res.status(400).json({ error: 'OTP expired or invalid.' });
-
-    const tempData = JSON.parse(tempStr);
-    if (tempData.locked) return res.status(429).json({ error: 'Too many failed attempts. Please request a new OTP.' });
-    tempData.retryCount = tempData.retryCount || 0;
-    if (tempData.otp !== otp) {
-      tempData.retryCount++;
-      if (tempData.retryCount >= 5) {
-        tempData.locked = true;
-        await redisClient.setEx(email, 600, JSON.stringify(tempData));
-        return res.status(429).json({ error: 'Too many failed attempts. Please request a new OTP.' });
-      }
-      await redisClient.setEx(email, 600, JSON.stringify(tempData));
-      return res.status(400).json({ error: 'Invalid OTP.' });
+    // Verify OTP using the service
+    const isValid = await otpService.verifyOtp(email, otp);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid or expired OTP.' });
     }
 
-    let user = await User.findOne({ email });
-
-    if (user) {
-      // Existing user login
-      await redisClient.del(email);
-      const token = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
-      return res.json({
-        message: 'OTP verified, logged in.',
-        token,
-        user: sanitizeUser(user)
-      });
+    // Find the user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
     }
 
-    // New user registration
-    const passwordHash = await bcrypt.hash(tempData.password, 10);
-    user = new User({
-      name: tempData.name,
-      email,
-      phone: tempData.phone,
-      passwordHash,
-      roles: ['student'],
-      isVerified: false,
-      canHost: false,
-      createdAt: new Date(),
-      institutionId: tempData.institutionId,
-      institutionVerificationStatus: tempData.institutionIsVerified ? 'verified' : 'pending'
-    });
-
+    // Mark user as verified
+    user.isVerified = true;
     await user.save();
-    await redisClient.del(email);
 
+    // Generate JWT token
     const token = jwt.sign({ id: user._id, roles: user.roles }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    return res.status(201).json({
-      message: 'Registration successful, logged in.',
+
+    return res.json({
+      message: 'Email verified successfully.',
       token,
-      user: sanitizeUser(user)
+      user: sanitizeUser(user),
+      requiresProfileCompletion: !user.phone || !user.interests || user.interests.length === 0
     });
+
   } catch (err) {
     logger.error('Verify OTP error:', err);
     return res.status(500).json({ error: 'Server error during OTP verification.' });
@@ -735,39 +881,69 @@ async function forgotPassword(req, res) {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email required.' });
+    
+    // Validate email format
+    if (!validateEmail(email)) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
+    
     const user = await User.findOne({ email });
     if (!user) return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' }); // Don't reveal user existence
+    
     const token = crypto.randomBytes(32).toString('hex');
-    await redisClient.setEx(`reset:${token}`, 3600, email); // 1 hour expiry
-    // Send email with reset link (replace with your frontend URL)
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-    await emailService.sendMail({
-      to: user.email,
-      subject: 'Password Reset',
-      text: `Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
-    });
-    return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+    
+    try {
+      await redisClient.setEx(`reset:${token}`, 3600, email); // 1 hour expiry
+      
+      // Send email with reset link (replace with your frontend URL)
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+      await emailService.sendMail({
+        to: user.email,
+        subject: 'Password Reset',
+        text: `Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
+      });
+      
+      return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+    } catch (emailError) {
+      logger.error('Email sending failed in forgotPassword:', emailError);
+      return res.status(500).json({ error: 'Failed to send reset email. Please try again.' });
+    }
   } catch (err) {
     logger.error('ForgotPassword error:', err);
-    return res.status(500).json({ error: 'Server error during password reset request.' });
+    return res.status(500).json({ error: 'Server error during password reset.' });
   }
 }
 /**
  * POST /reset-password
- * Reset password using token
+ * Reset password with token
  */
 async function resetPassword(req, res) {
   try {
     const { token, password } = req.body;
-    if (!token || !password) return res.status(400).json({ error: 'Token and new password required.' });
+    if (!token || !password) return res.status(400).json({ error: 'Token and password required.' });
+    
+    // Validate password
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+    
     const email = await redisClient.get(`reset:${token}`);
     if (!email) return res.status(400).json({ error: 'Invalid or expired token.' });
+    
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: 'User not found.' });
-    user.passwordHash = await bcrypt.hash(password, 10);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    
+    // Hash new password
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // Update user password
+    user.passwordHash = passwordHash;
     await user.save();
+    
+    // Delete reset token
     await redisClient.del(`reset:${token}`);
-    return res.status(200).json({ message: 'Password reset successful.' });
+    
+    return res.json({ message: 'Password reset successful.' });
   } catch (err) {
     logger.error('ResetPassword error:', err);
     return res.status(500).json({ error: 'Server error during password reset.' });
@@ -777,22 +953,37 @@ async function resetPassword(req, res) {
 // Update deleteUser: if user deletes self, mark for deletion in 30 days
 async function deleteUser(req, res) {
   try {
-    // If admin, allow immediate delete
-    if (req.user.roles.includes('platformAdmin')) {
-      const deleted = await User.findByIdAndDelete(req.params.id);
-      if (!deleted) return res.status(404).json({ error: 'User not found.' });
-      return res.json({ message: 'User deleted.' });
+    const userId = req.params.id;
+    
+    // Validate user ID
+    if (!userId || !require('mongoose').Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID.' });
     }
-    // If user is deleting self, mark for deletion in 30 days
-    if (req.user.id === req.params.id) {
-      const user = await User.findById(req.params.id);
-      if (!user) return res.status(404).json({ error: 'User not found.' });
-      user.deletionRequestedAt = new Date();
-      user.deletionScheduledFor = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-      await user.save();
-      return res.json({ message: 'Account deletion requested. Your profile will be deleted in 30 days.' });
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
     }
-    return res.status(403).json({ error: 'Forbidden: only admin or self can delete.' });
+    
+    // Check if user has active events or certificates
+    const activeEvents = await require('../Models/Event').countDocuments({ hostUserId: userId });
+    const certificates = await require('../Models/Certificate').countDocuments({ userId });
+    
+    if (activeEvents > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete user with active events. Please transfer or cancel events first.' 
+      });
+    }
+    
+    // Soft delete - mark for deletion instead of hard delete
+    user.deletionRequestedAt = new Date();
+    user.deletionScheduledFor = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    await user.save();
+    
+    return res.json({ 
+      message: 'User marked for deletion. Will be permanently deleted in 30 days.',
+      deletionDate: user.deletionScheduledFor
+    });
   } catch (err) {
     logger.error('DeleteUser error:', err);
     return res.status(500).json({ error: 'Server error deleting user.' });
@@ -948,23 +1139,31 @@ async function resendOtp(req, res) {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required.' });
 
-    const tempStr = await redisClient.get(email);
-    if (!tempStr) return res.status(400).json({ error: 'No pending registration found for this email.' });
+    // Check if user exists and is not verified
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
 
-    const tempData = JSON.parse(tempStr);
-    const otp = otpService.generate();
+    if (user.isVerified) {
+      return res.status(400).json({ error: 'User is already verified.' });
+    }
+
+    // Generate new OTP
+    const otp = await otpService.generateOtp(email);
+    
     try {
       await emailService.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Your Verification Code',
-        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        text: `Your verification code is: ${otp}. Please enter it within 10 minutes.`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">CampVerse Verification Code</h2>
-            <p>Hello ${tempData.name},</p>
+            <p>Hello ${user.name},</p>
             <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
-            <p>Please enter this code within 5 minutes to complete your registration.</p>
+            <p>Please enter this code within 10 minutes to complete your registration.</p>
             <p>If you didn't request this code, please ignore this email.</p>
             <hr>
             <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
@@ -976,8 +1175,7 @@ async function resendOtp(req, res) {
       console.error('Email sending failed:', emailError.message);
       return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
     }
-    tempData.otp = otp;
-    await redisClient.setEx(email, 600, JSON.stringify(tempData));
+    
     return res.status(200).json({ message: 'OTP resent to email.' });
   } catch (err) {
     logger.error('Resend OTP error:', err);
@@ -1010,5 +1208,7 @@ module.exports = {
   approveHostRequest,
   rejectHostRequest,
   listPendingHostRequests,
-  resendOtp
+  resendOtp,
+  completeProfile,
+  requestInstitutionVerification
 };

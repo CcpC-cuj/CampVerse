@@ -9,6 +9,7 @@ const {
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getInstitutionAnalytics,
+  getPendingInstitutionRequests,
   getInstitutionDashboard
 } = require('../Controller/institution');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
@@ -180,6 +181,20 @@ router.post('/:id/approve-verification', authenticateToken, requireRole('platfor
  *       403: { description: Forbidden }
  */
 router.post('/:id/reject-verification', authenticateToken, requireRole('platformAdmin'), rejectInstitutionVerification);
+
+/**
+ * @swagger
+ * /api/institutions/pending-requests:
+ *   get:
+ *     summary: Get pending institution verification requests (admin only)
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: List of pending institution requests }
+ *       403: { description: Forbidden }
+ */
+router.get('/pending-requests', authenticateToken, requireRole('platformAdmin'), getPendingInstitutionRequests);
 
 /**
  * @swagger

@@ -24,7 +24,9 @@ const {
   listPendingHostRequests,
   approveHostRequest,
   rejectHostRequest,
-  resendOtp
+  resendOtp,
+  completeProfile,
+  requestInstitutionVerification
 } = require('../Controller/User');
 
 const {
@@ -353,6 +355,111 @@ router.post('/reset-password', resetPassword);
  *         description: Server error
  */
 router.post('/resend-otp', resendOtp);
+
+/**
+ * @swagger
+ * /api/users/complete-profile:
+ *   post:
+ *     summary: Complete user profile after Google signup
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - interests
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: 10-digit phone number
+ *               interests:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of user interests
+ *               skills:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Optional array of user skills
+ *               learningGoals:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Optional array of learning goals
+ *               collegeIdNumber:
+ *                 type: string
+ *                 description: Optional college ID number
+ *     responses:
+ *       200:
+ *         description: Profile completed successfully
+ *       400:
+ *         description: Invalid data or missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/complete-profile', authenticateToken, completeProfile);
+
+/**
+ * @swagger
+ * /api/users/request-institution-verification:
+ *   post:
+ *     summary: Request institution verification for temporary institutions
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - institutionName
+ *               - institutionType
+ *               - location
+ *             properties:
+ *               institutionName:
+ *                 type: string
+ *                 description: Name of the institution
+ *               institutionType:
+ *                 type: string
+ *                 enum: [college, university, org]
+ *                 description: Type of institution
+ *               location:
+ *                 type: object
+ *                 required:
+ *                   - city
+ *                   - state
+ *                   - country
+ *                 properties:
+ *                   city:
+ *                     type: string
+ *                   state:
+ *                     type: string
+ *                   country:
+ *                     type: string
+ *               collegeIdNumber:
+ *                 type: string
+ *                 description: Optional college ID number
+ *     responses:
+ *       200:
+ *         description: Institution verification request submitted
+ *       400:
+ *         description: Invalid data or user already verified
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/request-institution-verification', authenticateToken, requestInstitutionVerification);
 
 /**
  * @swagger

@@ -24,8 +24,11 @@ const errorHandler = require('./Middleware/errorHandler');
 
 const app = express();
 
-console.log('MONGO_URI:', process.env.MONGO_URI);
-console.log('REDIS_URL:', process.env.REDIS_URL);
+// Remove sensitive logging in production
+if (process.env.NODE_ENV !== 'production') {
+  console.log('MONGO_URI:', process.env.MONGO_URI ? '***SET***' : 'NOT SET');
+  console.log('REDIS_URL:', process.env.REDIS_URL ? '***SET***' : 'NOT SET');
+}
 
 // Winston logger setup
 const logger = winston.createLogger({
@@ -40,8 +43,29 @@ const logger = winston.createLogger({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
-  message: 'Too many requests, please try again later.'
+  message: 'Too many requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
+
+// Rate limiting for sensitive operations
+const sensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: 'Too many sensitive operations, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting for certificate generation
+const certificateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // limit each IP to 20 requests per hour
+  message: 'Too many certificate generation requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Swagger setup
 const swaggerOptions = {
   definition: {
@@ -126,12 +150,30 @@ app.use('/api/users/register', authLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/google-signin', authLimiter);
 app.use('/api/users/verify', authLimiter);
+app.use('/api/users/forgot-password', authLimiter);
+app.use('/api/users/reset-password', authLimiter);
+
+// Apply rate limiting to sensitive operations
+app.use('/api/events', sensitiveLimiter);
+app.use('/api/certificates/generate', certificateLimiter);
+app.use('/api/certificates/generate-batch', certificateLimiter);
+app.use('/api/users/:id/grant-host', sensitiveLimiter);
+app.use('/api/users/:id/grant-verifier', sensitiveLimiter);
+app.use('/api/institutions', sensitiveLimiter);
 
 // Centralized error handler (should be last)
 app.use(errorHandler);
 
 // Connect MongoDB and start server
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  bufferMaxEntries: 0,
+  bufferCommands: false
+})
   .then(() => {
     console.log('MongoDB connected');
     app.listen(5001, '0.0.0.0', () => {
@@ -140,10 +182,52 @@ mongoose.connect(process.env.MONGO_URI)
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
+    // Retry connection after 5 seconds
+    setTimeout(() => {
+      console.log('Retrying MongoDB connection...');
+      mongoose.connect(process.env.MONGO_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        bufferMaxEntries: 0,
+        bufferCommands: false
+      });
+    }, 5000);
   });
-console.log('MONGO_URI:', process.env.MONGO_URI);
-console.log('REDIS_URL:', process.env.REDIS_URL);
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected');
+});
+
+// Remove duplicate logging
+if (process.env.NODE_ENV !== 'production') {
+  console.log('MONGO_URI:', process.env.MONGO_URI ? '***SET***' : 'NOT SET');
+  console.log('REDIS_URL:', process.env.REDIS_URL ? '***SET***' : 'NOT SET');
+}
 
 // Export app for testing
 module.exports = app;
+
+// Scheduled cleanup task (run every hour)
+const { cleanupRedis } = require('./scripts/cleanup');
+
+// Schedule cleanup to run every hour
+setInterval(async () => {
+  try {
+    await cleanupRedis();
+  } catch (error) {
+    console.error('Scheduled cleanup failed:', error);
+  }
+}, 60 * 60 * 1000); // Run every hour
   

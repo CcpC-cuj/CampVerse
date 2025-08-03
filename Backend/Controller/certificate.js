@@ -117,6 +117,14 @@ async function generateCertificate(req, res) {
       return res.status(400).json({ error: 'User ID and Event ID are required' });
     }
 
+    // Validate certificate type
+    const validCertificateTypes = ['participant', 'winner', 'organizer', 'co-organizer'];
+    if (!validCertificateTypes.includes(certificateType)) {
+      return res.status(400).json({ 
+        error: 'Invalid certificate type. Must be one of: participant, winner, organizer, co-organizer' 
+      });
+    }
+
     // Check if user has permission (host, co-host, or platform admin)
     const event = await Event.findById(eventId);
     if (!event) {

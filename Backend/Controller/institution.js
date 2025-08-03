@@ -111,6 +111,20 @@ async function getInstitutionAnalytics(req, res) {
   }
 }
 
+// Get pending institution verification requests (admin only)
+async function getPendingInstitutionRequests(req, res) {
+  try {
+    const pendingInstitutions = await Institution.find({ 
+      verificationRequested: true,
+      isVerified: false 
+    }).populate('hostedEvents');
+    
+    res.json(pendingInstitutions);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching pending institution requests.' });
+  }
+}
+
 // Get institution dashboard (institution or admin)
 async function getInstitutionDashboard(req, res) {
   try {
@@ -211,5 +225,6 @@ module.exports = {
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getInstitutionAnalytics,
+  getPendingInstitutionRequests,
   getInstitutionDashboard
 }; 
