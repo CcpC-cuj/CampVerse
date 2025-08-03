@@ -1,0 +1,73 @@
+version: '3.8'
+services:
+  backend-dev:
+    build: 
+      context: ./Backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/campverse_dev
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev_jwt_secret_key_48hJ9dKf
+      - EMAIL_USER=krish.hansdiha@gmail.com
+      - EMAIL_PASSWORD=zeyf wiyznnuhpacu
+      - ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
+      - ML_API_KEY=dev_ml_api_key
+      - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
+      - FRONTEND_URL=http://localhost:3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - mongo
+      - redis
+    volumes:
+      - ./Backend:/app
+      - /app/node_modules
+    networks:
+      - campverse_dev
+    command: npm run dev
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_dev_data:/data/db
+    networks:
+      - campverse_dev
+    environment:
+      - MONGO_INITDB_DATABASE=campverse_dev
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - campverse_dev
+    command: redis-server --appendonly yes
+
+  # Optional: MongoDB Express for database management
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongo
+    networks:
+      - campverse_dev
+
+volumes:
+  mongo_dev_data:
+
+networks:
+  campverse_dev:
+    driver: bridge 
