@@ -122,9 +122,11 @@ async function googleSignIn(req, res) {
         user = new User({
           name: mockName,
           email: mockEmail,
-          phone: '1234567890',
+          phone: '', // Empty phone for Google users
           profilePhoto: '',
-          passwordHash,
+          passwordHash: null, // No password for Google users initially
+          authMethod: 'google',
+          googleId: null,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -165,9 +167,11 @@ async function googleSignIn(req, res) {
         user = new User({
           name: name || email.split('@')[0],
           email,
-          phone: '',
+          phone: '', // Empty phone for Google users
           profilePhoto: picture || '',
-          passwordHash,
+          passwordHash: null, // No password for Google users initially
+          authMethod: 'google',
+          googleId: userInfo.id || null,
           roles: ['student'],
           isVerified: true,
           canHost: false,
@@ -200,13 +204,12 @@ async function register(req, res) {
     const { name, email, phone, password } = req.body;
 
     // Comprehensive validation
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !password) {
       return res.status(400).json({ 
-        error: 'All fields (name, email, phone, password) are required.',
+        error: 'All fields (name, email, password) are required.',
         missing: {
           name: !name,
           email: !email,
-          phone: !phone,
           password: !password
         }
       });
@@ -224,7 +227,7 @@ async function register(req, res) {
       return res.status(400).json({ error: 'Only academic emails (.ac.in, .edu.in, or .edu) are allowed.' });
     }
 
-    if (!validatePhone(phone)) {
+    if (phone && !validatePhone(phone)) {
       return res.status(400).json({ error: 'Please provide a valid 10-digit phone number.' });
     }
 
@@ -319,6 +322,7 @@ async function verifyOtp(req, res) {
       email,
       phone: tempData.phone,
       passwordHash,
+      authMethod: 'email',
       roles: ['student'],
       isVerified: false,
       canHost: false,
@@ -940,48 +944,163 @@ async function getUserBadges(req, res) {
   }
 }
 
+// Set password for Google users
+async function setPassword(req, res) {
+  try {
+    const userId = req.user.id;
+    const { password } = req.body;
 
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required.' });
+    }
 
-// ---------------- Resend OTP ----------------
-async function resendOtp(req, res) {
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Hash the new password
+    const passwordHash = await bcrypt.hash(password, 10);
+    user.passwordHash = passwordHash;
+    user.authMethod = 'email'; // Update auth method to email since they now have a password
+    await user.save();
+
+    return res.json({
+      message: 'Password set successfully.',
+      user: sanitizeUser(user)
+    });
+  } catch (err) {
+    logger.error('Set password error:', err);
+    return res.status(500).json({ error: 'Server error while setting password.' });
+  }
+}
+
+// Request password reset
+async function requestPasswordReset(req, res) {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required.' });
 
-    const tempStr = await redisClient.get(email);
-    if (!tempStr) return res.status(400).json({ error: 'No pending registration found for this email.' });
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
 
-    const tempData = JSON.parse(tempStr);
-    const otp = otpService.generate();
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    // Store reset token in Redis
+    await redisClient.setEx(`reset_${email}`, 3600, JSON.stringify({
+      token: resetToken,
+      userId: user._id.toString()
+    }));
+
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}&email=${email}`;
+    
     try {
       await emailService.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'Your Verification Code',
-        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        subject: 'Password Reset Request',
+        text: `Click the following link to reset your password: ${resetUrl}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">CampVerse Verification Code</h2>
-            <p>Hello ${tempData.name},</p>
-            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
-            <p>Please enter this code within 5 minutes to complete your registration.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
+            <h2 style="color: #333;">CampVerse Password Reset</h2>
+            <p>Hello ${user.name},</p>
+            <p>You requested to reset your password. Click the button below to reset it:</p>
+            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px;">Reset Password</a>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
             <hr>
             <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
           </div>
         `
       });
-      console.log(`Email resent successfully to ${email}`);
+      logger.info(`Password reset email sent to ${email}`);
     } catch (emailError) {
-      console.error('Email sending failed:', emailError.message);
-      return res.status(500).json({ error: 'Failed to send verification email. Please try again.' });
+      logger.error('Password reset email sending failed:', emailError.message);
+      return res.status(500).json({ error: 'Failed to send password reset email. Please try again.' });
     }
-    tempData.otp = otp;
-    await redisClient.setEx(email, 600, JSON.stringify(tempData));
-    return res.status(200).json({ message: 'OTP resent to email.' });
+
+    return res.json({ message: 'Password reset email sent.' });
   } catch (err) {
-    logger.error('Resend OTP error:', err);
-    return res.status(500).json({ error: 'Server error during OTP resend. Please try again.' });
+    logger.error('Request password reset error:', err);
+    return res.status(500).json({ error: 'Server error while requesting password reset.' });
+  }
+}
+
+// Reset password with token
+async function resetPassword(req, res) {
+  try {
+    const { email, token, password } = req.body;
+
+    if (!email || !token || !password) {
+      return res.status(400).json({ error: 'Email, token, and password are required.' });
+    }
+
+    if (!validatePassword(password)) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    // Get reset token from Redis
+    const resetDataStr = await redisClient.get(`reset_${email}`);
+    if (!resetDataStr) {
+      return res.status(400).json({ error: 'Invalid or expired reset token.' });
+    }
+
+    const resetData = JSON.parse(resetDataStr);
+    if (resetData.token !== token) {
+      return res.status(400).json({ error: 'Invalid reset token.' });
+    }
+
+    // Update user password
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.findById(resetData.userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    user.passwordHash = passwordHash;
+    user.authMethod = 'email'; // Update auth method to email
+    await user.save();
+
+    // Delete reset token
+    await redisClient.del(`reset_${email}`);
+
+    return res.json({ message: 'Password reset successfully.' });
+  } catch (err) {
+    logger.error('Reset password error:', err);
+    return res.status(500).json({ error: 'Server error while resetting password.' });
+  }
+}
+
+// Check if user has password (for Google users)
+async function checkPasswordStatus(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    return res.json({
+      hasPassword: !!user.passwordHash,
+      authMethod: user.authMethod
+    });
+  } catch (err) {
+    logger.error('Check password status error:', err);
+    return res.status(500).json({ error: 'Server error while checking password status.' });
   }
 }
 
@@ -989,26 +1108,29 @@ module.exports = {
   register,
   verifyOtp,
   login,
+  googleSignIn,
   updatePreferences,
   getMe,
   updateMe,
   getUserById,
   updateUserById,
-  deleteUser,
+  getDashboard,
   getUserCertificates,
   getUserAchievements,
   getUserEvents,
   grantHostAccess,
   grantVerifierAccess,
-  googleSignIn,
-  forgotPassword,
-  resetPassword,
-  getDashboard,
-  trackReferral,
-  getUserBadges,
   requestHostAccess,
   approveHostRequest,
   rejectHostRequest,
   listPendingHostRequests,
-  resendOtp
+  forgotPassword,
+  resetPassword,
+  deleteUser,
+  trackReferral,
+  getUserBadges,
+  resendOtp,
+  setPassword,
+  requestPasswordReset,
+  checkPasswordStatus
 };

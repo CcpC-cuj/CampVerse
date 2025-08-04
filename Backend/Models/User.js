@@ -29,10 +29,12 @@ const verifierEligibilityStatusSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$|\.edu$/ },
-  phone: { type: String, required: true },
+  phone: { type: String, required: false },
   Gender: { type: String },
   DOB: { type: Date },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: false }, // Optional for Google users
+  authMethod: { type: String, enum: ['email', 'google'], default: 'email' },
+  googleId: { type: String }, // For Google OAuth users
   profilePhoto: { type: String },
   institutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Institution' },
   institutionVerificationStatus: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
