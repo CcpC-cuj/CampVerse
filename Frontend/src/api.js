@@ -67,4 +67,43 @@ export async function resendOtp({ email }) {
   return res.json();
 }
 
+// Password management functions
+export async function setPassword({ password }) {
+  const res = await fetch(`${API_URL}/api/users/set-password`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...getAuthHeaders()
+    },
+    body: JSON.stringify({ password })
+  });
+  return res.json();
+}
+
+export async function requestPasswordReset({ email }) {
+  const res = await fetch(`${API_URL}/api/users/request-password-reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  return res.json();
+}
+
+export async function resetPassword({ email, token, password }) {
+  const res = await fetch(`${API_URL}/api/users/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token, password })
+  });
+  return res.json();
+}
+
+export async function checkPasswordStatus() {
+  const res = await fetch(`${API_URL}/api/users/check-password-status`, {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+  return res.json();
+}
+
 // Add more API functions as needed (e.g., getProfile, updateProfile, etc.) 

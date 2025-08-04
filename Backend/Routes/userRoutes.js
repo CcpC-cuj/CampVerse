@@ -925,4 +925,90 @@ router.get('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), getU
  */
 router.patch('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), updateUserById);
 
+// Password management routes
+/**
+ * @swagger
+ * /api/users/set-password:
+ *   post:
+ *     summary: Set password for Google users
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *       400:
+ *         description: Invalid password
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/set-password', authenticateToken, setPassword);
+
+/**
+ * @swagger
+ * /api/users/request-password-reset:
+ *   post:
+ *     summary: Request password reset via email
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.post('/request-password-reset', requestPasswordReset);
+
+/**
+ * @swagger
+ * /api/users/check-password-status:
+ *   get:
+ *     summary: Check if user has password set
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Password status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 hasPassword:
+ *                   type: boolean
+ *                 authMethod:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get('/check-password-status', authenticateToken, checkPasswordStatus);
+
 module.exports = router;
