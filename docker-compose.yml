@@ -1,7 +1,10 @@
 version: '3.8'
 services:
   frontend:
-    build: ./Frontend
+    build:
+      context: ./Frontend
+      args:
+        - VITE_GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
     ports:
       - "3000:80"
     depends_on:
