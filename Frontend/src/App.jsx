@@ -11,6 +11,8 @@ import OAuthCallback from "./pages/OAuthCallback";
 import "remixicon/fonts/remixicon.css";
 
 function App() {
+  console.log("🌍 App loaded");
+
   return (
     <AuthProvider>
       <Router>
@@ -31,5 +33,6 @@ function App() {
     </AuthProvider>
   );
 }
+
 
 export default App;
