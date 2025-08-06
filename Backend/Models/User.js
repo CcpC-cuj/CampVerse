@@ -29,7 +29,7 @@ const verifierEligibilityStatusSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$|\.edu$/ },
-  phone: { type: String, required: true },
+  phone: { type: String, required: false },
   Gender: { type: String },
   DOB: { type: Date },
   passwordHash: { type: String, required: true },

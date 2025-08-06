@@ -122,7 +122,7 @@ async function googleSignIn(req, res) {
         user = new User({
           name: mockName,
           email: mockEmail,
-          phone: '1234567890',
+          phone: '',
           profilePhoto: '',
           passwordHash,
           roles: ['student'],
