@@ -1,6 +1,6 @@
 // components/RecentNotifications.jsx
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Bell } from 'lucide-react';
 
 const RecentNotifications = () => {

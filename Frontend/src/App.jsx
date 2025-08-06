@@ -6,7 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Import pages
 import Landing from "./pages/landing";
-import UserDashboard from "./pages/UserDashboard";
+import UserDashboard from "./userdashboard/UserDashboard";
 import OAuthCallback from "./pages/OAuthCallback";
 import "remixicon/fonts/remixicon.css";
 

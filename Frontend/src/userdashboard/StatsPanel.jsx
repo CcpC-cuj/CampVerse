@@ -1,6 +1,6 @@
 // components/StatsPanel.jsx
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Trophy, Calendar } from 'lucide-react';
 
 const StatsPanel = () => {

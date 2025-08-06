@@ -1,6 +1,6 @@
 // components/AssociatedColleges.jsx
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { University } from 'lucide-react';
 
 const AssociatedColleges = () => {
