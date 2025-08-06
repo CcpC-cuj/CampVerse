@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampVerse Platform Admin Panel</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+primary: '#3B82F6',
+secondary: '#8B5CF6'
+},
+borderRadius: {
+'none': '0px',
+'sm': '4px',
+DEFAULT: '8px',
+'md': '12px',
+'lg': '16px',
+'xl': '20px',
+'2xl': '24px',
+'3xl': '32px',
+'full': '9999px',
+'button': '8px'
+}
+}
+}
+}
+</script>
+<style>
+:where([class^="ri-"])::before {
+content: "\f3c2";
+}
+</style>
+</head>
+<body class="bg-slate-900">
+<div class="flex h-screen">
+<!-- Sidebar -->
+<aside class="w-64 bg-slate-800 shadow-lg flex flex-col border-r border-slate-700">
+<div class="p-6 border-b border-slate-700">
+<h1 class="text-2xl font-['Pacifico'] text-primary">CampVerse</h1>
+<p class="text-sm text-slate-400 mt-1">Platform Admin</p>
+</div>
+<nav class="flex-1 p-4 space-y-2">
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-dashboard-line"></i>
+</div>
+<span>Dashboard</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-flag-line"></i>
+</div>
+<span>Content Moderation</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-building-line"></i>
+</div>
+<span>Institutions</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>Role Management</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-bar-chart-line"></i>
+</div>
+<span>Analytics</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-settings-line"></i>
+</div>
+<span>Settings</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-file-list-line"></i>
+</div>
+<span>Activity Logs</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content -->
+<div class="flex-1 flex flex-col">
+<!-- Header -->
+<header class="bg-slate-800/50 shadow-sm border-b border-slate-700 px-6 py-4 backdrop-blur-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-semibold text-slate-100">Platform Dashboard</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input type="text" placeholder="Search across platform..." class="w-80 px-4 py-2 pl-10 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-200 placeholder-slate-400">
+<div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+<i class="ri-search-line text-slate-400"></i>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button id="notificationBtn" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-notification-line"></i>
+</div>
+<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+</button>
+<div id="notificationPanel" class="hidden absolute right-4 top-16 w-96 bg-slate-800 rounded-xl shadow-lg border border-slate-700 z-50">
+<div class="p-4 border-b border-slate-700">
+<div class="flex items-center justify-between">
+<h3 class="font-semibold text-slate-100">Notifications</h3>
+<button class="text-sm text-primary hover:text-secondary">Mark all as read</button>
+</div>
+</div>
+<div class="max-h-96 overflow-y-auto">
+<div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-flag-line text-red-600"></i>
+</div>
+<div>
+<p class="text-sm text-gray-900">New content flagged: "Tech Conference 2024"</p>
+<p class="text-xs text-gray-500 mt-1">Reported by 3 users for content violation</p>
+<p class="text-xs text-gray-400 mt-1">2 minutes ago</p>
+</div>
+</div>
+</div>
+<div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-user-follow-line text-yellow-600"></i>
+</div>
+<div>
+<p class="text-sm text-gray-900">New role request from Maria Garcia</p>
+<p class="text-xs text-gray-500 mt-1">Event Verifier role requested</p>
+<p class="text-xs text-gray-400 mt-1">15 minutes ago</p>
+</div>
+</div>
+</div>
+<div class="p-4 hover:bg-gray-50">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-building-line text-green-600"></i>
+</div>
+<div>
+<p class="text-sm text-gray-900">New institution registration: MIT University</p>
+<p class="text-xs text-gray-500 mt-1">Pending approval</p>
+<p class="text-xs text-gray-400 mt-1">1 hour ago</p>
+</div>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-gray-200 bg-gray-50">
+<button class="w-full py-2 text-sm text-center text-primary hover:text-secondary font-medium">View All Notifications</button>
+</div>
+</div>
+<div class="flex items-center gap-3 pl-3 border-l border-gray-200">
+<img src="https://readdy.ai/api/search-image?query=professional%20admin%20user%20avatar%20portrait%20with%20clean%20background%20modern%20style&width=40&height=40&seq=admin-avatar&orientation=squarish" alt="Admin" class="w-8 h-8 rounded-full object-cover"><div class="text-sm">
+<p class="font-medium text-gray-900">Sarah Johnson</p>
+<p class="text-gray-500">Platform Admin</p>
+</div>
+<button class="p-1 text-gray-600 hover:text-gray-900">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<main class="flex-1 p-6 overflow-y-auto">
+<!-- KPI Cards -->
+<div class="grid grid-cols-4 gap-6 mb-8">
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700 hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] transition-shadow">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-slate-400">Total Institutions</p>
+<p class="text-2xl font-bold text-slate-100 mt-1">247</p>
+<p class="text-sm text-emerald-400 mt-1">+12 this month</p>
+</div>
+<div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+<i class="ri-building-fill text-blue-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-gray-600">Total Users</p>
+<p class="text-2xl font-bold text-gray-900 mt-1">18,542</p>
+<p class="text-sm text-green-600 mt-1">+1,234 this month</p>
+</div>
+<div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+<i class="ri-user-fill text-green-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-gray-600">Active Events</p>
+<p class="text-2xl font-bold text-gray-900 mt-1">1,847</p>
+<p class="text-sm text-orange-600 mt-1">+89 this week</p>
+</div>
+<div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+<i class="ri-calendar-event-fill text-orange-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-gray-600">Certificates Issued</p>
+<p class="text-2xl font-bold text-gray-900 mt-1">45,231</p>
+<p class="text-sm text-purple-600 mt-1">+2,156 this month</p>
+</div>
+<div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+<i class="ri-award-fill text-purple-600 text-xl"></i>
+</div>
+</div>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-2 gap-6 mb-8">
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<h3 class="text-lg font-semibold text-slate-100 mb-4">Event Participation Trends</h3>
+<div id="eventChart" style="width: 100%; height: 300px;"></div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<h3 class="text-lg font-semibold text-gray-900 mb-4">Institution Distribution</h3>
+<div id="institutionChart" style="width: 100%; height: 300px;"></div>
+</div>
+</div>
+<!-- Pending Actions -->
+<div class="grid grid-cols-3 gap-6 mb-8">
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-semibold text-gray-900">Pending Institution Requests</h3>
+<span class="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded-full">8</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">MIT University</p>
+<p class="text-sm text-gray-600">Cambridge, MA</p>
+</div>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">Stanford University</p>
+<p class="text-sm text-gray-600">Stanford, CA</p>
+</div>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+</div>
+<button class="w-full mt-4 text-center text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">View All Requests</button>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-semibold text-gray-900">Role Requests</h3>
+<span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-2 py-1 rounded-full">15</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">Alex Chen</p>
+<p class="text-sm text-gray-600">Event Host Request</p>
+</div>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">Maria Garcia</p>
+<p class="text-sm text-gray-600">Event Verifier Request</p>
+</div>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+</div>
+<button class="w-full mt-4 text-center text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">View All Requests</button>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-semibold text-gray-900">Flagged Events</h3>
+<span class="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded-full">3</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">Tech Conference 2024</p>
+<p class="text-sm text-gray-600">Content violation</p>
+</div>
+<button class="text-red-600 hover:text-red-700 text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+<div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+<div>
+<p class="font-medium text-gray-900">AI Workshop</p>
+<p class="text-sm text-gray-600">Spam report</p>
+</div>
+<button class="text-red-600 hover:text-red-700 text-sm font-medium !rounded-button whitespace-nowrap">Review</button>
+</div>
+</div>
+<button class="w-full mt-4 text-center text-red-600 hover:text-red-700 text-sm font-medium !rounded-button whitespace-nowrap">View All Flagged</button>
+</div>
+</div>
+<!-- Content Moderation -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+<div class="p-6 border-b border-gray-200">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-semibold text-gray-900">Content Moderation Queue</h3>
+<div class="flex gap-3">
+<select class="text-sm border border-gray-300 rounded-lg px-3 py-2 pr-8">
+<option>All Types</option>
+<option>Events</option>
+<option>Comments</option>
+<option>User Reports</option>
+</select>
+<select class="text-sm border border-gray-300 rounded-lg px-3 py-2 pr-8">
+<option>All Status</option>
+<option>Pending Review</option>
+<option>Under Investigation</option>
+<option>Resolved</option>
+</select>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-gray-50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reports</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-white divide-y divide-gray-200">
+<tr>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-gray-900">Tech Conference 2024</p>
+<p class="text-xs text-gray-500">Reported 2 hours ago</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Event</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm text-gray-900">3 reports</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Under Review</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex gap-2">
+<button class="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg !rounded-button whitespace-nowrap">Approve</button>
+<button class="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg !rounded-button whitespace-nowrap">Remove</button>
+</div>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-medium text-gray-900">Inappropriate comment on AI Workshop</p>
+<p class="text-xs text-gray-500">Reported 4 hours ago</p>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Comment</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="text-sm text-gray-900">2 reports</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Pending</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex gap-2">
+<button class="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg !rounded-button whitespace-nowrap">Approve</button>
+<button class="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg !rounded-button whitespace-nowrap">Remove</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Recent Activity -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+<div class="p-6 border-b border-gray-200">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-semibold text-gray-900">Recent Activity</h3>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">View All</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-gray-50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User/Institution</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-white divide-y divide-gray-200">
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15 14:30</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Institution Registration</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Harvard University</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm">
+<button class="text-primary hover:text-secondary font-medium !rounded-button whitespace-nowrap">Review</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15 13:45</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Role Request</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">John Smith (Event Host)</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm">
+<button class="text-gray-400 font-medium !rounded-button whitespace-nowrap">View</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15 12:20</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Event Flagged</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Data Science Summit</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Under Review</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm">
+<button class="text-red-600 hover:text-red-700 font-medium !rounded-button whitespace-nowrap">Investigate</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15 11:15</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Institution Approved</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">UC Berkeley</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm">
+<button class="text-gray-400 font-medium !rounded-button whitespace-nowrap">View</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2024-01-15 10:30</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Bulk Certificate Issue</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">IIT Patna (456 certificates)</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm">
+<button class="text-gray-400 font-medium !rounded-button whitespace-nowrap">View</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script id="notifications">
+document.addEventListener('DOMContentLoaded', function() {
+const notificationBtn = document.getElementById('notificationBtn');
+const notificationPanel = document.getElementById('notificationPanel');
+notificationBtn.addEventListener('click', function(e) {
+e.stopPropagation();
+notificationPanel.classList.toggle('hidden');
+});
+document.addEventListener('click', function(e) {
+if (!notificationPanel.contains(e.target) && !notificationBtn.contains(e.target)) {
+notificationPanel.classList.add('hidden');
+}
+});
+});
+</script>
+<script id="eventChart">
+document.addEventListener('DOMContentLoaded', function() {
+const eventChart = echarts.init(document.getElementById('eventChart'));
+const eventOption = {
+animation: false,
+grid: { top: 20, right: 20, bottom: 20, left: 40 },
+tooltip: {
+trigger: 'axis',
+backgroundColor: 'rgba(30, 41, 59, 0.9)',
+borderColor: '#475569',
+borderWidth: 1,
+textStyle: { color: '#f1f5f9' }
+},
+xAxis: {
+type: 'category',
+data: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+axisLabel: { color: '#94a3b8' },
+axisLine: { lineStyle: { color: '#475569' } }
+},
+yAxis: {
+type: 'value',
+axisLabel: { color: '#94a3b8' },
+axisLine: { lineStyle: { color: '#475569' } },
+splitLine: { lineStyle: { color: '#334155' } }
+},
+series: [{
+data: [1200, 1800, 1500, 2200, 1900, 2400, 2100],
+type: 'bar',
+itemStyle: {
+color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+{offset: 0, color: 'rgba(59, 130, 246, 0.8)'},
+{offset: 1, color: 'rgba(139, 92, 246, 0.3)'}
+]),
+borderRadius: [4, 4, 0, 0]
+},
+emphasis: {
+itemStyle: {
+color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+{offset: 0, color: 'rgba(59, 130, 246, 1)'},
+{offset: 1, color: 'rgba(139, 92, 246, 0.5)'}
+])
+}
+}
+}]
+};
+eventChart.setOption(eventOption);
+});
+</script>
+<script id="institutionChart">
+document.addEventListener('DOMContentLoaded', function() {
+const institutionChart = echarts.init(document.getElementById('institutionChart'));
+const institutionOption = {
+animation: false,
+tooltip: {
+trigger: 'item',
+backgroundColor: 'rgba(30, 41, 59, 0.9)',
+borderColor: '#475569',
+borderWidth: 1,
+textStyle: { color: '#f1f5f9' }
+},
+series: [{
+type: 'pie',
+radius: '70%',
+data: [
+{ value: 85, name: 'Engineering', itemStyle: { color: 'rgba(59, 130, 246, 0.8)' } },
+{ value: 62, name: 'Medical', itemStyle: { color: 'rgba(139, 92, 246, 0.8)' } },
+{ value: 48, name: 'Business', itemStyle: { color: 'rgba(236, 72, 153, 0.8)' } },
+{ value: 52, name: 'Liberal Arts', itemStyle: { color: 'rgba(45, 212, 191, 0.8)' } }
+],
+itemStyle: {
+borderRadius: 4,
+borderColor: '#fff',
+borderWidth: 2
+},
+emphasis: {
+itemStyle: {
+shadowBlur: 10,
+shadowOffsetX: 0,
+shadowColor: 'rgba(0, 0, 0, 0.5)'
+}
+}
+}]
+};
+institutionChart.setOption(institutionOption);
+});
+</script>
+</body>
+</html>
