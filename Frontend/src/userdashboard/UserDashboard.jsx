@@ -3,12 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../userdashboard/sidebar';
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white ">
+    <div className="min-h-screen flex bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* Sidebar */}
       <Sidebar />
 
@@ -28,7 +28,7 @@ const UserDashboard = () => {
             />
           </div>
 
-          {/* Right Nav */}
+          {/* Right Nav Buttons */}
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end w-full sm:w-auto">
             <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
               <i className="ri-notification-3-line w-5 h-5" />
@@ -43,9 +43,9 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Scrollable Main Area */}
+        {/* Main Scrollable Area */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gray-900">
-          {/* Welcome Section */}
+          {/* ✅ Get Started / Welcome Section */}
           <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-6 mb-6">
             <div className="flex items-center justify-between flex-wrap gap-6">
               <div>
@@ -72,7 +72,7 @@ const UserDashboard = () => {
             </div>
           </div>
 
-          {/* Stats Overview */}
+          {/* 🔢 Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[
               { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: 5 },
@@ -80,7 +80,10 @@ const UserDashboard = () => {
               { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: 7 },
               { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: 3 },
             ].map((stat, i) => (
-              <div key={i} className="bg-gray-800 rounded-lg p-4 flex items-center">
+              <div
+                key={i}
+                className={`bg-gray-800 rounded-lg p-4 flex items-center`}
+              >
                 <div className={`w-12 h-12 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center text-${stat.color}-400 mr-4`}>
                   <i className={`${stat.icon} ri-lg`} />
                 </div>
@@ -91,6 +94,7 @@ const UserDashboard = () => {
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </div>
