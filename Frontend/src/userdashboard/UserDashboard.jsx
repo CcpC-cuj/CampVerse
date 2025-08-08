@@ -1,98 +1,97 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../userdashboard/sidebar';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (!user) {
-    return <div className="text-white p-6">Loading...</div>;
-  }
+  if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden flex justify-between items-center p-4 bg-black/20 border-b border-purple-500/30">
-        <h1 className="text-xl font-bold text-white">CampVerse</h1>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white text-2xl">
-          <i className="ri-menu-line"></i>
-        </button>
-      </div>
+    <div className="min-h-screen flex bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white ">
+      {/* Sidebar */}
+      <Sidebar />
 
-      {/* Sidebar (Hidden on mobile unless open) */}
-      <div
-        className={`fixed md:static z-40 top-0 left-0 h-full w-64 bg-gray-900 transform ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition-transform duration-300 ease-in-out`}
-      >
-        <Sidebar />
-      </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navigation */}
+        <div className="bg-gray-800 border-b border-gray-700 p-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-auto sm:flex-1 min-w-[250px] max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i className="ri-search-line text-gray-400 w-5 h-5" />
+            </div>
+            <input
+              type="text"
+              className="bg-gray-700 border-none text-sm rounded-lg block w-full pl-10 p-2.5 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="Search events, colleges, or categories..."
+            />
+          </div>
 
-      {/* Overlay when sidebar is open (on mobile) */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black opacity-50 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
+          {/* Right Nav */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end w-full sm:w-auto">
+            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
+              <i className="ri-notification-3-line w-5 h-5" />
+            </button>
+            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
+              <i className="ri-calendar-line w-5 h-5" />
+            </button>
+            <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button whitespace-nowrap flex items-center gap-2 transition-colors">
+              <i className="ri-add-line w-5 h-5" />
+              <span className="hidden sm:inline">Host Event</span>
+            </button>
+          </div>
+        </div>
 
-      {/* Main Dashboard Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-black/20 backdrop-blur-lg border-b border-purple-500/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="hidden md:flex items-center space-x-4">
-                <h1 className="text-2xl font-bold text-white">CampVerse</h1>
-                <span className="text-purple-300">Dashboard</span>
+        {/* Scrollable Main Area */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gray-900">
+          {/* Welcome Section */}
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <h1 className="text-2xl font-bold">Welcome back, {user.name}!</h1>
+                <p className="text-gray-300 mt-1">Ready to explore your next event galaxy?</p>
+                <div className="mt-4 flex gap-3">
+                  <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button whitespace-nowrap transition-colors">
+                    Discover Events
+                  </button>
+                  <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button whitespace-nowrap transition-colors">
+                    View Calendar
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-white text-sm sm:text-base">Welcome, {user.name}</span>
-                <button
-                  onClick={logout}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base"
-                >
-                  Logout
-                </button>
+              <div className="hidden md:block relative">
+                <div className="absolute -top-6 -right-6 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl" />
+                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl" />
+                <img
+                  src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20a%20space%20theme%20with%20planets%2C%20stars%2C%20and%20a%20rocket%2C%20colorful%2C%20playful%2C%20educational%20theme%2C%20galaxy%20exploration&width=200&height=200&seq=2&orientation=squarish"
+                  alt="Space theme"
+                  className="w-40 h-40 object-contain relative z-10"
+                />
               </div>
             </div>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Profile Section */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-purple-500/30">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">Profile Information</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Name</label>
-                <p className="text-white text-base sm:text-lg">{user.name}</p>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[
+              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: 5 },
+              { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: 2 },
+              { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: 7 },
+              { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: 3 },
+            ].map((stat, i) => (
+              <div key={i} className="bg-gray-800 rounded-lg p-4 flex items-center">
+                <div className={`w-12 h-12 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center text-${stat.color}-400 mr-4`}>
+                  <i className={`${stat.icon} ri-lg`} />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400">{stat.label}</div>
+                  <div className="text-xl font-bold">{stat.count}</div>
+                </div>
               </div>
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Email</label>
-                <p className="text-white text-base sm:text-lg">{user.email}</p>
-              </div>
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Phone</label>
-                <p className="text-white text-base sm:text-lg">{user.phone}</p>
-              </div>
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Role</label>
-                <p className="text-white text-base sm:text-lg capitalize">{user.roles?.join(', ') || 'Student'}</p>
-              </div>
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Verified</label>
-                <p className="text-white text-base sm:text-lg">{user.isVerified ? 'Yes' : 'No'}</p>
-              </div>
-              <div>
-                <label className="block text-purple-300 text-sm font-medium mb-1">Can Host</label>
-                <p className="text-white text-base sm:text-lg">{user.canHost ? 'Yes' : 'No'}</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
