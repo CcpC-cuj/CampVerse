@@ -104,13 +104,52 @@ async function requestInstitutionVerification(req, res) {
 // Approve institution verification (admin only)
 async function approveInstitutionVerification(req, res) {
   try {
+    const { location, website, phone, info } = req.body || {};
+    
     const institution = await Institution.findById(req.params.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found.' });
+    
+    // Update institution with admin-provided details
     institution.isVerified = true;
     institution.verificationRequested = false;
+    
+    // Admin can add/update location and other details during approval
+    if (location) {
+      institution.location = {
+        city: location.city || '',
+        state: location.state || '',
+        country: location.country || ''
+      };
+    }
+    
+    if (website) institution.website = website;
+    if (phone) institution.phone = phone;
+    if (info) institution.info = info;
+    
     await institution.save();
-    res.json({ message: 'Institution verified.' });
+    
+    // Update all users with this institution to verified status
+    await User.updateMany(
+      { institutionId: institution._id },
+      { institutionVerificationStatus: 'verified' }
+    );
+    
+    res.json({ 
+      message: 'Institution verified successfully.',
+      institution: {
+        id: institution._id,
+        name: institution.name,
+        type: institution.type,
+        emailDomain: institution.emailDomain,
+        isVerified: institution.isVerified,
+        location: institution.location,
+        website: institution.website,
+        phone: institution.phone,
+        info: institution.info
+      }
+    });
   } catch (err) {
+    console.error('Error approving institution verification:', err);
     res.status(500).json({ error: 'Error approving verification.' });
   }
 }
@@ -247,63 +286,153 @@ async function searchInstitutions(req, res) {
 
 async function requestNewInstitution(req, res) {
   try {
-    const { name, type, location, emailDomain: _ignoredEmailDomain, website, phone, info } = req.body || {};
+    console.log('=== INSTITUTION REQUEST DEBUG ===');
+    console.log('Request body:', req.body);
+    console.log('User ID:', req.user.id);
+    console.log('User object:', req.user);
+    
+    const { name, type, website, phone, info } = req.body || {};
+    
+    console.log('Extracted data:', { name, type, website, phone, info });
+    
+    // Validate required fields
     if (!name || !type) {
-      return res.status(400).json({ error: 'name and type are required.' });
+      console.log('Validation failed: missing name or type');
+      return res.status(400).json({ 
+        error: 'name and type are required.',
+        received: { name, type }
+      });
+    }
+
+    // Validate type enum
+    const validTypes = ['college', 'university', 'org', 'temporary'];
+    if (!validTypes.includes(type)) {
+      console.log('Validation failed: invalid type');
+      return res.status(400).json({ 
+        error: `Invalid type. Must be one of: ${validTypes.join(', ')}`,
+        received: { type }
+      });
     }
 
     // Derive domain from requester email for correctness
     const requester = await User.findById(req.user.id).select('email name');
+    console.log('Requester found:', requester);
+    
     if (!requester || !requester.email || !requester.email.includes('@')) {
+      console.log('Validation failed: invalid requester email');
       return res.status(400).json({ error: 'Requester email not found to derive domain.' });
     }
+    
     const computedDomain = requester.email.split('@')[1].toLowerCase();
+    console.log('Computed domain:', computedDomain);
 
-    // Create a temporary institution entry
-    const institution = await Institution.create({
-      name,
-      type: type || 'temporary',
-      location: location || { city: '', state: '', country: '' },
+    // Check if institution with same domain already exists
+    const existingInstitution = await Institution.findOne({ emailDomain: computedDomain });
+    if (existingInstitution) {
+      console.log('Conflict: institution with domain already exists');
+      return res.status(409).json({ 
+        error: 'An institution with this email domain already exists.',
+        existingInstitution: {
+          id: existingInstitution._id,
+          name: existingInstitution.name,
+          isVerified: existingInstitution.isVerified
+        }
+      });
+    }
+
+    // Create a new institution entry (unverified by default)
+    const institutionData = {
+      name: name.trim(),
+      type: type,
+      // Location will be set by admin during approval
       emailDomain: computedDomain,
-      isVerified: false,
-      isTemporary: true,
+      isVerified: false, // Always false for user requests
+      isTemporary: false, // Not temporary, just unverified
       verificationRequested: true,
       verificationRequests: [
         {
           requestedBy: req.user.id,
-          institutionName: name,
+          institutionName: name.trim(),
           officialEmail: requester.email,
           website: website || '',
           phone: phone || '',
-          type,
+          type: type,
           info: info || ''
         }
       ]
-    });
+    };
 
-    // Update user to reference this institution and pending status
+    console.log('Creating institution with data:', institutionData);
+
+    const institution = await Institution.create(institutionData);
+    console.log('Institution created successfully:', institution._id);
+
+    // Update user to reference this institution and set status to pending
     await User.findByIdAndUpdate(req.user.id, {
       institutionId: institution._id,
       institutionVerificationStatus: 'pending'
     });
+    console.log('User updated with institution reference');
 
-    // Notify platform admins
+    // Notify platform admins about the new institution request
     try {
       await notifyInstitutionRequest({
         requesterId: req.user.id,
         requesterName: requester?.name || 'Unknown',
         requesterEmail: requester?.email || '',
-        institutionName: name,
+        institutionName: name.trim(),
         type
       });
+      console.log('Admin notification sent');
     } catch (e) {
       // Log error but don't fail the request
       console.error('Failed to notify institution request:', e);
     }
 
-    return res.status(201).json({ message: 'Institution request submitted.', institution });
+    console.log('=== INSTITUTION REQUEST SUCCESS ===');
+    return res.status(201).json({ 
+      message: 'Institution request submitted successfully. It will be reviewed by administrators.',
+      institution: {
+        id: institution._id,
+        name: institution.name,
+        type: institution.type,
+        emailDomain: institution.emailDomain,
+        isVerified: institution.isVerified,
+        verificationRequested: institution.verificationRequested,
+        createdAt: institution.createdAt
+      },
+      note: 'This institution is currently unverified. Only platform administrators can verify it.'
+    });
+
   } catch (err) {
-    res.status(500).json({ error: 'Error submitting institution request.' });
+    console.error('=== INSTITUTION REQUEST ERROR ===');
+    console.error('Error in requestNewInstitution:', err);
+    console.error('Error name:', err.name);
+    console.error('Error code:', err.code);
+    console.error('Error message:', err.message);
+    console.error('Full error object:', JSON.stringify(err, null, 2));
+    
+    // Handle specific validation errors
+    if (err.name === 'ValidationError') {
+      const validationErrors = Object.values(err.errors).map(e => e.message);
+      console.log('Validation errors:', validationErrors);
+      return res.status(400).json({ 
+        error: 'Validation failed', 
+        details: validationErrors 
+      });
+    }
+    
+    if (err.code === 11000) {
+      console.log('Duplicate key error');
+      return res.status(409).json({ 
+        error: 'An institution with this name or domain already exists.' 
+      });
+    }
+
+    return res.status(500).json({ 
+      error: 'Error submitting institution request.',
+      details: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 }
 
