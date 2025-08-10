@@ -146,13 +146,28 @@ async function googleSignIn(req, res) {
 
     // Real Google OAuth implementation
     try {
-      // Use access token to get user info from Google
-      const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
-      if (!userInfoResponse.ok) {
-        throw new Error('Failed to fetch user info from Google');
+      let email, name, picture;
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const oauthClient = new OAuth2Client(clientId);
+      // First try treating the token as an ID token (most frontends provide this)
+      try {
+        const ticket = await oauthClient.verifyIdToken({ idToken: token, audience: clientId });
+        const payload = ticket.getPayload();
+        email = payload.email;
+        name = payload.name;
+        picture = payload.picture;
+      } catch (e) {
+        // Fallback: treat token as an access token and call userinfo
+        const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
+        if (!userInfoResponse.ok) {
+          throw new Error('Failed to fetch user info from Google');
+        }
+        const userInfo = await userInfoResponse.json();
+        email = userInfo.email;
+        name = userInfo.name;
+        picture = userInfo.picture;
       }
-      const userInfo = await userInfoResponse.json();
-      const { email, name, picture } = userInfo;
+
       if (!email) {
         return res.status(400).json({ error: 'Email not provided by Google.' });
       }
