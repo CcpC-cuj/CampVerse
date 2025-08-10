@@ -1,3 +1,4 @@
+
 # Frontend Developer Guide: Institution Management System
 
 This guide explains how to implement the institution request and approval system in your frontend application.

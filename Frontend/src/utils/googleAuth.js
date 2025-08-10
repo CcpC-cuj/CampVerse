@@ -18,26 +18,36 @@ export const initializeGoogleAuth = () => {
   };
 };
 
-// Get Google OAuth token using popup
+// Start Google OAuth and obtain an ID token via implicit flow (redirect)
 export const getGoogleToken = () => {
   return new Promise((resolve, reject) => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    
+
     if (!clientId) {
       reject(new Error('Google Client ID not configured'));
       return;
     }
 
-    // Real Google OAuth implementation (redirect in same tab)
     const redirectUri = `${window.location.origin}/oauth-callback`;
-    const scope = 'email profile';
+    // Request OpenID Connect ID token to match backend verification path
+    const scope = 'openid email profile';
+
+    // Generate a simple nonce for the request (recommended for OIDC implicit)
+    const nonceBytes = new Uint8Array(16);
+    if (window.crypto && window.crypto.getRandomValues) {
+      window.crypto.getRandomValues(nonceBytes);
+    }
+    const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('') || String(Date.now());
+    sessionStorage.setItem('google_oauth_nonce', nonce);
+
     const oauthUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${clientId}&` +
       `redirect_uri=${encodeURIComponent(redirectUri)}&` +
       `scope=${encodeURIComponent(scope)}&` +
-      `response_type=token&` +
-      `prompt=select_account`;
+      `response_type=id_token&` +
+      `prompt=select_account&` +
+      `nonce=${encodeURIComponent(nonce)}`;
 
     // Store a flag in sessionStorage to indicate OAuth is in progress
     sessionStorage.setItem('google_oauth_in_progress', '1');
