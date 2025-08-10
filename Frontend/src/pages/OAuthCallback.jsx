@@ -10,18 +10,24 @@ const OAuthCallback = () => {
   const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => {
-    // Parse access_token from URL hash
+    // Parse id_token (preferred) or access_token (fallback) from URL hash
     const hash = window.location.hash.substring(1);
     const params = new URLSearchParams(hash);
+    const idToken = params.get('id_token');
     const accessToken = params.get('access_token');
+    const oauthToken = idToken || accessToken;
 
-    if (!accessToken) {
-      setError('No access token found in URL.');
+    if (!oauthToken) {
+      setError('No Google OAuth token found in URL.');
       return;
     }
 
-    // Exchange access token for JWT/user with backend
-    googleSignIn({ token: accessToken })
+    // Clear in-progress flags
+    sessionStorage.removeItem('google_oauth_in_progress');
+    sessionStorage.removeItem('google_oauth_nonce');
+
+    // Exchange token for JWT/user with backend (supports id_token or access_token)
+    googleSignIn({ token: oauthToken })
       .then((response) => {
         if (response.token) {
           login(response.token, response.user);

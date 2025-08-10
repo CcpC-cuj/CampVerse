@@ -70,7 +70,9 @@ const userSchema = new mongoose.Schema({
     }
   },
   // Frontend gate: mark onboarding as completed to avoid showing modal repeatedly
-  onboardingCompleted: { type: Boolean, default: false }
+  onboardingCompleted: { type: Boolean, default: false },
+  // Track if user has linked Google account for dual login capability
+  googleLinked: { type: Boolean, default: false }
 });
 
 userSchema.pre('save', function (next) {
