@@ -201,6 +201,81 @@ async function getInstitutionDashboard(req, res) {
   }
 }
 
+async function searchInstitutions(req, res) {
+  try {
+    const q = (req.query.q || '').trim();
+    if (!q) return res.json([]);
+    const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const results = await Institution.find({
+      $or: [{ name: regex }, { emailDomain: regex }]
+    }).limit(20);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: 'Error searching institutions.' });
+  }
+}
+
+async function requestNewInstitution(req, res) {
+  try {
+    const { name, type, location, emailDomain: _ignoredEmailDomain, website, phone, info } = req.body || {};
+    if (!name || !type) {
+      return res.status(400).json({ error: 'name and type are required.' });
+    }
+
+    // Derive domain from requester email for correctness
+    const requester = await User.findById(req.user.id).select('email name');
+    if (!requester || !requester.email || !requester.email.includes('@')) {
+      return res.status(400).json({ error: 'Requester email not found to derive domain.' });
+    }
+    const computedDomain = requester.email.split('@')[1].toLowerCase();
+
+    // Create a temporary institution entry
+    const institution = await Institution.create({
+      name,
+      type: type || 'temporary',
+      location: location || { city: '', state: '', country: '' },
+      emailDomain: computedDomain,
+      isVerified: false,
+      isTemporary: true,
+      verificationRequested: true,
+      verificationRequests: [
+        {
+          requestedBy: req.user.id,
+          institutionName: name,
+          officialEmail: requester.email,
+          website: website || '',
+          phone: phone || '',
+          type,
+          info: info || ''
+        }
+      ]
+    });
+
+    // Update user to reference this institution and pending status
+    await User.findByIdAndUpdate(req.user.id, {
+      institutionId: institution._id,
+      institutionVerificationStatus: 'pending'
+    });
+
+    // Notify platform admins
+    try {
+      await notifyInstitutionRequest({
+        requesterId: req.user.id,
+        requesterName: requester?.name || 'Unknown',
+        requesterEmail: requester?.email || '',
+        institutionName: name,
+        type
+      });
+    } catch (e) {
+      // Log error but don't fail the request
+      console.error('Failed to notify institution request:', e);
+    }
+
+    return res.status(201).json({ message: 'Institution request submitted.', institution });
+  } catch (err) {
+    res.status(500).json({ error: 'Error submitting institution request.' });
+  }
+}
 module.exports = {
   createInstitution,
   getInstitutions,
