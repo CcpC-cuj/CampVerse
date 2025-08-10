@@ -1,9 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
+import { getInstitutionById } from "../api";
 
 const Sidebar = () => {
   const { user } = useAuth();
+  const [institutionName, setInstitutionName] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (user?.institutionId) {
+          const inst = await getInstitutionById(user.institutionId);
+          if (mounted && inst && inst.name) setInstitutionName(inst.name);
+        }
+      } catch {}
+      return () => { mounted = false; };
+    })();
+  }, [user?.institutionId]);
+
+  const profileUrl = user?.profilePhoto || user?.avatar || "/default-avatar.png";
+  const collegeText = institutionName || "Under Approval";
 
   return (
     <div className="h-screen w-64 flex flex-col bg-gray-900 text-white font-poppins overflow-hidden">
@@ -19,26 +37,27 @@ const Sidebar = () => {
           <div className="flex items-center space-x-3">
             <div className="relative">
               <img
-                src={user.avatar || "/default-avatar.png"}
+                src={profileUrl}
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover"
+                onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/default-avatar.png'; }}
               />
               <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-gray-800"></div>
             </div>
             <div>
               <div className="font-medium flex items-center">
-                {user.name}
+                {user?.name || 'User'}
                 <span className="ml-1 text-blue-400 w-4 h-4 flex items-center justify-center">
                   <i className="ri-verified-badge-fill ri-sm"></i>
                 </span>
               </div>
               <div className="text-xs text-gray-400">
-                {user.college || "Your College"} • {user.branch || "Your Branch"}
+                {collegeText}
               </div>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-1">
-            {(user.tags || ["Tech", "Design", "Debate"]).map((tag, idx) => (
+            {(user?.interests || ["Tech", "Design", "Debate"]).slice(0,6).map((tag, idx) => (
               <span
                 key={idx}
                 className="badge bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded"
@@ -54,13 +73,11 @@ const Sidebar = () => {
           <SidebarSection title="Main" />
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" />
           <SidebarLink icon="ri-compass-line" to="/explore" label="Discover Events" />
-          <SidebarLink icon="ri-calendar-line" to="/my-events" label="My Events" badge="5" />
+          <SidebarLink icon="ri-calendar-line" to="/my-events" label="My Events" />
           <SidebarLink
             icon="ri-notification-3-line"
             to="/notifications"
             label="Notifications"
-            badge="3"
-            badgeColor="bg-red-500"
           />
 
           <SidebarSection title="Events" />

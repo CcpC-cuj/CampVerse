@@ -30,6 +30,13 @@ services:
       # Alternative email service (uncomment if Gmail doesn't work)
       - EMAIL_USER=krish.hansdiha@gmail.com
       - EMAIL_PASSWORD=zeyf wiyznnuhpacu
+      # Google Drive config
+      - GOOGLE_DRIVE_KEY_FILE=/usr/src/app/credentials/service-account.json
+      - GOOGLE_DRIVE_FOLDER_ID=1JiL9bB2pt2DG1mc0LUsQdshFEDtjxRQ2 # Profile images folder ID
+      - DRIVE_LOGO_FOLDER_ID=1RLKXcxFwBx3k0SIA11cWGDkb8NMGmabc   # Event logos folder ID
+      - DRIVE_BANNER_FOLDER_ID=1cFmh70UHTafPmuoL8-rVBwhVHsPDgKOm # Event banners folder ID
+    volumes:
+      - ./Backend/credentials:/usr/src/app/credentials:ro
     depends_on:
       - mongo
       - redis

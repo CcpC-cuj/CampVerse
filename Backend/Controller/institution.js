@@ -3,6 +3,7 @@ const User = require('../Models/User');
 const Event = require('../Models/Event');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const Certificate = require('../Models/Certificate');
+const { notifyInstitutionRequest } = require('../Services/notification');
 
 // Create a new institution (admin only)
 async function createInstitution(req, res) {
@@ -63,8 +64,37 @@ async function requestInstitutionVerification(req, res) {
   try {
     const institution = await Institution.findById(req.params.id);
     if (!institution) return res.status(404).json({ error: 'Institution not found.' });
+    const { institutionName, email, website, phone, type, info } = req.body || {};
     institution.verificationRequested = true;
+    institution.verificationRequests = institution.verificationRequests || [];
+    institution.verificationRequests.push({
+      requestedBy: req.user.id,
+      institutionName: institutionName || institution.name,
+      officialEmail: email || '',
+      website: website || '',
+      phone: phone || '',
+      type: type || institution.type,
+      info: info || ''
+    });
     await institution.save();
+
+    // Optionally update user's status to pending (already default on registration)
+    await User.findByIdAndUpdate(req.user.id, { institutionVerificationStatus: 'pending' });
+
+    // Notify platform admins in-app
+    try {
+      const user = await User.findById(req.user.id).select('name email');
+      await notifyInstitutionRequest({
+        requesterId: req.user.id,
+        requesterName: user?.name || 'Unknown',
+        requesterEmail: user?.email || '',
+        institutionName: institutionName || institution.name,
+        type: type || institution.type
+      });
+    } catch (e) {
+      // non-blocking
+    }
+
     res.json({ message: 'Verification request submitted.' });
   } catch (err) {
     res.status(500).json({ error: 'Error requesting verification.' });
@@ -276,6 +306,7 @@ async function requestNewInstitution(req, res) {
     res.status(500).json({ error: 'Error submitting institution request.' });
   }
 }
+
 module.exports = {
   createInstitution,
   getInstitutions,
@@ -286,5 +317,7 @@ module.exports = {
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getInstitutionAnalytics,
-  getInstitutionDashboard
+  getInstitutionDashboard,
+  searchInstitutions,
+  requestNewInstitution
 }; 

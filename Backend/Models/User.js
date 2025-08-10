@@ -69,6 +69,8 @@ const userSchema = new mongoose.Schema({
       host_request: { type: Boolean, default: true }
     }
   },
+  // Frontend gate: mark onboarding as completed to avoid showing modal repeatedly
+  onboardingCompleted: { type: Boolean, default: false }
 });
 
 userSchema.pre('save', function (next) {

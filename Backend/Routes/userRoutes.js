@@ -24,7 +24,9 @@ const {
   listPendingHostRequests,
   approveHostRequest,
   rejectHostRequest,
-  resendOtp
+  resendOtp,
+  uploadProfilePhoto,
+  setInstitutionForMe
 } = require('../Controller/User');
 
 const {
@@ -38,6 +40,7 @@ const {
   requireRole,
   requireSelfOrRole
 } = require('../Middleware/Auth');
+const upload = require('../Middleware/upload');
 
 const router = express.Router();
 
@@ -464,6 +467,12 @@ router.get('/me', authenticateToken, getMe);
  *         description: Server error
  */
 router.post('/updatePreferences', authenticateToken, updatePreferences);
+
+// Upload profile photo (onboarding)
+router.post('/me/profile-photo', authenticateToken, upload.single('photo'), uploadProfilePhoto);
+
+// Set institution for current user (onboarding)
+router.post('/me/set-institution', authenticateToken, setInstitutionForMe);
 
 /**
  * @swagger

@@ -71,6 +71,23 @@ async function notifyHostStatusUpdate(userId, userName, userEmail, status, remar
   }
 }
 
+// NEW: Notify platform admins about institution verification request
+async function notifyInstitutionRequest({ requesterId, requesterName, requesterEmail, institutionName, type }) {
+  try {
+    const platformAdmins = await User.find({ roles: 'platformAdmin' });
+    for (const admin of platformAdmins) {
+      await createNotification(
+        admin._id,
+        'institution_request',
+        `New institution verification request: ${institutionName} (${type}) by ${requesterName}`,
+        { requesterId, requesterName, requesterEmail, institutionName, type }
+      );
+    }
+  } catch (error) {
+    console.error('Error notifying institution request:', error);
+  }
+}
+
 /**
  * Send email for host request notification
  */
@@ -236,6 +253,8 @@ module.exports = {
   createNotification,
   notifyHostRequest,
   notifyHostStatusUpdate,
+  // new
+  notifyInstitutionRequest,
   getUserNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
