@@ -5,6 +5,14 @@ import { useNavigate } from "react-router-dom";
 const GetStarted = () => {
   const navigate = useNavigate();
 
+  // Color mapping for Tailwind classes to avoid dynamic class issues
+  const colorClassMap = {
+    indigo: { bg: 'bg-indigo-500/20', text: 'text-indigo-400' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+    amber: { bg: 'bg-amber-500/20', text: 'text-amber-400' },
+    teal: { bg: 'bg-teal-500/20', text: 'text-teal-400' },
+  };
+
   const handleClose = () => {
     navigate("/dashboard");
   };
@@ -62,7 +70,7 @@ const GetStarted = () => {
                 className="glass-card rounded-lg p-4 hover:glow-border transition-all duration-300"
               >
                 <div
-                  className={`w-10 h-10 rounded-lg bg-${card.color}-500/20 flex items-center justify-center text-${card.color}-400 mb-3`}
+                  className={`w-10 h-10 rounded-lg ${colorClassMap[card.color].bg} flex items-center justify-center ${colorClassMap[card.color].text} mb-3`}
                 >
                   <i className={card.icon}></i>
                 </div>

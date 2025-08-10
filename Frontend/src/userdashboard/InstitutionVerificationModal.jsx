@@ -1,18 +1,43 @@
-import React from "react";
+import React, { useState } from "react";
 
 const InstitutionVerificationModal = ({ visible, onClose }) => {
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   if (!visible) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle submission logic here (API call, validation, etc.)
-    alert("Verification submitted!");
-    onClose();
+    setIsSubmitting(true);
+    
+    try {
+      // Handle submission logic here (API call, validation, etc.)
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error('Verification submission failed:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/90 flex items-center justify-center z-50">
       <div className="glass-card rounded-xl p-6 max-w-xl w-full mx-4 bg-slate-800">
+        {/* Success Notification */}
+        {showSuccess && (
+          <div className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-center">
+            <i className="ri-check-line mr-2"></i>
+            Verification submitted successfully!
+          </div>
+        )}
+
         <div className="text-center mb-6">
           <h2 className="text-2xl font-semibold text-white mb-2">
             Institution Verification
@@ -68,14 +93,27 @@ const InstitutionVerificationModal = ({ visible, onClose }) => {
           <div className="flex items-center space-x-4">
             <button
               type="submit"
-              className="flex-1 bg-primary text-white px-6 py-2 rounded-button"
+              disabled={isSubmitting}
+              className={`flex-1 px-6 py-2 rounded-button transition-colors ${
+                isSubmitting 
+                  ? 'bg-gray-600 cursor-not-allowed' 
+                  : 'bg-primary hover:bg-blue-600'
+              } text-white`}
             >
-              Submit for Verification
+              {isSubmitting ? (
+                <>
+                  <i className="ri-loader-4-line animate-spin mr-2"></i>
+                  Submitting...
+                </>
+              ) : (
+                'Submit for Verification'
+              )}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-slate-700 text-slate-300 hover:text-white px-6 py-2 rounded-button"
+              disabled={isSubmitting}
+              className="flex-1 border border-slate-700 text-slate-300 hover:text-white px-6 py-2 rounded-button disabled:opacity-50"
             >
               Skip for Now
             </button>

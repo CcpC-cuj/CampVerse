@@ -5,6 +5,14 @@ import Sidebar from '../userdashboard/sidebar';
 const UserDashboard = () => {
   const { user } = useAuth();
 
+  // Color mapping for Tailwind classes to avoid dynamic class issues
+  const colorClassMap = {
+    blue: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
+    green: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+  };
+
   if (!user) return <div>Loading...</div>;
 
   return (
@@ -67,6 +75,10 @@ const UserDashboard = () => {
                   src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20a%20space%20theme%20with%20planets%2C%20stars%2C%20and%20a%20rocket%2C%20colorful%2C%20playful%2C%20educational%20theme%2C%20galaxy%20exploration&width=200&height=200&seq=2&orientation=squarish"
                   alt="Space theme"
                   className="w-40 h-40 object-contain relative z-10"
+                  onError={(e) => { 
+                    e.currentTarget.onerror = null; 
+                    e.currentTarget.src = "/images/space-theme-fallback.svg"; 
+                  }}
                 />
               </div>
             </div>
@@ -82,9 +94,9 @@ const UserDashboard = () => {
             ].map((stat, i) => (
               <div
                 key={i}
-                className={`bg-gray-800 rounded-lg p-4 flex items-center`}
+                className="bg-gray-800 rounded-lg p-4 flex items-center"
               >
-                <div className={`w-12 h-12 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center text-${stat.color}-400 mr-4`}>
+                <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
                   <i className={`${stat.icon} ri-lg`} />
                 </div>
                 <div>
