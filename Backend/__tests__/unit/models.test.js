@@ -323,7 +323,7 @@ describe('Model Unit Tests', () => {
         const certificateData = {
           userId: new mongoose.Types.ObjectId(),
           eventId: new mongoose.Types.ObjectId(),
-          type: type
+          type
         };
 
         const certificate = new Certificate(certificateData);
