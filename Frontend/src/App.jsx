@@ -20,7 +20,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route 
-            path="/dashboard" 
+            path="/dashboard/*" 
             element={
               <ProtectedRoute>
                 <UserDashboard />
