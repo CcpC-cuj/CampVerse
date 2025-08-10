@@ -23,19 +23,8 @@ export const getGoogleToken = () => {
   return new Promise((resolve, reject) => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     
-    // If no Google Client ID is provided, use mock mode
-    if (!clientId || clientId === 'your-google-client-id') {
-      // Prompt for email in mock mode
-      const email = window.prompt('Enter your academic email for mock Google login:', 'test.user@cuj.ac.in');
-      if (!email) {
-        reject(new Error('Email is required for mock Google login'));
-        return;
-      }
-      const mockToken = `mock_google_token_${Date.now()}__${email}`;
-      setTimeout(() => {
-        console.log('Mock Google OAuth successful');
-        resolve(mockToken);
-      }, 1000);
+    if (!clientId) {
+      reject(new Error('Google Client ID not configured'));
       return;
     }
 
@@ -66,7 +55,7 @@ export const initializeGoogleSignIn = (buttonId, onSuccess, onError) => {
   }
 
   google.accounts.id.initialize({
-    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
+    client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
     callback: (response) => {
       if (response.credential) {
         onSuccess(response.credential);

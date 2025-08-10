@@ -1,3 +1,5 @@
+// src/contexts/AuthContext.jsx
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getToken, setToken, removeToken, getUser, setUser, removeUser } from '../utils/auth';
 
@@ -16,14 +18,11 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already authenticated on app load
     const token = getToken();
     const userData = getUser();
-    
     if (token && userData) {
       setUserState(userData);
     }
-    
     setLoading(false);
   }, []);
 
@@ -40,17 +39,9 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/';
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    loading,
-    isAuthenticated: !!user
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
-}; 
+};

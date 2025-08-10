@@ -38,7 +38,7 @@ const SignupModal = ({
       setIsLoading(true);
       const response = await register(formData);
 
-      if (response.message && response.otp) {
+      if (response.message) {
         // OTP has been sent successfully
         alert(`OTP sent to your email.`); 
         onClose(); // close signup modal
