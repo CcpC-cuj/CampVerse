@@ -33,245 +33,202 @@ const SuggestionPills = ({ items, onPick }) => (
 );
 
 const StepHeader = ({ step, total }) => (
-  <div className="flex items-center justify-between mb-4">
-    <h3 className="text-xl font-semibold">Complete your profile</h3>
-    <span className="text-sm text-slate-400">Step {step} of {total}</span>
+  <div className="text-center mb-6">
+    <h2 className="text-xl font-semibold text-white mb-2">Step {step} of {total}</h2>
+    <div className="flex justify-center space-x-2">
+      {Array.from({ length: total }, (_, i) => (
+        <div key={i} className={`w-2 h-2 rounded-full ${i < step ? 'bg-blue-500' : 'bg-slate-600'}`} />
+      ))}
+    </div>
   </div>
 );
 
 const OnboardingModal = ({ visible, onClose, onComplete }) => {
-  const { login } = useAuth();
-  const totalSteps = 4;
+  const { user, updateUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Step 1: basic profile
-  const [profile, setProfile] = useState({ name: '', phone: '', Gender: '', DOB: '', collegeIdNumber: '' });
-
-  // Step 2: photo
-  const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState('');
-  const [existingPhotoUrl, setExistingPhotoUrl] = useState('');
-
-  // Step 3: preferences
-  const [preferences, setPreferences] = useState({ interests: [], skills: [], learningGoals: [] });
+  const [preferences, setPreferences] = useState({
+    interests: user?.interests || [],
+    skills: user?.skills || [],
+    learningGoals: user?.learningGoals || []
+  });
   const [interestInput, setInterestInput] = useState('');
   const [skillInput, setSkillInput] = useState('');
   const [goalInput, setGoalInput] = useState('');
+
+  // Filter suggestions to hide already selected items
+  const filteredInterestSuggestions = useMemo(
+    () => SUGGESTED_INTERESTS.filter(s => !(preferences.interests || []).includes(s)),
+    [preferences.interests]
+  );
+  const filteredSkillSuggestions = useMemo(
+    () => SUGGESTED_SKILLS.filter(s => !(preferences.skills || []).includes(s)),
+    [preferences.skills]
+  );
+  const filteredGoalSuggestions = useMemo(
+    () => SUGGESTED_GOALS.filter(s => !(preferences.learningGoals || []).includes(s)),
+    [preferences.learningGoals]
+  );
 
   // Step 4: institution
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
-  const [reqInstitution, setReqInstitution] = useState({ name: '', type: '', website: '', phone: '', info: '' });
+  const [newInstitution, setNewInstitution] = useState({
+    name: '',
+    type: 'university',
+    location: { city: '', state: '', country: '' },
+    website: '',
+    phone: '',
+    info: ''
+  });
+
+  // Step 5: profile photo
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   useEffect(() => {
-    if (!visible) return;
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await getDashboard();
-        if (data?.user) {
-          setProfile({
-            name: data.user.name || '',
-            phone: data.user.phone || '',
-            Gender: data.user.Gender || '',
-            DOB: data.user.DOB ? String(data.user.DOB).slice(0, 10) : '',
-            collegeIdNumber: data.user.collegeIdNumber || ''
-          });
-          setExistingPhotoUrl(data.user.profilePhoto || '');
-          setPreferences({
-            interests: data.user.interests || [],
-            skills: data.user.skills || [],
-            learningGoals: data.user.learningGoals || []
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [visible]);
-
-  // Auto-skip Step 2 if a photo already exists and user didn't choose a new one
-  useEffect(() => {
-    if (visible && step === 2 && existingPhotoUrl && !photoFile) {
-      setStep(3);
+    if (visible && user) {
+      setPreferences({
+        interests: user.interests || [],
+        skills: user.skills || [],
+        learningGoals: user.learningGoals || []
+      });
     }
-  }, [visible, step, existingPhotoUrl, photoFile]);
-
-  useEffect(() => {
-    if (!query) { setResults([]); return; }
-    const id = setTimeout(async () => {
-      try {
-        const res = await searchInstitutions(query);
-        setResults(Array.isArray(res) ? res : []);
-      } catch {}
-    }, 300);
-    return () => clearTimeout(id);
-  }, [query]);
+  }, [visible, user]);
 
   const addChip = (key, value) => {
-    if (!value) return;
-    setPreferences((p) => ({ ...p, [key]: Array.from(new Set([...(p[key] || []), value])) }));
+    if (value.trim() && !preferences[key].includes(value.trim())) {
+      setPreferences(prev => ({
+        ...prev,
+        [key]: [...prev[key], value.trim()]
+      }));
+    }
   };
+
   const removeChip = (key, idx) => {
-    setPreferences((p) => ({ ...p, [key]: (p[key] || []).filter((_, i) => i !== idx) }));
+    setPreferences(prev => ({
+      ...prev,
+      [key]: prev[key].filter((_, i) => i !== idx)
+    }));
   };
 
   const next = async () => {
-    setError('');
-    try {
-      setLoading(true);
-      if (step === 1) {
-        if (!profile.name || !profile.phone) {
-          setError('Name and phone are required');
-          return;
-        }
-        const res = await updateMe(profile);
-        if (res?.user) {
-          const token = localStorage.getItem('token');
-          if (token) login(token, res.user);
-        }
-        setStep(step + 1);
-      } else if (step === 2) {
-        if (photoFile) {
-          const res = await uploadProfilePhoto(photoFile);
-          if (res?.user) {
-            const token = localStorage.getItem('token');
-            if (token) login(token, res.user);
-            setExistingPhotoUrl(res.user.profilePhoto || existingPhotoUrl);
-          }
-        }
-        setStep(step + 1);
-      } else if (step === 3) {
-        const res = await updateMe(preferences);
-        if (res?.user) {
-          const token = localStorage.getItem('token');
-          if (token) login(token, res.user);
-        }
-        setStep(step + 1);
-      } else if (step === 4) {
-        if (selectedInstitution) {
-          const res = await setInstitutionForMe(selectedInstitution._id);
-          if (res?.user) {
-            const token = localStorage.getItem('token');
-            if (token) login(token, res.user);
-          }
-        } else if (reqInstitution.name && reqInstitution.type) {
-          await requestNewInstitution(reqInstitution);
-        } else {
-          setError('Select an institution or request a new one (name and type).');
-          return;
-        }
-        onComplete?.();
-        onClose?.();
+    if (step === 3) {
+      // Save preferences
+      try {
+        setLoading(true);
+        await updateMe({ ...preferences });
+        setStep(4);
+      } catch (error) {
+        console.error('Failed to save preferences:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      setError(e?.message || 'Something went wrong');
-    } finally {
-      setLoading(false);
+    } else if (step === 4) {
+      // Save institution
+      try {
+        setLoading(true);
+        if (selectedInstitution) {
+          await setInstitutionForMe({ institutionId: selectedInstitution._id });
+        } else if (newInstitution.name) {
+          await requestNewInstitution(newInstitution);
+        }
+        setStep(5);
+      } catch (error) {
+        console.error('Failed to save institution:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else if (step === 5) {
+      // Save profile photo and complete
+      try {
+        setLoading(true);
+        if (photoFile) {
+          const formData = new FormData();
+          formData.append('photo', photoFile);
+          await uploadProfilePhoto(formData);
+        }
+        
+        // Mark onboarding as completed
+        await updateMe({ onboardingCompleted: true });
+        onComplete();
+      } catch (error) {
+        console.error('Failed to complete onboarding:', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setStep(step + 1);
     }
   };
 
   const back = () => setStep((s) => Math.max(1, s - 1));
 
+  const searchInstitutions = async (query) => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    try {
+      const data = await searchInstitutions(query);
+      setResults(data);
+    } catch (error) {
+      console.error('Failed to search institutions:', error);
+      setResults([]);
+    }
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setPhotoPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl p-6 text-white">
-        <StepHeader step={step} total={totalSteps} />
-        {error && <div className="mb-3 text-red-400">{error}</div>}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-900 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-white">Complete Your Profile</h1>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">×</button>
+        </div>
+
+        <StepHeader step={step} total={5} />
+
         {step === 1 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm text-slate-300">Full Name</label>
-              <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.name} onChange={(e)=>setProfile({...profile,name:e.target.value})} />
-            </div>
-            <div>
-              <label className="text-sm text-slate-300">Phone</label>
-              <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.phone} onChange={(e)=>setProfile({...profile,phone:e.target.value})} />
-            </div>
-            <div>
-              <label className="text-sm text-slate-300">Gender</label>
-              <select className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.Gender} onChange={(e)=>setProfile({...profile,Gender:e.target.value})}>
-                <option value="">Select</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-slate-300">Date of Birth</label>
-              <input type="date" className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.DOB} onChange={(e)=>setProfile({...profile,DOB:e.target.value})} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-sm text-slate-300">College/Enrollment Number</label>
-              <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.collegeIdNumber} onChange={(e)=>setProfile({...profile,collegeIdNumber:e.target.value})} placeholder="Registration / Admission / Enrollment number" />
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-            <div>
-              <label className="text-sm text-slate-300">Upload Profile Photo</label>
-              <input type="file" accept="image/*" className="w-full mt-1" onChange={(e)=>{
-                const f = e.target.files?.[0];
-                setPhotoFile(f||null);
-                setPhotoPreview(f ? URL.createObjectURL(f) : '');
-              }} />
-              {existingPhotoUrl && !photoFile && (
-                <p className="text-xs text-slate-400 mt-2">A profile photo is already set; you can skip this step.</p>
-              )}
-            </div>
-            {(photoPreview || existingPhotoUrl) && (
-              <img src={photoPreview || existingPhotoUrl} alt="preview" className="w-32 h-32 rounded-lg object-cover border border-slate-700" />
-            )}
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-4">
             <div>
               <label className="text-sm text-slate-300">Interests</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={interestInput} onChange={(e)=>setInterestInput(e.target.value)} placeholder="Add interest and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('interests', interestInput.trim()); setInterestInput('');}}>+</button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.interests.map((v,i)=>(
+                {preferences.interests.map((v, i) => (
                   <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('interests',i)} />
                 ))}
               </div>
-              <SuggestionPills items={SUGGESTED_INTERESTS} onPick={(v)=>addChip('interests', v)} />
+              <SuggestionPills items={filteredInterestSuggestions} onPick={(v)=>addChip('interests', v)} />
             </div>
             <div>
               <label className="text-sm text-slate-300">Skills</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={skillInput} onChange={(e)=>setSkillInput(e.target.value)} placeholder="Add skill and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('skills', skillInput.trim()); setSkillInput('');}}>+</button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.skills.map((v,i)=>(
+                {preferences.skills.map((v, i) => (
                   <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('skills',i)} />
                 ))}
               </div>
-              <SuggestionPills items={SUGGESTED_SKILLS} onPick={(v)=>addChip('skills', v)} />
+              <SuggestionPills items={filteredSkillSuggestions} onPick={(v)=>addChip('skills', v)} />
             </div>
             <div>
               <label className="text-sm text-slate-300">Learning Goals</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={goalInput} onChange={(e)=>setGoalInput(e.target.value)} placeholder="Add goal and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('learningGoals', goalInput.trim()); setGoalInput('');}}>+</button>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.learningGoals.map((v,i)=>(
+                {preferences.learningGoals.map((v, i) => (
                   <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('learningGoals',i)} />
                 ))}
               </div>
-              <SuggestionPills items={SUGGESTED_GOALS} onPick={(v)=>addChip('learningGoals', v)} />
+              <SuggestionPills items={filteredGoalSuggestions} onPick={(v)=>addChip('learningGoals', v)} />
             </div>
           </div>
         )}
@@ -279,66 +236,97 @@ const OnboardingModal = ({ visible, onClose, onComplete }) => {
         {step === 4 && (
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-slate-300">Search Institution</label>
-              <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={query} onChange={(e)=>{setQuery(e.target.value); setSelectedInstitution(null);}} placeholder="Type college/university name or domain" />
+              <label className="text-sm text-slate-300">Search Your Institution</label>
+              <input
+                type="text"
+                placeholder="Start typing institution name..."
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  searchInstitutions(e.target.value);
+                }}
+                className="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white"
+              />
               {results.length > 0 && (
-                <ul className="mt-2 max-h-48 overflow-y-auto border border-slate-700 rounded divide-y divide-slate-800">
-                  {results.map((r)=> (
-                    <li key={r._id} className={`px-3 py-2 hover:bg-slate-800 cursor-pointer ${selectedInstitution?._id===r._id?'bg-slate-800':''}`} onClick={()=> setSelectedInstitution(r)}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{r.name}</div>
-                          <div className="text-xs text-slate-400">{r.emailDomain}</div>
-                        </div>
-                        {!r.isVerified && <span className="text-xs text-amber-400">Unverified</span>}
-                      </div>
-                    </li>
+                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                  {results.map((inst) => (
+                    <button
+                      key={inst._id}
+                      onClick={() => setSelectedInstitution(inst)}
+                      className={`w-full p-2 text-left rounded ${
+                        selectedInstitution?._id === inst._id
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      <div className="font-medium">{inst.name}</div>
+                      <div className="text-xs text-slate-400">{inst.type}</div>
+                    </button>
                   ))}
-                </ul>
-              )}
-              {selectedInstitution && (
-                <div className="mt-2 text-sm text-green-400">Selected: {selectedInstitution.name}</div>
+                </div>
               )}
             </div>
-            <div className="text-slate-400 text-sm">If not found, request a new institution:</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-slate-300">Name</label>
-                <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.name} onChange={(e)=>setReqInstitution({...reqInstitution,name:e.target.value})} />
-              </div>
-              <div>
-                <label className="text-sm text-slate-300">Type</label>
-                <select className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.type} onChange={(e)=>setReqInstitution({...reqInstitution,type:e.target.value})}>
-                  <option value="">Select</option>
-                  <option value="college">College</option>
-                  <option value="university">University</option>
-                  <option value="org">Organization</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm text-slate-300">Website (optional)</label>
-                <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.website} onChange={(e)=>setReqInstitution({...reqInstitution,website:e.target.value})} />
-              </div>
-              <div>
-                <label className="text-sm text-slate-300">Phone (optional)</label>
-                <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.phone} onChange={(e)=>setReqInstitution({...reqInstitution,phone:e.target.value})} />
-              </div>
-              <div className="md:col-span-2">
-                <label className="text-sm text-slate-300">Info (optional)</label>
-                <textarea rows={3} className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.info} onChange={(e)=>setReqInstitution({...reqInstitution,info:e.target.value})} />
-              </div>
+
+            <div className="text-center text-slate-400">- OR -</div>
+
+            <div>
+              <label className="text-sm text-slate-300">Request New Institution</label>
+              <input
+                type="text"
+                placeholder="Institution name"
+                value={newInstitution.name}
+                onChange={(e) => setNewInstitution(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white mb-2"
+              />
+              <select
+                value={newInstitution.type}
+                onChange={(e) => setNewInstitution(prev => ({ ...prev, type: e.target.value }))}
+                className="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white mb-2"
+              >
+                <option value="university">University</option>
+                <option value="college">College</option>
+                <option value="school">School</option>
+                <option value="institute">Institute</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {step === 5 && (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-slate-300">Profile Photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white"
+              />
+              {photoPreview && (
+                <div className="mt-2">
+                  <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded object-cover" />
+                </div>
+              )}
             </div>
           </div>
         )}
 
         <div className="flex justify-between mt-6">
-          <button disabled={loading || step===1} onClick={back} className="px-4 py-2 border border-slate-700 rounded disabled:opacity-50">Back</button>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 border border-slate-700 rounded">Close</button>
-            <button disabled={loading} onClick={next} className="px-4 py-2 bg-primary rounded text-white">
-              {step === totalSteps ? (loading ? 'Submitting...' : 'Finish') : (loading ? 'Saving...' : 'Next')}
+          {step > 1 && (
+            <button
+              onClick={back}
+              className="px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600"
+            >
+              Back
             </button>
-          </div>
+          )}
+          <button
+            onClick={next}
+            disabled={loading}
+            className="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : step === 5 ? 'Complete' : 'Next'}
+          </button>
         </div>
       </div>
     </div>
