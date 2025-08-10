@@ -32,12 +32,14 @@ export const getGoogleToken = () => {
     // Request OpenID Connect ID token to match backend verification path
     const scope = 'openid email profile';
 
-    // Generate a simple nonce for the request (recommended for OIDC implicit)
-    const nonceBytes = new Uint8Array(16);
-    if (window.crypto && window.crypto.getRandomValues) {
-      window.crypto.getRandomValues(nonceBytes);
+    // Generate a cryptographically secure nonce for the request (required for OIDC implicit)
+    if (!(window.crypto && window.crypto.getRandomValues)) {
+      reject(new Error('Cryptographically secure random number generation is required for nonce'));
+      return;
     }
-    const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('') || String(Date.now());
+    const nonceBytes = new Uint8Array(16);
+    window.crypto.getRandomValues(nonceBytes);
+    const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('');
     sessionStorage.setItem('google_oauth_nonce', nonce);
 
     const oauthUrl =

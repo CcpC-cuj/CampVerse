@@ -64,6 +64,75 @@ export async function googleSignIn({ token }) {
   return data;
 }
 
+export async function linkGoogleAccount({ email, password, token }) {
+  const res = await fetch(`${API_URL}/api/users/link-google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, googleToken: token })
+  });
+  return res.json();
+}
+
+export async function unlinkGoogleAccount() {
+  const res = await fetch(`${API_URL}/api/users/unlink-google`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function forgotPassword({ email }) {
+  const res = await fetch(`${API_URL}/api/users/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  return res.json();
+}
+
+// Authentication management functions
+export async function getAuthStatus() {
+  const res = await fetch(`${API_URL}/api/users/auth-status`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function setupPassword({ newPassword }) {
+  const res = await fetch(`${API_URL}/api/users/setup-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ newPassword })
+  });
+  return res.json();
+}
+
+export async function changePassword({ currentPassword, newPassword }) {
+  const res = await fetch(`${API_URL}/api/users/change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ currentPassword, newPassword })
+  });
+  return res.json();
+}
+
+export async function sendVerificationOtp() {
+  const res = await fetch(`${API_URL}/api/users/send-verification-otp`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function verifyOtpForGoogleUser({ otp }) {
+  const res = await fetch(`${API_URL}/api/users/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ otp })
+  });
+  return res.json();
+}
+
 export async function resendOtp({ email }) {
   const res = await fetch(`${API_URL}/api/users/resend-otp`, {
     method: 'POST',
@@ -173,4 +242,30 @@ export async function markAllNotificationsAsRead() {
   return res.json();
 }
 
-// Add more API functions as needed (e.g., getProfile, updateProfile, etc.) 
+// Settings: Notification preferences
+export async function getMyNotificationPreferences() {
+  const res = await fetch(`${API_URL}/api/users/me/notification-preferences`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function updateMyNotificationPreferences(payload) {
+  const res = await fetch(`${API_URL}/api/users/me/notification-preferences`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+// Settings: Delete my account (schedule)
+export async function deleteMyAccount() {
+  const res = await fetch(`${API_URL}/api/users/me/delete`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+// Add more API functions as needed (e.g., getProfile, updateProfile, etc.)

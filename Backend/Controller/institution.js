@@ -134,6 +134,42 @@ async function approveInstitutionVerification(req, res) {
       { institutionVerificationStatus: 'verified' }
     );
     
+    // Auto-merge: Update ALL users with the same email domain to use this verified institution
+    // This handles cases where multiple unverified institutions exist for the same domain
+    const usersWithSameDomain = await User.find({
+      email: { $regex: `@${institution.emailDomain}$`, $options: 'i' },
+      institutionId: { $ne: institution._id } // Not already using this institution
+    });
+    
+    if (usersWithSameDomain.length > 0) {
+      console.log(`Auto-merging ${usersWithSameDomain.length} users from same domain to verified institution`);
+      
+      // Update all users with same domain to use the verified institution
+      await User.updateMany(
+        { email: { $regex: `@${institution.emailDomain}$`, $options: 'i' } },
+        { 
+          institutionId: institution._id,
+          institutionVerificationStatus: 'verified'
+        }
+      );
+      
+      // Delete any other unverified institutions with the same domain
+      const duplicateInstitutions = await Institution.find({
+        emailDomain: institution.emailDomain,
+        _id: { $ne: institution._id },
+        isVerified: false
+      });
+      
+      if (duplicateInstitutions.length > 0) {
+        console.log(`Deleting ${duplicateInstitutions.length} duplicate unverified institutions`);
+        await Institution.deleteMany({
+          emailDomain: institution.emailDomain,
+          _id: { $ne: institution._id },
+          isVerified: false
+        });
+      }
+    }
+    
     res.json({ 
       message: 'Institution verified successfully.',
       institution: {
@@ -286,18 +322,10 @@ async function searchInstitutions(req, res) {
 
 async function requestNewInstitution(req, res) {
   try {
-    console.log('=== INSTITUTION REQUEST DEBUG ===');
-    console.log('Request body:', req.body);
-    console.log('User ID:', req.user.id);
-    console.log('User object:', req.user);
-    
     const { name, type, website, phone, info } = req.body || {};
-    
-    console.log('Extracted data:', { name, type, website, phone, info });
     
     // Validate required fields
     if (!name || !type) {
-      console.log('Validation failed: missing name or type');
       return res.status(400).json({ 
         error: 'name and type are required.',
         received: { name, type }
@@ -307,7 +335,6 @@ async function requestNewInstitution(req, res) {
     // Validate type enum
     const validTypes = ['college', 'university', 'org', 'temporary'];
     if (!validTypes.includes(type)) {
-      console.log('Validation failed: invalid type');
       return res.status(400).json({ 
         error: `Invalid type. Must be one of: ${validTypes.join(', ')}`,
         received: { type }
@@ -316,20 +343,16 @@ async function requestNewInstitution(req, res) {
 
     // Derive domain from requester email for correctness
     const requester = await User.findById(req.user.id).select('email name');
-    console.log('Requester found:', requester);
     
     if (!requester || !requester.email || !requester.email.includes('@')) {
-      console.log('Validation failed: invalid requester email');
       return res.status(400).json({ error: 'Requester email not found to derive domain.' });
     }
     
     const computedDomain = requester.email.split('@')[1].toLowerCase();
-    console.log('Computed domain:', computedDomain);
 
     // Check if institution with same domain already exists
     const existingInstitution = await Institution.findOne({ emailDomain: computedDomain });
     if (existingInstitution) {
-      console.log('Conflict: institution with domain already exists');
       return res.status(409).json({ 
         error: 'An institution with this email domain already exists.',
         existingInstitution: {
@@ -362,17 +385,13 @@ async function requestNewInstitution(req, res) {
       ]
     };
 
-    console.log('Creating institution with data:', institutionData);
-
     const institution = await Institution.create(institutionData);
-    console.log('Institution created successfully:', institution._id);
 
     // Update user to reference this institution and set status to pending
     await User.findByIdAndUpdate(req.user.id, {
       institutionId: institution._id,
       institutionVerificationStatus: 'pending'
     });
-    console.log('User updated with institution reference');
 
     // Notify platform admins about the new institution request
     try {
@@ -383,13 +402,11 @@ async function requestNewInstitution(req, res) {
         institutionName: name.trim(),
         type
       });
-      console.log('Admin notification sent');
     } catch (e) {
       // Log error but don't fail the request
       console.error('Failed to notify institution request:', e);
     }
 
-    console.log('=== INSTITUTION REQUEST SUCCESS ===');
     return res.status(201).json({ 
       message: 'Institution request submitted successfully. It will be reviewed by administrators.',
       institution: {
@@ -405,17 +422,9 @@ async function requestNewInstitution(req, res) {
     });
 
   } catch (err) {
-    console.error('=== INSTITUTION REQUEST ERROR ===');
-    console.error('Error in requestNewInstitution:', err);
-    console.error('Error name:', err.name);
-    console.error('Error code:', err.code);
-    console.error('Error message:', err.message);
-    console.error('Full error object:', JSON.stringify(err, null, 2));
-    
     // Handle specific validation errors
     if (err.name === 'ValidationError') {
       const validationErrors = Object.values(err.errors).map(e => e.message);
-      console.log('Validation errors:', validationErrors);
       return res.status(400).json({ 
         error: 'Validation failed', 
         details: validationErrors 
@@ -423,7 +432,6 @@ async function requestNewInstitution(req, res) {
     }
     
     if (err.code === 11000) {
-      console.log('Duplicate key error');
       return res.status(409).json({ 
         error: 'An institution with this name or domain already exists.' 
       });

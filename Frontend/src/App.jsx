@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 // Import pages
 import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
+import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
 import "remixicon/fonts/remixicon.css";
 
@@ -23,6 +24,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } 
           />

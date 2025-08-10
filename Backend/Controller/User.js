@@ -130,6 +130,7 @@ async function googleSignIn(req, res) {
           roles: ['student'],
           isVerified: true,
           canHost: false,
+          googleLinked: true,
           createdAt: new Date()
         });
         await user.save();
@@ -188,9 +189,23 @@ async function googleSignIn(req, res) {
           roles: ['student'],
           isVerified: true,
           canHost: false,
+          googleLinked: true,
           createdAt: new Date()
         });
         await user.save();
+      } else {
+        // User exists - update profile photo if provided and user doesn't have one
+        if (picture && !user.profilePhoto) {
+          user.profilePhoto = picture;
+        }
+        // Update name if Google provides a better one (longer/more complete)
+        if (name && name.length > user.name.length) {
+          user.name = name;
+        }
+        // Mark as Google linked if not already
+        if (!user.googleLinked) {
+          user.googleLinked = true;
+        }
       }
       user.lastLogin = new Date();
       await user.save();
@@ -208,6 +223,307 @@ async function googleSignIn(req, res) {
   } catch (err) {
     logger.error('Google Login Error:', err);
     return res.status(500).json({ error: 'Google login failed.' });
+  }
+}
+
+// ---------------- Setup Password for Google Users ----------------
+async function setupPasswordForGoogleUser(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check if user has a real password (not the auto-generated Google one)
+    const isGoogleGeneratedPassword = user.passwordHash.includes('google_user_');
+    
+    if (!isGoogleGeneratedPassword) {
+      return res.status(400).json({ 
+        error: 'Password is already set up. Use change password instead.' 
+      });
+    }
+
+    // Validate new password
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 6 characters long.' 
+      });
+    }
+
+    // Hash the new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    
+    // Update user with new password and mark as verified
+    user.passwordHash = passwordHash;
+    user.isVerified = true;
+    user.googleLinked = true; // Mark that they can use both methods
+    await user.save();
+
+    return res.json({ 
+      message: 'Password set up successfully. You can now use email/password login.',
+      user: sanitizeUser(user)
+    });
+
+  } catch (err) {
+    logger.error('Setup Password Error:', err);
+    return res.status(500).json({ error: 'Failed to set up password.' });
+  }
+}
+
+// ---------------- Change Password (for all users) ----------------
+async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Verify current password
+    const validPass = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!validPass) {
+      return res.status(400).json({ error: 'Current password is incorrect.' });
+    }
+
+    // Validate new password
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 6 characters long.' 
+      });
+    }
+
+    // Hash the new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = passwordHash;
+    await user.save();
+
+    return res.json({ 
+      message: 'Password changed successfully.',
+      user: sanitizeUser(user)
+    });
+
+  } catch (err) {
+    logger.error('Change Password Error:', err);
+    return res.status(500).json({ error: 'Failed to change password.' });
+  }
+}
+
+// ---------------- Send OTP for Google User Verification ----------------
+async function sendOtpForGoogleUser(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Check if user is already verified
+    if (user.isVerified) {
+      return res.status(400).json({ 
+        error: 'Account is already verified.' 
+      });
+    }
+
+    // Generate and send OTP
+    const otp = otpService.generate();
+    
+    try {
+      await emailService.sendMail({
+        from: process.env.EMAIL_USER,
+        to: user.email,
+        subject: 'Verify Your CampVerse Account',
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">CampVerse Account Verification</h2>
+            <p>Hello ${user.name},</p>
+            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
+            <p>Please enter this code within 5 minutes to verify your account.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+          </div>
+        `
+      });
+      
+      // Store OTP in Redis with user ID
+      await redisClient.setEx(`verify_google_user:${userId}`, 300, JSON.stringify({ otp, email: user.email }));
+      
+      return res.json({ 
+        message: 'Verification code sent to your email.',
+        note: 'Enter the code to verify your account.'
+      });
+      
+    } catch (emailError) {
+      logger.error('Email sending failed:', emailError.message);
+      return res.status(500).json({ 
+        error: 'Failed to send verification email. Please try again.' 
+      });
+    }
+
+  } catch (err) {
+    logger.error('Send OTP for Google User Error:', err);
+    return res.status(500).json({ error: 'Failed to send verification code.' });
+  }
+}
+
+// ---------------- Verify OTP for Google User ----------------
+async function verifyOtpForGoogleUser(req, res) {
+  try {
+    const { otp } = req.body;
+    const userId = req.user.id;
+
+    if (!otp) {
+      return res.status(400).json({ error: 'OTP is required.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // Get stored OTP from Redis
+    const storedData = await redisClient.get(`verify_google_user:${userId}`);
+    if (!storedData) {
+      return res.status(400).json({ error: 'OTP expired or not found. Please request a new one.' });
+    }
+
+    const { otp: storedOtp, email } = JSON.parse(storedData);
+    
+    if (storedOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP.' });
+    }
+
+    // Verify the user account
+    user.isVerified = true;
+    await user.save();
+    
+    // Clear the OTP from Redis
+    await redisClient.del(`verify_google_user:${userId}`);
+
+    return res.json({ 
+      message: 'Account verified successfully!',
+      user: sanitizeUser(user)
+    });
+
+  } catch (err) {
+    logger.error('Verify OTP for Google User Error:', err);
+    return res.status(500).json({ error: 'Failed to verify account.' });
+  }
+}
+
+// ---------------- Get User Authentication Status ----------------
+async function getAuthStatus(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const isGoogleGeneratedPassword = user.passwordHash.includes('google_user_');
+    
+    return res.json({
+      hasPassword: !isGoogleGeneratedPassword,
+      isVerified: user.isVerified,
+      googleLinked: user.googleLinked,
+      canUseEmailLogin: !isGoogleGeneratedPassword,
+      canUseGoogleLogin: true, // All users can use Google login
+      needsVerification: !user.isVerified,
+      needsPasswordSetup: isGoogleGeneratedPassword
+    });
+
+  } catch (err) {
+    logger.error('Get Auth Status Error:', err);
+    return res.status(500).json({ error: 'Failed to get authentication status.' });
+  }
+}
+
+// ---------------- Link Google Account ----------------
+async function linkGoogleAccount(req, res) {
+  try {
+    const { email, password, googleToken } = req.body;
+    
+    if (!email || !password || !googleToken) {
+      return res.status(400).json({ 
+        error: 'Email, password, and Google token are required.' 
+      });
+    }
+
+    // First verify the user's email/password
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'User not found.' });
+    }
+
+    const validPass = await bcrypt.compare(password, user.passwordHash);
+    if (!validPass) {
+      return res.status(400).json({ error: 'Incorrect password.' });
+    }
+
+    // Verify Google token and extract Google account info
+    try {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const oauthClient = new OAuth2Client(clientId);
+      
+      let googleEmail, googleName, googlePicture;
+      try {
+        const ticket = await oauthClient.verifyIdToken({ idToken: googleToken, audience: clientId });
+        const payload = ticket.getPayload();
+        googleEmail = payload.email;
+        googleName = payload.name;
+        googlePicture = payload.picture;
+      } catch (e) {
+        // Fallback: treat token as access token
+        const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${googleToken}`);
+        if (!userInfoResponse.ok) {
+          throw new Error('Failed to fetch user info from Google');
+        }
+        const userInfo = await userInfoResponse.json();
+        googleEmail = userInfo.email;
+        googleName = userInfo.name;
+        googlePicture = userInfo.picture;
+      }
+
+      // Verify Google email matches user email
+      if (googleEmail.toLowerCase() !== email.toLowerCase()) {
+        return res.status(400).json({ 
+          error: 'Google account email must match your registered email address.' 
+        });
+      }
+
+      // Update user with Google profile info
+      if (googlePicture && !user.profilePhoto) {
+        user.profilePhoto = googlePicture;
+      }
+      if (googleName && googleName.length > user.name.length) {
+        user.name = googleName;
+      }
+
+      // Mark that this user can now use Google login
+      user.googleLinked = true;
+      await user.save();
+
+      return res.json({ 
+        message: 'Google account linked successfully. You can now use Google login.',
+        user: sanitizeUser(user)
+      });
+
+    } catch (googleError) {
+      logger.error('Google token verification failed:', googleError);
+      return res.status(401).json({ error: 'Invalid Google token.' });
+    }
+
+  } catch (err) {
+    logger.error('Link Google Account Error:', err);
+    return res.status(500).json({ error: 'Failed to link Google account.' });
   }
 }
 
@@ -754,16 +1070,48 @@ async function forgotPassword(req, res) {
     if (!email) return res.status(400).json({ error: 'Email required.' });
     const user = await User.findOne({ email });
     if (!user) return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' }); // Don't reveal user existence
+    
     const token = crypto.randomBytes(32).toString('hex');
-    await redisClient.setEx(`reset:${token}`, 3600, email); // 1 hour expiry
-    // Send email with reset link (replace with your frontend URL)
+    const isGoogleUser = user.passwordHash.includes('google_user_');
+    
+    // Store token with user info
+    await redisClient.setEx(`reset:${token}`, 3600, JSON.stringify({ 
+      email, 
+      isGoogleUser,
+      needsSetup: isGoogleUser 
+    })); // 1 hour expiry
+    
+    // Send email with reset link
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const subject = isGoogleUser ? 'Set Up Your Password' : 'Password Reset';
+    const text = isGoogleUser 
+      ? `Click the link below to set up your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
+      : `Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`;
+    
     await emailService.sendMail({
       to: user.email,
-      subject: 'Password Reset',
-      text: `Click the link below to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email.`
+      subject,
+      text,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">${subject}</h2>
+          <p>Hello ${user.name},</p>
+          <p>${isGoogleUser ? 'Set up your password' : 'Reset your password'} by clicking the button below:</p>
+          <a href="${resetUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 20px 0;">${isGoogleUser ? 'Set Up Password' : 'Reset Password'}</a>
+          <p>If the button doesn't work, copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you didn't request this, please ignore this email.</p>
+          <hr>
+          <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+        </div>
+      `
     });
-    return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+    
+    return res.status(200).json({ 
+      message: 'If the email exists, a reset link has been sent.',
+      isGoogleUser 
+    });
   } catch (err) {
     logger.error('ForgotPassword error:', err);
     return res.status(500).json({ error: 'Server error during password reset request.' });
@@ -777,17 +1125,149 @@ async function resetPassword(req, res) {
   try {
     const { token, password } = req.body;
     if (!token || !password) return res.status(400).json({ error: 'Token and new password required.' });
-    const email = await redisClient.get(`reset:${token}`);
-    if (!email) return res.status(400).json({ error: 'Invalid or expired token.' });
-    const user = await User.findOne({ email });
+    
+    const storedData = await redisClient.get(`reset:${token}`);
+    if (!storedData) return res.status(400).json({ error: 'Invalid or expired token.' });
+    
+    let email, isGoogleUser, needsSetup;
+    try {
+      const parsed = JSON.parse(storedData);
+      email = parsed.email;
+      isGoogleUser = parsed.isGoogleUser;
+      needsSetup = parsed.needsSetup;
+    } catch (e) {
+      // Fallback for old format
+      email = storedData;
+      isGoogleUser = false;
+      needsSetup = false;
+    }
+    
+    const user = await User.findById(email);
     if (!user) return res.status(400).json({ error: 'User not found.' });
+    
+    // Hash the new password
     user.passwordHash = await bcrypt.hash(password, 10);
+    
+    // If this was a Google user setting up password for the first time
+    if (isGoogleUser && needsSetup) {
+      user.googleLinked = true; // Ensure Google is marked as linked
+    }
+    
     await user.save();
     await redisClient.del(`reset:${token}`);
-    return res.status(200).json({ message: 'Password reset successful.' });
+    
+    const message = isGoogleUser && needsSetup 
+      ? 'Password set up successfully. You can now use both Google and email/password login.'
+      : 'Password reset successful.';
+    
+    return res.status(200).json({ 
+      message,
+      isGoogleUser,
+      needsSetup
+    });
   } catch (err) {
     logger.error('ResetPassword error:', err);
     return res.status(500).json({ error: 'Server error during password reset.' });
+  }
+}
+
+// ---------------- Settings: Notification Preferences ----------------
+async function getMyNotificationPreferences(req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('notificationPreferences');
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    return res.json(user.notificationPreferences || {});
+  } catch (err) {
+    logger.error('Get Notification Preferences error:', err);
+    return res.status(500).json({ error: 'Failed to fetch notification preferences.' });
+  }
+}
+
+async function updateMyNotificationPreferences(req, res) {
+  try {
+    const allowedKeys = ['rsvp', 'certificate', 'cohost', 'event_verification', 'host_request'];
+
+    const updates = { email: {}, inApp: {} };
+    if (req.body && typeof req.body === 'object') {
+      if (req.body.email && typeof req.body.email === 'object') {
+        for (const key of allowedKeys) {
+          if (key in req.body.email && typeof req.body.email[key] === 'boolean') {
+            updates.email[key] = req.body.email[key];
+          }
+        }
+      }
+      if (req.body.inApp && typeof req.body.inApp === 'object') {
+        for (const key of allowedKeys) {
+          if (key in req.body.inApp && typeof req.body.inApp[key] === 'boolean') {
+            updates.inApp[key] = req.body.inApp[key];
+          }
+        }
+      }
+    }
+
+    // Build Mongo update object using dot-notation for provided fields only
+    const mongoUpdate = {};
+    for (const [channel, channelUpdates] of Object.entries(updates)) {
+      for (const [k, v] of Object.entries(channelUpdates)) {
+        mongoUpdate[`notificationPreferences.${channel}.${k}`] = v;
+      }
+    }
+
+    if (Object.keys(mongoUpdate).length === 0) {
+      return res.status(400).json({ error: 'No valid notification preference fields to update.' });
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.user.id,
+      { $set: mongoUpdate },
+      { new: true }
+    ).select('notificationPreferences');
+
+    if (!updated) return res.status(404).json({ error: 'User not found.' });
+    return res.json({ message: 'Notification preferences updated.', notificationPreferences: updated.notificationPreferences });
+  } catch (err) {
+    logger.error('Update Notification Preferences error:', err);
+    return res.status(500).json({ error: 'Failed to update notification preferences.' });
+  }
+}
+
+// ---------------- Settings: Delete My Account (schedule) ----------------
+async function deleteMe(req, res) {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    user.deletionRequestedAt = new Date();
+    user.deletionScheduledFor = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await user.save();
+    return res.json({ message: 'Account deletion requested. Your profile will be deleted in 30 days.' });
+  } catch (err) {
+    logger.error('DeleteMe error:', err);
+    return res.status(500).json({ error: 'Server error requesting account deletion.' });
+  }
+}
+
+// ---------------- Settings: Unlink Google Account ----------------
+async function unlinkGoogleAccount(req, res) {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    // Ensure the user still has a valid password before unlinking Google
+    const isGoogleGeneratedPassword = user.passwordHash.includes('google_user_');
+    if (isGoogleGeneratedPassword) {
+      return res.status(400).json({ error: 'Please set a password first before unlinking Google.' });
+    }
+
+    if (!user.googleLinked) {
+      return res.status(400).json({ error: 'Google account is not linked.' });
+    }
+
+    user.googleLinked = false;
+    await user.save();
+    return res.json({ message: 'Google account unlinked successfully.', user: sanitizeUser(user) });
+  } catch (err) {
+    logger.error('UnlinkGoogleAccount error:', err);
+    return res.status(500).json({ error: 'Failed to unlink Google account.' });
   }
 }
 
@@ -1061,6 +1541,12 @@ module.exports = {
   grantHostAccess,
   grantVerifierAccess,
   googleSignIn,
+  linkGoogleAccount,
+  setupPasswordForGoogleUser,
+  changePassword,
+  sendOtpForGoogleUser,
+  verifyOtpForGoogleUser,
+  getAuthStatus,
   forgotPassword,
   resetPassword,
   getDashboard,
@@ -1072,5 +1558,9 @@ module.exports = {
   listPendingHostRequests,
   resendOtp,
   uploadProfilePhoto,
-  setInstitutionForMe
+  setInstitutionForMe,
+  getMyNotificationPreferences,
+  updateMyNotificationPreferences,
+  deleteMe,
+  unlinkGoogleAccount
 };

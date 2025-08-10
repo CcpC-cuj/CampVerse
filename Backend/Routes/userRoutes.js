@@ -13,6 +13,12 @@ const {
   getUserEvents,
   grantHostAccess,
   googleSignIn,
+  linkGoogleAccount,
+  setupPasswordForGoogleUser,
+  changePassword,
+  sendOtpForGoogleUser,
+  verifyOtpForGoogleUser,
+  getAuthStatus,
   updateMe,
   forgotPassword,
   resetPassword,
@@ -26,7 +32,11 @@ const {
   rejectHostRequest,
   resendOtp,
   uploadProfilePhoto,
-  setInstitutionForMe
+  setInstitutionForMe,
+  getMyNotificationPreferences,
+  updateMyNotificationPreferences,
+  deleteMe,
+  unlinkGoogleAccount
 } = require('../Controller/User');
 
 const {
@@ -277,6 +287,225 @@ router.post('/google-signin', googleSignIn);
 
 /**
  * @swagger
+ * /api/users/link-google:
+ *   post:
+ *     summary: Link Google account to existing email/password account
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - googleToken
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               googleToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Google account linked successfully
+ *       400:
+ *         description: Invalid credentials or email mismatch
+ *       401:
+ *         description: Invalid Google token
+ *       500:
+ *         description: Server error
+ */
+router.post('/link-google', linkGoogleAccount);
+
+/**
+ * @swagger
+ * /api/users/auth-status:
+ *   get:
+ *     summary: Get user authentication status and capabilities
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Authentication status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 hasPassword:
+ *                   type: boolean
+ *                   description: Whether user has set up a password
+ *                 isVerified:
+ *                   type: boolean
+ *                   description: Whether account is verified
+ *                 googleLinked:
+ *                   type: boolean
+ *                   description: Whether Google account is linked
+ *                 canUseEmailLogin:
+ *                   type: boolean
+ *                   description: Whether user can login with email/password
+ *                 canUseGoogleLogin:
+ *                   type: boolean
+ *                   description: Whether user can login with Google
+ *                 needsVerification:
+ *                   type: boolean
+ *                   description: Whether account needs verification
+ *                 needsPasswordSetup:
+ *                   type: boolean
+ *                   description: Whether password needs to be set up
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get('/auth-status', authenticateToken, getAuthStatus);
+
+/**
+ * @swagger
+ * /api/users/setup-password:
+ *   post:
+ *     summary: Set up password for Google users
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPassword
+ *             properties:
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: New password to set up
+ *     responses:
+ *       200:
+ *         description: Password set up successfully
+ *       400:
+ *         description: Password already set up or invalid password
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/setup-password', authenticateToken, setupPasswordForGoogleUser);
+
+/**
+ * @swagger
+ * /api/users/change-password:
+ *   post:
+ *     summary: Change password for all users
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: Current password
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: New password
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Current password incorrect or invalid new password
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/change-password', authenticateToken, changePassword);
+
+/**
+ * @swagger
+ * /api/users/unlink-google:
+ *   post:
+ *     summary: Unlink Google account from the current user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Google account unlinked successfully
+ *       400:
+ *         description: Password not set or Google not linked
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/unlink-google', authenticateToken, unlinkGoogleAccount);
+
+/**
+ * @swagger
+ * /api/users/send-verification-otp:
+ *   post:
+ *     summary: Send OTP for Google user verification
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Verification code sent
+ *       400:
+ *         description: Account already verified
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/send-verification-otp', authenticateToken, sendOtpForGoogleUser);
+
+/**
+ * @swagger
+ * /api/users/verify-otp:
+ *   post:
+ *     summary: Verify OTP for Google user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *             properties:
+ *               otp:
+ *                 type: string
+ *                 description: Verification code from email
+ *     responses:
+ *       200:
+ *         description: Account verified successfully
+ *       400:
+ *         description: Invalid or expired OTP
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.post('/verify-otp', authenticateToken, verifyOtpForGoogleUser);
+
+/**
+ * @swagger
  * /api/users/forgot-password:
  *   post:
  *     summary: Request password reset
@@ -473,6 +702,65 @@ router.post('/me/profile-photo', authenticateToken, upload.single('photo'), uplo
 
 // Set institution for current user (onboarding)
 router.post('/me/set-institution', authenticateToken, setInstitutionForMe);
+
+/**
+ * @swagger
+ * /api/users/me/notification-preferences:
+ *   get:
+ *     summary: Get current user's notification preferences
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Notification preferences
+ *   patch:
+ *     summary: Update current user's notification preferences
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: object
+ *                 properties:
+ *                   rsvp: { type: boolean }
+ *                   certificate: { type: boolean }
+ *                   cohost: { type: boolean }
+ *                   event_verification: { type: boolean }
+ *                   host_request: { type: boolean }
+ *               inApp:
+ *                 type: object
+ *                 properties:
+ *                   rsvp: { type: boolean }
+ *                   certificate: { type: boolean }
+ *                   cohost: { type: boolean }
+ *                   event_verification: { type: boolean }
+ *                   host_request: { type: boolean }
+ */
+router.get('/me/notification-preferences', authenticateToken, getMyNotificationPreferences);
+router.patch('/me/notification-preferences', authenticateToken, updateMyNotificationPreferences);
+
+/**
+ * @swagger
+ * /api/users/me/delete:
+ *   post:
+ *     summary: Request deletion of own account (scheduled in 30 days)
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Deletion requested
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/me/delete', authenticateToken, deleteMe);
 
 /**
  * @swagger

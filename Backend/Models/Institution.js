@@ -8,7 +8,7 @@ const institutionSchema = new mongoose.Schema({
     state: { type: String },
     country: { type: String }
   },
-  emailDomain: { type: String, required: true, unique: true, lowercase: true },
+  emailDomain: { type: String, required: true, unique: true, lowercase: true, sparse: true },
   website: { type: String, default: '' },
   phone: { type: String, default: '' },
   info: { type: String, default: '' },
