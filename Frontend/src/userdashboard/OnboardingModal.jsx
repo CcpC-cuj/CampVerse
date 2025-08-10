@@ -39,7 +39,7 @@ const StepHeader = ({ step, total }) => (
   </div>
 );
 
-const OnboardingModal = ({ visible, onClose, onComplete }) => {
+const OnboardingModal = ({ visible, onComplete }) => {
   const { login } = useAuth();
   const totalSteps = 4;
   const [step, setStep] = useState(1);
@@ -179,7 +179,6 @@ const OnboardingModal = ({ visible, onClose, onComplete }) => {
           return;
         }
         onComplete?.();
-        onClose?.();
       }
     } catch (e) {
       setError(e?.message || 'Something went wrong');
@@ -348,7 +347,6 @@ const OnboardingModal = ({ visible, onClose, onComplete }) => {
         <div className="flex justify-between mt-6">
           <button disabled={loading || step===1} onClick={back} className="px-4 py-2 border border-slate-700 rounded disabled:opacity-50">Back</button>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 border border-slate-700 rounded">Close</button>
             <button disabled={loading} onClick={next} className="px-4 py-2 bg-primary rounded text-white">
               {step === totalSteps ? (loading ? 'Submitting...' : 'Finish') : (loading ? 'Saving...' : 'Next')}
             </button>
