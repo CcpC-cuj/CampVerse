@@ -5,7 +5,6 @@ import {
   changePassword, 
   sendVerificationOtp, 
   verifyOtpForGoogleUser,
-  linkGoogleAccount,
   unlinkGoogleAccount,
   forgotPassword
 } from '../api';
@@ -21,7 +20,6 @@ const AuthenticationSettings = () => {
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
-  const [showGoogleLink, setShowGoogleLink] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   
   // Form data
@@ -31,20 +29,25 @@ const AuthenticationSettings = () => {
     confirmPassword: ''
   });
   const [otpData, setOtpData] = useState({ otp: '' });
-  const [googleLinkData, setGoogleLinkData] = useState({
-    email: '',
-    password: ''
-  });
 
   useEffect(() => {
     loadAuthStatus();
   }, []);
 
+  const toBool = (v) => v === true || v === 'true' || v === 1 || v === '1';
+
   const loadAuthStatus = async () => {
     try {
       setLoading(true);
       const status = await getAuthStatus();
-      setAuthStatus(status);
+      const normalized = {
+        ...status,
+        isVerified: toBool(status?.isVerified),
+        hasPassword: toBool(status?.hasPassword),
+        googleLinked: toBool(status?.googleLinked),
+        needsVerification: toBool(status?.needsVerification),
+      };
+      setAuthStatus(normalized);
     } catch (err) {
       setError('Failed to load authentication status');
     } finally {
@@ -145,34 +148,8 @@ const AuthenticationSettings = () => {
     }
   };
 
-  const handleLinkGoogle = async (e) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      
-      // Get Google token
-      const googleToken = await getGoogleToken();
-      
-      // Link Google account
-      const response = await linkGoogleAccount({
-        email: googleLinkData.email,
-        password: googleLinkData.password,
-        token: googleToken
-      });
-      
-      if (response.message) {
-        setSuccess(response.message);
-        setShowGoogleLink(false);
-        setGoogleLinkData({ email: '', password: '' });
-        loadAuthStatus(); // Refresh status
-      } else {
-        setError(response.error || 'Failed to link Google account');
-      }
-    } catch (err) {
-      setError('Failed to link Google account: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleLinkGoogleStart = () => {
+    window.location.href = '/api/auth/link/google';
   };
 
   const clearMessages = () => {
@@ -200,7 +177,7 @@ const AuthenticationSettings = () => {
   const handleForgotPassword = async () => {
     try {
       setLoading(true);
-      const response = await forgotPassword({ email: authStatus.email || user?.email });
+      const response = await forgotPassword({ email: authStatus?.email });
       if (response.message) {
         setSuccess(response.message);
         setShowForgotPassword(false);
@@ -229,6 +206,15 @@ const AuthenticationSettings = () => {
       </div>
     );
   }
+
+  // Derived flags for UI flow
+  const hasPassword = !!authStatus?.hasPassword;
+  const googleLinked = !!authStatus?.googleLinked;
+
+  const shouldShowSetupPassword = googleLinked && !hasPassword; // Google login with no password
+  const shouldShowChangePassword = hasPassword; // Email login or Google user who added a password
+  const shouldShowLinkGoogle = hasPassword && !googleLinked; // Email login only
+  const shouldShowUnlinkGoogle = googleLinked; // Already linked
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
@@ -259,16 +245,12 @@ const AuthenticationSettings = () => {
               Account Verified: {authStatus.isVerified ? 'Yes' : 'No'}
             </div>
             <div className="flex items-center">
-              <span className={`w-3 h-3 rounded-full mr-2 ${authStatus.hasPassword ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-              Password Set: {authStatus.hasPassword ? 'Yes' : 'No'}
+              <span className={`w-3 h-3 rounded-full mr-2 ${hasPassword ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+              Password Set: {hasPassword ? 'Yes' : 'No'}
             </div>
             <div className="flex items-center">
-              <span className={`w-3 h-3 rounded-full mr-2 ${authStatus.googleLinked ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-              Google Linked: {authStatus.googleLinked ? 'Yes' : 'No'}
-            </div>
-            <div className="flex items-center">
-              <span className="w-3 h-3 rounded-full mr-2 bg-blue-500"></span>
-              Google Login: Available
+              <span className={`w-3 h-3 rounded-full mr-2 ${googleLinked ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+              Google Linked: {googleLinked ? 'Yes' : 'No'}
             </div>
           </div>
         </div>
@@ -276,7 +258,7 @@ const AuthenticationSettings = () => {
         {/* Action Buttons */}
         <div className="space-y-4">
           {/* Google-only users: Set up password */}
-          {authStatus.needsPasswordSetup && (
+          {shouldShowSetupPassword && (
             <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
               <h4 className="font-semibold text-yellow-800 mb-2">Set Up Password</h4>
               <p className="text-yellow-700 mb-3">
@@ -300,14 +282,14 @@ const AuthenticationSettings = () => {
           )}
 
           {/* Email-only users: Link Google account */}
-          {authStatus.hasPassword && !authStatus.googleLinked && !authStatus.needsPasswordSetup && (
+          {shouldShowLinkGoogle && (
             <div className="p-4 border border-green-300 bg-green-50 rounded-lg">
               <h4 className="font-semibold text-green-800 mb-2">Link Google Account</h4>
               <p className="text-green-700 mb-3">
                 Link your college Google account for convenient login options and better integration.
               </p>
               <button
-                onClick={() => setShowGoogleLink(true)}
+                onClick={handleLinkGoogleStart}
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
               >
                 Link Google Account
@@ -315,8 +297,8 @@ const AuthenticationSettings = () => {
             </div>
           )}
 
-          {/* Users with real password and Google linked: Change password */}
-          {authStatus.hasPassword && authStatus.googleLinked && !authStatus.needsPasswordSetup && (
+          {/* Users with real password: Change password */}
+          {shouldShowChangePassword && (
             <div className="p-4 border border-blue-300 bg-blue-50 rounded-lg">
               <h4 className="font-semibold text-blue-800 mb-2">Change Password</h4>
               <p className="text-blue-700 mb-3">
@@ -331,8 +313,8 @@ const AuthenticationSettings = () => {
             </div>
           )}
 
-          {/* Users with real password and Google linked: Unlink Google */}
-          {authStatus.hasPassword && authStatus.googleLinked && !authStatus.needsPasswordSetup && (
+          {/* Users with Google linked: Unlink Google */}
+          {shouldShowUnlinkGoogle && (
             <div className="p-4 border border-gray-300 bg-gray-50 rounded-lg">
               <h4 className="font-semibold text-gray-800 mb-2">Unlink Google Account</h4>
               <p className="text-gray-700 mb-3">
@@ -503,56 +485,6 @@ const AuthenticationSettings = () => {
                   <button
                     type="button"
                     onClick={() => setShowOtpVerification(false)}
-                    className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Google Link Modal */}
-        {showGoogleLink && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Link Google Account</h3>
-              <p className="text-gray-600 mb-4">
-                Enter your credentials to link your Google account.
-              </p>
-              <form onSubmit={handleLinkGoogle} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    type="email"
-                    value={googleLinkData.email}
-                    onChange={(e) => setGoogleLinkData({...googleLinkData, email: e.target.value})}
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
-                  <input
-                    type="password"
-                    value={googleLinkData.password}
-                    onChange={(e) => setGoogleLinkData({...googleLinkData, password: e.target.value})}
-                    className="w-full p-2 border rounded"
-                    required
-                  />
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 bg-purple-600 text-white py-2 rounded hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    {loading ? 'Linking...' : 'Link Account'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowGoogleLink(false)}
                     className="flex-1 bg-gray-300 text-gray-700 py-2 rounded hover:bg-gray-400"
                   >
                     Cancel
