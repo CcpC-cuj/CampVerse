@@ -1,155 +1,116 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import Sidebar from '../userdashboard/sidebar';
 
 const UserDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
-  if (!user) {
-    return <div>Loading...</div>;
-  }
+  // Color mapping for Tailwind classes to avoid dynamic class issues
+  const colorClassMap = {
+    blue: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
+    green: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+  };
+
+  if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Header */}
-      <header className="bg-black/20 backdrop-blur-lg border-b border-purple-500/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-white">CampVerse</h1>
-              <span className="text-purple-300">Dashboard</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-white">Welcome, {user.name}</span>
-              <button
-                onClick={logout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen flex bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+      {/* Sidebar */}
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* User Profile Card */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-purple-500/30">
-          <h2 className="text-2xl font-bold text-white mb-6">Profile Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Name</label>
-              <p className="text-white text-lg">{user.name}</p>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Navigation */}
+        <div className="bg-gray-800 border-b border-gray-700 p-4 flex flex-wrap items-center justify-between gap-4">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-auto sm:flex-1 min-w-[250px] max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i className="ri-search-line text-gray-400 w-5 h-5" />
             </div>
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Email</label>
-              <p className="text-white text-lg">{user.email}</p>
-            </div>
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Phone</label>
-              <p className="text-white text-lg">{user.phone}</p>
-            </div>
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Role</label>
-              <p className="text-white text-lg capitalize">{user.roles?.join(', ') || 'Student'}</p>
-            </div>
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Verified</label>
-              <p className="text-white text-lg">{user.isVerified ? 'Yes' : 'No'}</p>
-            </div>
-            <div>
-              <label className="block text-purple-300 text-sm font-medium mb-2">Can Host</label>
-              <p className="text-white text-lg">{user.canHost ? 'Yes' : 'No'}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-500/30">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-600 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-purple-300 text-sm">Certificates</p>
-                <p className="text-white text-2xl font-bold">{user.badges?.length || 0}</p>
-              </div>
-            </div>
+            <input
+              type="text"
+              className="bg-gray-700 border-none text-sm rounded-lg block w-full pl-10 p-2.5 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary outline-none"
+              placeholder="Search events, colleges, or categories..."
+            />
           </div>
 
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-500/30">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-purple-300 text-sm">Achievements</p>
-                <p className="text-white text-2xl font-bold">{user.badges?.length || 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-purple-500/30">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-600 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-purple-300 text-sm">Events</p>
-                <p className="text-white text-2xl font-bold">0</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-purple-500/30">
-          <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg transition-colors">
-              <div className="text-center">
-                <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                <span className="text-sm">Join Event</span>
-              </div>
+          {/* Right Nav Buttons */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end w-full sm:w-auto">
+            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
+              <i className="ri-notification-3-line w-5 h-5" />
             </button>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg transition-colors">
-              <div className="text-center">
-                <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="text-sm">View Certificates</span>
-              </div>
+            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
+              <i className="ri-calendar-line w-5 h-5" />
             </button>
-            <button className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-lg transition-colors">
-              <div className="text-center">
-                <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="text-sm">Edit Profile</span>
-              </div>
-            </button>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-lg transition-colors">
-              <div className="text-center">
-                <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm">Help & Support</span>
-              </div>
+            <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button whitespace-nowrap flex items-center gap-2 transition-colors">
+              <i className="ri-add-line w-5 h-5" />
+              <span className="hidden sm:inline">Host Event</span>
             </button>
           </div>
         </div>
-      </main>
+
+        {/* Main Scrollable Area */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-gray-900">
+          {/* ✅ Get Started / Welcome Section */}
+          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between flex-wrap gap-6">
+              <div>
+                <h1 className="text-2xl font-bold">Welcome back, {user.name}!</h1>
+                <p className="text-gray-300 mt-1">Ready to explore your next event galaxy?</p>
+                <div className="mt-4 flex gap-3">
+                  <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button whitespace-nowrap transition-colors">
+                    Discover Events
+                  </button>
+                  <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button whitespace-nowrap transition-colors">
+                    View Calendar
+                  </button>
+                </div>
+              </div>
+              <div className="hidden md:block relative">
+                <div className="absolute -top-6 -right-6 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl" />
+                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl" />
+                <img
+                  src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20a%20space%20theme%20with%20planets%2C%20stars%2C%20and%20a%20rocket%2C%20colorful%2C%20playful%2C%20educational%20theme%2C%20galaxy%20exploration&width=200&height=200&seq=2&orientation=squarish"
+                  alt="Space theme"
+                  className="w-40 h-40 object-contain relative z-10"
+                  onError={(e) => { 
+                    e.currentTarget.onerror = null; 
+                    e.currentTarget.src = "/images/space-theme-fallback.svg"; 
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 🔢 Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[
+              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: 5 },
+              { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: 2 },
+              { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: 7 },
+              { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: 3 },
+            ].map((stat, i) => (
+              <div
+                key={i}
+                className="bg-gray-800 rounded-lg p-4 flex items-center"
+              >
+                <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
+                  <i className={`${stat.icon} ri-lg`} />
+                </div>
+                <div>
+                  <div className="text-sm text-gray-400">{stat.label}</div>
+                  <div className="text-xl font-bold">{stat.count}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </div>
     </div>
   );
 };
 
-export default UserDashboard; 
+export default UserDashboard;
