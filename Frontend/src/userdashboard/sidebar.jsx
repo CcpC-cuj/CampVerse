@@ -74,7 +74,10 @@ const Sidebar = () => {
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" />
           <SidebarLink icon="ri-compass-line" to="/dashboard/discover-events" label="Discover Events" />
 
-          <SidebarLink icon="ri-calendar-line" to="/my-events" label="My Events" />
+          <SidebarLink icon="ri-calendar-line" to="/eventhistory" label="My Events" />
+
+
+
           <SidebarLink
             icon="ri-notification-3-line"
             to="/notifications"

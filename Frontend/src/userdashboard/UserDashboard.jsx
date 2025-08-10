@@ -4,6 +4,7 @@ import Sidebar from '../userdashboard/sidebar';
 import OnboardingModal from './OnboardingModal';
 import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
+import EventHistory from './EventHistory'; 
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -135,6 +136,7 @@ const UserDashboard = () => {
 
           {/* Discover Events */}
           <DiscoverEvents />
+          
         </div>
       </div>
 

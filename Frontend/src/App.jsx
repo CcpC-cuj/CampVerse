@@ -9,31 +9,39 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
+import EventHistory from "./userdashboard/EventHistory";  // <-- import here
 import "remixicon/fonts/remixicon.css";
 
 function App() {
-  console.log("🌍 App loaded");
-
   return (
     <AuthProvider>
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route 
-            path="/dashboard/*" 
+          <Route
+            path="/dashboard/*"
             element={
               <ProtectedRoute>
                 <UserDashboard />
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/settings" 
+          <Route
+            path="/settings"
             element={
               <ProtectedRoute>
                 <Settings />
               </ProtectedRoute>
-            } 
+            }
+          />
+          {/* New route for Event History */}
+          <Route
+            path="/eventhistory"
+            element={
+              <ProtectedRoute>
+                <EventHistory />
+              </ProtectedRoute>
+            }
           />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="*" element={<Landing />} />
@@ -42,6 +50,5 @@ function App() {
     </AuthProvider>
   );
 }
-
 
 export default App;
