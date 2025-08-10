@@ -60,7 +60,7 @@ const EventHistory = () => {
 
   return (
     <div
-     style={{ fontFamily: "'Poppins', sans-serif" }} className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+      className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
 
       {sidebarOpen && (
         <div
@@ -77,7 +77,7 @@ const EventHistory = () => {
         <Sidebar />
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full">
+      <div style={{ fontFamily: "'Poppins', sans-serif" }} className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full">
 
         <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
 
