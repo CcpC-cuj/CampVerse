@@ -9,7 +9,9 @@ const {
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getInstitutionAnalytics,
-  getInstitutionDashboard
+  getInstitutionDashboard,
+  searchInstitutions,
+  requestNewInstitution
 } = require('../Controller/institution');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
@@ -40,6 +42,54 @@ const router = express.Router();
  *       403: { description: Forbidden }
  */
 router.post('/', authenticateToken, requireRole('platformAdmin'), createInstitution);
+
+// New: search institutions by name/domain
+/**
+ * @swagger
+ * /api/institutions/search:
+ *   get:
+ *     summary: Search institutions by name or email domain
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: List of institutions }
+ */
+router.get('/search', authenticateToken, searchInstitutions);
+
+// New: request creation of a new institution (user)
+/**
+ * @swagger
+ * /api/institutions/request-new:
+ *   post:
+ *     summary: Request a new institution (user)
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, type, emailDomain]
+ *             properties:
+ *               name: { type: string }
+ *               type: { type: string }
+ *               emailDomain: { type: string }
+ *               website: { type: string }
+ *               phone: { type: string }
+ *               info: { type: string }
+ *     responses:
+ *       201: { description: Institution request submitted }
+ */
+router.post('/request-new', authenticateToken, requestNewInstitution);
 
 /**
  * @swagger

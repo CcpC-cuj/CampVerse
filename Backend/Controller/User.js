@@ -30,6 +30,8 @@ const { notifyHostRequest, notifyHostStatusUpdate } = require('../Services/notif
 const { createClient } = require('redis');
 const { OAuth2Client } = require('google-auth-library');
 const winston = require('winston');
+const upload = require('../Middleware/upload');
+const { uploadImageToDrive, deleteImageFromDrive } = require('../Services/driveService');
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -940,7 +942,50 @@ async function getUserBadges(req, res) {
   }
 }
 
+// Upload profile photo (multipart/form-data: field name 'photo')
+async function uploadProfilePhoto(req, res) {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
+    // Upload to Google Drive and get public URL
+    const result = await uploadImageToDrive(req.file, req.user.id);
+    const updated = await User.findByIdAndUpdate(
+      req.user.id,
+      { profilePhoto: result.url },
+      { new: true }
+    ).select('-passwordHash');
+
+    if (!updated) return res.status(404).json({ error: 'User not found.' });
+    return res.json({ message: 'Profile photo updated.', user: updated });
+  } catch (err) {
+    logger.error('UploadProfilePhoto error:', err);
+    return res.status(500).json({ error: 'Failed to upload profile photo.' });
+  }
+}
+
+// Set institution for current user
+async function setInstitutionForMe(req, res) {
+  try {
+    const { institutionId } = req.body || {};
+    if (!institutionId) return res.status(400).json({ error: 'institutionId is required.' });
+
+    const Institution = require('../Models/Institution');
+    const institution = await Institution.findById(institutionId);
+    if (!institution) return res.status(404).json({ error: 'Institution not found.' });
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    user.institutionId = institution._id;
+    user.institutionVerificationStatus = institution.isVerified ? 'verified' : 'pending';
+    await user.save();
+
+    return res.json({ message: 'Institution updated.', user: sanitizeUser(user) });
+  } catch (err) {
+    logger.error('SetInstitutionForMe error:', err);
+    return res.status(500).json({ error: 'Failed to set institution.' });
+  }
+}
 
 // ---------------- Resend OTP ----------------
 async function resendOtp(req, res) {
@@ -1010,5 +1055,7 @@ module.exports = {
   approveHostRequest,
   rejectHostRequest,
   listPendingHostRequests,
-  resendOtp
+  resendOtp,
+  uploadProfilePhoto,
+  setInstitutionForMe
 };

@@ -13,7 +13,21 @@ const institutionSchema = new mongoose.Schema({
   isTemporary: { type: Boolean, default: false },
   hostedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  // Track verification workflow
+  verificationRequested: { type: Boolean, default: false },
+  verificationRequests: [
+    {
+      requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      institutionName: String,
+      officialEmail: String,
+      website: String,
+      phone: String,
+      type: String,
+      info: String,
+      createdAt: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 module.exports = mongoose.model('Institution', institutionSchema);
