@@ -296,7 +296,10 @@ async function requestNewInstitution(req, res) {
         institutionName: name,
         type
       });
-    } catch (e) {}
+    } catch (e) {
+      // Log error but don't fail the request
+      console.error('Failed to notify institution request:', e);
+    }
 
     return res.status(201).json({ message: 'Institution request submitted.', institution });
   } catch (err) {

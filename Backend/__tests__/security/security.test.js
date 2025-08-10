@@ -45,8 +45,8 @@ describe('Security Tests', () => {
     it('should prevent SQL injection attempts', async () => {
       const maliciousInputs = [
         '; DROP TABLE users; --',
-        "' OR '1'='1",
-        '; INSERT INTO users VALUES (\'hacker\', \'password\'); --',
+        '\' OR \'1\'=\'1',
+        '\'; INSERT INTO users VALUES (\'hacker\', \'password\'); --',
         'admin\'--',
         '1\' OR \'1\' = \'1\' --'
       ];
@@ -69,11 +69,11 @@ describe('Security Tests', () => {
 
     it('should prevent XSS attacks', async () => {
       const xssPayloads = [
-        '<script>alert("xss")</script>',
+        '<script>alert(\'xss\')</script>',
         '<img src="x" onerror="alert(\'xss\')">',
-        'javascript:alert("xss")',
+        'javascript:alert(\'xss\')',
         '<iframe src="javascript:alert(\'xss\')"></iframe>',
-        '"><script>alert("xss")</script>'
+        '\'><script>alert(\'xss\')</script>'
       ];
 
       for (const payload of xssPayloads) {
@@ -107,7 +107,7 @@ describe('Security Tests', () => {
           .post('/api/users/register')
           .send({
             name: 'Test User',
-            email: email,
+            email,
             password: 'password123',
             phone: '1234567890'
           });
@@ -133,7 +133,7 @@ describe('Security Tests', () => {
           .send({
             name: 'Test User',
             email: 'test@example.com',
-            password: password,
+            password,
             phone: '1234567890'
           });
 

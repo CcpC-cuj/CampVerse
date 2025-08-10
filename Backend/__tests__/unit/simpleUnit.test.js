@@ -152,7 +152,7 @@ describe('Simple Unit Tests', () => {
 
     it('should truncate long strings', () => {
       const truncate = (str, length) => {
-        return str.length > length ? str.substring(0, length) + '...' : str;
+        return str.length > length ? `${str.substring(0, length)}...` : str;
       };
       
       expect(truncate('Hello World', 5)).toBe('Hello...');

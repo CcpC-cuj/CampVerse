@@ -12,8 +12,8 @@ process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';
 // Increase timeout for tests
 jest.setTimeout(15000);
 
-// Global test utilities
-global.testUtils = {
+// Test utilities
+const testUtils = {
   // Helper to create test user data
   createTestUser: (overrides = {}) => ({
     name: 'Test User',
@@ -42,4 +42,10 @@ global.testUtils = {
     contactEmail: 'institution@test.com',
     ...overrides
   })
-}; 
+};
+
+// Export for use in test files
+module.exports = { testUtils };
+
+// Also set as global for backward compatibility
+global.testUtils = testUtils; 
