@@ -417,7 +417,7 @@ async function updateMe(req, res) {
     const userId = req.user.id;
     const updates = req.body;
     // Allow all profile fields to be updated
-    const allowedFields = ['name', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber', 'interests', 'skills', 'learningGoals', 'badges', 'location'];
+    const allowedFields = ['name', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber', 'interests', 'skills', 'learningGoals', 'badges', 'location', 'onboardingCompleted'];
     const filteredUpdates = {};
     for (const key of allowedFields) {
       if (key in updates) filteredUpdates[key] = updates[key];

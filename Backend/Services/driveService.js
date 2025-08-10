@@ -60,19 +60,19 @@ const uploadImageToDrive = async (file, userId) => {
   try {
     const fileName = `profile_${userId}_${Date.now()}${path.extname(file.originalname)}`;
     
-    const fileMetadata = {
-      name: fileName,
-      parents: [FOLDER_ID],
-    };
-
-    const media = {
-      mimeType: file.mimetype,
-      body: file.buffer,
-    };
+    // Use a PassThrough stream to satisfy googleapis multipart upload
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(file.buffer);
 
     const response = await drive.files.create({
-      resource: fileMetadata,
-      media,
+      requestBody: {
+        name: fileName,
+        parents: [FOLDER_ID],
+      },
+      media: {
+        mimeType: file.mimetype,
+        body: bufferStream,
+      },
       fields: 'id, webViewLink, webContentLink',
     });
 

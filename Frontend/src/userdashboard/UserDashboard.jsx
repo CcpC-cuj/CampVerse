@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../userdashboard/sidebar';
+import OnboardingModal from './OnboardingModal';
+import { getDashboard, updateMe } from '../api';
 
 const UserDashboard = () => {
   const { user } = useAuth();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [loadingGate, setLoadingGate] = useState(true);
 
   // Color mapping for Tailwind classes to avoid dynamic class issues
   const colorClassMap = {
@@ -13,7 +17,31 @@ const UserDashboard = () => {
     purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
   };
 
-  if (!user) return <div>Loading...</div>;
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await getDashboard();
+        if (!mounted) return;
+        const u = data?.user || {};
+        if (u.onboardingCompleted) {
+          setShowOnboarding(false);
+        } else {
+          const basicFieldsFilled = Boolean(u.name && u.phone && u.Gender && u.DOB);
+          const hasInstitution = Boolean(u.institutionId);
+          const needsOnboarding = !basicFieldsFilled || !hasInstitution;
+          setShowOnboarding(needsOnboarding);
+        }
+      } catch {
+        setShowOnboarding(false);
+      } finally {
+        if (mounted) setLoadingGate(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  if (!user || loadingGate) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
@@ -109,6 +137,17 @@ const UserDashboard = () => {
 
         </div>
       </div>
+
+      {showOnboarding && (
+        <OnboardingModal
+          visible={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+          onComplete={async () => {
+            try { await updateMe({ onboardingCompleted: true }); } catch {}
+            setShowOnboarding(false);
+          }}
+        />
+      )}
     </div>
   );
 };

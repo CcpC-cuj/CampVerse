@@ -7,6 +7,12 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function updateLocalUserIfPresent(data) {
+  if (data && data.user) {
+    localStorage.setItem('user', JSON.stringify(data.user));
+  }
+}
+
 export async function register({ name, email, phone, password }) {
   const res = await fetch(`${API_URL}/api/users/register`, {
     method: 'POST',
@@ -63,6 +69,106 @@ export async function resendOtp({ email }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email })
+  });
+  return res.json();
+}
+
+// Dashboard and profile
+export async function getDashboard() {
+  const res = await fetch(`${API_URL}/api/users`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function updateMe(payload) {
+  const res = await fetch(`${API_URL}/api/users/me`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  updateLocalUserIfPresent(data);
+  return data;
+}
+
+export async function uploadProfilePhoto(file) {
+  const formData = new FormData();
+  formData.append('photo', file);
+  const res = await fetch(`${API_URL}/api/users/me/profile-photo`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+    body: formData
+  });
+  const data = await res.json();
+  updateLocalUserIfPresent(data);
+  return data;
+}
+
+// Institutions
+export async function searchInstitutions(q) {
+  const res = await fetch(`${API_URL}/api/institutions/search?q=${encodeURIComponent(q)}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function getInstitutionById(id) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function setInstitutionForMe(institutionId) {
+  const res = await fetch(`${API_URL}/api/users/me/set-institution`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ institutionId })
+  });
+  const data = await res.json();
+  updateLocalUserIfPresent(data);
+  return data;
+}
+
+export async function requestNewInstitution(payload) {
+  const res = await fetch(`${API_URL}/api/institutions/request-new`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+export async function requestInstitutionVerification(institutionId, payload) {
+  const res = await fetch(`${API_URL}/api/institutions/${institutionId}/request-verification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+// Notifications
+export async function getNotifications(limit = 20) {
+  const res = await fetch(`${API_URL}/api/users/notifications?limit=${limit}`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function markNotificationAsRead(id) {
+  const res = await fetch(`${API_URL}/api/users/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function markAllNotificationsAsRead() {
+  const res = await fetch(`${API_URL}/api/users/notifications/read-all`, {
+    method: 'PATCH',
+    headers: { ...getAuthHeaders() }
   });
   return res.json();
 }

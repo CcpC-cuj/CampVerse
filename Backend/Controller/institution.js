@@ -247,16 +247,24 @@ async function searchInstitutions(req, res) {
 
 async function requestNewInstitution(req, res) {
   try {
-    const { name, type, location, emailDomain, website, phone, info } = req.body || {};
-    if (!name || !type || !emailDomain) {
-      return res.status(400).json({ error: 'name, type and emailDomain are required.' });
+    const { name, type, location, emailDomain: _ignoredEmailDomain, website, phone, info } = req.body || {};
+    if (!name || !type) {
+      return res.status(400).json({ error: 'name and type are required.' });
     }
+
+    // Derive domain from requester email for correctness
+    const requester = await User.findById(req.user.id).select('email name');
+    if (!requester || !requester.email || !requester.email.includes('@')) {
+      return res.status(400).json({ error: 'Requester email not found to derive domain.' });
+    }
+    const computedDomain = requester.email.split('@')[1].toLowerCase();
+
     // Create a temporary institution entry
     const institution = await Institution.create({
       name,
       type: type || 'temporary',
       location: location || { city: '', state: '', country: '' },
-      emailDomain,
+      emailDomain: computedDomain,
       isVerified: false,
       isTemporary: true,
       verificationRequested: true,
@@ -264,7 +272,7 @@ async function requestNewInstitution(req, res) {
         {
           requestedBy: req.user.id,
           institutionName: name,
-          officialEmail: req.user.email,
+          officialEmail: requester.email,
           website: website || '',
           phone: phone || '',
           type,
@@ -281,11 +289,10 @@ async function requestNewInstitution(req, res) {
 
     // Notify platform admins
     try {
-      const user = await User.findById(req.user.id).select('name email');
       await notifyInstitutionRequest({
         requesterId: req.user.id,
-        requesterName: user?.name || 'Unknown',
-        requesterEmail: user?.email || '',
+        requesterName: requester?.name || 'Unknown',
+        requesterEmail: requester?.email || '',
         institutionName: name,
         type
       });
