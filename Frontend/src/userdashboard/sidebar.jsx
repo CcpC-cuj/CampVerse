@@ -72,7 +72,8 @@ const Sidebar = () => {
         <div className="py-2">
           <SidebarSection title="Main" />
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" />
-          <SidebarLink icon="ri-compass-line" to="/explore" label="Discover Events" />
+          <SidebarLink icon="ri-compass-line" to="/dashboard/discover-events" label="Discover Events" />
+
           <SidebarLink icon="ri-calendar-line" to="/my-events" label="My Events" />
           <SidebarLink
             icon="ri-notification-3-line"
