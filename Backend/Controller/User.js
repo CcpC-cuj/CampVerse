@@ -1471,7 +1471,7 @@ async function uploadProfilePhotoHandler(req, res) {
     // Delete old profile photo if exists
     if (user.profilePhoto) await deleteProfilePhoto(user.profilePhoto);
     // Upload new photo
-    const url = await uploadProfilePhoto(req.file.buffer, req.file.originalname, req.user.id);
+    const url = await uploadProfilePhoto(req.file.buffer, req.file.originalname, req.user.id, req.file.mimetype);
     user.profilePhoto = url;
     await user.save();
     return res.json({ message: 'Profile photo updated.', user: sanitizeUser(user) });

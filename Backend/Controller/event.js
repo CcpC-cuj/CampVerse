@@ -31,10 +31,12 @@ async function createEvent(req, res) {
     const { title, description, tags, type, organizer, schedule, isPaid, price, capacity } = req.body;
     let logoURL, bannerURL;
     if (req.files && req.files['logo']) {
-      logoURL = await uploadEventImage(req.files['logo'][0].buffer, req.files['logo'][0].originalname, 'logo');
+      const f = req.files['logo'][0];
+      logoURL = await uploadEventImage(f.buffer, f.originalname, 'logo', f.mimetype);
     }
     if (req.files && req.files['banner']) {
-      bannerURL = await uploadEventImage(req.files['banner'][0].buffer, req.files['banner'][0].originalname, 'banner');
+      const f = req.files['banner'][0];
+      bannerURL = await uploadEventImage(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     const event = await Event.create({
       title, description, tags, type, organizer, schedule, isPaid, price, capacity,
@@ -67,11 +69,13 @@ async function updateEvent(req, res) {
     if (!event) return res.status(404).json({ error: 'Event not found.' });
     if (req.files && req.files['logo']) {
       if (event.logoURL) await deleteEventImage(event.logoURL);
-      update.logoURL = await uploadEventImage(req.files['logo'][0].buffer, req.files['logo'][0].originalname, 'logo');
+      const f = req.files['logo'][0];
+      update.logoURL = await uploadEventImage(f.buffer, f.originalname, 'logo', f.mimetype);
     }
     if (req.files && req.files['banner']) {
       if (event.bannerURL) await deleteEventImage(event.bannerURL);
-      update.bannerURL = await uploadEventImage(req.files['banner'][0].buffer, req.files['banner'][0].originalname, 'banner');
+      const f = req.files['banner'][0];
+      update.bannerURL = await uploadEventImage(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
