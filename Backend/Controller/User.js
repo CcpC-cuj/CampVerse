@@ -657,7 +657,7 @@ async function verifyOtp(req, res) {
       canHost: false,
       createdAt: new Date(),
       // Don't set institutionId automatically - user must request institution
-      institutionVerificationStatus: 'none' // No institution requested yet
+      institutionVerificationStatus: 'pending' // No institution requested yet
     });
 
     await user.save();
