@@ -19,7 +19,7 @@
 const Event = require('../Models/Event');
 const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
-const { uploadEventImage } = require('../Services/driveService');
+const { uploadEventImage, deleteEventImage } = require('../Services/driveService');
 const qrcode = require('qrcode');
 const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
@@ -63,15 +63,18 @@ async function getEventById(req, res) {
 async function updateEvent(req, res) {
   try {
     const update = req.body;
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
     if (req.files && req.files['logo']) {
+      if (event.logoURL) await deleteEventImage(event.logoURL);
       update.logoURL = await uploadEventImage(req.files['logo'][0].buffer, req.files['logo'][0].originalname, 'logo');
     }
     if (req.files && req.files['banner']) {
+      if (event.bannerURL) await deleteEventImage(event.bannerURL);
       update.bannerURL = await uploadEventImage(req.files['banner'][0].buffer, req.files['banner'][0].originalname, 'banner');
     }
-    const event = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    res.json(event);
+    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
+    res.json(updatedEvent);
   } catch (err) {
     res.status(500).json({ error: 'Error updating event.' });
   }
@@ -82,6 +85,8 @@ async function deleteEvent(req, res) {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+    if (event.logoURL) await deleteEventImage(event.logoURL);
+    if (event.bannerURL) await deleteEventImage(event.bannerURL);
     res.json({ message: 'Event deleted.' });
   } catch (err) {
     res.status(500).json({ error: 'Error deleting event.' });

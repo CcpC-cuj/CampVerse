@@ -23,39 +23,53 @@
  */
 const dotenv = require('dotenv');
 dotenv.config();
+const nodemailer = require('nodemailer');
 
-function createEmailService() {
-  // Try Gmail first, if it fails, we can switch to a different service
-  const transporter = require('nodemailer').createTransport({
+function createEmailTransporter() {
+  return nodemailer.createTransport({
     service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
     auth: {
       user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false
+      pass: process.env.EMAIL_PASSWORD
     }
   });
-  
+}
+
+async function sendOTP(to, otp) {
+  try {
+    const transporter = createEmailTransporter();
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject: 'Your OTP for CampVerse',
+      html: `<p>Your verification code is: <b>${otp}</b></p>`
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function sendWelcomeEmail(to, name) {
+  try {
+    const transporter = createEmailTransporter();
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject: 'Welcome to CampVerse!',
+      html: `<p>Hi ${name}, welcome to CampVerse!</p>`
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function createEmailService() {
+  const transporter = createEmailTransporter();
   return {
-    async sendMail(options) {
-      console.log('Sending email to:', options.to);
-      console.log('From:', options.from);
-      console.log('Subject:', options.subject);
-      
-      try {
-        const result = await transporter.sendMail(options);
-        console.log('Email sent successfully with message ID:', result.messageId);
-        return result;
-      } catch (error) {
-        console.error('Email sending failed:', error.message);
-        throw error;
-      }
-    }
+    sendMail: (options) => transporter.sendMail(options)
   };
 }
 
-module.exports = { createEmailService };
+module.exports = { createEmailTransporter, sendOTP, sendWelcomeEmail, createEmailService };

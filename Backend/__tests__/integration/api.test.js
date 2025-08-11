@@ -20,12 +20,12 @@ jest.mock('redis', () => ({
   }))
 }));
 
-jest.mock('../Services/email.js', () => ({
+jest.mock('../../Services/email.js', () => ({
   sendOTP: jest.fn().mockResolvedValue(true),
   sendWelcomeEmail: jest.fn().mockResolvedValue(true)
 }));
 
-jest.mock('../Services/otp.js', () => ({
+jest.mock('../../Services/otp.js', () => ({
   otpgenrater: jest.fn().mockReturnValue('123456'),
   createOtpService: jest.fn(() => ({
     generate: jest.fn().mockReturnValue('123456'),
@@ -42,7 +42,7 @@ describe('API Integration Tests', () => {
     app = require('../../app');
     
     // Create test user
-    const User = require('../Models/User');
+    const User = require('../../Models/User');
     const hashedPassword = await bcrypt.hash('testpassword123', 10);
     testUser = await User.create({
       name: 'Test User',

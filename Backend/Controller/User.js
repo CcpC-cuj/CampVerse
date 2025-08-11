@@ -24,14 +24,23 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { createOtpService } = require('../Services/otp');
 const otpService = createOtpService();
-const { createEmailService } = require('../Services/email');
-const emailService = createEmailService();
+let emailService;
+try {
+  const emailModule = require('../Services/email');
+  if (typeof emailModule.createEmailService === 'function') {
+    emailService = emailModule.createEmailService();
+  } else {
+    emailService = { sendMail: async () => true };
+  }
+} catch (e) {
+  emailService = { sendMail: async () => true };
+}
 const { notifyHostRequest, notifyHostStatusUpdate } = require('../Services/notification');
 const { createClient } = require('redis');
 const { OAuth2Client } = require('google-auth-library');
 const winston = require('winston');
 const upload = require('../Middleware/upload');
-const { uploadImageToDrive, deleteImageFromDrive } = require('../Services/driveService');
+const { uploadImageToDrive, deleteImageFromDrive, uploadProfilePhoto, deleteProfilePhoto } = require('../Services/driveService');
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -52,18 +61,9 @@ function extractDomain(email) {
 
 async function findOrCreateInstitution(domain) {
   const Institution = require('../Models/Institution');
-  let institution = await Institution.findOne({ emailDomain: domain });
-  if (!institution) {
-    institution = await Institution.create({
-      name: `Temporary - ${domain}`,
-      type: 'temporary',
-      emailDomain: domain,
-      isVerified: false,
-      isTemporary: true,
-      location: { city: 'Unknown', state: 'Unknown', country: 'Unknown' }
-    });
-  }
-  return institution;
+  // Don't create institutions automatically - let users request them
+  const institution = await Institution.findOne({ emailDomain: domain });
+  return institution; // Return null if no institution exists
 }
 
 const redisClient = createClient({
@@ -331,7 +331,7 @@ async function sendOtpForGoogleUser(req, res) {
     }
 
     // Generate and send OTP
-    const otp = otpService.generate();
+    const otp = await otpService.generate();
     
     try {
       await emailService.sendMail({
@@ -570,7 +570,7 @@ async function register(req, res) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
 
-    const otp = otpService.generate();
+    const otp = await otpService.generate();
     
     try {
       await emailService.sendMail({
@@ -600,7 +600,7 @@ async function register(req, res) {
     const domain = extractDomain(email);
     const institution = await findOrCreateInstitution(domain);
 
-    const tempData = { name, phone, password, otp, institutionId: institution._id, institutionIsVerified: institution.isVerified };
+    const tempData = { name, phone, password, otp, institutionId: institution ? institution._id : null, institutionIsVerified: institution ? institution.isVerified : 'none' };
     await redisClient.setEx(email, 600, JSON.stringify(tempData));
 
     return res.status(200).json({ message: 'OTP sent to email.' }); // Do NOT include OTP in response
@@ -645,7 +645,7 @@ async function verifyOtp(req, res) {
       });
     }
 
-    // New user registration
+    // New user registration - no automatic institution creation
     const passwordHash = await bcrypt.hash(tempData.password, 10);
     user = new User({
       name: tempData.name,
@@ -656,8 +656,8 @@ async function verifyOtp(req, res) {
       isVerified: false,
       canHost: false,
       createdAt: new Date(),
-      institutionId: tempData.institutionId,
-      institutionVerificationStatus: tempData.institutionIsVerified ? 'verified' : 'pending'
+      // Don't set institutionId automatically - user must request institution
+      institutionVerificationStatus: 'none' // No institution requested yet
     });
 
     await user.save();
@@ -733,8 +733,17 @@ async function updatePreferences(req, res) {
 // Get logged in user profile (GET /me)
 async function getMe(req, res) {
   try {
-    const user = await User.findById(req.user.id).select('-passwordHash');
+    const user = await User.findById(req.user.id)
+      .populate('institutionId', 'name isVerified')
+      .select('-passwordHash');
     if (!user) return res.status(404).json({ error: 'User not found.' });
+    
+    // Ensure institutionId is null if no institution exists
+    if (user.institutionId && !user.institutionId._id) {
+      user.institutionId = null;
+      user.institutionVerificationStatus = 'none';
+    }
+    
     return res.json(user);
   } catch (err) {
     logger.error('GetMe error:', err);
@@ -1438,20 +1447,18 @@ async function getUserBadges(req, res) {
 }
 
 // Upload profile photo (multipart/form-data: field name 'photo')
-async function uploadProfilePhoto(req, res) {
+async function uploadProfilePhotoHandler(req, res) {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
-
-    // Upload to Google Drive and get public URL
-    const result = await uploadImageToDrive(req.file, req.user.id);
-    const updated = await User.findByIdAndUpdate(
-      req.user.id,
-      { profilePhoto: result.url },
-      { new: true }
-    ).select('-passwordHash');
-
-    if (!updated) return res.status(404).json({ error: 'User not found.' });
-    return res.json({ message: 'Profile photo updated.', user: updated });
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    // Delete old profile photo if exists
+    if (user.profilePhoto) await deleteProfilePhoto(user.profilePhoto);
+    // Upload new photo
+    const url = await uploadProfilePhoto(req.file.buffer, req.file.originalname, req.user.id);
+    user.profilePhoto = url;
+    await user.save();
+    return res.json({ message: 'Profile photo updated.', user: sanitizeUser(user) });
   } catch (err) {
     logger.error('UploadProfilePhoto error:', err);
     return res.status(500).json({ error: 'Failed to upload profile photo.' });
@@ -1492,7 +1499,7 @@ async function resendOtp(req, res) {
     if (!tempStr) return res.status(400).json({ error: 'No pending registration found for this email.' });
 
     const tempData = JSON.parse(tempStr);
-    const otp = otpService.generate();
+    const otp = await otpService.generate();
     try {
       await emailService.sendMail({
         from: process.env.EMAIL_USER,
@@ -1557,7 +1564,7 @@ module.exports = {
   rejectHostRequest,
   listPendingHostRequests,
   resendOtp,
-  uploadProfilePhoto,
+  uploadProfilePhoto: uploadProfilePhotoHandler,
   setInstitutionForMe,
   getMyNotificationPreferences,
   updateMyNotificationPreferences,
