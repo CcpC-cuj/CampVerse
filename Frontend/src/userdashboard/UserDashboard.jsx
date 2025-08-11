@@ -119,7 +119,7 @@ const UserDashboard = () => {
           {/* Stats Overview */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {[
-              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: (stats?.upcomingEvents ?? stats?.totalRegistered ?? 0) },
+              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: (stats?.upcomingEvents ?? 0) },
               { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: (stats?.totalWaitlisted ?? 0) },
               { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: (stats?.achievements ?? 0) },
               { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
