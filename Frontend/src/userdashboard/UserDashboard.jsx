@@ -11,6 +11,7 @@ const UserDashboard = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [loadingGate, setLoadingGate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false); // ✅ For mobile menu
+  const [stats, setStats] = useState(null);
 
   const colorClassMap = {
     blue: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
@@ -29,6 +30,7 @@ const UserDashboard = () => {
         const basicFieldsFilled = Boolean(u.name && u.phone && u.Gender && u.DOB);
         const hasInstitution = Boolean(u.institutionId);
         setShowOnboarding(!basicFieldsFilled || !hasInstitution);
+        setStats(data?.stats || null);
       } catch {
         setShowOnboarding(false);
       } finally {
@@ -117,10 +119,10 @@ const UserDashboard = () => {
           {/* Stats Overview */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {[
-              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: 5 },
-              { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: 2 },
-              { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: 7 },
-              { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: 3 },
+              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: (stats?.upcomingEvents ?? stats?.totalRegistered ?? 0) },
+              { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: (stats?.totalWaitlisted ?? 0) },
+              { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: (stats?.achievements ?? 0) },
+              { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
             ].map((stat, i) => (
               <div key={i} className="bg-gray-800 rounded-lg p-4 flex items-center">
                 <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
