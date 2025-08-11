@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthenticationSettings from '../components/AuthenticationSettings';
 import Sidebar from './sidebar';
-import { getMyNotificationPreferences, updateMyNotificationPreferences, deleteMyAccount } from '../api';
+import { getMyNotificationPreferences, updateMyNotificationPreferences, deleteMyAccount, updateMe, uploadProfilePhoto } from '../api';
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('authentication');
   const [darkMode, setDarkMode] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -13,6 +13,52 @@ const Settings = () => {
   const [notifPrefs, setNotifPrefs] = useState({ email: {}, inApp: {} });
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifMessage, setNotifMessage] = useState('');
+
+  // Profile state
+  const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [profilePhoto, setProfilePhoto] = useState(user?.profilePhoto || user?.avatar || '/default-avatar.png');
+  const [profileMessage, setProfileMessage] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const fileInputRef = useRef();
+  const [editingField, setEditingField] = useState(null); // 'name' | 'phone' | 'location' | 'bio' | null
+  const nameInputRef = useRef(null);
+  const phoneInputRef = useRef(null);
+  const locationInputRef = useRef(null);
+  const bioInputRef = useRef(null);
+
+  useEffect(() => {
+    if (editingField) return; // do not reset inputs while a field is being edited
+    setName(user?.name || '');
+    setPhone(user?.phone || '');
+    setLocation(user?.location || '');
+    setBio(user?.bio || '');
+    setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
+  }, [user?._id, editingField]); 
+
+  // Keep focus locked on the active editing field
+  useEffect(() => {
+    const refMap = {
+      name: nameInputRef,
+      phone: phoneInputRef,
+      location: locationInputRef,
+      bio: bioInputRef,
+    };
+    const targetRef = editingField ? refMap[editingField] : null;
+    if (targetRef && targetRef.current) {
+      const el = targetRef.current;
+      el.focus();
+      try {
+        const len = el.value?.length ?? 0;
+        if (typeof el.setSelectionRange === 'function') el.setSelectionRange(len, len);
+      } catch (_) {}
+    }
+  }, [editingField, name, phone, location, bio]);
+
+  const startEditing = (field) => setEditingField(field);
+  const stopEditing = () => setEditingField(null);
 
   const handleLogout = () => {
     logout();
@@ -54,6 +100,52 @@ const Settings = () => {
     alert(res.message || res.error || 'Request sent');
   };
 
+  // Profile photo upload
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileSaving(true);
+      setProfileMessage('Uploading...');
+      try {
+        const res = await uploadProfilePhoto(file);
+        if (res.user?.profilePhoto) {
+          setProfilePhoto(res.user.profilePhoto);
+          setProfileMessage('Profile photo updated!');
+          if (res.user) {
+            setUser(res.user); // update global context
+          }
+        } else {
+          setProfileMessage(res.error || 'Failed to update photo');
+        }
+      } catch (err) {
+        setProfileMessage('Failed to update photo');
+      } finally {
+        setTimeout(() => setProfileMessage(''), 2000);
+        setProfileSaving(false);
+      }
+    }
+  };
+
+  // Save profile fields
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    setProfileMessage('Saving...');
+    try {
+      const res = await updateMe({ name, phone, location, bio });
+      if (res.user) {
+        setProfileMessage('Profile updated!');
+        setUser(res.user); // update global context
+      } else {
+        setProfileMessage(res.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      setProfileMessage('Failed to update profile');
+    } finally {
+      setTimeout(() => setProfileMessage(''), 2000);
+      setProfileSaving(false);
+    }
+  };
+
   const tabs = [
     { id: 'authentication', label: 'Authentication', icon: 'ri-shield-keyhole-line' },
     { id: 'profile', label: 'Profile', icon: 'ri-user-settings-line' },
@@ -76,7 +168,7 @@ const Settings = () => {
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <img
-                    src={user?.profilePhoto || user?.avatar || "/default-avatar.png"}
+                    src={profilePhoto}
                     alt="Profile"
                     className="w-16 h-16 rounded-full object-cover"
                     onError={(e) => {
@@ -85,19 +177,42 @@ const Settings = () => {
                     }}
                   />
                   <div>
-                    <button className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    <button
+                      type="button"
+                      className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                      onClick={() => fileInputRef.current.click()}
+                      disabled={profileSaving}
+                    >
                       Change Photo
                     </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      onChange={handlePhotoChange}
+                    />
                   </div>
+                  {profileMessage && <span className="text-sm text-gray-600 ml-4">{profileMessage}</span>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      {editingField !== 'name' ? (
+                        <button type="button" onClick={() => startEditing('name')} className="text-sm text-purple-600">Edit</button>
+                      ) : (
+                        <button type="button" onClick={stopEditing} className="text-sm text-gray-600">Done</button>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      defaultValue={user?.name || ''}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      ref={nameInputRef}
+                      value={name}
+                      readOnly={editingField !== 'name'}
+                      onChange={e => setName(e.target.value)}
+                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent ${editingField !== 'name' ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                     />
                   </div>
                   
@@ -105,44 +220,79 @@ const Settings = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
                       type="email"
-                      defaultValue={user?.email || ''}
+                      value={user?.email || ''}
                       disabled
                       className="w-full p-2 border border-gray-300 rounded bg-gray-50 text-gray-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      {editingField !== 'phone' ? (
+                        <button type="button" onClick={() => startEditing('phone')} className="text-sm text-purple-600">Edit</button>
+                      ) : (
+                        <button type="button" onClick={stopEditing} className="text-sm text-gray-600">Done</button>
+                      )}
+                    </div>
                     <input
                       type="tel"
-                      defaultValue={user?.phone || ''}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      ref={phoneInputRef}
+                      value={phone}
+                      readOnly={editingField !== 'phone'}
+                      onChange={e => setPhone(e.target.value)}
+                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent ${editingField !== 'phone' ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                      {editingField !== 'location' ? (
+                        <button type="button" onClick={() => startEditing('location')} className="text-sm text-purple-600">Edit</button>
+                      ) : (
+                        <button type="button" onClick={stopEditing} className="text-sm text-gray-600">Done</button>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      defaultValue={user?.location || ''}
-                      className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      ref={locationInputRef}
+                      value={location}
+                      readOnly={editingField !== 'location'}
+                      onChange={e => setLocation(e.target.value)}
+                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent ${editingField !== 'location' ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                    {editingField !== 'bio' ? (
+                      <button type="button" onClick={() => startEditing('bio')} className="text-sm text-purple-600">Edit</button>
+                    ) : (
+                      <button type="button" onClick={stopEditing} className="text-sm text-gray-600">Done</button>
+                    )}
+                  </div>
                   <textarea
                     rows={3}
-                    defaultValue={user?.bio || ''}
-                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    ref={bioInputRef}
+                    value={bio}
+                    readOnly={editingField !== 'bio'}
+                    onChange={e => setBio(e.target.value)}
+                    className={`w-full p-2 border rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent ${editingField !== 'bio' ? 'bg-gray-50 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                     placeholder="Tell us about yourself..."
                   />
                 </div>
 
                 <div className="flex justify-end">
-                  <button className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700">
-                    Save Changes
+                  <button
+                    type="button"
+                    className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700"
+                    onClick={handleSaveProfile}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
               </div>

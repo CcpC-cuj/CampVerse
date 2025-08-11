@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, match: /\.(ac|edu)\.in$|\.edu$/ },
   phone: { type: String, required: false },
+  location: { type: String },
+  bio: { type: String },
   Gender: { type: String },
   DOB: { type: Date },
   passwordHash: { type: String, required: true },
