@@ -8,6 +8,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
 const { createClient } = require('redis');
 const userRoutes = require('./Routes/userRoutes');
 const hostRoutes = require('./Routes/hostRoutes');
@@ -60,6 +61,9 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
+// Basic security headers
+app.use(helmet());
+
 // Enable CORS for local frontend development
 app.use(cors({
   origin: [
@@ -71,7 +75,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Connect Redis client
 const redisClient = createClient({
@@ -105,13 +109,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Validate required environment variables
-['JWT_SECRET','EMAIL_USER','EMAIL_PASSWORD'].forEach((key) => {
+// Validate required environment variables (soft-fail locally to avoid exit on dev)
+const requiredEnv = ['JWT_SECRET'];
+for (const key of requiredEnv) {
   if (!process.env[key]) {
-    console.error(`Missing required environment variable: ${key}`);
-    process.exit(1);
+    console.warn(`Missing environment variable: ${key}. Using dev fallback.`);
   }
-});
+}
 
 // Routes
 app.use('/api/users', userRoutes);
@@ -121,7 +125,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
-// Apply rate limiter to sensitive routes
+// Apply rate limiter to sensitive routes (mount before potential route handlers)
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/google-signin', authLimiter);

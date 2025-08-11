@@ -6,6 +6,7 @@ import { getInstitutionById } from "../api";
 const Sidebar = () => {
   const { user } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
+  const [institutionVerified, setInstitutionVerified] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -13,7 +14,10 @@ const Sidebar = () => {
       try {
         if (user?.institutionId) {
           const inst = await getInstitutionById(user.institutionId);
-          if (mounted && inst && inst.name) setInstitutionName(inst.name);
+          if (mounted && inst) {
+            setInstitutionName(inst.name || '');
+            setInstitutionVerified(inst.isVerified || false);
+          }
         }
       } catch {}
       return () => { mounted = false; };
@@ -21,7 +25,8 @@ const Sidebar = () => {
   }, [user?.institutionId]);
 
   const profileUrl = user?.profilePhoto || user?.avatar || "/default-avatar.png";
-  const collegeText = institutionName || "Under Approval";
+  // Show "Under Approval" if institution is not verified, otherwise show institution name
+  const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
 
   return (
     <div className="h-screen w-64 flex flex-col bg-gray-900 text-white font-poppins overflow-hidden">

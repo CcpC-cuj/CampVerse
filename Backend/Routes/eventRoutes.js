@@ -22,6 +22,16 @@ const { requireHostOrCoHost, requireVerifier } = require('../Middleware/permissi
 
 const router = express.Router();
 
+// Public list events endpoint for browsing (used by tests and landing pages)
+router.get('/', async (req, res) => {
+  try {
+    const events = await require('../Models/Event').find().limit(50);
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching events.' });
+  }
+});
+
 /**
  * @swagger
  * /api/events:

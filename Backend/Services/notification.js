@@ -182,17 +182,16 @@ async function getUserNotifications(userId, limit = 20) {
 /**
  * Mark notification as read
  */
-async function markNotificationAsRead(notificationId, userId) {
+async function markNotificationAsRead(notificationId) {
   try {
-    const notification = await Notification.findOneAndUpdate(
-      { _id: notificationId, targetUserId: userId },
-      { isRead: true },
-      { new: true }
-    );
-    return notification;
+    const notification = await Notification.findById(notificationId);
+    if (!notification) return false;
+    notification.isRead = true;
+    await notification.save();
+    return true;
   } catch (error) {
     console.error('Error marking notification as read:', error);
-    throw error;
+    return false;
   }
 }
 

@@ -9,7 +9,7 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory";  // <-- import here
+import EventHistory from "./userdashboard/EventHistory"; 
 import "remixicon/fonts/remixicon.css";
 
 function App() {
