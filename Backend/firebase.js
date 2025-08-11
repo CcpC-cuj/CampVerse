@@ -11,7 +11,7 @@ function resolveServiceAccountPath() {
   ].filter(Boolean);
 
   for (const p of candidates) {
-    try { if (fs.existsSync(p)) return p; } catch (_) {}
+    try { if (fs.existsSync(p)) return p; } catch (_) { /* ignore errors */ }
   }
   return null;
 }
@@ -31,7 +31,7 @@ if (!admin.apps.length) {
       admin.initializeApp();
     }
   } catch (_) {
-    try { admin.initializeApp(); } catch (_) {}
+    try { admin.initializeApp(); } catch (_) { /* ignore errors */ }
   }
 }
 
