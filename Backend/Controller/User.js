@@ -20,6 +20,7 @@ const User = require('../Models/User');
 const Certificate = require('../Models/Certificate');
 const Achievement = require('../Models/Achievement');
 const EventParticipationLog = require('../Models/EventParticipationLog');
+const Event = require('../Models/Event');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { createOtpService } = require('../Services/otp');
@@ -832,6 +833,19 @@ async function getDashboard(req, res) {
     const participationLogs = await EventParticipationLog.find({ userId: user._id });
     const registeredEvents = participationLogs.filter(log => log.status === 'registered').length;
 
+    // Upcoming events count for the user (registered and in the future)
+    const now = new Date();
+    const registeredEventIds = participationLogs
+      .filter(log => log.status === 'registered')
+      .map(log => log.eventId);
+    let upcomingEventsCount = 0;
+    if (registeredEventIds.length > 0) {
+      upcomingEventsCount = await Event.countDocuments({
+        _id: { $in: registeredEventIds },
+        'schedule.start': { $gt: now }
+      });
+    }
+
     // Profile completion calculation
     const requiredFields = ['name', 'email', 'phone', 'Gender', 'DOB', 'profilePhoto', 'collegeIdNumber'];
     let filled = 0;
@@ -843,11 +857,13 @@ async function getDashboard(req, res) {
       totalAttended: user.eventHistory?.attended?.length || 0,
       totalHosted: user.eventHistory?.hosted?.length || 0,
       totalSaved: user.eventHistory?.saved?.length || 0,
-      totalWaitlisted: user.eventHistory?.waitlisted?.length || 0,
+      totalWaitlisted: participationLogs.filter(log => log.status === 'waitlisted').length,
       totalRegistered: registeredEvents,
       totalParticipationLogs: participationLogs.length,
       certificates: certificatesCount,
       achievements: achievementsCount,
+      upcomingEvents: upcomingEventsCount,
+      myColleges: user.institutionId ? 1 : 0,
       referralStats: user.referralStats || { sharedLinks: 0, successfulSignups: 0 },
       profileCompletion,
       isHost: user.roles.includes('host'),
@@ -1455,7 +1471,7 @@ async function uploadProfilePhotoHandler(req, res) {
     // Delete old profile photo if exists
     if (user.profilePhoto) await deleteProfilePhoto(user.profilePhoto);
     // Upload new photo
-    const url = await uploadProfilePhoto(req.file.buffer, req.file.originalname, req.user.id);
+    const url = await uploadProfilePhoto(req.file.buffer, req.file.originalname, req.user.id, req.file.mimetype);
     user.profilePhoto = url;
     await user.save();
     return res.json({ message: 'Profile photo updated.', user: sanitizeUser(user) });

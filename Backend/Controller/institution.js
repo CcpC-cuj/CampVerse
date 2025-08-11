@@ -366,7 +366,7 @@ async function requestNewInstitution(req, res) {
     // Create a new institution entry (unverified by default)
     const institutionData = {
       name: name.trim(),
-      type: type,
+      type,
       // Location will be set by admin during approval
       emailDomain: computedDomain,
       isVerified: false, // Always false for user requests
@@ -379,7 +379,7 @@ async function requestNewInstitution(req, res) {
           officialEmail: requester.email,
           website: website || '',
           phone: phone || '',
-          type: type,
+          type,
           info: info || ''
         }
       ]

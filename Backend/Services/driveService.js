@@ -18,9 +18,7 @@
  *
  * These plans are for reference/documentation and do not affect current code execution.
  */
-const { google } = require('googleapis');
 const multer = require('multer');
-const stream = require('stream');
 const path = require('path');
 const { randomUUID } = require('crypto');
 
@@ -48,15 +46,16 @@ const upload = multer({
  * @param {Buffer} fileBuffer - The file buffer to upload
  * @param {String} filename - The name of the file
  * @param {String} type - 'logo' or 'banner'
+ * @param {String} mimetype - The MIME type of the image (e.g., 'image/png')
  * @returns {Promise<String>} - The public URL of the uploaded file
  */
-async function uploadEventImage(fileBuffer, filename, type) {
+async function uploadEventImage(fileBuffer, filename, type, mimetype) {
   const destination = `Campverse/${type}/${Date.now()}_${filename}`;
   const file = bucket.file(destination);
   const token = randomUUID();
   await file.save(fileBuffer, {
     metadata: {
-      contentType: 'image/png',
+      contentType: mimetype || 'image/png',
       metadata: { firebaseStorageDownloadTokens: token }
     }
   });
@@ -88,15 +87,16 @@ async function deleteEventImage(fileUrl) {
  * @param {Buffer} fileBuffer - The file buffer to upload
  * @param {String} filename - The name of the file
  * @param {String} userId - The user's ID
+ * @param {String} mimetype - The MIME type of the image (e.g., 'image/jpeg')
  * @returns {Promise<String>} - The public URL of the uploaded file
  */
-async function uploadProfilePhoto(fileBuffer, filename, userId) {
+async function uploadProfilePhoto(fileBuffer, filename, userId, mimetype) {
   const destination = `Campverse/profiles/${userId}_${Date.now()}_${filename}`;
   const file = bucket.file(destination);
   const token = randomUUID();
   await file.save(fileBuffer, {
     metadata: {
-      contentType: 'image/png',
+      contentType: mimetype || 'image/png',
       metadata: { firebaseStorageDownloadTokens: token }
     }
   });
