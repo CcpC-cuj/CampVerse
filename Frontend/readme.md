@@ -26,7 +26,7 @@ npm install
 ```bash
 npm run dev
 ```
-- Runs the app in development mode (default: http://localhost:5173)
+- Runs the app in development mode (default Vite: http://localhost:5173)
 - The page will reload if you make edits.
 
 ### 3. Linting
@@ -82,7 +82,7 @@ Frontend/
 - **Environment Variables:**
   - Create a `.env` file in `Frontend/` for API URLs, e.g.:
     ```env
-    VITE_API_URL=http://localhost:5000
+    VITE_API_URL=http://localhost:5001
     ```
   - Use `import.meta.env.VITE_API_URL` in your code to access the backend URL.
 
@@ -90,7 +90,7 @@ Frontend/
 
 ## 🔐 Google OAuth, Academic Email Enforcement & Error Handling
 - **Google Sign-In** is integrated via the backend `/google-signin` endpoint.
-- Only academic emails (`.ac.in` or `.edu.in`) are allowed for Google login. If a non-academic email is used, the user will see an error and a Logout/Back button.
+- Only academic emails (`.ac.in`, `.edu.in`, or `.edu`) are allowed for Google login. If a non-academic email is used, the user will see an error and a Logout/Back button.
 - The **OAuthCallback** page handles the Google OAuth redirect, exchanges the access token for a JWT, and redirects to the dashboard on success.
 - If an error occurs (e.g., non-academic email, invalid token), the UI displays a clear error message and provides a Logout and Back button for user recovery.
 - All debug and info console logs have been removed from production code; only errors are logged in the console.
