@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
 
 const Sidebar = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
   const [institutionVerified, setInstitutionVerified] = useState(false);
 
@@ -100,14 +100,16 @@ const Sidebar = () => {
       <div className="p-4 border-t border-gray-700">
         <SidebarLink icon="ri-settings-3-line" to="/settings" label="Settings" />
         <SidebarLink icon="ri-question-line" to="/help" label="Help Center" />
-        <div className="flex items-center justify-between mt-4">
-          <span className="text-sm text-gray-400">Dark Mode</span>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" checked readOnly className="sr-only peer" />
-            <div className="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:bg-[#9b5de5] transition-all duration-200"></div>
-            <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 transform peer-checked:translate-x-5"></div>
-          </label>
-        </div>
+
+        {/* Modern Logout (purple theme, subtle glow, micro-interactions) */}
+        <button
+          onClick={logout}
+          aria-label="Logout"
+          className="group mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] bg-transparent hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all duration-200 hover:shadow-[0_0_15px_rgba(155,93,229,0.35)] active:scale-[0.98] backdrop-blur-sm"
+        >
+          <i className="ri-logout-box-r-line transition-transform duration-200 group-hover:-translate-x-0.5"></i>
+          <span className="text-sm font-medium">Logout</span>
+        </button>
       </div>
     </div>
   );
