@@ -10,7 +10,8 @@ import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
 import EventHistory from "./userdashboard/EventHistory";
-import HelpCenter from "./userdashboard/HelpCenter"; // ← NEW
+import HelpCenter from "./userdashboard/HelpCenter"; // already added earlier
+import Feedback from "./userdashboard/Feedback";     // ← NEW
 import "remixicon/fonts/remixicon.css";
 
 function App() {
@@ -44,12 +45,21 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* NEW: Help Center route */}
+          {/* Help Center route */}
           <Route
             path="/help"
             element={
               <ProtectedRoute>
                 <HelpCenter />
+              </ProtectedRoute>
+            }
+          />
+          {/* NEW: Feedback route */}
+          <Route
+            path="/feedback"
+            element={
+              <ProtectedRoute>
+                <Feedback />
               </ProtectedRoute>
             }
           />
