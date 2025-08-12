@@ -45,7 +45,7 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
             onClick={onSignupClick}
             onMouseEnter={() => setHovered("signup")}
             onMouseLeave={() => setHovered(null)}
-            className="px-5 py-2 rounded-full text-white bg-primary hover:bg-white/10 hover:scale-105 transition duration-300"
+            className="px-5 py-2 rounded-full text-white bg-[#9b5de5] hover:bg-white/10 hover:scale-105 transition duration-300"
           >
             Sign Up
           </button>
@@ -88,7 +88,7 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
               onSignupClick();
               setIsOpen(false);
             }}
-            className="block w-full text-left px-5 py-2 rounded-full text-white bg-primary hover:bg-white/10 hover:scale-105 transition duration-300"
+            className="block w-full text-left px-5 py-2 rounded-full text-white bg-[#9b5de5] hover:bg-white/10 hover:scale-105 transition duration-300"
           >
             Sign Up
           </button>
