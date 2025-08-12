@@ -251,7 +251,7 @@ const OnboardingModal = ({ visible, onComplete }) => {
               <label className="text-sm text-slate-300">Interests</label>
               <div className="flex gap-2 mt-1">
                 <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={interestInput} onChange={(e)=>setInterestInput(e.target.value)} placeholder="Add interest and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('interests', interestInput.trim()); setInterestInput('');}}>+</button>
+                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('interests', interestInput.trim()); setInterestInput('');}}>+</button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.interests.map((v,i)=>(
@@ -264,7 +264,7 @@ const OnboardingModal = ({ visible, onComplete }) => {
               <label className="text-sm text-slate-300">Skills</label>
               <div className="flex gap-2 mt-1">
                 <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={skillInput} onChange={(e)=>setSkillInput(e.target.value)} placeholder="Add skill and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('skills', skillInput.trim()); setSkillInput('');}}>+</button>
+                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('skills', skillInput.trim()); setSkillInput('');}}>+</button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.skills.map((v,i)=>(
@@ -277,7 +277,7 @@ const OnboardingModal = ({ visible, onComplete }) => {
               <label className="text-sm text-slate-300">Learning Goals</label>
               <div className="flex gap-2 mt-1">
                 <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={goalInput} onChange={(e)=>setGoalInput(e.target.value)} placeholder="Add goal and press +" />
-                <button className="bg-primary px-3 rounded" onClick={()=>{addChip('learningGoals', goalInput.trim()); setGoalInput('');}}>+</button>
+                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('learningGoals', goalInput.trim()); setGoalInput('');}}>+</button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.learningGoals.map((v,i)=>(
@@ -347,7 +347,7 @@ const OnboardingModal = ({ visible, onComplete }) => {
         <div className="flex justify-between mt-6">
           <button disabled={loading || step===1} onClick={back} className="px-4 py-2 border border-slate-700 rounded disabled:opacity-50">Back</button>
           <div className="flex gap-2">
-            <button disabled={loading} onClick={next} className="px-4 py-2 bg-primary rounded text-white">
+            <button disabled={loading} onClick={next} className="px-4 py-2 bg-[#9b5de5] hover:bg-[#8c4be1] rounded text-white">
               {step === totalSteps ? (loading ? 'Submitting...' : 'Finish') : (loading ? 'Saving...' : 'Next')}
             </button>
           </div>

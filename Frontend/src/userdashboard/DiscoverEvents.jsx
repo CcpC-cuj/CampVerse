@@ -38,7 +38,7 @@ const DiscoverEvents = () => {
         {events.map((event) => (
           <div
             key={event.id}
-            className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300"
+            className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 border border-gray-800 hover:border-[#9b5de5]/30"
           >
             <img
               src={event.image}
@@ -54,13 +54,13 @@ const DiscoverEvents = () => {
                 {event.tags.map((tag, idx) => (
                   <span
                     key={idx}
-                    className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs"
+                    className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-              <button className="mt-4 bg-primary hover:bg-blue-600 px-4 py-2 rounded-button w-full transition-colors">
+              <button className="mt-4 bg-[#9b5de5] hover:bg-[#8c4be1] px-4 py-2 rounded-button w-full transition-colors text-white">
                 View Details
               </button>
             </div>

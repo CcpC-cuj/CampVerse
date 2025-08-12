@@ -29,8 +29,8 @@ const GetStarted = () => {
           </button>
 
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-dashboard-line text-primary text-2xl"></i>
+            <div className="w-16 h-16 bg-[#9b5de5]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ri-dashboard-line text-[#9b5de5] text-2xl"></i>
             </div>
             <h2 className="text-2xl font-semibold mb-2">Welcome to CampVerse Dashboard</h2>
             <p className="text-slate-300">
@@ -83,7 +83,7 @@ const GetStarted = () => {
           <div className="text-center">
             <button
               onClick={handleClose}
-              className="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-button"
+              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-button transition-colors"
             >
               Get Started
             </button>

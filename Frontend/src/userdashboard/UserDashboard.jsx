@@ -13,11 +13,12 @@ const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false); // ✅ For mobile menu
   const [stats, setStats] = useState(null);
 
+  // Unified purple accent to match landing page
   const colorClassMap = {
-    blue: { bg: 'bg-blue-500/20', text: 'text-blue-400' },
-    green: { bg: 'bg-green-500/20', text: 'text-green-400' },
+    blue:   { bg: 'bg-[#9b5de5]/20', text: 'text-[#9b5de5]' }, // was blue → now purple accent
+    green:  { bg: 'bg-green-500/20',  text: 'text-green-400' },
     yellow: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
-    purple: { bg: 'bg-purple-500/20', text: 'text-purple-400' },
+    purple: { bg: 'bg-[#9b5de5]/20', text: 'text-[#9b5de5]' }, // align purple to same hex
   };
 
   useEffect(() => {
@@ -58,59 +59,65 @@ const UserDashboard = () => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full">
+      {/* Main Content (lighter background to distinguish from sidebar) */}
+      <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full bg-[#141a45]">
 
-        {/* ✅ Top Navigation */}
-        <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
-          
-          {/* Hamburger Button (Mobile) */}
-          <button
-            className="sm:hidden p-2 rounded-lg bg-gray-700 text-white"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <i className="ri-menu-line text-lg"></i>
-          </button>
+        {/* ✅ Top Navigation (aligned; background no longer touches sidebar) */}
+        <div className="sticky top-0 z-30 bg-transparent">
+          <div className="px-4 sm:px-6 py-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
 
-          {/* Search Bar */}
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i className="ri-search-line text-gray-400 w-5 h-5" />
+              {/* Hamburger Button (Mobile) */}
+              <button
+                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white transition-transform hover:scale-105"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <i className="ri-menu-line text-lg"></i>
+              </button>
+
+              {/* Search Bar (polished alignment) */}
+              <div className="relative flex-1 min-w-[220px] max-w-xl">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <i className="ri-search-line text-gray-400 w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  className="h-11 bg-gray-800/60 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#9b5de5] outline-none"
+                  placeholder="Search events, colleges, or categories..."
+                />
+              </div>
+
+              {/* Right Nav Buttons */}
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+                <button className="bg-gray-800/60 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/80 transition-all">
+                  <i className="ri-notification-3-line" />
+                </button>
+                <button className="bg-gray-800/60 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/80 transition-all">
+                  <i className="ri-calendar-line" />
+                </button>
+                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button whitespace-nowrap flex items-center gap-2 transition-transform hover:scale-105">
+                  <i className="ri-add-line" />
+                  <span className="hidden sm:inline">Host Event</span>
+                </button>
+              </div>
+
             </div>
-            <input
-              type="text"
-              className="bg-gray-700 border-none text-sm rounded-lg block w-full pl-10 p-2.5 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary outline-none"
-              placeholder="Search events, colleges, or categories..."
-            />
-          </div>
-
-          {/* Right Nav Buttons */}
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
-            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
-              <i className="ri-notification-3-line" />
-            </button>
-            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors">
-              <i className="ri-calendar-line" />
-            </button>
-            <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button whitespace-nowrap flex items-center gap-2 transition-colors">
-              <i className="ri-add-line" />
-              <span className="hidden sm:inline">Host Event</span>
-            </button>
           </div>
         </div>
 
-        {/* Main Scrollable Area */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-gray-900">
+        {/* Main Scrollable Area (light background) */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
           
           {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-lg p-6 mb-6">
+          <div className="bg-gradient-to-r from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15">
             <h1 className="text-xl sm:text-2xl font-bold">Welcome back, {user.name}!</h1>
             <p className="text-gray-300 mt-1">Ready to explore your next event galaxy?</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-button transition-colors">
+              <button className="border border-[#9b5de5] text-white px-4 py-2 rounded-button transition-colors hover:bg-[#9b5de5]/20 hover:backdrop-blur-sm">
                 Discover Events
               </button>
-              <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button transition-colors">
+              <button className="bg-gray-800/60 hover:bg-gray-800/80 text-white px-4 py-2 rounded-button transition-colors">
                 View Calendar
               </button>
             </div>
@@ -119,12 +126,12 @@ const UserDashboard = () => {
           {/* Stats Overview */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {[
-              { icon: "ri-calendar-check-fill", color: "blue", label: "Upcoming Events", count: (stats?.upcomingEvents ?? 0) },
-              { icon: "ri-time-fill", color: "green", label: "Waitlisted", count: (stats?.totalWaitlisted ?? 0) },
-              { icon: "ri-medal-fill", color: "yellow", label: "Achievements", count: (stats?.achievements ?? 0) },
-              { icon: "ri-building-2-fill", color: "purple", label: "My Colleges", count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
+              { icon: "ri-calendar-check-fill", color: "blue",   label: "Upcoming Events", count: (stats?.upcomingEvents ?? 0) },
+              { icon: "ri-time-fill",           color: "green",  label: "Waitlisted",      count: (stats?.totalWaitlisted ?? 0) },
+              { icon: "ri-medal-fill",          color: "yellow", label: "Achievements",    count: (stats?.achievements ?? 0) },
+              { icon: "ri-building-2-fill",     color: "purple", label: "My Colleges",     count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
             ].map((stat, i) => (
-              <div key={i} className="bg-gray-800 rounded-lg p-4 flex items-center">
+              <div key={i} className="bg-gray-800/60 rounded-lg p-4 flex items-center border border-gray-700/40 hover:border-[#9b5de5]/30 transition-colors">
                 <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
                   <i className={`${stat.icon} ri-lg`} />
                 </div>

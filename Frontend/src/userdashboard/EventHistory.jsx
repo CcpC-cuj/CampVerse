@@ -21,17 +21,8 @@ const EventHistory = () => {
   ];
 
   // Map events to fixed picsum.photos images by ID (picsum IDs chosen arbitrarily but fixed)
-  const eventImageMap = {
-    1: "1", // nice tech photo from picsum
-    2: "20",
-    3: "7",
-  };
-
-  // Map certificates to fixed picsum.photos images
-  const certificateImageMap = {
-    1: "1",
-    2: "7",
-  };
+  const eventImageMap = { 1: "1", 2: "20", 3: "7" };
+  const certificateImageMap = { 1: "1", 2: "7" };
 
   const [eventHistory, setEventHistory] = useState([]);
   const [certificateData, setCertificateData] = useState([]);
@@ -79,40 +70,46 @@ const EventHistory = () => {
 
       <div style={{ fontFamily: "'Poppins', sans-serif" }} className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full">
 
-        <div className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+        {/* Top Bar (aligned; background no longer touches sidebar) */}
+        <div className="sticky top-0 z-30 bg-transparent">
+          <div className="px-4 sm:px-6 py-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800 border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
 
-          <button
-            className="sm:hidden p-2 rounded-lg bg-gray-700 text-white"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open sidebar"
-          >
-            <i className="ri-menu-line text-lg"></i>
-          </button>
+              <button
+                className="sm:hidden p-2 rounded-lg bg-gray-700 text-white"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open sidebar"
+              >
+                <i className="ri-menu-line text-lg"></i>
+              </button>
 
-          <div className="relative flex-1 min-w-[200px] max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <i className="ri-search-line text-gray-400 w-5 h-5" />
+              <div className="relative flex-1 min-w-[220px] max-w-xl">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <i className="ri-search-line text-gray-400 w-5 h-5" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search event history..."
+                  className="h-11 bg-gray-700 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#9b5de5] outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
+                <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors" title="Notifications">
+                  <i className="ri-notification-3-line" />
+                </button>
+                <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors" title="Calendar">
+                  <i className="ri-calendar-line" />
+                </button>
+              </div>
+
             </div>
-            <input
-              type="text"
-              placeholder="Search event history..."
-              className="bg-gray-700 border-none text-sm rounded-lg block w-full pl-10 p-2.5 text-white placeholder-gray-400 focus:ring-2 focus:ring-primary outline-none"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-end">
-            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors" title="Notifications">
-              <i className="ri-notification-3-line" />
-            </button>
-            <button className="bg-gray-700 p-2 rounded-lg text-gray-300 hover:text-white transition-colors" title="Calendar">
-              <i className="ri-calendar-line" />
-            </button>
           </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gray-800 border-b border-gray-700">
           <select
-            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-primary outline-none"
+            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-[#9b5de5] outline-none"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             aria-label="Filter events by status"
@@ -124,7 +121,7 @@ const EventHistory = () => {
 
           <input
             type="date"
-            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-primary outline-none"
+            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-[#9b5de5] outline-none"
             value={dateRange.from}
             onChange={(e) => setDateRange(prev => ({ ...prev, from: e.target.value }))}
             aria-label="Filter events from date"
@@ -133,7 +130,7 @@ const EventHistory = () => {
 
           <input
             type="date"
-            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-primary outline-none"
+            className="bg-gray-700 rounded px-3 py-2 text-white focus:ring-2 focus:ring-[#9b5de5] outline-none"
             value={dateRange.to}
             onChange={(e) => setDateRange(prev => ({ ...prev, to: e.target.value }))}
             aria-label="Filter events to date"
@@ -153,7 +150,7 @@ const EventHistory = () => {
                 <div
                   key={event.id}
                   tabIndex={0}
-                  className="bg-gray-800 rounded-lg p-5 flex items-center cursor-pointer transition-shadow border border-gray-700 shadow-md hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-gray-800 rounded-lg p-5 flex items-center cursor-pointer transition-shadow border border-gray-700 shadow-md hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]"
                 >
                   <img
                     src={event.thumbnail}
@@ -215,7 +212,7 @@ const EventHistory = () => {
                     </div>
                     {cert.certificateUrl && (
                       <button
-                        className="bg-primary text-white px-4 py-2 rounded-button hover:bg-blue-600 transition"
+                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button transition"
                         onClick={e => {
                           e.stopPropagation();
                           window.open(cert.certificateUrl, "_blank");

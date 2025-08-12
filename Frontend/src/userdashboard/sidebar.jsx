@@ -29,7 +29,7 @@ const Sidebar = () => {
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
 
   return (
-    <div className="h-screen w-64 flex flex-col bg-gray-900 text-white font-poppins overflow-hidden">
+    <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
       {/* Top Logo */}
       <div className="p-4 border-b border-gray-700 flex items-center">
         <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
@@ -52,7 +52,7 @@ const Sidebar = () => {
             <div>
               <div className="font-medium flex items-center">
                 {user?.name || 'User'}
-                <span className="ml-1 text-blue-400 w-4 h-4 flex items-center justify-center">
+                <span className="ml-1 text-[#9b5de5] w-4 h-4 flex items-center justify-center">
                   <i className="ri-verified-badge-fill ri-sm"></i>
                 </span>
               </div>
@@ -65,7 +65,7 @@ const Sidebar = () => {
             {(user?.interests || ["Tech", "Design", "Debate"]).slice(0,6).map((tag, idx) => (
               <span
                 key={idx}
-                className="badge bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded"
+                className="badge bg-[#9b5de5]/20 text-[#d9c4ff] text-xs px-2 py-0.5 rounded"
               >
                 {tag}
               </span>
@@ -76,18 +76,12 @@ const Sidebar = () => {
         {/* Navigation Sections */}
         <div className="py-2">
           <SidebarSection title="Main" />
-          <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" />
+          {/* exact match for the root dashboard to prevent double selection */}
+          <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" end />
           <SidebarLink icon="ri-compass-line" to="/dashboard/discover-events" label="Discover Events" />
 
           <SidebarLink icon="ri-calendar-line" to="/eventhistory" label="My Events" />
-
-
-
-          <SidebarLink
-            icon="ri-notification-3-line"
-            to="/notifications"
-            label="Notifications"
-          />
+          <SidebarLink icon="ri-notification-3-line" to="/notifications" label="Notifications" />
 
           <SidebarSection title="Events" />
           <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
@@ -110,7 +104,7 @@ const Sidebar = () => {
           <span className="text-sm text-gray-400">Dark Mode</span>
           <label className="relative inline-flex items-center cursor-pointer">
             <input type="checkbox" checked readOnly className="sr-only peer" />
-            <div className="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:bg-blue-500 transition-all duration-200"></div>
+            <div className="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:bg-[#9b5de5] transition-all duration-200"></div>
             <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 transform peer-checked:translate-x-5"></div>
           </label>
         </div>
@@ -125,13 +119,16 @@ const SidebarSection = ({ title }) => (
   </div>
 );
 
-const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-primary" }) => {
+const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-[#9b5de5]", end = false }) => {
   return (
     <NavLink
       to={to}
+      end={end}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-          isActive ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-700"
+          isActive
+            ? "bg-[#9b5de5] text-white"
+            : "text-gray-300 hover:bg-[#9b5de5]/20 hover:text-white"
         }`
       }
     >

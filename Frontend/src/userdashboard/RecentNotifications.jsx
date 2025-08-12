@@ -33,7 +33,12 @@ const RecentNotifications = () => {
           <Bell className="w-5 h-5 mr-2" />
           Recent Notifications
         </h3>
-        <button onClick={handleMarkAll} className="text-sm text-blue-400 hover:underline">Mark all as read</button>
+        <button
+          onClick={handleMarkAll}
+          className="text-sm text-[#9b5de5] hover:underline"
+        >
+          Mark all as read
+        </button>
       </div>
       {loading ? (
         <p className="text-gray-500">Loading...</p>
@@ -41,10 +46,19 @@ const RecentNotifications = () => {
         <ul className="space-y-2">
           {notifications.length > 0 ? (
             notifications.map((n) => (
-              <li key={n._id} className={`px-4 py-2 rounded-lg shadow-sm ${n.isRead ? 'bg-gray-100 text-gray-800' : 'bg-blue-100 text-blue-800'}`}>
+              <li
+                key={n._id}
+                className={`px-4 py-2 rounded-lg shadow-sm border ${
+                  n.isRead
+                    ? 'bg-gray-800/60 text-gray-200 border-gray-700/60'
+                    : 'bg-[#9b5de5]/20 text-white border-[#9b5de5]/30'
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <span>{n.message}</span>
-                  <span className="text-xs text-gray-500">{new Date(n.createdAt).toLocaleString()}</span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(n.createdAt).toLocaleString()}
+                  </span>
                 </div>
               </li>
             ))
