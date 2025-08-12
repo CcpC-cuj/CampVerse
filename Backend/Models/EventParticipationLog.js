@@ -6,11 +6,23 @@ const mongoose = require('mongoose');
  */
 const eventParticipationLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  status: { type: String, enum: ['registered', 'waitlisted', 'attended'], required: true },
+  eventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event',
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['registered', 'waitlisted', 'attended'],
+    required: true,
+  },
   timestamp: { type: Date, default: Date.now },
   paymentType: { type: String, enum: ['free', 'paid'], default: 'free' },
-  paymentStatus: { type: String, enum: ['success', 'pending', 'failed'], default: 'success' },
+  paymentStatus: {
+    type: String,
+    enum: ['success', 'pending', 'failed'],
+    default: 'success',
+  },
   attendanceTimestamp: { type: Date },
   qrToken: { type: String }, // Secure token for QR code validation
   attendanceMarkedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Host/co-host who scanned
@@ -19,4 +31,7 @@ const eventParticipationLogSchema = new mongoose.Schema({
 
 eventParticipationLogSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 
-module.exports = mongoose.model('EventParticipationLog', eventParticipationLogSchema);
+module.exports = mongoose.model(
+  'EventParticipationLog',
+  eventParticipationLogSchema,
+);

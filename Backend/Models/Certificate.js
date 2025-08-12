@@ -1,28 +1,28 @@
 const mongoose = require('mongoose');
 
 const certificateSchema = new mongoose.Schema({
-  userId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
   },
-  eventId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Event', 
-    required: true 
+  eventId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Event',
+    required: true,
   },
-  type: { 
-    type: String, 
-    enum: ['participant', 'winner', 'organizer', 'co-organizer'], 
-    required: true 
+  type: {
+    type: String,
+    enum: ['participant', 'winner', 'organizer', 'co-organizer'],
+    required: true,
   },
-  status: { 
-    type: String, 
-    enum: ['pending', 'generated', 'failed'], 
-    default: 'pending' 
+  status: {
+    type: String,
+    enum: ['pending', 'generated', 'failed'],
+    default: 'pending',
   },
-  certificateURL: { 
-    type: String 
+  certificateURL: {
+    type: String,
   },
   certificateData: {
     // Data sent to ML API for certificate generation
@@ -39,27 +39,27 @@ const certificateSchema = new mongoose.Schema({
     userSkills: [String],
     eventTags: [String],
     attendanceDate: Date,
-    qrCode: String // For certificate verification
+    qrCode: String, // For certificate verification
   },
   mlApiResponse: {
     // Response from ML certificate generation API
     requestId: String,
     generationStatus: String,
     errorMessage: String,
-    generatedAt: Date
+    generatedAt: Date,
   },
-  issuedAt: { 
-    type: Date, 
-    default: Date.now 
+  issuedAt: {
+    type: Date,
+    default: Date.now,
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
-  updatedAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 // Index for efficient queries
@@ -68,7 +68,7 @@ certificateSchema.index({ status: 1 });
 certificateSchema.index({ issuedAt: -1 });
 
 // Update timestamp on save
-certificateSchema.pre('save', function(next) {
+certificateSchema.pre('save', function (next) {
   this.updatedAt = new Date();
   next();
 });

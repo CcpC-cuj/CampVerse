@@ -15,11 +15,11 @@ describe('Simple Unit Tests', () => {
     it('should hash password correctly', async () => {
       const password = 'testpassword';
       const hashedPassword = 'hashedpassword123';
-      
+
       bcrypt.hash.mockResolvedValue(hashedPassword);
-      
+
       const result = await bcrypt.hash(password, 10);
-      
+
       expect(result).toBe(hashedPassword);
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
     });
@@ -27,11 +27,11 @@ describe('Simple Unit Tests', () => {
     it('should compare password correctly', async () => {
       const password = 'testpassword';
       const hashedPassword = 'hashedpassword123';
-      
+
       bcrypt.compare.mockResolvedValue(true);
-      
+
       const result = await bcrypt.compare(password, hashedPassword);
-      
+
       expect(result).toBe(true);
       expect(bcrypt.compare).toHaveBeenCalledWith(password, hashedPassword);
     });
@@ -41,23 +41,25 @@ describe('Simple Unit Tests', () => {
     it('should generate JWT token', () => {
       const payload = { userId: 'user123' };
       const token = 'mock.jwt.token';
-      
+
       jwt.sign.mockReturnValue(token);
-      
+
       const result = jwt.sign(payload, 'secret', { expiresIn: '7d' });
-      
+
       expect(result).toBe(token);
-      expect(jwt.sign).toHaveBeenCalledWith(payload, 'secret', { expiresIn: '7d' });
+      expect(jwt.sign).toHaveBeenCalledWith(payload, 'secret', {
+        expiresIn: '7d',
+      });
     });
 
     it('should verify JWT token', () => {
       const token = 'mock.jwt.token';
       const decoded = { userId: 'user123' };
-      
+
       jwt.verify.mockReturnValue(decoded);
-      
+
       const result = jwt.verify(token, 'secret');
-      
+
       expect(result).toEqual(decoded);
       expect(jwt.verify).toHaveBeenCalledWith(token, 'secret');
     });
@@ -69,7 +71,7 @@ describe('Simple Unit Tests', () => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
       };
-      
+
       expect(validateEmail('test@example.com')).toBe(true);
       expect(validateEmail('invalid-email')).toBe(false);
       expect(validateEmail('test@')).toBe(false);
@@ -80,7 +82,7 @@ describe('Simple Unit Tests', () => {
         const phoneRegex = /^[0-9]{10}$/;
         return phoneRegex.test(phone);
       };
-      
+
       expect(validatePhone('1234567890')).toBe(true);
       expect(validatePhone('123456789')).toBe(false);
       expect(validatePhone('12345678901')).toBe(false);
@@ -91,7 +93,7 @@ describe('Simple Unit Tests', () => {
       const validatePassword = (password) => {
         return Boolean(password && password.length >= 6);
       };
-      
+
       expect(validatePassword('password123')).toBe(true);
       expect(validatePassword('pass')).toBe(false);
       expect(validatePassword('')).toBe(false);
@@ -103,7 +105,7 @@ describe('Simple Unit Tests', () => {
       const validateName = (name) => {
         return Boolean(name && name.trim().length >= 2);
       };
-      
+
       expect(validateName('John')).toBe(true);
       expect(validateName('A')).toBe(false);
       expect(validateName('')).toBe(false);
@@ -118,13 +120,13 @@ describe('Simple Unit Tests', () => {
       const isFutureDate = (date) => {
         return new Date(date) > new Date();
       };
-      
+
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
-      
+
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - 1);
-      
+
       expect(isFutureDate(futureDate)).toBe(true);
       expect(isFutureDate(pastDate)).toBe(false);
     });
@@ -133,7 +135,7 @@ describe('Simple Unit Tests', () => {
       const formatDate = (date) => {
         return new Date(date).toISOString().split('T')[0];
       };
-      
+
       const testDate = new Date('2024-01-15');
       expect(formatDate(testDate)).toBe('2024-01-15');
     });
@@ -144,7 +146,7 @@ describe('Simple Unit Tests', () => {
       const capitalize = (str) => {
         return str.charAt(0).toUpperCase() + str.slice(1);
       };
-      
+
       expect(capitalize('hello')).toBe('Hello');
       expect(capitalize('world')).toBe('World');
       expect(capitalize('')).toBe('');
@@ -154,7 +156,7 @@ describe('Simple Unit Tests', () => {
       const truncate = (str, length) => {
         return str.length > length ? `${str.substring(0, length)}...` : str;
       };
-      
+
       expect(truncate('Hello World', 5)).toBe('Hello...');
       expect(truncate('Short', 10)).toBe('Short');
     });
@@ -165,7 +167,7 @@ describe('Simple Unit Tests', () => {
       const removeDuplicates = (arr) => {
         return [...new Set(arr)];
       };
-      
+
       expect(removeDuplicates([1, 2, 2, 3, 3, 4])).toEqual([1, 2, 3, 4]);
       expect(removeDuplicates(['a', 'b', 'a', 'c'])).toEqual(['a', 'b', 'c']);
     });
@@ -174,7 +176,7 @@ describe('Simple Unit Tests', () => {
       const findUnique = (arr) => {
         return arr.filter((item, index) => arr.indexOf(item) === index);
       };
-      
+
       expect(findUnique([1, 2, 2, 3, 3, 4])).toEqual([1, 2, 3, 4]);
     });
   });
@@ -184,22 +186,22 @@ describe('Simple Unit Tests', () => {
       const mergeObjects = (obj1, obj2) => {
         return { ...obj1, ...obj2 };
       };
-      
+
       const obj1 = { a: 1, b: 2 };
       const obj2 = { b: 3, c: 4 };
-      
+
       expect(mergeObjects(obj1, obj2)).toEqual({ a: 1, b: 3, c: 4 });
     });
 
     it('should remove null/undefined values', () => {
       const removeNullValues = (obj) => {
         return Object.fromEntries(
-          Object.entries(obj).filter(([_, value]) => value != null)
+          Object.entries(obj).filter(([_, value]) => value != null),
         );
       };
-      
+
       const testObj = { a: 1, b: null, c: undefined, d: 2 };
       expect(removeNullValues(testObj)).toEqual({ a: 1, d: 2 });
     });
   });
-}); 
+});

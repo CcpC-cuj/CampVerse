@@ -11,9 +11,13 @@ const {
   getCertificateProgress,
   sendCertificateNotification,
   getCertificateDashboard,
-  bulkRetryFailedCertificates
+  bulkRetryFailedCertificates,
 } = require('../Controller/certificate');
-const { authenticateToken, requireRole, requireSelfOrRole } = require('../Middleware/Auth');
+const {
+  authenticateToken,
+  requireRole,
+  requireSelfOrRole,
+} = require('../Middleware/Auth');
 
 const router = express.Router();
 
@@ -146,7 +150,12 @@ router.get('/my', authenticateToken, getUserCertificates);
  *       500:
  *         description: Server error
  */
-router.get('/user/:userId', authenticateToken, requireSelfOrRole(['platformAdmin', 'host']), getUserCertificates);
+router.get(
+  '/user/:userId',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin', 'host']),
+  getUserCertificates,
+);
 
 /**
  * @swagger
@@ -369,7 +378,11 @@ router.get('/export-attended/:eventId', authenticateToken, exportAttendedUsers);
  *       500:
  *         description: Server error
  */
-router.post('/:certificateId/retry', authenticateToken, retryCertificateGeneration);
+router.post(
+  '/:certificateId/retry',
+  authenticateToken,
+  retryCertificateGeneration,
+);
 
 /**
  * @swagger
@@ -509,7 +522,11 @@ router.get('/progress/:eventId', authenticateToken, getCertificateProgress);
  *       404:
  *         description: Certificate not found
  */
-router.post('/:certificateId/notify', authenticateToken, sendCertificateNotification);
+router.post(
+  '/:certificateId/notify',
+  authenticateToken,
+  sendCertificateNotification,
+);
 
 /**
  * @swagger
@@ -662,6 +679,10 @@ router.get('/dashboard', authenticateToken, getCertificateDashboard);
  *       404:
  *         description: Event not found
  */
-router.post('/:eventId/bulk-retry', authenticateToken, bulkRetryFailedCertificates);
+router.post(
+  '/:eventId/bulk-retry',
+  authenticateToken,
+  bulkRetryFailedCertificates,
+);
 
-module.exports = router; 
+module.exports = router;

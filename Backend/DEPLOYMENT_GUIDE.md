@@ -3,6 +3,7 @@
 ## Environment Variables Required
 
 ### Required Variables:
+
 ```env
 # Database
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/campverse
@@ -27,6 +28,7 @@ PORT=5001
 ```
 
 ### Optional Variables:
+
 ```env
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
@@ -47,6 +49,7 @@ LOG_LEVEL=info
 ## Docker Deployment
 
 ### Build and Run Locally:
+
 ```bash
 # Build the Docker image
 docker build -t campverse-backend .
@@ -56,8 +59,9 @@ docker run -p 5001:5001 --env-file .env campverse-backend
 ```
 
 ### Docker Compose (for local development):
+
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
   backend:
     build: .
@@ -88,21 +92,25 @@ services:
 ## Deployment Platforms
 
 ### 1. Railway (Recommended)
+
 - Connect your GitHub repo
 - Add environment variables in Railway dashboard
 - Deploy automatically
 
 ### 2. Render
+
 - Connect GitHub repo
 - Set build command: `docker build -t campverse-backend .`
 - Set start command: `docker run -p $PORT:5001 campverse-backend`
 
 ### 3. DigitalOcean App Platform
+
 - Connect GitHub repo
 - Use Docker deployment
 - Configure environment variables
 
 ### 4. AWS ECS/Fargate
+
 - Push Docker image to ECR
 - Deploy using ECS with Fargate
 - Configure environment variables
@@ -120,10 +128,11 @@ services:
 ## Health Check
 
 The application includes a health check endpoint at `/health` that returns:
+
 ```json
 {
   "status": "OK",
   "timestamp": "2024-01-01T00:00:00.000Z",
   "uptime": 123.456
 }
-``` 
+```

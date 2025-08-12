@@ -11,7 +11,8 @@ function authenticateToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided.' });
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+    if (err)
+      return res.status(403).json({ error: 'Invalid or expired token.' });
     req.user = user;
     next();
   });
@@ -36,7 +37,11 @@ function requireRole(role) {
  */
 function requireSelfOrRole(roles = []) {
   return (req, res, next) => {
-    if (req.user && (req.user.id === req.params.id || roles.some(role => req.user.roles.includes(role)))) {
+    if (
+      req.user &&
+      (req.user.id === req.params.id ||
+        roles.some((role) => req.user.roles.includes(role)))
+    ) {
       return next();
     }
     return res.status(403).json({ error: 'Forbidden: not allowed.' });
@@ -46,6 +51,5 @@ function requireSelfOrRole(roles = []) {
 module.exports = {
   authenticateToken,
   requireRole,
-  requireSelfOrRole
+  requireSelfOrRole,
 };
-  

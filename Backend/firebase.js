@@ -7,11 +7,15 @@ function resolveServiceAccountPath() {
   const candidates = [
     envPath,
     path.join(__dirname, 'credentials', 'firebaseServiceAccountKey.json'),
-    path.join(__dirname, 'credentials', 'service-account.json')
+    path.join(__dirname, 'credentials', 'service-account.json'),
   ].filter(Boolean);
 
   for (const p of candidates) {
-    try { if (fs.existsSync(p)) return p; } catch (_) { /* ignore errors */ }
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch (_) {
+      /* ignore errors */
+    }
   }
   return null;
 }
@@ -19,7 +23,11 @@ function resolveServiceAccountPath() {
 function loadServiceAccount() {
   const keyPath = resolveServiceAccountPath();
   if (!keyPath) return null;
-  try { return JSON.parse(fs.readFileSync(keyPath, 'utf8')); } catch (_) { return null; }
+  try {
+    return JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+  } catch (_) {
+    return null;
+  }
 }
 
 if (!admin.apps.length) {
@@ -31,7 +39,11 @@ if (!admin.apps.length) {
       admin.initializeApp();
     }
   } catch (_) {
-    try { admin.initializeApp(); } catch (_) { /* ignore errors */ }
+    try {
+      admin.initializeApp();
+    } catch (_) {
+      /* ignore errors */
+    }
   }
 }
 

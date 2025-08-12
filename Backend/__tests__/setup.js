@@ -20,7 +20,7 @@ const testUtils = {
     email: 'test@example.com',
     password: 'testpassword123',
     phone: '+1234567890',
-    ...overrides
+    ...overrides,
   }),
 
   // Helper to create test event data
@@ -31,7 +31,7 @@ const testUtils = {
     endDate: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
     location: 'Test Location',
     maxParticipants: 100,
-    ...overrides
+    ...overrides,
   }),
 
   // Helper to create test institution data
@@ -40,12 +40,12 @@ const testUtils = {
     description: 'Test institution description',
     address: 'Test Address',
     contactEmail: 'institution@test.com',
-    ...overrides
-  })
+    ...overrides,
+  }),
 };
 
 // Export for use in test files
 module.exports = { testUtils };
 
 // Also set as global for backward compatibility
-global.testUtils = testUtils; 
+global.testUtils = testUtils;

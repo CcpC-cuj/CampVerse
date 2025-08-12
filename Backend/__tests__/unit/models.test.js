@@ -37,7 +37,7 @@ describe('Model Unit Tests', () => {
         email: 'test@university.edu',
         phone: '1234567890',
         passwordHash: 'hashedPassword123',
-        roles: ['student']
+        roles: ['student'],
       };
 
       const user = new User(userData);
@@ -56,12 +56,12 @@ describe('Model Unit Tests', () => {
       const userData = {
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       };
 
       const user = new User(userData);
       let error;
-      
+
       try {
         await user.save();
       } catch (err) {
@@ -76,12 +76,12 @@ describe('Model Unit Tests', () => {
       const userData = {
         name: 'Test User',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       };
 
       const user = new User(userData);
       let error;
-      
+
       try {
         await user.save();
       } catch (err) {
@@ -97,12 +97,12 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'invalid-email',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       };
 
       const user = new User(userData);
       let error;
-      
+
       try {
         await user.save();
       } catch (err) {
@@ -118,7 +118,7 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       };
 
       const user = new User(userData);
@@ -132,7 +132,7 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       };
 
       const user = new User(userData);
@@ -151,9 +151,9 @@ describe('Model Unit Tests', () => {
         hostUserId: new mongoose.Types.ObjectId(),
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
-          end: new Date('2024-01-01T12:00:00Z')
+          end: new Date('2024-01-01T12:00:00Z'),
         },
-        type: 'workshop'
+        type: 'workshop',
       };
 
       const event = new Event(eventData);
@@ -173,12 +173,12 @@ describe('Model Unit Tests', () => {
       const eventData = {
         description: 'Test Description',
         organizer: 'Test Organizer',
-        hostUserId: new mongoose.Types.ObjectId()
+        hostUserId: new mongoose.Types.ObjectId(),
       };
 
       const event = new Event(eventData);
       let error;
-      
+
       try {
         await event.save();
       } catch (err) {
@@ -193,12 +193,12 @@ describe('Model Unit Tests', () => {
       const eventData = {
         title: 'Test Event',
         description: 'Test Description',
-        hostUserId: new mongoose.Types.ObjectId()
+        hostUserId: new mongoose.Types.ObjectId(),
       };
 
       const event = new Event(eventData);
       let error;
-      
+
       try {
         await event.save();
       } catch (err) {
@@ -214,7 +214,7 @@ describe('Model Unit Tests', () => {
         title: 'Test Event',
         description: 'Test Description',
         organizer: 'Test Organizer',
-        hostUserId: new mongoose.Types.ObjectId()
+        hostUserId: new mongoose.Types.ObjectId(),
       };
 
       const event = new Event(eventData);
@@ -228,7 +228,7 @@ describe('Model Unit Tests', () => {
         title: 'Test Event',
         description: 'Test Description',
         organizer: 'Test Organizer',
-        hostUserId: new mongoose.Types.ObjectId()
+        hostUserId: new mongoose.Types.ObjectId(),
       };
 
       const event = new Event(eventData);
@@ -244,7 +244,7 @@ describe('Model Unit Tests', () => {
         userId: new mongoose.Types.ObjectId(),
         eventId: new mongoose.Types.ObjectId(),
         type: 'participant',
-        certificateURL: 'https://example.com/certificate.pdf'
+        certificateURL: 'https://example.com/certificate.pdf',
       };
 
       const certificate = new Certificate(certificateData);
@@ -255,19 +255,21 @@ describe('Model Unit Tests', () => {
       expect(savedCertificate.eventId).toEqual(certificateData.eventId);
       expect(savedCertificate.type).toBe(certificateData.type);
       expect(savedCertificate.status).toBe('pending');
-      expect(savedCertificate.certificateURL).toBe(certificateData.certificateURL);
+      expect(savedCertificate.certificateURL).toBe(
+        certificateData.certificateURL,
+      );
       expect(savedCertificate.issuedAt).toBeDefined();
     });
 
     it('should require userId field', async () => {
       const certificateData = {
         eventId: new mongoose.Types.ObjectId(),
-        type: 'participant'
+        type: 'participant',
       };
 
       const certificate = new Certificate(certificateData);
       let error;
-      
+
       try {
         await certificate.save();
       } catch (err) {
@@ -281,12 +283,12 @@ describe('Model Unit Tests', () => {
     it('should require eventId field', async () => {
       const certificateData = {
         userId: new mongoose.Types.ObjectId(),
-        type: 'participant'
+        type: 'participant',
       };
 
       const certificate = new Certificate(certificateData);
       let error;
-      
+
       try {
         await certificate.save();
       } catch (err) {
@@ -300,12 +302,12 @@ describe('Model Unit Tests', () => {
     it('should require type field', async () => {
       const certificateData = {
         userId: new mongoose.Types.ObjectId(),
-        eventId: new mongoose.Types.ObjectId()
+        eventId: new mongoose.Types.ObjectId(),
       };
 
       const certificate = new Certificate(certificateData);
       let error;
-      
+
       try {
         await certificate.save();
       } catch (err) {
@@ -318,17 +320,17 @@ describe('Model Unit Tests', () => {
 
     it('should validate certificate type enum', async () => {
       const validTypes = ['participant', 'winner', 'organizer', 'co-organizer'];
-      
+
       for (const type of validTypes) {
         const certificateData = {
           userId: new mongoose.Types.ObjectId(),
           eventId: new mongoose.Types.ObjectId(),
-          type
+          type,
         };
 
         const certificate = new Certificate(certificateData);
         const savedCertificate = await certificate.save();
-        
+
         expect(savedCertificate.type).toBe(type);
       }
     });
@@ -341,7 +343,7 @@ describe('Model Unit Tests', () => {
         title: 'Test Achievement',
         badgeIcon: '🏆',
         points: 100,
-        rank: 1
+        rank: 1,
       };
 
       const achievement = new Achievement(achievementData);
@@ -359,12 +361,12 @@ describe('Model Unit Tests', () => {
     it('should require userId field', async () => {
       const achievementData = {
         title: 'Test Achievement',
-        badgeIcon: '🏆'
+        badgeIcon: '🏆',
       };
 
       const achievement = new Achievement(achievementData);
       let error;
-      
+
       try {
         await achievement.save();
       } catch (err) {
@@ -379,7 +381,7 @@ describe('Model Unit Tests', () => {
       const achievementData = {
         userId: new mongoose.Types.ObjectId(),
         title: 'Test Achievement',
-        badgeIcon: '🏆'
+        badgeIcon: '🏆',
       };
 
       const achievement = new Achievement(achievementData);
@@ -393,7 +395,7 @@ describe('Model Unit Tests', () => {
       const achievementData = {
         userId: new mongoose.Types.ObjectId(),
         title: 'Test Achievement',
-        badgeIcon: '🏆'
+        badgeIcon: '🏆',
       };
 
       const achievement = new Achievement(achievementData);
@@ -412,9 +414,9 @@ describe('Model Unit Tests', () => {
         location: {
           city: 'Test City',
           state: 'Test State',
-          country: 'Test Country'
+          country: 'Test Country',
         },
-        isVerified: true
+        isVerified: true,
       };
 
       const institution = new Institution(institutionData);
@@ -431,12 +433,12 @@ describe('Model Unit Tests', () => {
     it('should require name field', async () => {
       const institutionData = {
         type: 'university',
-        emailDomain: 'test.edu'
+        emailDomain: 'test.edu',
       };
 
       const institution = new Institution(institutionData);
       let error;
-      
+
       try {
         await institution.save();
       } catch (err) {
@@ -451,7 +453,7 @@ describe('Model Unit Tests', () => {
       const institutionData = {
         name: 'Test University',
         type: 'university',
-        emailDomain: 'test.edu'
+        emailDomain: 'test.edu',
       };
 
       const institution = new Institution(institutionData);
@@ -468,7 +470,7 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       });
 
       // Create an event with the user as host
@@ -479,8 +481,8 @@ describe('Model Unit Tests', () => {
         hostUserId: user._id,
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
-          end: new Date('2024-01-01T12:00:00Z')
-        }
+          end: new Date('2024-01-01T12:00:00Z'),
+        },
       });
 
       expect(event.hostUserId).toEqual(user._id);
@@ -492,7 +494,7 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       });
 
       // Create an event
@@ -503,8 +505,8 @@ describe('Model Unit Tests', () => {
         hostUserId: user._id,
         schedule: {
           start: new Date('2024-01-01T10:00:00Z'),
-          end: new Date('2024-01-01T12:00:00Z')
-        }
+          end: new Date('2024-01-01T12:00:00Z'),
+        },
       });
 
       // Create a certificate
@@ -512,7 +514,7 @@ describe('Model Unit Tests', () => {
         userId: user._id,
         eventId: event._id,
         type: 'participant',
-        certificateURL: 'https://example.com/certificate.pdf'
+        certificateURL: 'https://example.com/certificate.pdf',
       });
 
       expect(certificate.userId).toEqual(user._id);
@@ -525,7 +527,7 @@ describe('Model Unit Tests', () => {
         name: 'Test User',
         email: 'test@university.edu',
         phone: '1234567890',
-        passwordHash: 'hashedPassword123'
+        passwordHash: 'hashedPassword123',
       });
 
       // Create an achievement
@@ -534,10 +536,10 @@ describe('Model Unit Tests', () => {
         title: 'Test Achievement',
         badgeIcon: '🏆',
         points: 100,
-        rank: 1
+        rank: 1,
       });
 
       expect(achievement.userId).toEqual(user._id);
     });
   });
-}); 
+});

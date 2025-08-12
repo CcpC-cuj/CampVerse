@@ -8,33 +8,63 @@ async function requireHostOrCoHost(req, res, next) {
     if (!event) {
       return res.status(404).json({ error: 'Event not found.' });
     }
-    if (event.hostUserId.toString() === userId || event.coHosts.map(id => id.toString()).includes(userId)) {
+    if (
+      event.hostUserId.toString() === userId ||
+      event.coHosts.map((id) => id.toString()).includes(userId)
+    ) {
       return next();
     }
-    return res.status(403).json({ error: 'Only host or approved co-host can perform this action.' });
+    return res
+      .status(403)
+      .json({
+        error: 'Only host or approved co-host can perform this action.',
+      });
   } catch (error) {
     next(error);
   }
 }
 
 function requireVerifier(req, res, next) {
-  if (req.user.roles.includes('verifier') || req.user.roles.includes('platformAdmin')) return next();
-  return res.status(403).json({ error: 'Only verifier or platform admin can perform this action.' });
+  if (
+    req.user.roles.includes('verifier') ||
+    req.user.roles.includes('platformAdmin')
+  )
+    return next();
+  return res
+    .status(403)
+    .json({
+      error: 'Only verifier or platform admin can perform this action.',
+    });
 }
 
 function requireAdmin(req, res, next) {
   if (req.user.roles.includes('platformAdmin')) return next();
-  return res.status(403).json({ error: 'Only platform admin can perform this action.' });
+  return res
+    .status(403)
+    .json({ error: 'Only platform admin can perform this action.' });
 }
 
 function requireInstitution(req, res, next) {
-  if (req.user.roles.includes('institution') || req.user.roles.includes('platformAdmin')) return next();
-  return res.status(403).json({ error: 'Only institution or platform admin can perform this action.' });
+  if (
+    req.user.roles.includes('institution') ||
+    req.user.roles.includes('platformAdmin')
+  )
+    return next();
+  return res
+    .status(403)
+    .json({
+      error: 'Only institution or platform admin can perform this action.',
+    });
 }
 
 function requireSelfOrRole(role) {
   return (req, res, next) => {
-    if (req.user.id === req.params.id || req.user.roles.includes(role) || req.user.roles.includes('platformAdmin')) return next();
+    if (
+      req.user.id === req.params.id ||
+      req.user.roles.includes(role) ||
+      req.user.roles.includes('platformAdmin')
+    )
+      return next();
     return res.status(403).json({ error: 'Forbidden: insufficient role.' });
   };
 }
@@ -44,5 +74,5 @@ module.exports = {
   requireVerifier,
   requireAdmin,
   requireInstitution,
-  requireSelfOrRole
-}; 
+  requireSelfOrRole,
+};

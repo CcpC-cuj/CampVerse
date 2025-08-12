@@ -17,20 +17,20 @@ jest.mock('redis', () => ({
     on: jest.fn(),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(true),
-    del: jest.fn().mockResolvedValue(true)
-  }))
+    del: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 // Mock email service
 jest.mock('../Services/email.js', () => ({
   sendOTP: jest.fn().mockResolvedValue(true),
-  sendWelcomeEmail: jest.fn().mockResolvedValue(true)
+  sendWelcomeEmail: jest.fn().mockResolvedValue(true),
 }));
 
 // Mock OTP service
 jest.mock('../Services/otp.js', () => ({
   generateOTP: jest.fn().mockReturnValue('123456'),
-  verifyOTP: jest.fn().mockResolvedValue(true)
+  verifyOTP: jest.fn().mockResolvedValue(true),
 }));
 
 beforeAll(async () => {
@@ -38,7 +38,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
   process.env.MONGO_URI = mongoUri;
-  
+
   // Import app after setting up environment
   app = require('../app');
 });
@@ -58,18 +58,14 @@ beforeEach(async () => {
 
   // Create a test user and get auth token
   const userData = testUtils.createTestUser();
-  
-  await request(app)
-    .post('/api/users/register')
-    .send(userData);
-  
-  const loginResponse = await request(app)
-    .post('/api/users/login')
-    .send({
-      email: userData.email,
-      password: userData.password
-    });
-  
+
+  await request(app).post('/api/users/register').send(userData);
+
+  const loginResponse = await request(app).post('/api/users/login').send({
+    email: userData.email,
+    password: userData.password,
+  });
+
   authToken = loginResponse.body.token;
   testUser = loginResponse.body.user;
 
@@ -78,7 +74,7 @@ beforeEach(async () => {
     name: 'Test Host',
     email: 'host@test.com',
     phone: '+1234567890',
-    organization: 'Test Organization'
+    organization: 'Test Organization',
   };
 
   const hostResponse = await request(app)
@@ -91,19 +87,25 @@ beforeEach(async () => {
 describe('Event Creation', () => {
   test('POST /api/events should create a new event successfully', async () => {
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
+
     const response = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty('message', 'Event created successfully');
+    expect(response.body).toHaveProperty(
+      'message',
+      'Event created successfully',
+    );
     expect(response.body).toHaveProperty('event');
     expect(response.body.event).toHaveProperty('title', eventData.title);
-    expect(response.body.event).toHaveProperty('description', eventData.description);
+    expect(response.body.event).toHaveProperty(
+      'description',
+      eventData.description,
+    );
     expect(response.body.event).toHaveProperty('hostId', testHost._id);
   });
 
@@ -112,23 +114,21 @@ describe('Event Creation', () => {
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send({
-        title: 'Test Event'
+        title: 'Test Event',
         // Missing required fields
       });
-    
+
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
 
   test('POST /api/events should return 401 without authentication', async () => {
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
-    const response = await request(app)
-      .post('/api/events')
-      .send(eventData);
-    
+
+    const response = await request(app).post('/api/events').send(eventData);
+
     expect(response.status).toBe(401);
   });
 
@@ -136,14 +136,14 @@ describe('Event Creation', () => {
     const eventData = testUtils.createTestEvent({
       hostId: testHost._id,
       startDate: 'invalid-date',
-      endDate: 'invalid-date'
+      endDate: 'invalid-date',
     });
-    
+
     const response = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
@@ -155,21 +155,20 @@ describe('Event Retrieval', () => {
   beforeEach(async () => {
     // Create a test event
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
+
     const createResponse = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     testEvent = createResponse.body.event;
   });
 
   test('GET /api/events should return all events', async () => {
-    const response = await request(app)
-      .get('/api/events');
-    
+    const response = await request(app).get('/api/events');
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('events');
     expect(Array.isArray(response.body.events)).toBe(true);
@@ -177,9 +176,8 @@ describe('Event Retrieval', () => {
   });
 
   test('GET /api/events/:id should return specific event', async () => {
-    const response = await request(app)
-      .get(`/api/events/${testEvent._id}`);
-    
+    const response = await request(app).get(`/api/events/${testEvent._id}`);
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('event');
     expect(response.body.event).toHaveProperty('_id', testEvent._id);
@@ -188,9 +186,8 @@ describe('Event Retrieval', () => {
 
   test('GET /api/events/:id should return 404 for non-existent event', async () => {
     const fakeId = new mongoose.Types.ObjectId();
-    const response = await request(app)
-      .get(`/api/events/${fakeId}`);
-    
+    const response = await request(app).get(`/api/events/${fakeId}`);
+
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('error');
   });
@@ -199,7 +196,7 @@ describe('Event Retrieval', () => {
     const response = await request(app)
       .get('/api/events/search')
       .query({ q: 'Test' });
-    
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('events');
     expect(Array.isArray(response.body.events)).toBe(true);
@@ -212,59 +209,65 @@ describe('Event Updates', () => {
   beforeEach(async () => {
     // Create a test event
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
+
     const createResponse = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     testEvent = createResponse.body.event;
   });
 
   test('PUT /api/events/:id should update event successfully', async () => {
     const updateData = {
       title: 'Updated Event Title',
-      description: 'Updated event description'
+      description: 'Updated event description',
     };
-    
+
     const response = await request(app)
       .put(`/api/events/${testEvent._id}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send(updateData);
-    
+
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Event updated successfully');
+    expect(response.body).toHaveProperty(
+      'message',
+      'Event updated successfully',
+    );
     expect(response.body).toHaveProperty('event');
     expect(response.body.event).toHaveProperty('title', updateData.title);
-    expect(response.body.event).toHaveProperty('description', updateData.description);
+    expect(response.body.event).toHaveProperty(
+      'description',
+      updateData.description,
+    );
   });
 
   test('PUT /api/events/:id should return 404 for non-existent event', async () => {
     const fakeId = new mongoose.Types.ObjectId();
     const updateData = {
-      title: 'Updated Event Title'
+      title: 'Updated Event Title',
     };
-    
+
     const response = await request(app)
       .put(`/api/events/${fakeId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .send(updateData);
-    
+
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('error');
   });
 
   test('PUT /api/events/:id should return 401 without authentication', async () => {
     const updateData = {
-      title: 'Updated Event Title'
+      title: 'Updated Event Title',
     };
-    
+
     const response = await request(app)
       .put(`/api/events/${testEvent._id}`)
       .send(updateData);
-    
+
     expect(response.status).toBe(401);
   });
 });
@@ -275,14 +278,14 @@ describe('Event Participation', () => {
   beforeEach(async () => {
     // Create a test event
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
+
     const createResponse = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     testEvent = createResponse.body.event;
   });
 
@@ -290,9 +293,12 @@ describe('Event Participation', () => {
     const response = await request(app)
       .post(`/api/events/${testEvent._id}/participate`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Successfully joined the event');
+    expect(response.body).toHaveProperty(
+      'message',
+      'Successfully joined the event',
+    );
   });
 
   test('POST /api/events/:id/participate should return 400 if already participating', async () => {
@@ -300,12 +306,12 @@ describe('Event Participation', () => {
     await request(app)
       .post(`/api/events/${testEvent._id}/participate`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     // Try to join again
     const response = await request(app)
       .post(`/api/events/${testEvent._id}/participate`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     expect(response.status).toBe(400);
     expect(response.body).toHaveProperty('error');
   });
@@ -315,14 +321,17 @@ describe('Event Participation', () => {
     await request(app)
       .post(`/api/events/${testEvent._id}/participate`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     // Leave the event
     const response = await request(app)
       .delete(`/api/events/${testEvent._id}/participate`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Successfully left the event');
+    expect(response.body).toHaveProperty(
+      'message',
+      'Successfully left the event',
+    );
   });
 });
 
@@ -332,14 +341,14 @@ describe('Event Deletion', () => {
   beforeEach(async () => {
     // Create a test event
     const eventData = testUtils.createTestEvent({
-      hostId: testHost._id
+      hostId: testHost._id,
     });
-    
+
     const createResponse = await request(app)
       .post('/api/events')
       .set('Authorization', `Bearer ${authToken}`)
       .send(eventData);
-    
+
     testEvent = createResponse.body.event;
   });
 
@@ -347,9 +356,12 @@ describe('Event Deletion', () => {
     const response = await request(app)
       .delete(`/api/events/${testEvent._id}`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('message', 'Event deleted successfully');
+    expect(response.body).toHaveProperty(
+      'message',
+      'Event deleted successfully',
+    );
   });
 
   test('DELETE /api/events/:id should return 404 for non-existent event', async () => {
@@ -357,8 +369,8 @@ describe('Event Deletion', () => {
     const response = await request(app)
       .delete(`/api/events/${fakeId}`)
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('error');
   });
-}); 
+});

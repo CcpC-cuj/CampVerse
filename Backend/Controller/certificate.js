@@ -10,12 +10,14 @@ const { notifyUser } = require('../Services/notification');
 
 // ML Certificate Generation API Configuration
 const ML_API_CONFIG = {
-  baseURL: process.env.ML_CERTIFICATE_API_URL || 'https://ml-certificate-api.example.com',
+  baseURL:
+    process.env.ML_CERTIFICATE_API_URL ||
+    'https://ml-certificate-api.example.com',
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.ML_API_KEY || ''}`
-  }
+    Authorization: `Bearer ${process.env.ML_API_KEY || ''}`,
+  },
 };
 
 /**
@@ -27,7 +29,7 @@ async function prepareCertificateData(userId, eventId, certificateType) {
     const [user, event, participationLog] = await Promise.all([
       User.findById(userId).populate('institutionId'),
       Event.findById(eventId).populate('hostUserId'),
-      EventParticipationLog.findOne({ userId, eventId, status: 'attended' })
+      EventParticipationLog.findOne({ userId, eventId, status: 'attended' }),
     ]);
 
     if (!user || !event || !participationLog) {
@@ -39,7 +41,7 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       certificateId: `cert_${userId}_${eventId}_${Date.now()}`,
       userId: userId.toString(),
       eventId: eventId.toString(),
-      issuedAt: new Date().toISOString()
+      issuedAt: new Date().toISOString(),
     });
     const qrCode = await QRCode.toDataURL(qrData);
 
@@ -52,7 +54,9 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       eventDate: event.schedule.start,
       eventLocation: event.location || 'Online',
       organizerName: event.hostUserId ? event.hostUserId.name : event.organizer,
-      institutionName: user.institutionId ? user.institutionId.name : 'Unknown Institution',
+      institutionName: user.institutionId
+        ? user.institutionId.name
+        : 'Unknown Institution',
       certificateType,
       userSkills: user.skills || [],
       eventTags: event.tags || [],
@@ -63,7 +67,7 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       userInterests: user.interests || [],
       eventType: event.type,
       isPaid: event.isPaid,
-      price: event.price
+      price: event.price,
     };
 
     return certificateData;
@@ -83,15 +87,15 @@ async function sendToMLAPI(certificateData) {
       certificateData,
       {
         timeout: ML_API_CONFIG.timeout,
-        headers: ML_API_CONFIG.headers
-      }
+        headers: ML_API_CONFIG.headers,
+      },
     );
 
     return {
       success: true,
       requestId: response.data.requestId,
       certificateURL: response.data.certificateURL,
-      generationStatus: 'generated'
+      generationStatus: 'generated',
     };
   } catch (error) {
     console.error('ML API Error:', error.response?.data || error.message);
@@ -99,7 +103,7 @@ async function sendToMLAPI(certificateData) {
       success: false,
       requestId: null,
       errorMessage: error.response?.data?.message || error.message,
-      generationStatus: 'failed'
+      generationStatus: 'failed',
     };
   }
 }
@@ -114,7 +118,9 @@ async function generateCertificate(req, res) {
 
     // Validate inputs
     if (!userId || !eventId) {
-      return res.status(400).json({ error: 'User ID and Event ID are required' });
+      return res
+        .status(400)
+        .json({ error: 'User ID and Event ID are required' });
     }
 
     // Check if user has permission (host, co-host, or platform admin)
@@ -128,28 +134,43 @@ async function generateCertificate(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can generate certificates' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can generate certificates',
+        });
     }
 
     // Check if user attended the event
     const participationLog = await EventParticipationLog.findOne({
       userId,
       eventId,
-      status: 'attended'
+      status: 'attended',
     });
 
     if (!participationLog) {
-      return res.status(400).json({ error: 'User must have attended the event to receive a certificate' });
+      return res
+        .status(400)
+        .json({
+          error: 'User must have attended the event to receive a certificate',
+        });
     }
 
     // Check if certificate already exists
     const existingCertificate = await Certificate.findOne({ userId, eventId });
     if (existingCertificate) {
-      return res.status(400).json({ error: 'Certificate already exists for this user and event' });
+      return res
+        .status(400)
+        .json({ error: 'Certificate already exists for this user and event' });
     }
 
     // Prepare certificate data
-    const certificateData = await prepareCertificateData(userId, eventId, certificateType);
+    const certificateData = await prepareCertificateData(
+      userId,
+      eventId,
+      certificateType,
+    );
 
     // Create certificate record
     const certificate = new Certificate({
@@ -157,7 +178,7 @@ async function generateCertificate(req, res) {
       eventId,
       type: certificateType,
       status: 'pending',
-      certificateData
+      certificateData,
     });
 
     // Send to ML API
@@ -168,7 +189,7 @@ async function generateCertificate(req, res) {
       requestId: mlResponse.requestId,
       generationStatus: mlResponse.generationStatus,
       errorMessage: mlResponse.errorMessage,
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
 
     if (mlResponse.success) {
@@ -181,12 +202,16 @@ async function generateCertificate(req, res) {
           userId,
           type: 'certificate',
           message: `Your certificate for ${event.title} is ready!`,
-          data: { eventId, certificateId: certificate._id, certificateURL: certificate.certificateURL },
+          data: {
+            eventId,
+            certificateId: certificate._id,
+            certificateURL: certificate.certificateURL,
+          },
           emailOptions: {
             to: user.email,
             subject: `Your Certificate for ${event.title} is Ready!`,
-            html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${event.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`
-          }
+            html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${event.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+          },
         });
       }
     } else {
@@ -202,10 +227,9 @@ async function generateCertificate(req, res) {
         status: certificate.status,
         type: certificate.type,
         certificateURL: certificate.certificateURL,
-        issuedAt: certificate.issuedAt
-      }
+        issuedAt: certificate.issuedAt,
+      },
     });
-
   } catch (error) {
     console.error('Certificate generation error:', error);
     return res.status(500).json({ error: 'Error generating certificate' });
@@ -236,17 +260,24 @@ async function generateBatchCertificates(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can generate batch certificates' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can generate batch certificates',
+        });
     }
 
     // Get all attended users for the event
     const attendedUsers = await EventParticipationLog.find({
       eventId,
-      status: 'attended'
+      status: 'attended',
     }).populate('userId', 'name email');
 
     if (attendedUsers.length === 0) {
-      return res.status(400).json({ error: 'No attended users found for this event' });
+      return res
+        .status(400)
+        .json({ error: 'No attended users found for this event' });
     }
 
     const results = {
@@ -254,16 +285,16 @@ async function generateBatchCertificates(req, res) {
       generated: 0,
       skipped: 0,
       failed: 0,
-      certificates: []
+      certificates: [],
     };
 
     // Process each attended user
     for (const attendance of attendedUsers) {
       try {
         // Check if certificate already exists
-        const existingCertificate = await Certificate.findOne({ 
-          userId: attendance.userId._id, 
-          eventId 
+        const existingCertificate = await Certificate.findOne({
+          userId: attendance.userId._id,
+          eventId,
         });
 
         if (existingCertificate) {
@@ -273,16 +304,16 @@ async function generateBatchCertificates(req, res) {
             userName: attendance.userId.name,
             userEmail: attendance.userId.email,
             status: 'skipped',
-            reason: 'Certificate already exists'
+            reason: 'Certificate already exists',
           });
           continue;
         }
 
         // Prepare certificate data
         const certificateData = await prepareCertificateData(
-          attendance.userId._id, 
-          eventId, 
-          certificateType
+          attendance.userId._id,
+          eventId,
+          certificateType,
         );
 
         // Create certificate record
@@ -291,7 +322,7 @@ async function generateBatchCertificates(req, res) {
           eventId,
           type: certificateType,
           status: 'pending',
-          certificateData
+          certificateData,
         });
 
         // Send to ML API
@@ -302,7 +333,7 @@ async function generateBatchCertificates(req, res) {
           requestId: mlResponse.requestId,
           generationStatus: mlResponse.generationStatus,
           errorMessage: mlResponse.errorMessage,
-          generatedAt: new Date()
+          generatedAt: new Date(),
         };
 
         if (mlResponse.success) {
@@ -322,18 +353,20 @@ async function generateBatchCertificates(req, res) {
           userEmail: attendance.userId.email,
           status: certificate.status,
           certificateId: certificate._id,
-          certificateURL: certificate.certificateURL
+          certificateURL: certificate.certificateURL,
         });
-
       } catch (error) {
-        console.error(`Error generating certificate for user ${attendance.userId._id}:`, error);
+        console.error(
+          `Error generating certificate for user ${attendance.userId._id}:`,
+          error,
+        );
         results.failed++;
         results.certificates.push({
           userId: attendance.userId._id,
           userName: attendance.userId.name,
           userEmail: attendance.userId.email,
           status: 'failed',
-          reason: error.message
+          reason: error.message,
         });
       }
     }
@@ -342,12 +375,13 @@ async function generateBatchCertificates(req, res) {
       message: 'Batch certificate generation completed',
       eventId,
       eventTitle: event.title,
-      results
+      results,
     });
-
   } catch (error) {
     console.error('Batch certificate generation error:', error);
-    return res.status(500).json({ error: 'Error generating batch certificates' });
+    return res
+      .status(500)
+      .json({ error: 'Error generating batch certificates' });
   }
 }
 
@@ -411,8 +445,9 @@ async function verifyCertificate(req, res) {
     // Find certificate
     const certificate = await Certificate.findOne({
       userId: qrData.userId,
-      eventId: qrData.eventId
-    }).populate('userId', 'name email')
+      eventId: qrData.eventId,
+    })
+      .populate('userId', 'name email')
       .populate('eventId', 'title description schedule');
 
     if (!certificate) {
@@ -432,10 +467,9 @@ async function verifyCertificate(req, res) {
         eventDate: certificate.eventId.schedule.start,
         certificateType: certificate.type,
         issuedAt: certificate.issuedAt,
-        certificateURL: certificate.certificateURL
-      }
+        certificateURL: certificate.certificateURL,
+      },
     });
-
   } catch (error) {
     console.error('Certificate verification error:', error);
     return res.status(500).json({ error: 'Error verifying certificate' });
@@ -461,14 +495,20 @@ async function exportAttendedUsers(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can export attended users' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can export attended users',
+        });
     }
 
     // Get all attended users for the event
     const attendedUsers = await EventParticipationLog.find({
       eventId,
-      status: 'attended'
-    }).populate('userId', 'name email skills interests')
+      status: 'attended',
+    })
+      .populate('userId', 'name email skills interests')
       .populate('eventId', 'title description schedule tags type');
 
     // Prepare data for ML API
@@ -480,23 +520,22 @@ async function exportAttendedUsers(req, res) {
       eventLocation: event.location || 'Online',
       organizerName: event.organizer,
       totalAttended: attendedUsers.length,
-      attendedUsers: attendedUsers.map(log => ({
+      attendedUsers: attendedUsers.map((log) => ({
         userId: log.userId._id,
         userName: log.userId.name,
         userEmail: log.userId.email,
         userSkills: log.userId.skills || [],
         userInterests: log.userId.interests || [],
         attendanceDate: log.attendanceTimestamp,
-        certificateType: 'participant' // Default type
-      }))
+        certificateType: 'participant', // Default type
+      })),
     };
 
     return res.json({
       message: 'Attended users exported successfully',
       data: exportData,
-      count: attendedUsers.length
+      count: attendedUsers.length,
     });
-
   } catch (error) {
     console.error('Export attended users error:', error);
     return res.status(500).json({ error: 'Error exporting attended users' });
@@ -511,8 +550,8 @@ async function retryCertificateGeneration(req, res) {
     const { certificateId } = req.params;
     const requesterId = req.user.id;
 
-    const certificate = await Certificate.findById(certificateId)
-      .populate('eventId');
+    const certificate =
+      await Certificate.findById(certificateId).populate('eventId');
 
     if (!certificate) {
       return res.status(404).json({ error: 'Certificate not found' });
@@ -524,11 +563,18 @@ async function retryCertificateGeneration(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can retry certificate generation' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can retry certificate generation',
+        });
     }
 
     if (certificate.status !== 'failed') {
-      return res.status(400).json({ error: 'Certificate is not in failed status' });
+      return res
+        .status(400)
+        .json({ error: 'Certificate is not in failed status' });
     }
 
     // Retry ML API call
@@ -539,7 +585,7 @@ async function retryCertificateGeneration(req, res) {
       requestId: mlResponse.requestId,
       generationStatus: mlResponse.generationStatus,
       errorMessage: mlResponse.errorMessage,
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
 
     if (mlResponse.success) {
@@ -552,12 +598,13 @@ async function retryCertificateGeneration(req, res) {
     return res.json({
       message: 'Certificate generation retry completed',
       status: certificate.status,
-      certificateURL: certificate.certificateURL
+      certificateURL: certificate.certificateURL,
     });
-
   } catch (error) {
     console.error('Retry certificate generation error:', error);
-    return res.status(500).json({ error: 'Error retrying certificate generation' });
+    return res
+      .status(500)
+      .json({ error: 'Error retrying certificate generation' });
   }
 }
 
@@ -573,27 +620,28 @@ async function getCertificateStats(req, res) {
       {
         $group: {
           _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     const totalCertificates = await Certificate.countDocuments({ userId });
-    const generatedCertificates = await Certificate.countDocuments({ 
-      userId, 
-      status: 'generated' 
+    const generatedCertificates = await Certificate.countDocuments({
+      userId,
+      status: 'generated',
     });
 
     return res.json({
       totalCertificates,
       generatedCertificates,
       pendingCertificates: totalCertificates - generatedCertificates,
-      stats
+      stats,
     });
-
   } catch (error) {
     console.error('Certificate stats error:', error);
-    return res.status(500).json({ error: 'Error fetching certificate statistics' });
+    return res
+      .status(500)
+      .json({ error: 'Error fetching certificate statistics' });
   }
 }
 
@@ -616,20 +664,27 @@ async function getCertificateProgress(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can view certificate progress' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can view certificate progress',
+        });
     }
 
     // Get total attended users
     const totalAttended = await EventParticipationLog.countDocuments({
       eventId,
-      status: 'attended'
+      status: 'attended',
     });
 
     // Get certificate statistics
     const certificates = await Certificate.find({ eventId });
-    const generated = certificates.filter(c => c.status === 'generated').length;
-    const pending = certificates.filter(c => c.status === 'pending').length;
-    const failed = certificates.filter(c => c.status === 'failed').length;
+    const generated = certificates.filter(
+      (c) => c.status === 'generated',
+    ).length;
+    const pending = certificates.filter((c) => c.status === 'pending').length;
+    const failed = certificates.filter((c) => c.status === 'failed').length;
     const notGenerated = totalAttended - certificates.length;
 
     const progress = {
@@ -640,15 +695,22 @@ async function getCertificateProgress(req, res) {
       certificatesPending: pending,
       certificatesFailed: failed,
       certificatesNotGenerated: notGenerated,
-      generationProgress: totalAttended > 0 ? Math.round((certificates.length / totalAttended) * 100) : 0,
-      successRate: certificates.length > 0 ? Math.round((generated / certificates.length) * 100) : 0
+      generationProgress:
+        totalAttended > 0
+          ? Math.round((certificates.length / totalAttended) * 100)
+          : 0,
+      successRate:
+        certificates.length > 0
+          ? Math.round((generated / certificates.length) * 100)
+          : 0,
     };
 
     return res.json(progress);
-
   } catch (error) {
     console.error('Certificate progress error:', error);
-    return res.status(500).json({ error: 'Error fetching certificate progress' });
+    return res
+      .status(500)
+      .json({ error: 'Error fetching certificate progress' });
   }
 }
 
@@ -674,33 +736,47 @@ async function sendCertificateNotification(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can send certificate notifications' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can send certificate notifications',
+        });
     }
 
     if (certificate.status !== 'generated') {
-      return res.status(400).json({ error: 'Certificate must be generated before sending notification' });
+      return res
+        .status(400)
+        .json({
+          error: 'Certificate must be generated before sending notification',
+        });
     }
 
     await notifyUser({
       userId: certificate.userId._id,
       type: 'certificate',
       message: `Your certificate for ${certificate.eventId.title} is ready!`,
-      data: { eventId: certificate.eventId._id, certificateId: certificate._id, certificateURL: certificate.certificateURL },
+      data: {
+        eventId: certificate.eventId._id,
+        certificateId: certificate._id,
+        certificateURL: certificate.certificateURL,
+      },
       emailOptions: {
         to: certificate.userId.email,
         subject: `Your Certificate for ${certificate.eventId.title} is Ready!`,
-        html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${certificate.userId.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`
-      }
+        html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${certificate.userId.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+      },
     });
 
-    return res.json({ 
+    return res.json({
       message: 'Certificate notification sent successfully',
-      recipient: certificate.userId.email
+      recipient: certificate.userId.email,
     });
-
   } catch (error) {
     console.error('Send certificate notification error:', error);
-    return res.status(500).json({ error: 'Error sending certificate notification' });
+    return res
+      .status(500)
+      .json({ error: 'Error sending certificate notification' });
   }
 }
 
@@ -710,7 +786,13 @@ async function sendCertificateNotification(req, res) {
 async function getCertificateDashboard(req, res) {
   try {
     const requesterId = req.user.id;
-    const { eventId, status, certificateType, page = 1, limit = 10 } = req.query;
+    const {
+      eventId,
+      status,
+      certificateType,
+      page = 1,
+      limit = 10,
+    } = req.query;
 
     // Build query for events hosted by the user
     const eventQuery = { hostUserId: requesterId };
@@ -719,7 +801,7 @@ async function getCertificateDashboard(req, res) {
     }
 
     const events = await Event.find(eventQuery, '_id title schedule');
-    const eventIds = events.map(event => event._id);
+    const eventIds = events.map((event) => event._id);
 
     if (eventIds.length === 0) {
       return res.json({
@@ -728,14 +810,14 @@ async function getCertificateDashboard(req, res) {
           page: parseInt(page),
           limit: parseInt(limit),
           total: 0,
-          pages: 0
+          pages: 0,
         },
         summary: {
           totalCertificates: 0,
           generated: 0,
           pending: 0,
-          failed: 0
-        }
+          failed: 0,
+        },
       });
     }
 
@@ -750,7 +832,8 @@ async function getCertificateDashboard(req, res) {
 
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const totalCertificates = await Certificate.countDocuments(certificateQuery);
+    const totalCertificates =
+      await Certificate.countDocuments(certificateQuery);
 
     // Get certificates with pagination
     const certificates = await Certificate.find(certificateQuery)
@@ -766,24 +849,24 @@ async function getCertificateDashboard(req, res) {
       {
         $group: {
           _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     const summaryObj = {
       totalCertificates,
       generated: 0,
       pending: 0,
-      failed: 0
+      failed: 0,
     };
 
-    summary.forEach(item => {
+    summary.forEach((item) => {
       summaryObj[item._id] = item.count;
     });
 
     return res.json({
-      certificates: certificates.map(cert => ({
+      certificates: certificates.map((cert) => ({
         id: cert._id,
         userId: cert.userId._id,
         userName: cert.userId.name,
@@ -795,25 +878,26 @@ async function getCertificateDashboard(req, res) {
         status: cert.status,
         certificateURL: cert.certificateURL,
         issuedAt: cert.issuedAt,
-        createdAt: cert.createdAt
+        createdAt: cert.createdAt,
       })),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
         total: totalCertificates,
-        pages: Math.ceil(totalCertificates / parseInt(limit))
+        pages: Math.ceil(totalCertificates / parseInt(limit)),
       },
       summary: summaryObj,
-      events: events.map(event => ({
+      events: events.map((event) => ({
         id: event._id,
         title: event.title,
-        date: event.schedule?.start
-      }))
+        date: event.schedule?.start,
+      })),
     });
-
   } catch (error) {
     console.error('Certificate dashboard error:', error);
-    return res.status(500).json({ error: 'Error fetching certificate dashboard' });
+    return res
+      .status(500)
+      .json({ error: 'Error fetching certificate dashboard' });
   }
 }
 
@@ -836,17 +920,24 @@ async function bulkRetryFailedCertificates(req, res) {
     const isAdmin = req.user.roles.includes('platformAdmin');
 
     if (!isHost && !isCoHost && !isAdmin) {
-      return res.status(403).json({ error: 'Only event hosts, co-hosts, or admins can retry failed certificates' });
+      return res
+        .status(403)
+        .json({
+          error:
+            'Only event hosts, co-hosts, or admins can retry failed certificates',
+        });
     }
 
     // Get all failed certificates for the event
     const failedCertificates = await Certificate.find({
       eventId,
-      status: 'failed'
+      status: 'failed',
     });
 
     if (failedCertificates.length === 0) {
-      return res.status(400).json({ error: 'No failed certificates found for this event' });
+      return res
+        .status(400)
+        .json({ error: 'No failed certificates found for this event' });
     }
 
     const results = {
@@ -854,7 +945,7 @@ async function bulkRetryFailedCertificates(req, res) {
       retried: 0,
       success: 0,
       failed: 0,
-      certificates: []
+      certificates: [],
     };
 
     // Retry each failed certificate
@@ -868,7 +959,7 @@ async function bulkRetryFailedCertificates(req, res) {
           requestId: mlResponse.requestId,
           generationStatus: mlResponse.generationStatus,
           errorMessage: mlResponse.errorMessage,
-          generatedAt: new Date()
+          generatedAt: new Date(),
         };
 
         if (mlResponse.success) {
@@ -887,9 +978,8 @@ async function bulkRetryFailedCertificates(req, res) {
           certificateId: certificate._id,
           status: certificate.status,
           success: mlResponse.success,
-          errorMessage: mlResponse.errorMessage
+          errorMessage: mlResponse.errorMessage,
         });
-
       } catch (error) {
         console.error(`Error retrying certificate ${certificate._id}:`, error);
         results.failed++;
@@ -897,7 +987,7 @@ async function bulkRetryFailedCertificates(req, res) {
           certificateId: certificate._id,
           status: 'failed',
           success: false,
-          errorMessage: error.message
+          errorMessage: error.message,
         });
       }
     }
@@ -906,12 +996,13 @@ async function bulkRetryFailedCertificates(req, res) {
       message: 'Bulk retry completed',
       eventId,
       eventTitle: event.title,
-      results
+      results,
     });
-
   } catch (error) {
     console.error('Bulk retry error:', error);
-    return res.status(500).json({ error: 'Error retrying failed certificates' });
+    return res
+      .status(500)
+      .json({ error: 'Error retrying failed certificates' });
   }
 }
 
@@ -927,5 +1018,5 @@ module.exports = {
   getCertificateProgress,
   sendCertificateNotification,
   getCertificateDashboard,
-  bulkRetryFailedCertificates
-}; 
+  bulkRetryFailedCertificates,
+};

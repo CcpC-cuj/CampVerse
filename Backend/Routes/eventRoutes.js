@@ -14,11 +14,23 @@ const {
   approveCoHost,
   rejectCoHost,
   verifyEvent,
-  getGoogleCalendarLink
+  getGoogleCalendarLink,
 } = require('../Controller/event');
-const { advancedEventSearch, getUserAnalytics, getPlatformInsights, getSearchAnalytics, getAdvancedEventAnalytics, getUserActivityTimeline, getGrowthTrends, getZeroResultSearches } = require('../Controller/analytics');
+const {
+  advancedEventSearch,
+  getUserAnalytics,
+  getPlatformInsights,
+  getSearchAnalytics,
+  getAdvancedEventAnalytics,
+  getUserActivityTimeline,
+  getGrowthTrends,
+  getZeroResultSearches,
+} = require('../Controller/analytics');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
-const { requireHostOrCoHost, requireVerifier } = require('../Middleware/permissions');
+const {
+  requireHostOrCoHost,
+  requireVerifier,
+} = require('../Middleware/permissions');
 
 const router = express.Router();
 
@@ -62,7 +74,13 @@ router.get('/', async (req, res) => {
  *       201: { description: Event created }
  *       403: { description: Forbidden }
  */
-router.post('/', authenticateToken, requireRole('host'), upload.fields([{ name: 'logo' }, { name: 'banner' }]), createEvent);
+router.post(
+  '/',
+  authenticateToken,
+  requireRole('host'),
+  upload.fields([{ name: 'logo' }, { name: 'banner' }]),
+  createEvent,
+);
 
 /**
  * @swagger
@@ -108,7 +126,13 @@ router.get('/:id', authenticateToken, getEventById);
  *       200: { description: Event updated }
  *       403: { description: Forbidden }
  */
-router.patch('/:id', authenticateToken, requireHostOrCoHost, upload.fields([{ name: 'logo' }, { name: 'banner' }]), updateEvent);
+router.patch(
+  '/:id',
+  authenticateToken,
+  requireHostOrCoHost,
+  upload.fields([{ name: 'logo' }, { name: 'banner' }]),
+  updateEvent,
+);
 
 /**
  * @swagger
@@ -197,7 +221,12 @@ router.post('/cancel-rsvp', authenticateToken, cancelRsvp);
  *       200: { description: List of participants }
  *       403: { description: Forbidden }
  */
-router.get('/:id/participants', authenticateToken, requireHostOrCoHost, getParticipants);
+router.get(
+  '/:id/participants',
+  authenticateToken,
+  requireHostOrCoHost,
+  getParticipants,
+);
 
 /**
  * @swagger
@@ -241,7 +270,12 @@ router.post('/scan', authenticateToken, requireHostOrCoHost, scanQr);
  *       200: { description: Event analytics }
  *       403: { description: Forbidden }
  */
-router.get('/:id/analytics', authenticateToken, requireRole('host'), getEventAnalytics);
+router.get(
+  '/:id/analytics',
+  authenticateToken,
+  requireRole('host'),
+  getEventAnalytics,
+);
 
 /**
  * @swagger
@@ -302,7 +336,12 @@ router.post('/nominate-cohost', authenticateToken, nominateCoHost);
  *       404: { description: Co-host request not found }
  *       500: { description: Error approving co-host }
  */
-router.post('/approve-cohost', authenticateToken, requireVerifier, approveCoHost);
+router.post(
+  '/approve-cohost',
+  authenticateToken,
+  requireVerifier,
+  approveCoHost,
+);
 
 /**
  * @swagger
@@ -352,7 +391,12 @@ router.post('/reject-cohost', authenticateToken, requireVerifier, rejectCoHost);
  *       200: { description: Event verified }
  *       403: { description: Forbidden }
  */
-router.post('/:id/verify', authenticateToken, requireRole('verifier'), verifyEvent);
+router.post(
+  '/:id/verify',
+  authenticateToken,
+  requireRole('verifier'),
+  verifyEvent,
+);
 
 /**
  * @swagger
@@ -379,17 +423,45 @@ router.get('/search', authenticateToken, advancedEventSearch);
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
 // Platform insights (global stats)
-router.get('/platform-insights', authenticateToken, requireRole('platformAdmin'), getPlatformInsights);
+router.get(
+  '/platform-insights',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getPlatformInsights,
+);
 // Search analytics (admin only)
-router.get('/search-analytics', authenticateToken, requireRole('platformAdmin'), getSearchAnalytics);
+router.get(
+  '/search-analytics',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getSearchAnalytics,
+);
 
 // Advanced event analytics
-router.get('/:id/advanced-analytics', authenticateToken, getAdvancedEventAnalytics);
+router.get(
+  '/:id/advanced-analytics',
+  authenticateToken,
+  getAdvancedEventAnalytics,
+);
 // User activity timeline
-router.get('/user-activity/:userId', authenticateToken, getUserActivityTimeline);
+router.get(
+  '/user-activity/:userId',
+  authenticateToken,
+  getUserActivityTimeline,
+);
 // Platform growth trends (admin only)
-router.get('/admin/growth-trends', authenticateToken, requireRole('platformAdmin'), getGrowthTrends);
+router.get(
+  '/admin/growth-trends',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getGrowthTrends,
+);
 // Zero-result searches (admin only)
-router.get('/admin/zero-result-searches', authenticateToken, requireRole('platformAdmin'), getZeroResultSearches);
+router.get(
+  '/admin/zero-result-searches',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getZeroResultSearches,
+);
 
-module.exports = router; 
+module.exports = router;

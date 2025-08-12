@@ -1,4 +1,3 @@
-
 # Frontend Developer Guide: Institution Management System
 
 This guide explains how to implement the institution request and approval system in your frontend application.
@@ -10,12 +9,14 @@ The institution system allows users to request new institutions and administrato
 ## 📋 User Flow
 
 ### 1. User Requests Institution
+
 - User fills out simple form (name + type only)
 - Institution created as "unverified"
 - User status becomes "pending"
 - Admin gets notified
 
 ### 2. Admin Reviews & Approves
+
 - Admin sees pending requests
 - Admin can approve with or without additional details
 - If approved, all users get "verified" status
@@ -23,13 +24,16 @@ The institution system allows users to request new institutions and administrato
 ## 🎯 API Endpoints
 
 ### POST `/api/institutions/request-new`
+
 **Purpose:** User requests new institution creation
 
 **Required Fields:**
+
 - `name`: Institution name
 - `type`: Institution type (college/university/org/temporary)
 
 **Optional Fields:**
+
 - `website`: Institution website
 - `phone`: Institution phone number
 - `info`: Additional information
@@ -37,9 +41,11 @@ The institution system allows users to request new institutions and administrato
 **Note:** Location fields are NOT collected from users - they're added by admins during approval.
 
 ### POST `/api/institutions/{id}/approve-verification`
+
 **Purpose:** Admin approves institution verification
 
 **Optional Fields (all optional):**
+
 - `location.city`: City name
 - `location.state`: State/Province
 - `location.country`: Country
@@ -52,47 +58,49 @@ The institution system allows users to request new institutions and administrato
 ### User Request Form (React)
 
 ```jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const InstitutionRequestForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    website: '',
-    phone: '',
-    info: ''
+    name: "",
+    type: "",
+    website: "",
+    phone: "",
+    info: "",
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
-      const response = await fetch('/api/institutions/request-new', {
-        method: 'POST',
+      const response = await fetch("/api/institutions/request-new", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         const result = await response.json();
-        alert('Institution request submitted! It will be reviewed by administrators.');
+        alert(
+          "Institution request submitted! It will be reviewed by administrators.",
+        );
         // Reset form or redirect
       } else {
         const error = await response.json();
         alert(`Error: ${error.error}`);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="institution-form">
       <h2>Request New Institution</h2>
-      
+
       <div className="form-group">
         <label htmlFor="name">Institution Name *</label>
         <input
@@ -100,7 +108,7 @@ const InstitutionRequestForm = () => {
           name="name"
           type="text"
           value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., MIT University"
           required
         />
@@ -112,7 +120,7 @@ const InstitutionRequestForm = () => {
           id="type"
           name="type"
           value={formData.type}
-          onChange={(e) => setFormData({...formData, type: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
           required
         >
           <option value="">Select Type</option>
@@ -130,7 +138,9 @@ const InstitutionRequestForm = () => {
           name="website"
           type="url"
           value={formData.website}
-          onChange={(e) => setFormData({...formData, website: e.target.value})}
+          onChange={(e) =>
+            setFormData({ ...formData, website: e.target.value })
+          }
           placeholder="https://example.edu"
         />
       </div>
@@ -142,7 +152,7 @@ const InstitutionRequestForm = () => {
           name="phone"
           type="tel"
           value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           placeholder="123-456-7890"
         />
       </div>
@@ -153,7 +163,7 @@ const InstitutionRequestForm = () => {
           id="info"
           name="info"
           value={formData.info}
-          onChange={(e) => setFormData({...formData, info: e.target.value})}
+          onChange={(e) => setFormData({ ...formData, info: e.target.value })}
           placeholder="Tell us more about this institution..."
           rows="4"
         />
@@ -172,66 +182,79 @@ export default InstitutionRequestForm;
 ### Admin Approval Form (React)
 
 ```jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 const InstitutionApprovalForm = ({ institution, onApproved, onRejected }) => {
   const [approvalData, setApprovalData] = useState({
-    location: { city: '', state: '', country: '' },
-    website: '',
-    phone: '',
-    info: ''
+    location: { city: "", state: "", country: "" },
+    website: "",
+    phone: "",
+    info: "",
   });
 
   const handleApproval = async (e) => {
     e.preventDefault();
-    
+
     try {
-      const response = await fetch(`/api/institutions/${institution._id}/approve-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      const response = await fetch(
+        `/api/institutions/${institution._id}/approve-verification`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+          body: JSON.stringify(approvalData),
         },
-        body: JSON.stringify(approvalData)
-      });
+      );
 
       if (response.ok) {
         const result = await response.json();
-        alert('Institution approved successfully!');
+        alert("Institution approved successfully!");
         onApproved();
       } else {
         const error = await response.json();
         alert(`Error: ${error.error}`);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
   const handleRejection = async () => {
     try {
-      const response = await fetch(`/api/institutions/${institution._id}/reject-verification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
+      const response = await fetch(
+        `/api/institutions/${institution._id}/reject-verification`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        },
+      );
 
       if (response.ok) {
-        alert('Institution rejected');
+        alert("Institution rejected");
         onRejected();
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   };
 
   return (
     <div className="approval-form">
       <h3>Approve Institution: {institution.name}</h3>
-      <p><strong>Type:</strong> {institution.type}</p>
-      <p><strong>Domain:</strong> {institution.emailDomain}</p>
-      <p><strong>Requested:</strong> {new Date(institution.createdAt).toLocaleDateString()}</p>
+      <p>
+        <strong>Type:</strong> {institution.type}
+      </p>
+      <p>
+        <strong>Domain:</strong> {institution.emailDomain}
+      </p>
+      <p>
+        <strong>Requested:</strong>{" "}
+        {new Date(institution.createdAt).toLocaleDateString()}
+      </p>
 
       <form onSubmit={handleApproval}>
         <div className="form-section">
@@ -241,28 +264,37 @@ const InstitutionApprovalForm = ({ institution, onApproved, onRejected }) => {
               name="city"
               placeholder="City"
               value={approvalData.location.city}
-              onChange={(e) => setApprovalData({
-                ...approvalData,
-                location: { ...approvalData.location, city: e.target.value }
-              })}
+              onChange={(e) =>
+                setApprovalData({
+                  ...approvalData,
+                  location: { ...approvalData.location, city: e.target.value },
+                })
+              }
             />
             <input
               name="state"
               placeholder="State/Province"
               value={approvalData.location.state}
-              onChange={(e) => setApprovalData({
-                ...approvalData,
-                location: { ...approvalData.location, state: e.target.value }
-              })}
+              onChange={(e) =>
+                setApprovalData({
+                  ...approvalData,
+                  location: { ...approvalData.location, state: e.target.value },
+                })
+              }
             />
             <input
               name="country"
               placeholder="Country"
               value={approvalData.location.country}
-              onChange={(e) => setApprovalData({
-                ...approvalData,
-                location: { ...approvalData.location, country: e.target.value }
-              })}
+              onChange={(e) =>
+                setApprovalData({
+                  ...approvalData,
+                  location: {
+                    ...approvalData.location,
+                    country: e.target.value,
+                  },
+                })
+              }
             />
           </div>
         </div>
@@ -274,20 +306,26 @@ const InstitutionApprovalForm = ({ institution, onApproved, onRejected }) => {
             type="url"
             placeholder="Website URL"
             value={approvalData.website}
-            onChange={(e) => setApprovalData({...approvalData, website: e.target.value})}
+            onChange={(e) =>
+              setApprovalData({ ...approvalData, website: e.target.value })
+            }
           />
           <input
             name="phone"
             type="tel"
             placeholder="Phone Number"
             value={approvalData.phone}
-            onChange={(e) => setApprovalData({...approvalData, phone: e.target.value})}
+            onChange={(e) =>
+              setApprovalData({ ...approvalData, phone: e.target.value })
+            }
           />
           <textarea
             name="info"
             placeholder="Additional Information"
             value={approvalData.info}
-            onChange={(e) => setApprovalData({...approvalData, info: e.target.value})}
+            onChange={(e) =>
+              setApprovalData({ ...approvalData, info: e.target.value })
+            }
             rows="3"
           />
         </div>
@@ -296,7 +334,11 @@ const InstitutionApprovalForm = ({ institution, onApproved, onRejected }) => {
           <button type="submit" className="approve-btn">
             Approve Institution
           </button>
-          <button type="button" onClick={handleRejection} className="reject-btn">
+          <button
+            type="button"
+            onClick={handleRejection}
+            className="reject-btn"
+          >
             Reject Institution
           </button>
         </div>
@@ -311,8 +353,8 @@ export default InstitutionApprovalForm;
 ### Admin Dashboard (React)
 
 ```jsx
-import React, { useState, useEffect } from 'react';
-import InstitutionApprovalForm from './InstitutionApprovalForm';
+import React, { useState, useEffect } from "react";
+import InstitutionApprovalForm from "./InstitutionApprovalForm";
 
 const AdminDashboard = () => {
   const [pendingInstitutions, setPendingInstitutions] = useState([]);
@@ -325,18 +367,21 @@ const AdminDashboard = () => {
   const fetchPendingInstitutions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/institutions?verificationRequested=true&isVerified=false', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
-      
+      const response = await fetch(
+        "/api/institutions?verificationRequested=true&isVerified=false",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+          },
+        },
+      );
+
       if (response.ok) {
         const institutions = await response.json();
         setPendingInstitutions(institutions);
       }
     } catch (error) {
-      console.error('Error fetching pending institutions:', error);
+      console.error("Error fetching pending institutions:", error);
     } finally {
       setLoading(false);
     }
@@ -347,14 +392,14 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard">
       <h1>Institution Approval Dashboard</h1>
-      
+
       {pendingInstitutions.length === 0 ? (
         <p>No pending institution requests</p>
       ) : (
         <div className="pending-institutions">
           <h2>Pending Requests ({pendingInstitutions.length})</h2>
-          
-          {pendingInstitutions.map(institution => (
+
+          {pendingInstitutions.map((institution) => (
             <div key={institution._id} className="institution-card">
               <InstitutionApprovalForm
                 institution={institution}
@@ -375,7 +420,7 @@ export default AdminDashboard;
 ### Status Tracking Component
 
 ```jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const InstitutionStatus = ({ user }) => {
   const [status, setStatus] = useState(user.institutionVerificationStatus);
@@ -386,29 +431,29 @@ const InstitutionStatus = ({ user }) => {
 
   const getStatusMessage = () => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return {
-          text: 'Your institution request is pending review',
-          type: 'warning',
-          icon: '⏳'
+          text: "Your institution request is pending review",
+          type: "warning",
+          icon: "⏳",
         };
-      case 'verified':
+      case "verified":
         return {
-          text: 'Your institution has been verified!',
-          type: 'success',
-          icon: '✅'
+          text: "Your institution has been verified!",
+          type: "success",
+          icon: "✅",
         };
-      case 'rejected':
+      case "rejected":
         return {
-          text: 'Your institution request was rejected',
-          type: 'error',
-          icon: '❌'
+          text: "Your institution request was rejected",
+          type: "error",
+          icon: "❌",
         };
       default:
         return {
-          text: 'No institution status',
-          type: 'info',
-          icon: 'ℹ️'
+          text: "No institution status",
+          type: "info",
+          icon: "ℹ️",
         };
     }
   };
@@ -436,7 +481,7 @@ export default InstitutionStatus;
   padding: 20px;
   background: #f8f9fa;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-group {
@@ -585,34 +630,34 @@ export default InstitutionStatus;
 ```jsx
 const handleSubmit = async (e) => {
   e.preventDefault();
-  
+
   try {
-    const response = await fetch('/api/institutions/request-new', {
-      method: 'POST',
+    const response = await fetch("/api/institutions/request-new", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(formData),
     });
 
     if (response.ok) {
       const result = await response.json();
-      showSuccess('Institution request submitted successfully!');
+      showSuccess("Institution request submitted successfully!");
     } else {
       const error = await response.json();
-      
+
       switch (response.status) {
         case 400:
           showError(`Validation Error: ${error.error}`);
           if (error.details) {
-            console.log('Validation details:', error.details);
+            console.log("Validation details:", error.details);
           }
           break;
         case 409:
           showError(`Conflict: ${error.error}`);
           if (error.existingInstitution) {
-            console.log('Existing institution:', error.existingInstitution);
+            console.log("Existing institution:", error.existingInstitution);
           }
           break;
         default:
@@ -620,8 +665,8 @@ const handleSubmit = async (e) => {
       }
     }
   } catch (error) {
-    console.error('Network error:', error);
-    showError('Network error. Please try again.');
+    console.error("Network error:", error);
+    showError("Network error. Please try again.");
   }
 };
 ```

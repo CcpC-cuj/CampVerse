@@ -31,14 +31,16 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase(),
+    );
     const mimetype = allowedTypes.test(file.mimetype);
     if (mimetype && extname) {
       return cb(null, true);
     } else {
       cb(new Error('Only image files are allowed!'));
     }
-  }
+  },
 });
 
 /**
@@ -56,8 +58,8 @@ async function uploadEventImage(fileBuffer, filename, type, mimetype) {
   await file.save(fileBuffer, {
     metadata: {
       contentType: mimetype || 'image/png',
-      metadata: { firebaseStorageDownloadTokens: token }
-    }
+      metadata: { firebaseStorageDownloadTokens: token },
+    },
   });
   const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(destination)}?alt=media&token=${token}`;
   return url;
@@ -79,7 +81,10 @@ async function deleteEventImage(fileUrl) {
     if (match) filePath = match[0].substring(1);
   }
   if (!filePath) return;
-  await bucket.file(filePath).delete().catch(() => {});
+  await bucket
+    .file(filePath)
+    .delete()
+    .catch(() => {});
 }
 
 /**
@@ -97,8 +102,8 @@ async function uploadProfilePhoto(fileBuffer, filename, userId, mimetype) {
   await file.save(fileBuffer, {
     metadata: {
       contentType: mimetype || 'image/png',
-      metadata: { firebaseStorageDownloadTokens: token }
-    }
+      metadata: { firebaseStorageDownloadTokens: token },
+    },
   });
   const url = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(destination)}?alt=media&token=${token}`;
   return url;
@@ -120,7 +125,10 @@ async function deleteProfilePhoto(fileUrl) {
     if (match) filePath = match[0].substring(1);
   }
   if (!filePath) return;
-  await bucket.file(filePath).delete().catch(() => {});
+  await bucket
+    .file(filePath)
+    .delete()
+    .catch(() => {});
 }
 
 module.exports = {
@@ -128,5 +136,5 @@ module.exports = {
   uploadEventImage,
   deleteEventImage,
   uploadProfilePhoto,
-  deleteProfilePhoto
-}; 
+  deleteProfilePhoto,
+};
