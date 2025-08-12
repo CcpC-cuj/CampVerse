@@ -105,10 +105,10 @@ const FaqCta = () => {
               your interests and aspirations.
             </p>
             <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <button className="px-8 py-4 border border-primary text-white rounded-button text-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
+              <button className="px-8 py-4 border border-[#9b5de5] text-white rounded-button text-lg font-medium hover:bg-[#9b5de5]/20 transition-colors whitespace-nowrap" aria-label="Create account">
                 Create Account
               </button>
-              <button className="px-8 py-4 border border-primary text-white rounded-button text-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
+              <button className="px-8 py-4 border border-[#9b5de5] text-white rounded-button text-lg font-medium hover:bg-[#9b5de5]/20 transition-colors whitespace-nowrap" aria-label="Learn more">
                 Learn More
               </button>
             </div>
@@ -118,7 +118,7 @@ const FaqCta = () => {
 
       {/* Call to Action Section */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-[#9b5de5]/20 to-secondary/20"></div>
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <h2
@@ -155,8 +155,8 @@ const FaqCta = () => {
                   className="bg-gray-800/40 backdrop-blur-sm rounded-lg p-6"
                   style={{ boxShadow: "0 0 15px rgba(155, 93, 229, 0.5)" }}
                 >
-                  <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i className={`${item.icon} ri-xl text-primary`}></i>
+                  <div className="w-12 h-12 bg-[#9b5de5]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className={`${item.icon} ri-xl text-[#9b5de5]`}></i>
                   </div>
                   <h3 className="text-xl font-bold mb-2 text-white">
                     {item.title}

@@ -36,6 +36,7 @@ const Landing = () => {
         }}
       />
 
+      {/* Expose "Home" anchor for nav/footer */}
       <Hero
         onSignupClick={() => {
           setShowLogin(false);
@@ -44,7 +45,12 @@ const Landing = () => {
       />
 
       <FeaturesSection />
-      <DashboardPreview />
+
+      {/* Expose "Events" anchor for nav/footer without changing DashboardPreview */}
+      <section id="events">
+        <DashboardPreview />
+      </section>
+
       <Testimonials />
       <FaqCta />
       <Footer />

@@ -31,6 +31,7 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
         {/* Desktop Auth buttons */}
         <div className="hidden md:flex space-x-4">
           <button
+            aria-label="Open login modal"
             onClick={onLoginClick}
             onMouseEnter={() => setHovered("login")}
             onMouseLeave={() => setHovered(null)}
@@ -42,6 +43,7 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
           </button>
 
           <button
+            aria-label="Open signup modal"
             onClick={onSignupClick}
             onMouseEnter={() => setHovered("signup")}
             onMouseLeave={() => setHovered(null)}
@@ -53,7 +55,7 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
 
         {/* Mobile Hamburger */}
         <div className="md:hidden">
-          <button onClick={() => setIsOpen(!isOpen)} className="text-white">
+          <button onClick={() => setIsOpen(!isOpen)} className="text-white" aria-label="Toggle menu">
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
