@@ -25,7 +25,6 @@ const Sidebar = () => {
   }, [user?.institutionId]);
 
   const profileUrl = user?.profilePhoto || user?.avatar || "/default-avatar.png";
-  // Show "Under Approval" if institution is not verified, otherwise show institution name
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
 
   return (
@@ -76,10 +75,8 @@ const Sidebar = () => {
         {/* Navigation Sections */}
         <div className="py-2">
           <SidebarSection title="Main" />
-          {/* exact match for the root dashboard to prevent double selection */}
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" end />
           <SidebarLink icon="ri-compass-line" to="/dashboard/discover-events" label="Discover Events" />
-
           <SidebarLink icon="ri-calendar-line" to="/eventhistory" label="My Events" />
           <SidebarLink icon="ri-notification-3-line" to="/notifications" label="Notifications" />
 
@@ -101,7 +98,7 @@ const Sidebar = () => {
         <SidebarLink icon="ri-settings-3-line" to="/settings" label="Settings" />
         <SidebarLink icon="ri-question-line" to="/help" label="Help Center" />
 
-        {/* Modern Logout (purple theme, subtle glow, micro-interactions) */}
+        {/* Logout (purple theme) */}
         <button
           onClick={logout}
           aria-label="Logout"

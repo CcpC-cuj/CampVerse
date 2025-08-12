@@ -9,7 +9,8 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory"; 
+import EventHistory from "./userdashboard/EventHistory";
+import HelpCenter from "./userdashboard/HelpCenter"; // ← NEW
 import "remixicon/fonts/remixicon.css";
 
 function App() {
@@ -40,6 +41,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <EventHistory />
+              </ProtectedRoute>
+            }
+          />
+          {/* NEW: Help Center route */}
+          <Route
+            path="/help"
+            element={
+              <ProtectedRoute>
+                <HelpCenter />
               </ProtectedRoute>
             }
           />
