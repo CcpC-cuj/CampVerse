@@ -567,7 +567,8 @@ const Settings = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col sm:flex-row bg-[#0d1331] text-white font-poppins">
+    // MATCHED to Dashboard outer gradient + typography
+    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* mobile overlay for sidebar */}
       {sidebarOpen && (
         <div
@@ -576,17 +577,17 @@ const Settings = () => {
         />
       )}
 
-      {/* dashboard sidebar (unchanged) */}
+      {/* dashboard sidebar (component handles its own bg) */}
       <div
-        className={`fixed sm:static top-0 left-0 h-full w-64 bg-[#0b1226] z-50 transform ${
+        className={`fixed sm:static top-0 left-0 h-full w-64 z-50 transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } transition-transform duration-300 sm:translate-x-0`}
       >
         <Sidebar />
       </div>
 
-      {/* main column */}
-      <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full">
+      {/* main column — MATCHED to Dashboard lighter surface */}
+      <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full bg-[#141a45]">
         {/* sticky top bar with back + horizontal tabs */}
         <div className="sticky top-0 z-30 bg-transparent">
           <div className="px-4 sm:px-6 py-3">
@@ -642,8 +643,8 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* scrollable content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6">
+        {/* scrollable content — MATCHED surface color */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
           <div className="max-w-6xl mx-auto">
             <h1
               className="text-2xl sm:text-3xl font-bold mb-4"

@@ -86,7 +86,7 @@ const Feedback = () => {
   )}`;
 
   return (
-    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-[#0e1030] via-[#11173a] to-[#0b0f2b] text-white font-poppins">
+    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -105,7 +105,7 @@ const Feedback = () => {
       </div>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
         {/* Sticky top bar */}
         <div className="sticky top-0 z-30 bg-transparent">
           <div className="px-4 sm:px-6 py-3">
@@ -150,7 +150,7 @@ const Feedback = () => {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-gray-900">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
           {/* Header copy */}
           <div className="mb-6">
             <h1
