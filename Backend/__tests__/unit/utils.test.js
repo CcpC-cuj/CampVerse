@@ -5,7 +5,10 @@ describe('Utility Functions Unit Tests', () => {
   describe('Email Validation', () => {
     it('should validate academic email domains', () => {
       const isAcademicEmail = (email) => {
-        return /@[\w.-]+\.(ac|edu)\.in$/i.test(email) || /@[\w.-]+\.edu$/i.test(email);
+        return (
+          /@[\w.-]+\.(ac|edu)\.in$/i.test(email) ||
+          /@[\w.-]+\.edu$/i.test(email)
+        );
       };
 
       // Valid academic emails
@@ -90,13 +93,13 @@ describe('Utility Functions Unit Tests', () => {
         return new Date(date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
       };
 
       const testDate = new Date('2024-01-15');
       const formatted = formatDate(testDate);
-      
+
       expect(formatted).toContain('January');
       expect(formatted).toContain('15');
       expect(formatted).toContain('2024');
@@ -110,7 +113,7 @@ describe('Utility Functions Unit Tests', () => {
 
       const date1 = new Date('2024-01-01');
       const date2 = new Date('2024-01-05');
-      
+
       expect(getTimeDifference(date1, date2)).toBe(4);
       expect(getTimeDifference(date2, date1)).toBe(4); // should be absolute
     });
@@ -128,7 +131,7 @@ describe('Utility Functions Unit Tests', () => {
       // Test XSS prevention
       const maliciousInput = '<script>alert("xss")</script>';
       const sanitized = sanitizeInput(maliciousInput);
-      
+
       expect(sanitized).toBe('scriptalert("xss")/script');
       expect(sanitized).not.toContain('<');
       expect(sanitized).not.toContain('>');
@@ -158,7 +161,9 @@ describe('Utility Functions Unit Tests', () => {
 
       expect(truncateText('Hello World', 5)).toBe('He...');
       expect(truncateText('Short', 10)).toBe('Short');
-      expect(truncateText('Very Long Text That Should Be Truncated', 20)).toBe('Very Long Text Th...');
+      expect(truncateText('Very Long Text That Should Be Truncated', 20)).toBe(
+        'Very Long Text Th...',
+      );
     });
   });
 
@@ -203,11 +208,11 @@ describe('Utility Functions Unit Tests', () => {
       const users = [
         { name: 'John', role: 'user' },
         { name: 'Jane', role: 'admin' },
-        { name: 'Bob', role: 'user' }
+        { name: 'Bob', role: 'user' },
       ];
 
       const grouped = groupBy(users, 'role');
-      
+
       expect(grouped.user).toHaveLength(2);
       expect(grouped.admin).toHaveLength(1);
       expect(grouped.user[0].name).toBe('John');
@@ -226,9 +231,9 @@ describe('Utility Functions Unit Tests', () => {
         age: 30,
         address: {
           city: 'New York',
-          country: 'USA'
+          country: 'USA',
         },
-        hobbies: ['reading', 'gaming']
+        hobbies: ['reading', 'gaming'],
       };
 
       const cloned = deepClone(original);
@@ -242,7 +247,11 @@ describe('Utility Functions Unit Tests', () => {
       const deepMerge = (target, source) => {
         const result = { ...target };
         for (const key in source) {
-          if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          if (
+            source[key] &&
+            typeof source[key] === 'object' &&
+            !Array.isArray(source[key])
+          ) {
             result[key] = deepMerge(result[key] || {}, source[key]);
           } else {
             result[key] = source[key];
@@ -259,7 +268,7 @@ describe('Utility Functions Unit Tests', () => {
       expect(merged).toEqual({
         a: 1,
         b: { c: 2, d: 4, e: 5 },
-        f: 6
+        f: 6,
       });
     });
 
@@ -278,7 +287,7 @@ describe('Utility Functions Unit Tests', () => {
         name: 'John',
         email: 'john@example.com',
         password: 'hashed',
-        role: 'user'
+        role: 'user',
       };
 
       const publicUser = pick(user, ['id', 'name', 'email', 'role']);
@@ -287,7 +296,7 @@ describe('Utility Functions Unit Tests', () => {
         id: 1,
         name: 'John',
         email: 'john@example.com',
-        role: 'user'
+        role: 'user',
       });
       expect(publicUser.password).toBeUndefined();
     });
@@ -334,7 +343,9 @@ describe('Utility Functions Unit Tests', () => {
 
       expect(validateFileExtension('image.jpg', allowedExtensions)).toBe(true);
       expect(validateFileExtension('photo.PNG', allowedExtensions)).toBe(true);
-      expect(validateFileExtension('document.pdf', allowedExtensions)).toBe(false);
+      expect(validateFileExtension('document.pdf', allowedExtensions)).toBe(
+        false,
+      );
       expect(validateFileExtension('script.js', allowedExtensions)).toBe(false);
     });
   });
@@ -364,7 +375,9 @@ describe('Utility Functions Unit Tests', () => {
 
     it('should round to decimal places', () => {
       const roundToDecimal = (number, decimals) => {
-        return Math.round(number * Math.pow(10, decimals)) / Math.pow(10, decimals);
+        return (
+          Math.round(number * Math.pow(10, decimals)) / Math.pow(10, decimals)
+        );
       };
 
       expect(roundToDecimal(3.14159, 2)).toBe(3.14);
@@ -372,4 +385,4 @@ describe('Utility Functions Unit Tests', () => {
       expect(roundToDecimal(10.5, 0)).toBe(11);
     });
   });
-}); 
+});

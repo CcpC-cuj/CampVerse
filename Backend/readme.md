@@ -31,6 +31,7 @@ CampVerse Backend is a **microservice-inspired, modular platform** that provides
 - **Notification System**: Email and in-app notifications
 
 ### **Key Features**
+
 - ✅ **JWT Authentication** with role-based access control
 - ✅ **QR Code System** for attendance tracking
 - ✅ **Certificate Generation** with ML integration
@@ -44,6 +45,7 @@ CampVerse Backend is a **microservice-inspired, modular platform** that provides
 ## 🏛️ Architecture
 
 ### **Service Architecture**
+
 ```mermaid
 graph TD
   subgraph Frontend
@@ -83,6 +85,7 @@ graph TD
 ```
 
 ### **Technology Stack**
+
 - **Runtime**: Node.js with Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Cache**: Redis for sessions, OTP, and caching
@@ -98,12 +101,14 @@ graph TD
 ## 🚀 Quick Start
 
 ### **Prerequisites**
+
 - Node.js (v16 or higher)
 - MongoDB
 - Redis
 - Google Cloud Platform account (for Drive API)
 
 ### **Environment Setup**
+
 ```bash
 # Clone the repository
 git clone https://github.com/CcpC-cuj/CampVerse.git
@@ -117,6 +122,7 @@ cp .env.example .env
 ```
 
 ### **Environment Variables**
+
 ```env
 # Database
 MONGO_URI=mongodb://localhost:27017/campverse
@@ -140,6 +146,7 @@ ML_API_KEY=your_ml_api_key_here
 ```
 
 ### **Running the Application**
+
 ```bash
 # Development mode
 npm run dev
@@ -152,6 +159,7 @@ npm test
 ```
 
 ### **Docker Setup**
+
 ```bash
 # Using docker-compose
 docker-compose up -d
@@ -166,15 +174,19 @@ docker run -p 5001:5001 campverse-backend
 ## 📚 API Documentation
 
 ### **Interactive API Docs**
+
 Access the interactive Swagger documentation at: **http://localhost:5001/api-docs**
 
 ### **Authentication**
+
 All protected endpoints require a JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
 ### **Base URL**
+
 ```
 http://localhost:5001/api
 ```
@@ -186,6 +198,7 @@ http://localhost:5001/api
 ### **1. User Module** (`/api/users`)
 
 **Core Features:**
+
 - User registration with OTP verification
 - Google OAuth integration (academic emails only)
 - Profile management and preferences
@@ -194,6 +207,7 @@ http://localhost:5001/api
 - User dashboard and statistics
 
 **Key Endpoints:**
+
 ```bash
 # Authentication
 POST /api/users/register          # Register new user
@@ -218,6 +232,7 @@ POST   /api/users/reset-password  # Reset password with token
 ```
 
 **File Structure:**
+
 ```
 Controller/User.js          # User controller logic
 Routes/userRoutes.js        # User route definitions
@@ -229,6 +244,7 @@ Services/otp.js            # OTP generation service
 ### **2. Event Module** (`/api/events`)
 
 **Core Features:**
+
 - Event creation and management
 - RSVP system with QR code generation
 - Attendance tracking via QR scanning
@@ -237,6 +253,7 @@ Services/otp.js            # OTP generation service
 - Google Calendar integration
 
 **Key Endpoints:**
+
 ```bash
 # Event Management
 POST   /api/events               # Create event
@@ -263,6 +280,7 @@ GET    /api/events/:id/calendar-link # Google Calendar link
 ```
 
 **File Structure:**
+
 ```
 Controller/event.js              # Event controller logic
 Routes/eventRoutes.js           # Event route definitions
@@ -274,6 +292,7 @@ Services/driveService.js        # File upload service
 ### **3. Certificate Module** (`/api/certificates`)
 
 **Core Features:**
+
 - Certificate generation for attended users
 - ML API integration for certificate creation
 - QR code verification system
@@ -282,6 +301,7 @@ Services/driveService.js        # File upload service
 - Certificate dashboard and analytics
 
 **Key Endpoints:**
+
 ```bash
 # Certificate Generation
 POST   /api/certificates/generate      # Generate individual certificate
@@ -302,6 +322,7 @@ GET    /api/certificates/stats         # Certificate statistics
 ```
 
 **File Structure:**
+
 ```
 Controller/certificate.js       # Certificate controller logic
 Routes/certificateRoutes.js    # Certificate route definitions
@@ -311,12 +332,14 @@ Models/Certificate.js          # Certificate data model
 ### **4. Host Module** (`/api/hosts`)
 
 **Core Features:**
+
 - Host dashboard with analytics
 - Event management for hosts
 - Participant management
 - Host-specific analytics
 
 **Key Endpoints:**
+
 ```bash
 # Host Dashboard
 GET    /api/hosts/dashboard           # Host analytics dashboard
@@ -332,6 +355,7 @@ GET    /api/hosts/events/:id/participants # Get participants
 ```
 
 **File Structure:**
+
 ```
 Controller/host.js              # Host controller logic
 Routes/hostRoutes.js           # Host route definitions
@@ -340,12 +364,14 @@ Routes/hostRoutes.js           # Host route definitions
 ### **5. Institution Module** (`/api/institutions`)
 
 **Core Features:**
+
 - Institution CRUD operations
 - Institution verification system
 - Analytics and dashboard
 - Student engagement tracking
 
 **Key Endpoints:**
+
 ```bash
 # Institution Management
 POST   /api/institutions              # Create institution
@@ -365,6 +391,7 @@ GET    /api/institutions/:id/dashboard # Institution dashboard
 ```
 
 **File Structure:**
+
 ```
 Controller/institution.js       # Institution controller logic
 Routes/institutionRoutes.js    # Institution route definitions
@@ -374,11 +401,13 @@ Models/Institution.js          # Institution data model
 ### **6. Recommendation Module** (`/api/recommendations`)
 
 **Core Features:**
+
 - Personalized event recommendations
 - Similar event suggestions
 - Preference-based filtering
 
 **Key Endpoints:**
+
 ```bash
 GET    /api/recommendations/events           # Get recommendations
 GET    /api/recommendations/events/:id/similar # Similar events
@@ -386,6 +415,7 @@ POST   /api/recommendations/preferences      # Update preferences
 ```
 
 **File Structure:**
+
 ```
 Controller/recommendation.js    # Recommendation controller logic
 Routes/recommendationRoutes.js # Recommendation route definitions
@@ -396,6 +426,7 @@ Routes/recommendationRoutes.js # Recommendation route definitions
 ## 🛠️ Development Guide
 
 ### **Project Structure**
+
 ```
 Backend/
 ├── app.js                    # Main application entry point
@@ -443,6 +474,7 @@ Backend/
 ### **Adding New Features**
 
 #### **1. Create Controller**
+
 ```javascript
 // Controller/newFeature.js
 const newFeature = async (req, res) => {
@@ -458,53 +490,62 @@ module.exports = { newFeature };
 ```
 
 #### **2. Create Routes**
+
 ```javascript
 // Routes/newFeatureRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { newFeature } = require('../Controller/newFeature');
-const { requireAuth } = require('../Middleware/Auth');
+const { newFeature } = require("../Controller/newFeature");
+const { requireAuth } = require("../Middleware/Auth");
 
-router.post('/new-feature', requireAuth, newFeature);
+router.post("/new-feature", requireAuth, newFeature);
 
 module.exports = router;
 ```
 
 #### **3. Add to Main App**
+
 ```javascript
 // app.js
-const newFeatureRoutes = require('./Routes/newFeatureRoutes');
-app.use('/api/new-feature', newFeatureRoutes);
+const newFeatureRoutes = require("./Routes/newFeatureRoutes");
+app.use("/api/new-feature", newFeatureRoutes);
 ```
 
 ### **Database Models**
 
 #### **Creating a New Model**
+
 ```javascript
 // Models/NewModel.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const newModelSchema = new mongoose.Schema({
   field1: { type: String, required: true },
   field2: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('NewModel', newModelSchema);
+module.exports = mongoose.model("NewModel", newModelSchema);
 ```
 
 ### **Middleware Usage**
 
 #### **Authentication Middleware**
+
 ```javascript
-const { requireAuth } = require('../Middleware/Auth');
-const { requireRole } = require('../Middleware/permissions');
+const { requireAuth } = require("../Middleware/Auth");
+const { requireRole } = require("../Middleware/permissions");
 
 // Require authentication
-router.get('/protected', requireAuth, controllerFunction);
+router.get("/protected", requireAuth, controllerFunction);
 
 // Require specific role
-router.post('/admin-only', requireAuth, requireRole('admin'), controllerFunction);
+router.post(
+  "/admin-only",
+  requireAuth,
+  requireRole("admin"),
+  controllerFunction,
+);
 ```
 
 ---
@@ -512,9 +553,11 @@ router.post('/admin-only', requireAuth, requireRole('admin'), controllerFunction
 ## 🧪 Testing & Validation
 
 ### **API Testing**
+
 All endpoints have been tested and validated:
 
 #### **✅ Tested Features**
+
 - User registration and authentication
 - Event creation and management
 - QR code generation and scanning
@@ -525,12 +568,14 @@ All endpoints have been tested and validated:
 - Analytics and dashboards
 
 #### **Performance Metrics**
+
 - **API Response Time**: < 200ms average
 - **Certificate Generation**: < 500ms
 - **QR Code Generation**: < 100ms
 - **Email Delivery**: 95% success rate
 
 ### **Testing Endpoints**
+
 ```bash
 # Test user registration
 curl -X POST http://localhost:5001/api/users/register \
@@ -549,6 +594,7 @@ curl -X POST http://localhost:5001/api/events \
 ## 🚀 Deployment
 
 ### **Production Environment Variables**
+
 ```env
 NODE_ENV=production
 MONGO_URI=mongodb://production-mongo-uri
@@ -559,6 +605,7 @@ EMAIL_PASSWORD=production-email-password
 ```
 
 ### **Docker Deployment**
+
 ```bash
 # Build production image
 docker build -t campverse-backend:latest .
@@ -572,6 +619,7 @@ docker run -d \
 ```
 
 ### **Environment-Specific Configurations**
+
 - **Development**: Local MongoDB and Redis
 - **Staging**: Cloud MongoDB and Redis
 - **Production**: Managed database services
@@ -583,6 +631,7 @@ docker run -d \
 ### **Common Issues**
 
 #### **1. MongoDB Connection Issues**
+
 ```bash
 # Check MongoDB status
 sudo systemctl status mongod
@@ -592,6 +641,7 @@ sudo systemctl restart mongod
 ```
 
 #### **2. Redis Connection Issues**
+
 ```bash
 # Check Redis status
 redis-cli ping
@@ -601,16 +651,19 @@ sudo systemctl restart redis
 ```
 
 #### **3. Email Configuration Issues**
+
 - Verify Gmail app password is correct
 - Check 2FA is enabled on Gmail account
 - Ensure EMAIL_USER and EMAIL_PASSWORD are set
 
 #### **4. JWT Token Issues**
+
 - Verify JWT_SECRET is set
 - Check token expiration
 - Ensure proper Authorization header format
 
 ### **Logs and Debugging**
+
 ```bash
 # View application logs
 docker compose logs backend
@@ -623,6 +676,7 @@ docker compose logs backend | grep ERROR
 ```
 
 ### **Performance Issues**
+
 - Check MongoDB query performance
 - Monitor Redis memory usage
 - Review rate limiting configuration
@@ -633,6 +687,7 @@ docker compose logs backend | grep ERROR
 ## 📚 Additional Resources
 
 ### **Documentation Files**
+
 - `readme.md` - Detailed API documentation
 - `TODO_BACKEND.md` - Development roadmap
 - `CERTIFICATE_SYSTEM_COMPLETE.md` - Certificate system details
@@ -640,13 +695,16 @@ docker compose logs backend | grep ERROR
 - `CERTIFICATE_TESTING_RESULTS.md` - Certificate testing results
 
 ### **External Links**
+
 - [Swagger API Documentation](http://localhost:5001/api-docs)
 - [MongoDB Documentation](https://docs.mongodb.com/)
 - [Redis Documentation](https://redis.io/documentation)
 - [Express.js Documentation](https://expressjs.com/)
 
 ### **Support**
+
 For technical support or questions:
+
 - Check the interactive API docs at `/api-docs`
 - Review error logs in Docker
 - Ensure all environment variables are properly configured
@@ -657,12 +715,14 @@ For technical support or questions:
 ## 🎯 Development Status
 
 ### **✅ Completed Phases**
+
 - **Phase 1: User Module** - ✅ COMPLETED
-- **Phase 2: Institution Module** - ✅ COMPLETED  
+- **Phase 2: Institution Module** - ✅ COMPLETED
 - **Phase 3: Event Module** - ✅ COMPLETED
 - **Phase 4: Certificate System** - ✅ COMPLETED
 
 ### **🔄 Current Status**
+
 - **Enhanced Analytics**: ✅ Working
 - **Email Configuration**: ✅ Fixed and Working
 - **QR Code System**: ✅ Working
@@ -672,6 +732,7 @@ For technical support or questions:
 - **API Documentation**: ✅ Complete
 
 ### **🚧 Planned Features**
+
 - **Payment System**: ❌ Not implemented yet (planned for future phase)
 - **Advanced Notification System**: 🚧 Basic email notifications only; in-app notifications planned
 
@@ -681,5 +742,5 @@ For technical support or questions:
 
 ---
 
-*Last updated: JUlY 2025*
-*Version: 1.0.0*
+_Last updated: July 2025_
+_Version: 1.0.0_

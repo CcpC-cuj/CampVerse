@@ -7,31 +7,55 @@ const SearchAnalytics = require('../Models/SearchAnalytics');
 // Advanced event search (filter, sort, paginate)
 const advancedEventSearch = async (req, res) => {
   try {
-    const { q, tags, type, startDate, endDate, sort = 'date', order = 'desc', page = 1, limit = 10 } = req.query;
-    
+    const {
+      q,
+      tags,
+      type,
+      startDate,
+      endDate,
+      sort = 'date',
+      order = 'desc',
+      page = 1,
+      limit = 10,
+    } = req.query;
+
     // Input validation
     const validSortFields = ['date', 'title', 'type']; // Add other valid fields as needed
     const validOrderValues = ['asc', 'desc'];
     const filter = {};
-    
+
     if (q && typeof q === 'string') filter.title = { $regex: q, $options: 'i' };
     if (tags) {
       const tagsArray = Array.isArray(tags) ? tags : tags.split(',');
-      filter.tags = { $in: tagsArray.map(tag => tag.trim()).filter(tag => tag) };
+      filter.tags = {
+        $in: tagsArray.map((tag) => tag.trim()).filter((tag) => tag),
+      };
     }
     if (type && typeof type === 'string') filter.type = type;
     if (startDate || endDate) {
       filter['schedule.start'] = {};
-      if (startDate && !isNaN(Date.parse(startDate))) filter['schedule.start'].$gte = new Date(startDate);
-      if (endDate && !isNaN(Date.parse(endDate))) filter['schedule.start'].$lte = new Date(endDate);
+      if (startDate && !isNaN(Date.parse(startDate)))
+        filter['schedule.start'].$gte = new Date(startDate);
+      if (endDate && !isNaN(Date.parse(endDate)))
+        filter['schedule.start'].$lte = new Date(endDate);
     }
-    
-    const sortField = validSortFields.includes(sort) ? (sort === 'date' ? 'schedule.start' : sort) : 'schedule.start';
-    const sortOrder = validOrderValues.includes(order) ? (order === 'asc' ? 1 : -1) : -1;
+
+    const sortField = validSortFields.includes(sort)
+      ? sort === 'date'
+        ? 'schedule.start'
+        : sort
+      : 'schedule.start';
+    const sortOrder = validOrderValues.includes(order)
+      ? order === 'asc'
+        ? 1
+        : -1
+      : -1;
     const parsedPage = parseInt(page);
     const parsedLimit = parseInt(limit);
-    const validatedPage = Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
-    const validatedLimit = Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
+    const validatedPage =
+      Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
+    const validatedLimit =
+      Number.isInteger(Number(limit)) && Number(limit) > 0 ? Number(limit) : 10;
     const skip = (validatedPage - 1) * validatedLimit;
     const total = await Event.countDocuments(filter);
     const events = await Event.find(filter)
@@ -42,7 +66,7 @@ const advancedEventSearch = async (req, res) => {
       total,
       page: validatedPage,
       limit: validatedLimit,
-      events
+      events,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error searching events.' });
@@ -57,9 +81,18 @@ const getUserAnalytics = async (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found.' });
     const hosted = await Event.countDocuments({ hostUserId: userId });
     const cohosted = await Event.countDocuments({ coHosts: userId });
-    const attended = await EventParticipationLog.countDocuments({ userId, status: 'attended' });
-    const registered = await EventParticipationLog.countDocuments({ userId, status: 'registered' });
-    const waitlisted = await EventParticipationLog.countDocuments({ userId, status: 'waitlisted' });
+    const attended = await EventParticipationLog.countDocuments({
+      userId,
+      status: 'attended',
+    });
+    const registered = await EventParticipationLog.countDocuments({
+      userId,
+      status: 'registered',
+    });
+    const waitlisted = await EventParticipationLog.countDocuments({
+      userId,
+      status: 'waitlisted',
+    });
     const certificates = await Certificate.countDocuments({ userId });
     res.json({
       user: { id: user._id, name: user.name, email: user.email },
@@ -68,7 +101,7 @@ const getUserAnalytics = async (req, res) => {
       attended,
       registered,
       waitlisted,
-      certificates
+      certificates,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching user analytics.' });
@@ -82,9 +115,15 @@ const getPlatformInsights = async (req, res) => {
     const totalEvents = await Event.countDocuments();
     const totalCertificates = await Certificate.countDocuments();
     const totalParticipations = await EventParticipationLog.countDocuments();
-    const totalAttended = await EventParticipationLog.countDocuments({ status: 'attended' });
-    const totalRegistered = await EventParticipationLog.countDocuments({ status: 'registered' });
-    const totalWaitlisted = await EventParticipationLog.countDocuments({ status: 'waitlisted' });
+    const totalAttended = await EventParticipationLog.countDocuments({
+      status: 'attended',
+    });
+    const totalRegistered = await EventParticipationLog.countDocuments({
+      status: 'registered',
+    });
+    const totalWaitlisted = await EventParticipationLog.countDocuments({
+      status: 'waitlisted',
+    });
     res.json({
       totalUsers,
       totalEvents,
@@ -92,7 +131,7 @@ const getPlatformInsights = async (req, res) => {
       totalParticipations,
       totalAttended,
       totalRegistered,
-      totalWaitlisted
+      totalWaitlisted,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching platform insights.' });
@@ -114,7 +153,7 @@ const getSearchAnalytics = async (req, res) => {
       total,
       page: parseInt(page),
       limit: parseInt(limit),
-      analytics
+      analytics,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching search analytics.' });
@@ -130,7 +169,7 @@ const getAdvancedEventAnalytics = async (req, res) => {
 
     const demographics = await EventParticipationLog.aggregate([
       { $match: { eventId } },
-      { $group: { _id: '$userId', count: { $sum: 1 } } }
+      { $group: { _id: '$userId', count: { $sum: 1 } } },
     ]);
 
     const engagement = await EventParticipationLog.countDocuments({ eventId });
@@ -140,7 +179,7 @@ const getAdvancedEventAnalytics = async (req, res) => {
       { $match: { eventId } },
       { $group: { _id: '$userId', participationCount: { $sum: 1 } } },
       { $sort: { participationCount: -1 } },
-      { $limit: 5 }
+      { $limit: 5 },
     ]);
 
     res.json({
@@ -148,7 +187,7 @@ const getAdvancedEventAnalytics = async (req, res) => {
       demographics,
       engagement,
       certificatesIssued,
-      topParticipants
+      topParticipants,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching advanced event analytics.' });
@@ -159,15 +198,18 @@ const getAdvancedEventAnalytics = async (req, res) => {
 const getUserActivityTimeline = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const logs = await EventParticipationLog.find({ userId }).sort({ timestamp: 1 });
-    if (!logs.length) return res.status(404).json({ error: 'No activity found for the user.' });
-    
-    const timeline = logs.map(log => ({
+    const logs = await EventParticipationLog.find({ userId }).sort({
+      timestamp: 1,
+    });
+    if (!logs.length)
+      return res.status(404).json({ error: 'No activity found for the user.' });
+
+    const timeline = logs.map((log) => ({
       eventId: log.eventId,
       status: log.status,
-      timestamp: log.timestamp
+      timestamp: log.timestamp,
     }));
-    
+
     res.json({ userId, timeline });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching user activity timeline.' });
@@ -178,24 +220,48 @@ const getUserActivityTimeline = async (req, res) => {
 const getGrowthTrends = async (req, res) => {
   try {
     const userGrowth = await User.aggregate([
-      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
     const eventGrowth = await Event.aggregate([
-      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
     const certificateGrowth = await Certificate.aggregate([
-      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, count: { $sum: 1 } } },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
 
     res.json({
       userGrowth,
       eventGrowth,
-      certificateGrowth
+      certificateGrowth,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching growth trends.' });
@@ -226,7 +292,7 @@ const getZeroResultSearches = async (req, res) => {
       total,
       page: parseInt(page),
       limit: parseInt(limit),
-      zeroResultSearches
+      zeroResultSearches,
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching zero-result searches.' });
@@ -241,5 +307,5 @@ module.exports = {
   getAdvancedEventAnalytics,
   getUserActivityTimeline,
   getGrowthTrends,
-  getZeroResultSearches
-}; 
+  getZeroResultSearches,
+};

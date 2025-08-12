@@ -5,7 +5,7 @@ const {
   updateEvent,
   deleteEvent,
   getMyEvents,
-  getEventParticipants
+  getEventParticipants,
 } = require('../Controller/host');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
@@ -42,7 +42,12 @@ const router = express.Router();
  *       403:
  *         description: Forbidden - User is not a host
  */
-router.get('/dashboard', authenticateToken, requireRole('host'), getHostDashboard);
+router.get(
+  '/dashboard',
+  authenticateToken,
+  requireRole('host'),
+  getHostDashboard,
+);
 
 /**
  * @swagger
@@ -193,8 +198,18 @@ router.post('/events', authenticateToken, requireRole('host'), createEvent);
  *       403:
  *         description: Forbidden - User is not a host
  */
-router.patch('/events/:id', authenticateToken, requireRole('host'), updateEvent);
-router.delete('/events/:id', authenticateToken, requireRole('host'), deleteEvent);
+router.patch(
+  '/events/:id',
+  authenticateToken,
+  requireRole('host'),
+  updateEvent,
+);
+router.delete(
+  '/events/:id',
+  authenticateToken,
+  requireRole('host'),
+  deleteEvent,
+);
 
 /**
  * @swagger
@@ -230,6 +245,11 @@ router.delete('/events/:id', authenticateToken, requireRole('host'), deleteEvent
  *       403:
  *         description: Forbidden - User is not a host
  */
-router.get('/events/:id/participants', authenticateToken, requireRole('host'), getEventParticipants);
+router.get(
+  '/events/:id/participants',
+  authenticateToken,
+  requireRole('host'),
+  getEventParticipants,
+);
 
-module.exports = router; 
+module.exports = router;

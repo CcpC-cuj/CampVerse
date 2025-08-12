@@ -6,7 +6,9 @@ const Institution = require('../Models/Institution');
 require('dotenv').config();
 
 async function seed() {
-  await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/campverse');
+  await mongoose.connect(
+    process.env.MONGO_URI || 'mongodb://localhost:27017/campverse',
+  );
   // Clear collections
   await User.deleteMany({});
   await Event.deleteMany({});
@@ -19,7 +21,7 @@ async function seed() {
     emailDomain: 'test.edu.in',
     isVerified: true,
     isTemporary: false,
-    location: { city: 'Test City', state: 'Test State', country: 'Testland' }
+    location: { city: 'Test City', state: 'Test State', country: 'Testland' },
   });
 
   // Create users
@@ -30,7 +32,7 @@ async function seed() {
     passwordHash: 'test',
     roles: ['platformAdmin'],
     institutionId: institution._id,
-    isVerified: true
+    isVerified: true,
   });
   const host = await User.create({
     name: 'Host',
@@ -39,7 +41,7 @@ async function seed() {
     passwordHash: 'test',
     roles: ['host'],
     institutionId: institution._id,
-    isVerified: true
+    isVerified: true,
   });
   const student = await User.create({
     name: 'Student',
@@ -48,7 +50,7 @@ async function seed() {
     passwordHash: 'test',
     roles: ['student'],
     institutionId: institution._id,
-    isVerified: true
+    isVerified: true,
   });
 
   // Create event
@@ -58,15 +60,18 @@ async function seed() {
     tags: ['workshop'],
     type: 'workshop',
     organizer: 'Test Club',
-    schedule: { start: new Date(), end: new Date(Date.now() + 2 * 60 * 60 * 1000) },
+    schedule: {
+      start: new Date(),
+      end: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    },
     hostUserId: host._id,
     institutionId: institution._id,
     capacity: 2,
-    verificationStatus: 'approved'
+    verificationStatus: 'approved',
   });
 
   console.log('Seed data created.');
   process.exit(0);
 }
 
-seed(); 
+seed();

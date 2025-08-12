@@ -11,7 +11,7 @@ const {
   getInstitutionAnalytics,
   getInstitutionDashboard,
   searchInstitutions,
-  requestNewInstitution
+  requestNewInstitution,
 } = require('../Controller/institution');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
@@ -41,7 +41,12 @@ const router = express.Router();
  *       201: { description: Institution created }
  *       403: { description: Forbidden }
  */
-router.post('/', authenticateToken, requireRole('platformAdmin'), createInstitution);
+router.post(
+  '/',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  createInstitution,
+);
 
 // New: search institutions by name/domain
 /**
@@ -71,39 +76,39 @@ router.get('/search', authenticateToken, searchInstitutions);
  *     summary: Request a new institution (user)
  *     description: |
  *       **Frontend Implementation Guide:**
- *       
+ *
  *       This endpoint allows users to request the creation of a new institution.
  *       The institution will be created as unverified and only platform administrators
  *       can approve it and add location/contact details.
- *       
+ *
  *       **Frontend Form Fields:**
  *       - `name` (required): Institution name (e.g., "MIT University")
  *       - `type` (required): Institution type - must be one of: "college", "university", "org", "temporary"
- *       
+ *
  *       **Optional Fields (if your form has them):**
  *       - `website`: Institution website URL
- *       - `phone`: Institution phone number  
+ *       - `phone`: Institution phone number
  *       - `info`: Additional information about the institution
- *       
+ *
  *       **Note:** Location fields (city, state, country) are NOT collected from users.
  *       They will be added by administrators during the approval process.
- *       
+ *
  *       **User Experience Flow:**
  *       1. User fills out institution request form
  *       2. Form submits to this endpoint
- *       3. Institution is created as "unverified" 
+ *       3. Institution is created as "unverified"
  *       4. User's status becomes "pending"
  *       5. Platform admins are notified
  *       6. Admin reviews and approves with location details
  *       7. User status automatically becomes "verified"
- *       
+ *
  *       **Frontend Form Example:**
  *       ```html
  *       <form onSubmit={handleSubmit}>
- *         <input 
- *           name="name" 
- *           placeholder="Institution Name" 
- *           required 
+ *         <input
+ *           name="name"
+ *           placeholder="Institution Name"
+ *           required
  *         />
  *         <select name="type" required>
  *           <option value="">Select Type</option>
@@ -112,22 +117,22 @@ router.get('/search', authenticateToken, searchInstitutions);
  *           <option value="org">Organization</option>
  *           <option value="temporary">Temporary</option>
  *         </select>
- *         <input 
- *           name="website" 
- *           placeholder="Website (optional)" 
+ *         <input
+ *           name="website"
+ *           placeholder="Website (optional)"
  *         />
- *         <input 
- *           name="phone" 
- *           placeholder="Phone (optional)" 
+ *         <input
+ *           name="phone"
+ *           placeholder="Phone (optional)"
  *         />
- *         <textarea 
- *           name="info" 
+ *         <textarea
+ *           name="info"
  *           placeholder="Additional Info (optional)"
  *         />
  *         <button type="submit">Submit Request</button>
  *       </form>
  *       ```
- *       
+ *
  *       **React Hook Example:**
  *       ```javascript
  *       const [formData, setFormData] = useState({
@@ -137,7 +142,7 @@ router.get('/search', authenticateToken, searchInstitutions);
  *         phone: '',
  *         info: ''
  *       });
- *       
+ *
  *       const handleSubmit = async (e) => {
  *         e.preventDefault();
  *         try {
@@ -149,7 +154,7 @@ router.get('/search', authenticateToken, searchInstitutions);
  *             },
  *             body: JSON.stringify(formData)
  *           });
- *           
+ *
  *           if (response.ok) {
  *             const result = await response.json();
  *             // Show success message
@@ -163,18 +168,18 @@ router.get('/search', authenticateToken, searchInstitutions);
  *         }
  *       };
  *       ```
- *       
+ *
  *       **Status Tracking:**
  *       After submission, check user's `institutionVerificationStatus`:
  *       - `"pending"`: Request submitted, waiting for admin review
  *       - `"verified"`: Institution approved by admin
  *       - `"rejected"`: Institution rejected by admin
- *       
+ *
  *       **Error Handling:**
  *       - 400: Missing required fields or invalid type
  *       - 409: Institution with same email domain already exists
  *       - 500: Server error
- *       
+ *
  *     tags: [Institution]
  *     security:
  *       - bearerAuth: []
@@ -267,7 +272,12 @@ router.post('/request-new', authenticateToken, requestNewInstitution);
  *       200: { description: List of institutions }
  *       403: { description: Forbidden }
  */
-router.get('/', authenticateToken, requireRole('platformAdmin'), getInstitutions);
+router.get(
+  '/',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getInstitutions,
+);
 
 /**
  * @swagger
@@ -313,7 +323,12 @@ router.get('/:id', authenticateToken, getInstitutionById);
  *       200: { description: Institution updated }
  *       403: { description: Forbidden }
  */
-router.patch('/:id', authenticateToken, requireRole('platformAdmin'), updateInstitution);
+router.patch(
+  '/:id',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  updateInstitution,
+);
 
 /**
  * @swagger
@@ -333,7 +348,12 @@ router.patch('/:id', authenticateToken, requireRole('platformAdmin'), updateInst
  *       200: { description: Institution deleted }
  *       403: { description: Forbidden }
  */
-router.delete('/:id', authenticateToken, requireRole('platformAdmin'), deleteInstitution);
+router.delete(
+  '/:id',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  deleteInstitution,
+);
 
 /**
  * @swagger
@@ -353,7 +373,11 @@ router.delete('/:id', authenticateToken, requireRole('platformAdmin'), deleteIns
  *       200: { description: Verification request submitted }
  *       403: { description: Forbidden }
  */
-router.post('/:id/request-verification', authenticateToken, requestInstitutionVerification);
+router.post(
+  '/:id/request-verification',
+  authenticateToken,
+  requestInstitutionVerification,
+);
 
 /**
  * @swagger
@@ -362,48 +386,48 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *     summary: Approve institution verification (admin only)
  *     description: |
  *       **Admin Panel Implementation Guide:**
- *       
+ *
  *       This endpoint allows platform administrators to approve institution verification
  *       requests and optionally add location, website, phone, and additional information.
- *       
+ *
  *       **Admin Workflow:**
  *       1. Admin receives notification about new institution request
  *       2. Admin reviews the request details
  *       3. Admin can approve with or without additional details
  *       4. If approved, all users with this institution get verified status
- *       
+ *
  *       **Admin Form Fields (all optional):**
  *       - `location.city`: City name (e.g., "Cambridge")
- *       - `location.state`: State/Province (e.g., "Massachusetts") 
+ *       - `location.state`: State/Province (e.g., "Massachusetts")
  *       - `location.country`: Country name (e.g., "USA")
  *       - `website`: Institution website URL
  *       - `phone`: Institution phone number
  *       - `info`: Additional information about the institution
- *       
+ *
  *       **Admin Panel Form Example:**
  *       ```html
  *       <form onSubmit={handleApproval}>
  *         <h3>Approve Institution: {institution.name}</h3>
- *         
+ *
  *         <div>
  *           <label>Location (optional):</label>
  *           <input name="city" placeholder="City" />
  *           <input name="state" placeholder="State/Province" />
  *           <input name="country" placeholder="Country" />
  *         </div>
- *         
+ *
  *         <div>
  *           <label>Contact Details (optional):</label>
  *           <input name="website" placeholder="Website URL" />
  *           <input name="phone" placeholder="Phone Number" />
  *           <textarea name="info" placeholder="Additional Information"></textarea>
  *         </div>
- *         
+ *
  *         <button type="submit">Approve Institution</button>
  *         <button type="button" onClick={handleReject}>Reject</button>
  *       </form>
  *       ```
- *       
+ *
  *       **React Hook Example:**
  *       ```javascript
  *       const [approvalData, setApprovalData] = useState({
@@ -412,7 +436,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         phone: '',
  *         info: ''
  *       });
- *       
+ *
  *       const handleApproval = async (e) => {
  *         e.preventDefault();
  *         try {
@@ -424,7 +448,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *             },
  *             body: JSON.stringify(approvalData)
  *           });
- *           
+ *
  *           if (response.ok) {
  *             const result = await response.json();
  *             alert('Institution approved successfully!');
@@ -437,7 +461,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *           console.error('Error:', error);
  *         }
  *       };
- *       
+ *
  *       const handleReject = async () => {
  *         try {
  *           const response = await fetch(`/api/institutions/${institutionId}/reject-verification`, {
@@ -446,7 +470,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *               'Authorization': `Bearer ${adminToken}`
  *             }
  *           });
- *           
+ *
  *           if (response.ok) {
  *             alert('Institution rejected');
  *             // Refresh institution list
@@ -456,9 +480,9 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         }
  *       };
  *       ```
- *       
+ *
  *       **Quick Approval vs. Detailed Approval:**
- *       
+ *
  *       **Quick Approval (just verify):**
  *       ```javascript
  *       // Send empty object - just approve without additional details
@@ -468,7 +492,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         body: JSON.stringify({})
  *       });
  *       ```
- *       
+ *
  *       **Detailed Approval (add location/contact):**
  *       ```javascript
  *       await fetch(`/api/institutions/${id}/approve-verification`, {
@@ -486,7 +510,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         })
  *       });
  *       ```
- *       
+ *
  *       **Admin Dashboard Integration:**
  *       ```javascript
  *       // Get pending institution requests
@@ -495,25 +519,25 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         const institutions = await response.json();
  *         setPendingInstitutions(institutions);
  *       };
- *       
+ *
  *       // Show approval form for each pending institution
  *       {pendingInstitutions.map(institution => (
  *         <div key={institution._id}>
  *           <h4>{institution.name} ({institution.type})</h4>
  *           <p>Domain: {institution.emailDomain}</p>
  *           <p>Requested: {new Date(institution.createdAt).toLocaleDateString()}</p>
- *           <InstitutionApprovalForm 
+ *           <InstitutionApprovalForm
  *             institutionId={institution._id}
  *             onApproved={getPendingInstitutions}
  *           />
  *         </div>
  *       ))}
  *       ```
- *       
+ *
  *       **Notification Integration:**
  *       When an institution is approved, all users with that institution automatically
  *       get their `institutionVerificationStatus` updated to "verified".
- *       
+ *
  *       Frontend should listen for user status changes and show appropriate UI:
  *       ```javascript
  *       useEffect(() => {
@@ -523,7 +547,7 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *         }
  *       }, [user.institutionVerificationStatus]);
  *       ```
- *       
+ *
  *     tags: [Institution]
  *     security:
  *       - bearerAuth: []
@@ -593,7 +617,12 @@ router.post('/:id/request-verification', authenticateToken, requestInstitutionVe
  *       500:
  *         description: Internal server error
  */
-router.post('/:id/approve-verification', authenticateToken, requireRole('platformAdmin'), approveInstitutionVerification);
+router.post(
+  '/:id/approve-verification',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  approveInstitutionVerification,
+);
 
 /**
  * @swagger
@@ -613,7 +642,12 @@ router.post('/:id/approve-verification', authenticateToken, requireRole('platfor
  *       200: { description: Institution verification rejected }
  *       403: { description: Forbidden }
  */
-router.post('/:id/reject-verification', authenticateToken, requireRole('platformAdmin'), rejectInstitutionVerification);
+router.post(
+  '/:id/reject-verification',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  rejectInstitutionVerification,
+);
 
 /**
  * @swagger
@@ -655,4 +689,4 @@ router.get('/:id/analytics', authenticateToken, getInstitutionAnalytics);
  */
 router.get('/:id/dashboard', authenticateToken, getInstitutionDashboard);
 
-module.exports = router; 
+module.exports = router;

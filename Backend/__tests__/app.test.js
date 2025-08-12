@@ -12,8 +12,8 @@ jest.mock('redis', () => ({
     on: jest.fn(),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(true),
-    del: jest.fn().mockResolvedValue(true)
-  }))
+    del: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 beforeAll(async () => {
@@ -21,7 +21,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
   process.env.MONGO_URI = mongoUri;
-  
+
   // Import app after setting up environment
   app = require('../app');
 });
@@ -59,7 +59,7 @@ describe('Application Setup', () => {
 describe('Health Check Endpoint', () => {
   test('GET /health should return 200 and health status', async () => {
     const response = await request(app).get('/health');
-    
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('status', 'OK');
     expect(response.body).toHaveProperty('timestamp');
@@ -71,14 +71,14 @@ describe('Health Check Endpoint', () => {
   test('Health check should include valid timestamp', async () => {
     const response = await request(app).get('/health');
     const timestamp = new Date(response.body.timestamp);
-    
+
     expect(timestamp.getTime()).toBeGreaterThan(0);
     expect(timestamp).toBeInstanceOf(Date);
   });
 
   test('Health check should include uptime', async () => {
     const response = await request(app).get('/health');
-    
+
     expect(response.body.uptime).toBeGreaterThan(0);
     expect(typeof response.body.uptime).toBe('number');
   });
@@ -106,7 +106,7 @@ describe('CORS Configuration', () => {
     const response = await request(app)
       .get('/health')
       .set('Origin', 'http://localhost:3000');
-    
+
     expect(response.headers).toHaveProperty('access-control-allow-origin');
   });
 });
@@ -122,7 +122,7 @@ describe('Error Handling', () => {
       .post('/api/users/register')
       .set('Content-Type', 'application/json')
       .send('{"invalid": json}');
-    
+
     expect(response.status).toBe(400);
   });
 });
@@ -139,4 +139,4 @@ describe('Database Connection', () => {
   test('MongoDB should be connected', () => {
     expect(mongoose.connection.readyState).toBe(1); // 1 = connected
   });
-}); 
+});

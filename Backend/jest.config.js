@@ -7,7 +7,7 @@ module.exports = {
     '!**/coverage/**',
     '!jest.config.js',
     '!**/__tests__/**',
-    '!**/*.test.js'
+    '!**/*.test.js',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -17,5 +17,5 @@ module.exports = {
   forceExit: true,
   clearMocks: true,
   resetMocks: true,
-  restoreMocks: true
-}; 
+  restoreMocks: true,
+};

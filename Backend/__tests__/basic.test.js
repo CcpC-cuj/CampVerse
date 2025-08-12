@@ -12,29 +12,29 @@ jest.mock('redis', () => ({
     on: jest.fn(),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(true),
-    del: jest.fn().mockResolvedValue(true)
-  }))
+    del: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 jest.mock('../Services/otp.js', () => ({
   otpgenrater: jest.fn().mockReturnValue('123456'),
   createOtpService: jest.fn(() => ({
     generate: jest.fn().mockReturnValue('123456'),
-    verify: jest.fn().mockResolvedValue(true)
-  }))
+    verify: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 jest.mock('../Services/email.js', () => ({
   createEmailService: jest.fn(() => ({
     sendMail: jest.fn().mockResolvedValue(true),
     sendOTP: jest.fn().mockResolvedValue(true),
-    sendWelcomeEmail: jest.fn().mockResolvedValue(true)
-  }))
+    sendWelcomeEmail: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 jest.mock('../Services/notification.js', () => ({
   notifyHostRequest: jest.fn().mockResolvedValue(true),
-  notifyHostStatusUpdate: jest.fn().mockResolvedValue(true)
+  notifyHostStatusUpdate: jest.fn().mockResolvedValue(true),
 }));
 
 beforeAll(async () => {
@@ -42,7 +42,7 @@ beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
   process.env.MONGO_URI = mongoUri;
-  
+
   // Import app after setting up environment
   app = require('../app');
 });
@@ -79,7 +79,7 @@ describe('Basic Application Tests', () => {
 
   test('Health check endpoint should work', async () => {
     const response = await request(app).get('/health');
-    
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('status', 'OK');
     expect(response.body).toHaveProperty('timestamp');
@@ -91,7 +91,7 @@ describe('Basic Application Tests', () => {
     const response = await request(app)
       .get('/health')
       .set('Origin', 'http://localhost:3000');
-    
+
     expect(response.headers).toHaveProperty('access-control-allow-origin');
   });
 
@@ -105,7 +105,7 @@ describe('Basic Application Tests', () => {
       .post('/api/users/register')
       .set('Content-Type', 'application/json')
       .send('{"invalid": json}');
-    
+
     expect(response.status).toBe(400);
   });
 
@@ -138,4 +138,4 @@ describe('API Route Structure', () => {
     // Should return 401 (unauthorized) rather than 404 (not found)
     expect(response.status).toBe(401);
   });
-}); 
+});

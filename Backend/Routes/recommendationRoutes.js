@@ -2,7 +2,7 @@ const express = require('express');
 const {
   getEventRecommendations,
   getSimilarEvents,
-  updateUserPreferences
+  updateUserPreferences,
 } = require('../Controller/recommendation');
 const { authenticateToken } = require('../Middleware/Auth');
 
@@ -147,4 +147,4 @@ router.get('/events/:eventId/similar', authenticateToken, getSimilarEvents);
  */
 router.post('/preferences', authenticateToken, updateUserPreferences);
 
-module.exports = router; 
+module.exports = router;

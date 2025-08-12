@@ -14,35 +14,45 @@ const eventSchema = new mongoose.Schema({
   bannerURL: { type: String }, // URL to event banner image
   schedule: {
     start: Date,
-    end: Date
+    end: Date,
   },
   hostUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   institutionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Institution' },
-  verificationStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
   isPaid: { type: Boolean, default: false },
   price: { type: Number },
   paymentDetails: {
     upi: String,
-    gatewayToken: String
+    gatewayToken: String,
   },
   features: {
     certificateEnabled: { type: Boolean, default: false },
-    chatEnabled: { type: Boolean, default: false }
+    chatEnabled: { type: Boolean, default: false },
   },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   coHosts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Co-hosts for the event
-  coHostRequests: [{
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-    requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    requestedAt: { type: Date },
-    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    approvedAt: { type: Date },
-    remarks: { type: String }
-  }],
+  coHostRequests: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      status: {
+        type: String,
+        enum: ['pending', 'approved', 'rejected'],
+        default: 'pending',
+      },
+      requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      requestedAt: { type: Date },
+      approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      approvedAt: { type: Date },
+      remarks: { type: String },
+    },
+  ],
   waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Explicit waitlist tracking
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
 });
 
 eventSchema.index({ institutionId: 1 });

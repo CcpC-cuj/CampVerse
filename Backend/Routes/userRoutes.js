@@ -36,19 +36,19 @@ const {
   getMyNotificationPreferences,
   updateMyNotificationPreferences,
   deleteMe,
-  unlinkGoogleAccount
+  unlinkGoogleAccount,
 } = require('../Controller/User');
 
 const {
   getUserNotifications,
   markNotificationAsRead,
-  markAllNotificationsAsRead
+  markAllNotificationsAsRead,
 } = require('../Services/notification');
 
 const {
   authenticateToken,
   requireRole,
-  requireSelfOrRole
+  requireSelfOrRole,
 } = require('../Middleware/Auth');
 const upload = require('../Middleware/upload');
 
@@ -698,7 +698,12 @@ router.get('/me', authenticateToken, getMe);
 router.post('/updatePreferences', authenticateToken, updatePreferences);
 
 // Upload profile photo (onboarding)
-router.post('/me/profile-photo', authenticateToken, upload.single('photo'), uploadProfilePhoto);
+router.post(
+  '/me/profile-photo',
+  authenticateToken,
+  upload.single('photo'),
+  uploadProfilePhoto,
+);
 
 // Set institution for current user (onboarding)
 router.post('/me/set-institution', authenticateToken, setInstitutionForMe);
@@ -743,8 +748,16 @@ router.post('/me/set-institution', authenticateToken, setInstitutionForMe);
  *                   event_verification: { type: boolean }
  *                   host_request: { type: boolean }
  */
-router.get('/me/notification-preferences', authenticateToken, getMyNotificationPreferences);
-router.patch('/me/notification-preferences', authenticateToken, updateMyNotificationPreferences);
+router.get(
+  '/me/notification-preferences',
+  authenticateToken,
+  getMyNotificationPreferences,
+);
+router.patch(
+  '/me/notification-preferences',
+  authenticateToken,
+  updateMyNotificationPreferences,
+);
 
 /**
  * @swagger
@@ -885,7 +898,12 @@ router.get('/badges', authenticateToken, getUserBadges);
  *       500:
  *         description: Server error
  */
-router.get('/:id/badges', authenticateToken, requireSelfOrRole(['platformAdmin', 'host']), getUserBadges);
+router.get(
+  '/:id/badges',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin', 'host']),
+  getUserBadges,
+);
 
 /**
  * @swagger
@@ -949,7 +967,12 @@ router.post('/me/request-host', authenticateToken, requestHostAccess);
  *       500:
  *         description: Server error
  */
-router.get('/host-requests/pending', authenticateToken, requireRole('verifier'), listPendingHostRequests);
+router.get(
+  '/host-requests/pending',
+  authenticateToken,
+  requireRole('verifier'),
+  listPendingHostRequests,
+);
 
 /**
  * @swagger
@@ -986,7 +1009,12 @@ router.get('/host-requests/pending', authenticateToken, requireRole('verifier'),
  *       500:
  *         description: Server error
  */
-router.post('/host-requests/:id/approve', authenticateToken, requireRole('verifier'), approveHostRequest);
+router.post(
+  '/host-requests/:id/approve',
+  authenticateToken,
+  requireRole('verifier'),
+  approveHostRequest,
+);
 
 /**
  * @swagger
@@ -1023,7 +1051,12 @@ router.post('/host-requests/:id/approve', authenticateToken, requireRole('verifi
  *       500:
  *         description: Server error
  */
-router.post('/host-requests/:id/reject', authenticateToken, requireRole('verifier'), rejectHostRequest);
+router.post(
+  '/host-requests/:id/reject',
+  authenticateToken,
+  requireRole('verifier'),
+  rejectHostRequest,
+);
 
 /**
  * @swagger
@@ -1067,7 +1100,10 @@ router.post('/host-requests/:id/reject', authenticateToken, requireRole('verifie
  */
 router.get('/notifications', authenticateToken, async (req, res) => {
   try {
-    const notifications = await getUserNotifications(req.user.id, req.query.limit || 20);
+    const notifications = await getUserNotifications(
+      req.user.id,
+      req.query.limit || 20,
+    );
     res.json(notifications);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch notifications' });
@@ -1098,7 +1134,10 @@ router.get('/notifications', authenticateToken, async (req, res) => {
  */
 router.patch('/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
-    const notification = await markNotificationAsRead(req.params.id, req.user.id);
+    const notification = await markNotificationAsRead(
+      req.params.id,
+      req.user.id,
+    );
     res.json(notification);
   } catch (error) {
     res.status(500).json({ error: 'Failed to mark notification as read' });
@@ -1131,17 +1170,47 @@ router.patch('/notifications/read-all', authenticateToken, async (req, res) => {
 });
 
 // Only admin can delete any user
-router.delete('/:id', authenticateToken, requireRole('platformAdmin'), deleteUser);
+router.delete(
+  '/:id',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  deleteUser,
+);
 
 // Certificates, achievements, events (self or admin or host)
-router.get('/:id/certificates', authenticateToken, requireSelfOrRole(['platformAdmin', 'host']), getUserCertificates);
-router.get('/:id/achievements', authenticateToken, requireSelfOrRole(['platformAdmin', 'host']), getUserAchievements);
-router.get('/:id/events', authenticateToken, requireSelfOrRole(['platformAdmin', 'host']), getUserEvents);
+router.get(
+  '/:id/certificates',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin', 'host']),
+  getUserCertificates,
+);
+router.get(
+  '/:id/achievements',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin', 'host']),
+  getUserAchievements,
+);
+router.get(
+  '/:id/events',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin', 'host']),
+  getUserEvents,
+);
 
 // Host access - only platformAdmin can assign
-router.post('/:id/grant-host', authenticateToken, requireRole('platformAdmin'), grantHostAccess);
+router.post(
+  '/:id/grant-host',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  grantHostAccess,
+);
 // Verifier access - only platformAdmin can assign
-router.post('/:id/grant-verifier', authenticateToken, requireRole('platformAdmin'), grantVerifierAccess);
+router.post(
+  '/:id/grant-verifier',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  grantVerifierAccess,
+);
 
 /**
  * @swagger
@@ -1171,7 +1240,12 @@ router.post('/:id/grant-verifier', authenticateToken, requireRole('platformAdmin
  *       404:
  *         description: User not found
  */
-router.get('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), getUserById);
+router.get(
+  '/:id',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin']),
+  getUserById,
+);
 
 /**
  * @swagger
@@ -1220,6 +1294,11 @@ router.get('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), getU
  *       500:
  *         description: Server error
  */
-router.patch('/:id', authenticateToken, requireSelfOrRole(['platformAdmin']), updateUserById);
+router.patch(
+  '/:id',
+  authenticateToken,
+  requireSelfOrRole(['platformAdmin']),
+  updateUserById,
+);
 
 module.exports = router;

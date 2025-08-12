@@ -10,7 +10,7 @@ describe('API Integration Tests', () => {
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
     process.env.MONGO_URI = mongoUri;
-    
+
     app = require('../../app');
   });
 
@@ -29,4 +29,4 @@ describe('API Integration Tests', () => {
       console.log('Cleanup error (ignored):', error.message);
     }
   });
-}); 
+});

@@ -13,7 +13,7 @@ async function createNotification(userId, type, message, data = {}) {
       message,
       data,
       isRead: false,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
     await notification.save();
     return notification;
@@ -31,17 +31,17 @@ async function notifyHostRequest(userId, userName, userEmail) {
     // Find platform admin users
     const User = require('../Models/User');
     const platformAdmins = await User.find({ roles: 'platformAdmin' });
-    
+
     // Create in-app notifications for all platform admins
     for (const admin of platformAdmins) {
       await createNotification(
         admin._id,
         'host_request',
         `New host request from ${userName} (${userEmail})`,
-        { userId, userName, userEmail }
+        { userId, userName, userEmail },
       );
     }
-    
+
     // Send email notification to platform admins
     for (const admin of platformAdmins) {
       await sendHostRequestEmail(admin.email, admin.name, userName, userEmail);
@@ -54,16 +54,22 @@ async function notifyHostRequest(userId, userName, userEmail) {
 /**
  * Send host approval/rejection notification to user
  */
-async function notifyHostStatusUpdate(userId, userName, userEmail, status, remarks = '') {
+async function notifyHostStatusUpdate(
+  userId,
+  userName,
+  userEmail,
+  status,
+  remarks = '',
+) {
   try {
     // Create in-app notification
     await createNotification(
       userId,
       'host_status_update',
       `Your host request has been ${status}`,
-      { status, remarks }
+      { status, remarks },
     );
-    
+
     // Send email notification
     await sendHostStatusEmail(userEmail, userName, status, remarks);
   } catch (error) {
@@ -72,7 +78,13 @@ async function notifyHostStatusUpdate(userId, userName, userEmail, status, remar
 }
 
 // NEW: Notify platform admins about institution verification request
-async function notifyInstitutionRequest({ requesterId, requesterName, requesterEmail, institutionName, type }) {
+async function notifyInstitutionRequest({
+  requesterId,
+  requesterName,
+  requesterEmail,
+  institutionName,
+  type,
+}) {
   try {
     const platformAdmins = await User.find({ roles: 'platformAdmin' });
     for (const admin of platformAdmins) {
@@ -80,7 +92,7 @@ async function notifyInstitutionRequest({ requesterId, requesterName, requesterE
         admin._id,
         'institution_request',
         `New institution verification request: ${institutionName} (${type}) by ${requesterName}`,
-        { requesterId, requesterName, requesterEmail, institutionName, type }
+        { requesterId, requesterName, requesterEmail, institutionName, type },
       );
     }
   } catch (error) {
@@ -91,7 +103,12 @@ async function notifyInstitutionRequest({ requesterId, requesterName, requesterE
 /**
  * Send email for host request notification
  */
-async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) {
+async function sendHostRequestEmail(
+  adminEmail,
+  adminName,
+  userName,
+  userEmail,
+) {
   try {
     const transporter = require('nodemailer').createTransporter({
       service: 'gmail',
@@ -118,7 +135,7 @@ async function sendHostRequestEmail(adminEmail, adminName, userName, userEmail) 
         </ul>
         <p>Please review and approve/reject this request in the admin panel.</p>
         <p>Best regards,<br>CampVerse Team</p>
-      `
+      `,
     });
   } catch (error) {
     console.error('Error sending host request email:', error);
@@ -152,12 +169,13 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
         <p>Hello ${userName},</p>
         <p>Your request to become a host has been <strong>${statusText}</strong>.</p>
         ${remarks ? `<p><strong>Remarks:</strong> ${remarks}</p>` : ''}
-        ${status === 'approved' ? 
-    '<p>You can now create and manage events on CampVerse!</p>' : 
-    '<p>You can submit a new request in the future if your circumstances change.</p>'
+        ${
+  status === 'approved'
+    ? '<p>You can now create and manage events on CampVerse!</p>'
+    : '<p>You can submit a new request in the future if your circumstances change.</p>'
 }
         <p>Best regards,<br>CampVerse Team</p>
-      `
+      `,
     });
   } catch (error) {
     console.error('Error sending host status email:', error);
@@ -202,7 +220,7 @@ async function markAllNotificationsAsRead(userId) {
   try {
     await Notification.updateMany(
       { targetUserId: userId, isRead: false },
-      { isRead: true }
+      { isRead: true },
     );
   } catch (error) {
     console.error('Error marking all notifications as read:', error);
@@ -213,7 +231,13 @@ async function markAllNotificationsAsRead(userId) {
 /**
  * Generic unified notification function
  */
-async function notifyUser({ userId, type, message, data = {}, emailOptions = null }) {
+async function notifyUser({
+  userId,
+  type,
+  message,
+  data = {},
+  emailOptions = null,
+}) {
   try {
     const user = await User.findById(userId).select('notificationPreferences');
     if (!user) {
@@ -222,8 +246,10 @@ async function notifyUser({ userId, type, message, data = {}, emailOptions = nul
     }
     // Check notification preferences
     const prefs = user.notificationPreferences || {};
-    const emailPref = prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : true;
-    const inAppPref = prefs.inApp && prefs.inApp[type] !== undefined ? prefs.inApp[type] : true;
+    const emailPref =
+      prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : true;
+    const inAppPref =
+      prefs.inApp && prefs.inApp[type] !== undefined ? prefs.inApp[type] : true;
     // In-app notification
     if (inAppPref) {
       await createNotification(userId, type, message, data);
@@ -240,7 +266,13 @@ async function notifyUser({ userId, type, message, data = {}, emailOptions = nul
 /**
  * Notify multiple users (e.g., all verifiers)
  */
-async function notifyUsers({ userIds, type, message, data = {}, emailOptionsFn = null }) {
+async function notifyUsers({
+  userIds,
+  type,
+  message,
+  data = {},
+  emailOptionsFn = null,
+}) {
   const notificationPromises = userIds.map(async (userId) => {
     const emailOptions = emailOptionsFn ? await emailOptionsFn(userId) : null;
     return notifyUser({ userId, type, message, data, emailOptions });
@@ -258,5 +290,5 @@ module.exports = {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   notifyUser,
-  notifyUsers
-}; 
+  notifyUsers,
+};

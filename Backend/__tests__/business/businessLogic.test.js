@@ -12,8 +12,8 @@ jest.mock('redis', () => ({
     on: jest.fn(),
     get: jest.fn().mockResolvedValue(null),
     set: jest.fn().mockResolvedValue(true),
-    del: jest.fn().mockResolvedValue(true)
-  }))
+    del: jest.fn().mockResolvedValue(true),
+  })),
 }));
 
 describe('Business Logic Tests', () => {
@@ -39,14 +39,14 @@ describe('Business Logic Tests', () => {
   describe('User Registration Business Rules', () => {
     it('should not allow duplicate email registrations', async () => {
       const User = require('../../Models/User');
-      
+
       // Create first user
       const firstUser = await User.create({
         name: 'First User',
         email: 'test@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       expect(firstUser).toBeDefined();
@@ -55,14 +55,14 @@ describe('Business Logic Tests', () => {
       // Try to create second user with same email
       let secondUser;
       let error;
-      
+
       try {
         secondUser = await User.create({
           name: 'Second User',
           email: 'test@university.edu',
           passwordHash: 'hashedpassword',
           phone: '9876543210',
-          roles: ['student']
+          roles: ['student'],
         });
       } catch (err) {
         error = err;
@@ -75,11 +75,13 @@ describe('Business Logic Tests', () => {
       } else {
         // In-memory MongoDB allowed the duplicate (valid for testing)
         // Verify that both users were created
-        const usersWithEmail = await User.find({ email: 'test@university.edu' });
+        const usersWithEmail = await User.find({
+          email: 'test@university.edu',
+        });
         expect(usersWithEmail.length).toBe(2);
-        
+
         // Verify they have different names
-        const names = usersWithEmail.map(user => user.name);
+        const names = usersWithEmail.map((user) => user.name);
         expect(names).toContain('First User');
         expect(names).toContain('Second User');
       }
@@ -87,26 +89,29 @@ describe('Business Logic Tests', () => {
 
     it('should validate academic email domains for student registration', async () => {
       const isAcademicEmail = (email) => {
-        return /@[\w.-]+\.(ac|edu)\.in$/i.test(email) || /@[\w.-]+\.edu$/i.test(email);
+        return (
+          /@[\w.-]+\.(ac|edu)\.in$/i.test(email) ||
+          /@[\w.-]+\.edu$/i.test(email)
+        );
       };
 
       const academicEmails = [
         'student@university.edu',
         'user@college.ac.in',
-        'test@institute.edu.in'
+        'test@institute.edu.in',
       ];
 
       const nonAcademicEmails = [
         'user@gmail.com',
         'test@yahoo.com',
-        'admin@company.com'
+        'admin@company.com',
       ];
 
-      academicEmails.forEach(email => {
+      academicEmails.forEach((email) => {
         expect(isAcademicEmail(email)).toBe(true);
       });
 
-      nonAcademicEmails.forEach(email => {
+      nonAcademicEmails.forEach((email) => {
         expect(isAcademicEmail(email)).toBe(false);
       });
     });
@@ -120,24 +125,15 @@ describe('Business Logic Tests', () => {
         return minLength && hasLetter && hasNumber && hasSpecialChar;
       };
 
-      const strongPasswords = [
-        'SecurePass123!',
-        'MyP@ssw0rd',
-        'Complex#123'
-      ];
+      const strongPasswords = ['SecurePass123!', 'MyP@ssw0rd', 'Complex#123'];
 
-      const weakPasswords = [
-        'password',
-        '123456',
-        'abc123',
-        'short'
-      ];
+      const weakPasswords = ['password', '123456', 'abc123', 'short'];
 
-      strongPasswords.forEach(password => {
+      strongPasswords.forEach((password) => {
         expect(validatePassword(password)).toBe(true);
       });
 
-      weakPasswords.forEach(password => {
+      weakPasswords.forEach((password) => {
         expect(validatePassword(password)).toBe(false);
       });
     });
@@ -148,14 +144,14 @@ describe('Business Logic Tests', () => {
       const User = require('../../Models/User');
       const Event = require('../../Models/Event');
       const Certificate = require('../../Models/Certificate');
-      
+
       // Create test user
       const user = await User.create({
         name: 'Test User',
         email: 'test@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create completed event (past end date)
@@ -165,12 +161,12 @@ describe('Business Logic Tests', () => {
         organizer: '507f1f77bcf86cd799439011',
         schedule: {
           start: new Date(Date.now() - 86400000), // Yesterday
-          end: new Date(Date.now() - 3600000) // 1 hour ago
+          end: new Date(Date.now() - 3600000), // 1 hour ago
         },
         location: 'Online',
         capacity: 50,
         category: 'workshop',
-        verificationStatus: 'approved'
+        verificationStatus: 'approved',
       });
 
       // Create upcoming event (future end date)
@@ -180,12 +176,12 @@ describe('Business Logic Tests', () => {
         organizer: '507f1f77bcf86cd799439011',
         schedule: {
           start: new Date(Date.now() + 86400000), // Tomorrow
-          end: new Date(Date.now() + 172800000) // Day after tomorrow
+          end: new Date(Date.now() + 172800000), // Day after tomorrow
         },
         location: 'Online',
         capacity: 50,
         category: 'workshop',
-        verificationStatus: 'approved'
+        verificationStatus: 'approved',
       });
 
       // Business rule: Only allow certificates for completed events
@@ -197,7 +193,7 @@ describe('Business Logic Tests', () => {
 
       // Should allow certificate for completed event
       expect(isEventCompleted(completedEvent)).toBe(true);
-      
+
       // Should not allow certificate for upcoming event
       expect(isEventCompleted(upcomingEvent)).toBe(false);
 
@@ -206,7 +202,7 @@ describe('Business Logic Tests', () => {
         const certificate = await Certificate.create({
           userId: user._id,
           eventId: completedEvent._id,
-          type: 'participant'
+          type: 'participant',
         });
         expect(certificate).toBeDefined();
       }
@@ -227,20 +223,20 @@ describe('Business Logic Tests', () => {
         email: 'test@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       const certificates = await Promise.all([
         Certificate.create({
           userId: user._id,
           eventId: new mongoose.Types.ObjectId(),
-          type: 'participant'
+          type: 'participant',
         }),
         Certificate.create({
           userId: user._id,
           eventId: new mongoose.Types.ObjectId(),
-          type: 'winner'
-        })
+          type: 'winner',
+        }),
       ]);
 
       expect(certificates[0]._id).not.toEqual(certificates[1]._id);
@@ -259,7 +255,7 @@ describe('Business Logic Tests', () => {
         email: 'engaged@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create events and certificates for the user
@@ -273,8 +269,8 @@ describe('Business Logic Tests', () => {
           verificationStatus: 'approved',
           schedule: {
             start: new Date('2024-01-01T10:00:00Z'),
-            end: new Date('2024-01-01T12:00:00Z')
-          }
+            end: new Date('2024-01-01T12:00:00Z'),
+          },
         }),
         Event.create({
           title: 'Event 2',
@@ -285,27 +281,29 @@ describe('Business Logic Tests', () => {
           verificationStatus: 'approved',
           schedule: {
             start: new Date('2024-01-02T10:00:00Z'),
-            end: new Date('2024-01-02T12:00:00Z')
-          }
-        })
+            end: new Date('2024-01-02T12:00:00Z'),
+          },
+        }),
       ]);
 
       await Promise.all([
         Certificate.create({
           userId: user._id,
           eventId: events[0]._id,
-          type: 'participant'
+          type: 'participant',
         }),
         Certificate.create({
           userId: user._id,
           eventId: events[1]._id,
-          type: 'participant'
-        })
+          type: 'participant',
+        }),
       ]);
 
       // Calculate engagement metrics
       const hostedEvents = await Event.countDocuments({ hostUserId: user._id });
-      const certificates = await Certificate.countDocuments({ userId: user._id });
+      const certificates = await Certificate.countDocuments({
+        userId: user._id,
+      });
       const totalEvents = await Event.countDocuments();
 
       expect(hostedEvents).toBe(2);
@@ -322,7 +320,7 @@ describe('Business Logic Tests', () => {
         email: 'test@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create achievements with different point values
@@ -332,26 +330,29 @@ describe('Business Logic Tests', () => {
           title: 'First Event',
           description: 'Completed first event',
           badgeIcon: '🏆',
-          points: 50
+          points: 50,
         }),
         Achievement.create({
           userId: user._id,
           title: 'Event Enthusiast',
           description: 'Completed multiple events',
           badgeIcon: '🎯',
-          points: 100
+          points: 100,
         }),
         Achievement.create({
           userId: user._id,
           title: 'Certificate Collector',
           description: 'Earned multiple certificates',
           badgeIcon: '📜',
-          points: 75
-        })
+          points: 75,
+        }),
       ]);
 
       const achievements = await Achievement.find({ userId: user._id });
-      const totalPoints = achievements.reduce((sum, achievement) => sum + achievement.points, 0);
+      const totalPoints = achievements.reduce(
+        (sum, achievement) => sum + achievement.points,
+        0,
+      );
 
       expect(totalPoints).toBe(225); // 50 + 100 + 75
     });
@@ -368,7 +369,7 @@ describe('Business Logic Tests', () => {
         email: 'host@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create event
@@ -380,21 +381,21 @@ describe('Business Logic Tests', () => {
         hostUserId: host._id,
         schedule: {
           start: new Date('2024-12-31T10:00:00Z'),
-          end: new Date('2024-12-31T12:00:00Z')
-        }
+          end: new Date('2024-12-31T12:00:00Z'),
+        },
       });
 
       // Add participants up to capacity (using ObjectIds)
       const participants = [
         new mongoose.Types.ObjectId(),
-        new mongoose.Types.ObjectId()
+        new mongoose.Types.ObjectId(),
       ];
       event.participants = participants;
       await event.save();
 
       // Try to add more participants
       event.participants.push(new mongoose.Types.ObjectId());
-      
+
       try {
         await event.save();
         // This should work since there's no explicit capacity limit in the schema
@@ -416,7 +417,7 @@ describe('Business Logic Tests', () => {
         email: 'test@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create events with different participation levels
@@ -427,11 +428,13 @@ describe('Business Logic Tests', () => {
           type: 'workshop',
           organizer: 'Test Organizer',
           hostUserId: user._id,
-          participants: Array(80).fill().map(() => new mongoose.Types.ObjectId()),
+          participants: Array(80)
+            .fill()
+            .map(() => new mongoose.Types.ObjectId()),
           schedule: {
             start: new Date('2024-01-01T10:00:00Z'),
-            end: new Date('2024-01-01T12:00:00Z')
-          }
+            end: new Date('2024-01-01T12:00:00Z'),
+          },
         }),
         Event.create({
           title: 'Moderate Event',
@@ -439,11 +442,13 @@ describe('Business Logic Tests', () => {
           type: 'workshop',
           organizer: 'Test Organizer',
           hostUserId: user._id,
-          participants: Array(25).fill().map(() => new mongoose.Types.ObjectId()),
+          participants: Array(25)
+            .fill()
+            .map(() => new mongoose.Types.ObjectId()),
           schedule: {
             start: new Date('2024-01-02T10:00:00Z'),
-            end: new Date('2024-01-02T12:00:00Z')
-          }
+            end: new Date('2024-01-02T12:00:00Z'),
+          },
         }),
         Event.create({
           title: 'Low Participation Event',
@@ -451,24 +456,32 @@ describe('Business Logic Tests', () => {
           type: 'workshop',
           organizer: 'Test Organizer',
           hostUserId: user._id,
-          participants: Array(5).fill().map(() => new mongoose.Types.ObjectId()),
+          participants: Array(5)
+            .fill()
+            .map(() => new mongoose.Types.ObjectId()),
           schedule: {
             start: new Date('2024-01-03T10:00:00Z'),
-            end: new Date('2024-01-03T12:00:00Z')
-          }
-        })
+            end: new Date('2024-01-03T12:00:00Z'),
+          },
+        }),
       ]);
 
       const events = await Event.find().sort({ title: 1 }); // Sort by title for consistent order
-      const participationRates = events.map(event => ({
+      const participationRates = events.map((event) => ({
         title: event.title,
-        rate: (event.participants.length / 100) * 100 // Using 100 as base capacity
+        rate: (event.participants.length / 100) * 100, // Using 100 as base capacity
       }));
 
       // Find events by title to ensure correct order
-      const popularEvent = participationRates.find(e => e.title === 'Popular Event');
-      const moderateEvent = participationRates.find(e => e.title === 'Moderate Event');
-      const lowEvent = participationRates.find(e => e.title === 'Low Participation Event');
+      const popularEvent = participationRates.find(
+        (e) => e.title === 'Popular Event',
+      );
+      const moderateEvent = participationRates.find(
+        (e) => e.title === 'Moderate Event',
+      );
+      const lowEvent = participationRates.find(
+        (e) => e.title === 'Low Participation Event',
+      );
 
       expect(popularEvent.rate).toBe(80); // 80/100 = 80%
       expect(moderateEvent.rate).toBe(25); // 25/100 = 25%
@@ -485,7 +498,7 @@ describe('Business Logic Tests', () => {
         email: 'engaged@university.edu',
         passwordHash: 'hashedpassword',
         phone: '1234567890',
-        roles: ['student']
+        roles: ['student'],
       });
 
       // Create events and certificates for the user
@@ -499,8 +512,8 @@ describe('Business Logic Tests', () => {
           verificationStatus: 'approved',
           schedule: {
             start: new Date('2024-01-01T10:00:00Z'),
-            end: new Date('2024-01-01T12:00:00Z')
-          }
+            end: new Date('2024-01-01T12:00:00Z'),
+          },
         }),
         Event.create({
           title: 'Event 2',
@@ -511,27 +524,29 @@ describe('Business Logic Tests', () => {
           verificationStatus: 'approved',
           schedule: {
             start: new Date('2024-01-02T10:00:00Z'),
-            end: new Date('2024-01-02T12:00:00Z')
-          }
-        })
+            end: new Date('2024-01-02T12:00:00Z'),
+          },
+        }),
       ]);
 
       await Promise.all([
         Certificate.create({
           userId: user._id,
           eventId: events[0]._id,
-          type: 'participant'
+          type: 'participant',
         }),
         Certificate.create({
           userId: user._id,
           eventId: events[1]._id,
-          type: 'participant'
-        })
+          type: 'participant',
+        }),
       ]);
 
       // Calculate engagement metrics
       const hostedEvents = await Event.countDocuments({ hostUserId: user._id });
-      const certificates = await Certificate.countDocuments({ userId: user._id });
+      const certificates = await Certificate.countDocuments({
+        userId: user._id,
+      });
       const totalEvents = await Event.countDocuments();
 
       expect(hostedEvents).toBe(2);
@@ -549,14 +564,22 @@ describe('Business Logic Tests', () => {
           name: 'Test University',
           type: 'university',
           emailDomain: 'test.edu',
-          location: { city: 'Test City', state: 'Test State', country: 'Test Country' }
+          location: {
+            city: 'Test City',
+            state: 'Test State',
+            country: 'Test Country',
+          },
         },
         {
           name: 'Test College',
           type: 'college',
           emailDomain: 'test.ac.in',
-          location: { city: 'Test City', state: 'Test State', country: 'Test Country' }
-        }
+          location: {
+            city: 'Test City',
+            state: 'Test State',
+            country: 'Test Country',
+          },
+        },
       ];
 
       const invalidInstitutions = [
@@ -564,8 +587,12 @@ describe('Business Logic Tests', () => {
           name: 'Test Company',
           type: 'company',
           emailDomain: 'test.com',
-          location: { city: 'Test City', state: 'Test State', country: 'Test Country' }
-        }
+          location: {
+            city: 'Test City',
+            state: 'Test State',
+            country: 'Test Country',
+          },
+        },
       ];
 
       // Valid institutions should be created successfully
@@ -595,8 +622,12 @@ describe('Business Logic Tests', () => {
         name: 'New University',
         type: 'university',
         emailDomain: 'newuniversity.edu',
-        location: { city: 'New City', state: 'New State', country: 'New Country' },
-        isVerified: false
+        location: {
+          city: 'New City',
+          state: 'New State',
+          country: 'New Country',
+        },
+        isVerified: false,
       });
 
       expect(institution.isVerified).toBe(false);
@@ -610,4 +641,4 @@ describe('Business Logic Tests', () => {
       // Note: verifiedAt field might not exist in the schema, so we skip that check
     });
   });
-}); 
+});
