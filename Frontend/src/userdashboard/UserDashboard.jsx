@@ -6,7 +6,8 @@ import OnboardingModal from './OnboardingModal';
 import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
 import NotificationBell from './notificationbell'; // ✅ use our bell component
-import EventHistory from './EventHistory';
+import CalendarDropdown from "./CalendarDropdown";
+import TopNav from "./TopNav";
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ const UserDashboard = () => {
   const [loadingGate, setLoadingGate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState(null);
+  const [eventsData, setEventsData] = useState([]);
 
   const discoverEventsRef = useRef(null);
   const location = useLocation();
@@ -36,6 +38,15 @@ const UserDashboard = () => {
         const hasInstitution = Boolean(u.institutionId);
         setShowOnboarding(!basicFieldsFilled || !hasInstitution);
         setStats(data?.stats || null);
+
+        // 🔹 Prepare events for calendar
+        if (data?.events) {
+          const formattedEvents = data.events.map(evt => ({
+            date: new Date(evt.date).toISOString().split("T")[0],
+            type: new Date(evt.date) >= new Date() ? "upcoming" : "past"
+          }));
+          setEventsData(formattedEvents);
+        }
       } catch {
         setShowOnboarding(false);
       } finally {
@@ -100,12 +111,12 @@ const UserDashboard = () => {
 
               {/* Right Nav Buttons */}
               <div className="flex items-center gap-2 sm:gap-4">
-                {/* ✅ Replaced static bell with working NotificationBell */}
+                {/* ✅ Notification Bell */}
                 <NotificationBell notifications={[]} />
 
-                <button className="bg-gray-800/60 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/80">
-                  <i className="ri-calendar-line" />
-                </button>
+                {/* ✅ Calendar Dropdown */}
+                <CalendarDropdown events={eventsData} />
+
                 <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button flex items-center gap-2 hover:scale-105">
                   <i className="ri-add-line" />
                   <span className="hidden sm:inline">Host Event</span>

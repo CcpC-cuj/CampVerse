@@ -84,6 +84,9 @@ const Sidebar = ({ onDiscoverClick }) => {
             label="Discover Events"
             end
           />
+          <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+
+
 
 
           <SidebarSection title="Events" />

@@ -9,7 +9,7 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory";
+import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter"; // already added earlier
 import Feedback from "./userdashboard/Feedback";     // ← NEW
 import "remixicon/fonts/remixicon.css";
@@ -39,13 +39,13 @@ function App() {
           />
           {/* New route for Event History */}
           <Route
-            path="/eventhistory"
-            element={
-              <ProtectedRoute>
-                <EventHistory />
-              </ProtectedRoute>
-            }
-          />
+  path="/dashboard/events"
+  element={
+    <ProtectedRoute>
+      <Events />
+    </ProtectedRoute>
+  }
+/>
           {/* Help Center route */}
           <Route
             path="/help"
