@@ -80,12 +80,11 @@ const Sidebar = ({ onDiscoverClick }) => {
           {/* ✅ Changed: use onClick instead of route to scroll inside UserDashboard */}
           <SidebarLink
             icon="ri-compass-line"
+            to="/dashboard/discover-events" 
             label="Discover Events"
-            onClick={onDiscoverClick}
+            end
           />
 
-          <SidebarLink icon="ri-calendar-line" to="/eventhistory" label="My Events" />
-          <SidebarLink icon="ri-notification-3-line" to="/notifications" label="Notifications" />
 
           <SidebarSection title="Events" />
           <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
