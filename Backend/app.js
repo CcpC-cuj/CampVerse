@@ -142,7 +142,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('MongoDB connected');
-    app.listen(5001, '0.0.0.0', () => {
+    const PORT = process.env.PORT || 5001;
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('Server is running on port 5001');
     });
   })
