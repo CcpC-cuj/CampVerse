@@ -671,12 +671,20 @@ async function register(req, res) {
       logger.info(`Email sent successfully to ${email}`);
     } catch (emailError) {
       logger.error("Email sending failed:", emailError.message);
-      // Don't continue if email fails - user needs the OTP
-      return res
-        .status(500)
-        .json({
-          error: "Failed to send verification email. Please try again.",
-        });
+      logger.error("Email error details:", emailError);
+      
+      // In development, continue without email for testing
+      if (process.env.NODE_ENV !== 'production') {
+        logger.warn('Development mode: Proceeding without email verification');
+      } else {
+        // In production, return specific error message
+        return res
+          .status(500)
+          .json({
+            error: "Failed to send verification email. Please check your email configuration.",
+            details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+          });
+      }
     }
 
     const domain = extractDomain(email);
