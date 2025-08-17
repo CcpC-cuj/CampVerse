@@ -5,7 +5,7 @@ services:
       context: ./Frontend
       args:
         - VITE_GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
-        - VITE_API_URL=http://backend:5001
+        - VITE_API_URL=http://localhost:5001
     ports:
       - "3000:80"
     depends_on:
