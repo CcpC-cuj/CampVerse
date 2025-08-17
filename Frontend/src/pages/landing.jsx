@@ -26,6 +26,42 @@ const Landing = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
 
+  // Handle Google OAuth callback if token is present in URL
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('id_token=') || hash.includes('access_token=')) {
+      // Extract token from URL hash
+      const params = new URLSearchParams(hash.substring(1));
+      const idToken = params.get('id_token');
+      const accessToken = params.get('access_token');
+      const oauthToken = idToken || accessToken;
+      
+      if (oauthToken) {
+        // Process Google OAuth token
+        import('../api').then(api => {
+          api.googleSignIn({ token: oauthToken })
+            .then((response) => {
+              if (response.token && response.user) {
+                login(response.token, response.user);
+                // Clear the hash from URL
+                window.location.hash = '';
+                navigate('/dashboard');
+              } else if (response.error) {
+                console.error('Google sign-in error:', response.error);
+                alert('Google sign-in failed: ' + response.error);
+                window.location.hash = '';
+              }
+            })
+            .catch((err) => {
+              console.error('Google sign-in catch error:', err);
+              alert('Google sign-in failed: ' + err.message);
+              window.location.hash = '';
+            });
+        });
+      }
+    }
+  }, [login, navigate]);
+
   return (
     <div>
       <StarryBackground />
