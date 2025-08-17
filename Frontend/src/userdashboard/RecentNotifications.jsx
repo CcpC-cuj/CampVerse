@@ -41,7 +41,12 @@ const RecentNotifications = () => {
         </button>
       </div>
       {loading ? (
-        <p className="text-gray-500">Loading...</p>
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 border-2 border-[#9b5de5]/30 border-t-[#9b5de5] rounded-full animate-spin"></div>
+            <span className="text-gray-400 text-sm">Loading notifications...</span>
+          </div>
+        </div>
       ) : (
         <ul className="space-y-2">
           {notifications.length > 0 ? (

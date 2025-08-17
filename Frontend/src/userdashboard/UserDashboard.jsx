@@ -49,7 +49,30 @@ const UserDashboard = () => {
     return () => { mounted = false; };
   }, []);
 
-  if (!user || loadingGate) return <div>Loading...</div>;
+  if (!user || loadingGate) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+        <div className="text-center">
+          {/* Loading spinner */}
+          <div className="relative mb-6">
+            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
+            <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-b-[#9b5de5] rounded-full animate-spin mx-auto" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+          </div>
+          
+          {/* Loading text */}
+          <h2 className="text-2xl font-semibold mb-2">Welcome to CampVerse</h2>
+          <p className="text-white/70 animate-pulse">Loading your dashboard...</p>
+          
+          {/* Animated dots */}
+          <div className="flex justify-center mt-4 space-x-1">
+            <div className="w-2 h-2 bg-[#9b5de5] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-[#9b5de5] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-[#9b5de5] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
