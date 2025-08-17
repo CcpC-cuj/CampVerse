@@ -1,10 +1,12 @@
 // src/pages/LoginModal.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { googleSignIn, login } from "../api";
 import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
 import { useAuth } from "../contexts/AuthContext";
 
 const LoginModal = ({ onClose, onSwitchToSignup }) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -32,7 +34,7 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
       } else {
         alert(response.error || 'Login failed');
       }
@@ -55,7 +57,7 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       } else if (response.error) {
         if (response.forceLogout) {
           authLogout();

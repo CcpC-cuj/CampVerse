@@ -102,7 +102,7 @@ const Landing = () => {
                 login(res.token, res.user);
                 alert('Email verified successfully!');
                 setShowOtp(false);
-                // Use navigate instead of window.location.href for better routing
+                // Use navigate for hash routing
                 navigate('/dashboard');
               } else {
                 alert(res.error || 'OTP verification failed.');
