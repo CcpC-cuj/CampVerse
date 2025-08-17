@@ -7,7 +7,7 @@ import DiscoverEvents from './DiscoverEvents';
 import EventHistory from './EventHistory'; 
 
 const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [loadingGate, setLoadingGate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false); // ✅ For mobile menu
@@ -28,9 +28,17 @@ const UserDashboard = () => {
         const data = await getDashboard();
         if (!mounted) return;
         const u = data?.user || {};
-        const basicFieldsFilled = Boolean(u.name && u.phone && u.Gender && u.DOB);
-        const hasInstitution = Boolean(u.institutionId);
-        setShowOnboarding(!basicFieldsFilled || !hasInstitution);
+        
+        // Check if onboarding was already completed
+        if (u.onboardingCompleted) {
+          setShowOnboarding(false);
+        } else {
+          // Only show onboarding if basic fields or institution are missing
+          const basicFieldsFilled = Boolean(u.name && u.phone && u.Gender && u.DOB);
+          const hasInstitution = Boolean(u.institutionId);
+          setShowOnboarding(!basicFieldsFilled || !hasInstitution);
+        }
+        
         setStats(data?.stats || null);
       } catch {
         setShowOnboarding(false);
@@ -154,7 +162,13 @@ const UserDashboard = () => {
           visible={showOnboarding}
           onClose={() => setShowOnboarding(false)}
           onComplete={async () => {
-            try { await updateMe({ onboardingCompleted: true }); } catch {}
+            try { 
+              const response = await updateMe({ onboardingCompleted: true });
+              if (response?.user) {
+                const token = localStorage.getItem('token');
+                if (token) login(token, response.user);
+              }
+            } catch {}
             setShowOnboarding(false);
           }}
         />
