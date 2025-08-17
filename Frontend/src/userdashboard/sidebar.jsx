@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
 
-const Sidebar = () => {
+const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
   const [institutionVerified, setInstitutionVerified] = useState(false);
@@ -76,9 +76,18 @@ const Sidebar = () => {
         <div className="py-2">
           <SidebarSection title="Main" />
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" end />
-          <SidebarLink icon="ri-compass-line" to="/dashboard/discover-events" label="Discover Events" />
-          <SidebarLink icon="ri-calendar-line" to="/eventhistory" label="My Events" />
-          <SidebarLink icon="ri-notification-3-line" to="/notifications" label="Notifications" />
+
+          {/* ✅ Changed: use onClick instead of route to scroll inside UserDashboard */}
+          <SidebarLink
+            icon="ri-compass-line"
+            to="/dashboard/discover-events" 
+            label="Discover Events"
+            end
+          />
+          <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+
+
+
 
           <SidebarSection title="Events" />
           <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
@@ -118,7 +127,34 @@ const SidebarSection = ({ title }) => (
   </div>
 );
 
-const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-[#9b5de5]", end = false }) => {
+/**
+ * SidebarLink now supports BOTH:
+ * - route links via `to`
+ * - action buttons via `onClick` (used for Discover Events)
+ * Everything else is unchanged.
+ */
+const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-[#9b5de5]", end = false, onClick }) => {
+  // Button for actions (no route)
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium rounded-lg transition-all text-gray-300 hover:bg-[#9b5de5]/20 hover:text-white"
+      >
+        <div className="w-5 h-5 flex items-center justify-center">
+          <i className={icon}></i>
+        </div>
+        <span>{label}</span>
+        {badge && (
+          <span className={`ml-auto ${badgeColor} text-white text-xs px-2 py-0.5 rounded-full`}>
+            {badge}
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  // Default: NavLink for routes
   return (
     <NavLink
       to={to}

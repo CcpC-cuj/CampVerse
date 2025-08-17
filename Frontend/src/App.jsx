@@ -8,7 +8,7 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory";
+import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import "remixicon/fonts/remixicon.css";
@@ -31,6 +31,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/settings"
             element={
@@ -40,13 +41,14 @@ function App() {
             }
           />
           <Route
-            path="/eventhistory"
+            path="/dashboard/events"
             element={
               <ProtectedRoute>
-                <EventHistory />
+                <Events />
               </ProtectedRoute>
             }
           />
+          {/* Help Center route */}
           <Route
             path="/help"
             element={
