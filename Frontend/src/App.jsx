@@ -1,5 +1,4 @@
-// src/App.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -10,11 +9,15 @@ import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
 import EventHistory from "./userdashboard/EventHistory";
-import HelpCenter from "./userdashboard/HelpCenter"; // already added earlier
-import Feedback from "./userdashboard/Feedback";     // ← NEW
+import HelpCenter from "./userdashboard/HelpCenter";
+import Feedback from "./userdashboard/Feedback";
 import "remixicon/fonts/remixicon.css";
 
 function App() {
+  useEffect(() => {
+    console.log("API URL from env:", import.meta.env.VITE_API_URL);
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
@@ -36,7 +39,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* New route for Event History */}
           <Route
             path="/eventhistory"
             element={
@@ -45,7 +47,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Help Center route */}
           <Route
             path="/help"
             element={
@@ -54,7 +55,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* NEW: Feedback route */}
           <Route
             path="/feedback"
             element={
