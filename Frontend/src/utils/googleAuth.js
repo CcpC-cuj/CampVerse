@@ -28,7 +28,7 @@ export const getGoogleToken = () => {
       return;
     }
 
-    const redirectUri = `${window.location.origin}/index.html`;
+    const redirectUri = `${window.location.origin}/`;
     // Request OpenID Connect ID token to match backend verification path
     const scope = 'openid email profile';
 

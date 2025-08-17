@@ -1,5 +1,6 @@
 // src/pages/SignupModal.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { googleSignIn, register } from "../api";
 import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,6 +10,7 @@ const SignupModal = ({
   onSwitchToLogin,
   onSignupSuccess // ← New prop for OTP
 }) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -64,7 +66,7 @@ const SignupModal = ({
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = "/dashboard";
+        navigate("/dashboard");
       } else if (response.error) {
         if (response.error.includes("academic emails")) {
           setError("Please use your institute email (ending with .ac.in or .edu.in).");
