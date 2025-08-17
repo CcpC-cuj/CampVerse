@@ -173,7 +173,17 @@ async function googleSignIn(req, res) {
     try {
       let email, name, picture;
       const clientId = process.env.GOOGLE_CLIENT_ID;
+      
+      if (!clientId) {
+        logger.error("Google Client ID not configured in environment variables");
+        return res.status(500).json({ error: "Google authentication not configured." });
+      }
+      
       const oauthClient = new OAuth2Client(clientId);
+      
+      // Log token info for debugging (first 20 chars only for security)
+      logger.info(`Processing Google token: ${token.substring(0, 20)}...`);
+      
       // First try treating the token as an ID token (most frontends provide this)
       try {
         const ticket = await oauthClient.verifyIdToken({
@@ -184,18 +194,23 @@ async function googleSignIn(req, res) {
         email = payload.email;
         name = payload.name;
         picture = payload.picture;
+        logger.info(`Successfully verified ID token for user: ${email}`);
       } catch (e) {
+        logger.warn(`ID token verification failed: ${e.message}. Trying access token approach...`);
         // Fallback: treat token as an access token and call userinfo
         const userInfoResponse = await fetch(
           `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`,
         );
         if (!userInfoResponse.ok) {
+          const errorText = await userInfoResponse.text();
+          logger.error(`Google userinfo API failed: ${userInfoResponse.status} - ${errorText}`);
           throw new Error("Failed to fetch user info from Google");
         }
         const userInfo = await userInfoResponse.json();
         email = userInfo.email;
         name = userInfo.name;
         picture = userInfo.picture;
+        logger.info(`Successfully got user info from access token for: ${email}`);
       }
 
       if (!email) {
@@ -263,8 +278,12 @@ async function googleSignIn(req, res) {
         user: sanitizeUser(user),
       });
     } catch (googleError) {
-      logger.error("Google token verification failed:", googleError);
-      return res.status(401).json({ error: "Invalid Google token." });
+      logger.error("Google token verification failed:", {
+        error: googleError.message,
+        tokenPrefix: token ? `${token.substring(0, 20)}...` : 'null',
+        clientIdConfigured: !!process.env.GOOGLE_CLIENT_ID
+      });
+      return res.status(401).json({ error: "Invalid Google token. Please try signing in again." });
     }
   } catch (err) {
     logger.error("Google Login Error:", err);
