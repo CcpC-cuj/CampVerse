@@ -70,10 +70,7 @@ async function findOrCreateInstitution(domain) {
 }
 
 const redisClient = createClient({
-  socket: {
-    host: process.env.REDIS_HOST || 'redis', // Use Docker Compose service name
-    port: process.env.REDIS_PORT || 6379,
-  },
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
 });
 redisClient.on('error', (err) => logger.error('Redis Client Error', err));
 (async () => {
