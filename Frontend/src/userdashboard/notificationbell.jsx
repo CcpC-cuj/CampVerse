@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const NotificationBell = ({ notifications }) => {
+const NotificationBell = ({ notifications = [] }) => {
   const [open, setOpen] = useState(false);
-  const dropdownRef = useRef();
+  const dropdownRef = useRef(null);
 
   // Close when clicking outside
   useEffect(() => {

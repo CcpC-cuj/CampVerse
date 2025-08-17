@@ -7,7 +7,6 @@ import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
 import NotificationBell from './notificationbell'; // ✅ use our bell component
 import CalendarDropdown from "./CalendarDropdown";
-import TopNav from "./TopNav";
 
 const UserDashboard = () => {
   const { user } = useAuth();

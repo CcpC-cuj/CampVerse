@@ -1,22 +1,18 @@
 import React from "react";
 import { useAuth } from "../contexts/AuthContext";
-import NotificationBell from "./notificationbell";
-import CalendarDropdown from "./CalendarDropdown";
 
-const TopNav = ({ notifications = [], markedDates = [] }) => {
+const TopNav = () => {
   const { user } = useAuth();
 
   return (
     <div className="flex justify-between items-center p-4 bg-gray-800/60 backdrop-blur-md border-b border-gray-700 text-white">
-      {/* Left Side (Welcome Text) */}
       <div className="text-xl font-semibold">
-        {user ? `Welcome, ${user.name}` : "Welcome to CampVerse"}
+        Welcome{user ? `, ${user.name}` : " to CampVerse"}
       </div>
-
-      {/* Right Side (Calendar, Notifications, Profile) */}
       <div className="flex items-center gap-4">
-        <CalendarDropdown markedDates={markedDates} />
-        <NotificationBell notifications={notifications} />
+        <button className="text-gray-300 hover:text-white bg-gray-800/60 hover:bg-gray-800/80 p-2 rounded-lg transition-all">
+          <i className="ri-notification-3-line text-xl" />
+        </button>
         <img
           src={user?.profilePicture || "/default-profile.png"}
           alt="Profile"

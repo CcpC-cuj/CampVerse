@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
-const CalendarDropdown = ({ events }) => {
+const CalendarDropdown = ({ events = [] }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -17,13 +17,15 @@ const CalendarDropdown = ({ events }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Function to highlight event dates
+  // Highlight event dates
   const tileClassName = ({ date, view }) => {
-    if (view === "month") {
+    if (view === "month" && events.length > 0) {
       const dateStr = date.toISOString().split("T")[0];
       const event = events.find((e) => e.date === dateStr);
       if (event) {
-        return event.type === "upcoming" ? "bg-green-500 rounded-full text-white" : "bg-red-500 rounded-full text-white";
+        return event.type === "upcoming"
+          ? "bg-green-500 rounded-full text-white"
+          : "bg-red-500 rounded-full text-white";
       }
     }
     return null;
@@ -31,15 +33,13 @@ const CalendarDropdown = ({ events }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Calendar Icon Button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((prev) => !prev)}
         className="bg-gray-800/60 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/80"
       >
         <i className="ri-calendar-line" />
       </button>
 
-      {/* Calendar Popup */}
       {open && (
         <div className="absolute right-0 mt-2 bg-gray-900 p-3 rounded-xl border border-gray-700 shadow-lg z-50">
           <Calendar

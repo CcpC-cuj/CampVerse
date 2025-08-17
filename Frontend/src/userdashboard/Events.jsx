@@ -33,7 +33,7 @@ const Events = () => {
         {/* Top Navigation */}
         <div className="sticky top-0 z-30 bg-transparent">
           <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700  px-4 sm:px-6 py-3">
 
               {/* Hamburger Button */}
               <button
@@ -42,6 +42,8 @@ const Events = () => {
               >
                 <i className="ri-menu-line text-lg"></i>
               </button>
+
+              
 
               {/* Search Bar */}
               <div className="relative flex-1 min-w-[220px] max-w-xl">
