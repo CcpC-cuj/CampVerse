@@ -102,14 +102,10 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
-  console.log("=== Google Sign-In Request ===");
-  console.log("Incoming body:", req.body);
-  console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
-
   try {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Google token missing.' });
-    console.log("Received token:", token);
+
     // Handle mock tokens for testing
     if (token.startsWith('mock_google_token_')) {
       // Extract email and name from token if present
@@ -603,75 +599,110 @@ async function register(req, res) {
   try {
     const { name, email, phone, password } = req.body;
 
-    // --- Input validation ---
+    // Comprehensive validation
     if (!name || !email || !phone || !password) {
       return res.status(400).json({
         error: "All fields (name, email, phone, password) are required.",
-        missing: { name: !name, email: !email, phone: !phone, password: !password },
+        missing: {
+          name: !name,
+          email: !email,
+          phone: !phone,
+          password: !password,
+        },
       });
     }
 
-    if (!validateName(name)) return res.status(400).json({ error: "Name must be at least 2 characters long." });
-    if (!validateEmail(email)) return res.status(400).json({ error: "Invalid email address." });
-    if (!isAcademicEmail(email)) return res.status(400).json({ error: "Only academic emails (.ac.in, .edu.in, .edu) are allowed." });
-    if (!validatePhone(phone)) return res.status(400).json({ error: "Invalid 10-digit phone number." });
-    if (!validatePassword(password)) return res.status(400).json({ error: "Password must be at least 6 characters long." });
+    if (!validateName(name)) {
+      return res
+        .status(400)
+        .json({ error: "Name must be at least 2 characters long." });
+    }
 
-    // --- Check existing user ---
+    if (!validateEmail(email)) {
+      return res
+        .status(400)
+        .json({ error: "Please provide a valid email address." });
+    }
+
+    if (!isAcademicEmail(email)) {
+      return res
+        .status(400)
+        .json({
+          error: "Only academic emails (.ac.in, .edu.in, or .edu) are allowed.",
+        });
+    }
+
+    if (!validatePhone(phone)) {
+      return res
+        .status(400)
+        .json({ error: "Please provide a valid 10-digit phone number." });
+    }
+
+    if (!validatePassword(password)) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters long." });
+    }
+
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ error: "User with this email already exists." });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ error: "User with this email already exists." });
+    }
 
-    // --- Generate OTP ---
     const otp = otpgenrater();
 
-    // --- Try sending email, but don't break if it fails ---
     try {
       await emailService.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
         subject: "Your Verification Code",
-        text: `Your verification code is: ${otp}.`,
-        html: `<p>Your verification code is: <strong>${otp}</strong></p>`,
+        text: `Your verification code is: ${otp}. Please enter it within 5 minutes.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">CampVerse Verification Code</h2>
+            <p>Hello ${name},</p>
+            <p>Your verification code is: <strong style="font-size: 24px; color: #007bff;">${otp}</strong></p>
+            <p>Please enter this code within 5 minutes to complete your registration.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+          </div>
+        `,
       });
-      console.log("Email sent successfully to", email);
-    } catch (emailErr) {
-      console.warn("Email sending failed:", emailErr.message);
-      // Continue without breaking registration
+      logger.info(`Email sent successfully to ${email}`);
+    } catch (emailError) {
+      logger.error("Email sending failed:", emailError.message);
+      // Don't continue if email fails - user needs the OTP
+      return res
+        .status(500)
+        .json({
+          error: "Failed to send verification email. Please try again.",
+        });
     }
 
-    // --- Find or create institution ---
-    let institution = null;
-    try {
-      const domain = extractDomain(email);
-      institution = await findOrCreateInstitution(domain);
-    } catch (instErr) {
-      console.warn("Institution lookup/creation failed:", instErr.message);
-    }
+    const domain = extractDomain(email);
+    const institution = await findOrCreateInstitution(domain);
 
-    // --- Save temp data to Redis safely ---
-    try {
-      if (redisClient && redisClient.setEx) {
-        const tempData = {
-          name, phone, password, otp,
-          institutionId: institution?._id || null,
-          institutionIsVerified: institution?.isVerified || "none",
-        };
-        await redisClient.setEx(email, 600, JSON.stringify(tempData));
-        console.log("Temp data saved to Redis");
-      } else {
-        console.warn("Redis client not ready, skipping Redis save");
-      }
-    } catch (redisErr) {
-      console.warn("Redis save failed:", redisErr.message);
-    }
+    const tempData = {
+      name,
+      phone,
+      password,
+      otp,
+      institutionId: institution ? institution._id : null,
+      institutionIsVerified: institution ? institution.isVerified : "none",
+    };
+    await redisClient.setEx(email, 600, JSON.stringify(tempData));
 
-    return res.status(200).json({ message: "OTP sent to email (if email service is configured)." });
+    return res.status(200).json({ message: "OTP sent to email." }); // Do NOT include OTP in response
   } catch (err) {
-    console.error("Register error:", err);
-    return res.status(500).json({ error: "Server error during registration. Please try again." });
+    logger.error("Register error:", err);
+    return res
+      .status(500)
+      .json({ error: "Server error during registration. Please try again." });
   }
 }
-
 // Verify OTP
 async function verifyOtp(req, res) {
   try {
