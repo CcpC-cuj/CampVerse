@@ -102,10 +102,14 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
+  console.log("=== Google Sign-In Request ===");
+  console.log("Incoming body:", req.body);
+  console.log("GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
+
   try {
     const { token } = req.body;
     if (!token) return res.status(400).json({ error: 'Google token missing.' });
-
+    console.log("Received token:", token);
     // Handle mock tokens for testing
     if (token.startsWith('mock_google_token_')) {
       // Extract email and name from token if present

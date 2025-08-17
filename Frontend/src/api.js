@@ -51,18 +51,24 @@ export async function login({ email, password }) {
 }
 
 export async function googleSignIn({ token }) {
+  console.log("Frontend sending token:", token); // ✅ see what is actually sent
+
   const res = await fetch(`${API_URL}/api/users/google-signin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token })
   });
+
   const data = await res.json();
+  console.log("Frontend received response:", data); // ✅ see backend response
+
   if (data.token) {
     localStorage.setItem('token', data.token);
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
 }
+
 
 export async function linkGoogleAccount({ email, password, token }) {
   const res = await fetch(`${API_URL}/api/users/link-google`, {
