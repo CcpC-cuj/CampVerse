@@ -1,5 +1,7 @@
 // src/pages/landing.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import StarryBackground from "../landing/StarryBackground";
 import Navbar from "../landing/navbar";
 import Hero from "../landing/hero";
@@ -13,6 +15,9 @@ import Footer from "../landing/footer";
 import FeaturesSection from "../landing/features";
 
 const Landing = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  
   // Control which popup is visible
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
@@ -92,10 +97,13 @@ const Landing = () => {
             // Call verifyOtp API
             try {
               const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
-              if (res.token) {
+              if (res.token && res.user) {
+                // Update AuthContext state
+                login(res.token, res.user);
                 alert('Email verified successfully!');
                 setShowOtp(false);
-                window.location.href = '/dashboard';
+                // Use navigate instead of window.location.href for better routing
+                navigate('/dashboard');
               } else {
                 alert(res.error || 'OTP verification failed.');
               }
