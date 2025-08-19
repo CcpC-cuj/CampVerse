@@ -23,14 +23,33 @@ const OAuthDetector = () => {
     const hash = window.location.hash;
     const isOAuthToken = hash.includes('id_token=') || hash.includes('access_token=');
     
+    // Prevent redirect loops by checking if we've already processed this
+    const redirectProcessed = sessionStorage.getItem('oauth_redirect_processed');
+    
     // If we're not on the oauth-callback route but have an OAuth token, redirect
-    if (isOAuthToken && location.pathname !== '/oauth-callback') {
+    // Handle both root path and /index.html (common in static hosting)
+    const isNonCallbackRoute = location.pathname !== '/oauth-callback' && 
+                              location.pathname !== '/oauth-callback.html';
+    
+    if (isOAuthToken && isNonCallbackRoute && !redirectProcessed) {
       console.log("🔵 [OAUTH DETECTOR] OAuth token detected on non-callback route, redirecting...");
       console.log("🔵 [OAUTH DETECTOR] Current path:", location.pathname);
       console.log("🔵 [OAUTH DETECTOR] Hash contains token:", !!isOAuthToken);
+      console.log("🔵 [OAUTH DETECTOR] Full hash:", hash);
+      
+      // Mark that we're processing this redirect
+      sessionStorage.setItem('oauth_redirect_processed', 'true');
       
       // Navigate to oauth-callback while preserving the hash
-      navigate('/oauth-callback', { replace: true });
+      // Use window.location to ensure hash is preserved
+      const redirectUrl = `${window.location.origin}/oauth-callback${hash}`;
+      console.log("🔵 [OAUTH DETECTOR] Redirecting to:", redirectUrl);
+      window.location.replace(redirectUrl);
+    }
+    
+    // Clear the redirect flag when we reach the oauth-callback route
+    if (location.pathname === '/oauth-callback' && redirectProcessed) {
+      sessionStorage.removeItem('oauth_redirect_processed');
     }
   }, [location, navigate]);
 
