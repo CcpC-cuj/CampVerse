@@ -68,12 +68,27 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://campverse-frontend.onrender.com', // production frontend
+  '*', // temporarily allow all origins for debugging
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) === -1 && origin !== undefined && allowedOrigins.indexOf('*') === -1) {
+        console.log(`CORS blocked origin: ${origin}`);
+        return callback(null, false);
+      }
+      console.log(`CORS allowed origin: ${origin}`);
+      return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   }),
 );
 
