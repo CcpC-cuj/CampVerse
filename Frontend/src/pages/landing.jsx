@@ -1,7 +1,8 @@
 // src/pages/landing.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { googleSignIn } from "../api";
 import StarryBackground from "../landing/StarryBackground";
 import Navbar from "../landing/navbar";
 import Hero from "../landing/hero";
@@ -25,6 +26,47 @@ const Landing = () => {
   // NEW: State for OTP modal
   const [showOtp, setShowOtp] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
+
+  // OAuth handling directly in landing page as fallback
+  useEffect(() => {
+    const handleOAuthToken = async () => {
+      const hash = window.location.hash;
+      const isOAuthToken = hash.includes('id_token=') || hash.includes('access_token=');
+      
+      if (isOAuthToken) {
+        console.log("🔵 [LANDING] OAuth token detected on landing page");
+        console.log("🔵 [LANDING] Processing token directly...");
+        console.log("🔵 [LANDING] Hash:", hash);
+        
+        try {
+          // Extract token from hash
+          const params = new URLSearchParams(hash.substring(1));
+          const idToken = params.get('id_token');
+          const accessToken = params.get('access_token');
+          const oauthToken = idToken || accessToken;
+          
+          if (oauthToken) {
+            console.log("🔵 [LANDING] Calling googleSignIn API with token...");
+            const response = await googleSignIn({ token: oauthToken });
+            
+            if (response.token) {
+              console.log("🔵 [LANDING] Login successful, redirecting to dashboard");
+              login(response.token, response.user);
+              // Clear the hash and redirect
+              window.location.hash = '';
+              navigate('/dashboard');
+            } else {
+              console.error("🔴 [LANDING] OAuth response error:", response.error);
+            }
+          }
+        } catch (error) {
+          console.error("🔴 [LANDING] OAuth processing error:", error);
+        }
+      }
+    };
+
+    handleOAuthToken();
+  }, [login, navigate]);
 
   return (
     <div>
