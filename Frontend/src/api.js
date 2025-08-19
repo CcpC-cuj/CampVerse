@@ -51,7 +51,10 @@ export async function login({ email, password }) {
 }
 
 export async function googleSignIn({ token }) {
-  console.log("Frontend sending token:", token); // ✅ see what is actually sent
+  console.log("🔵 [FRONTEND] Google Sign-In attempt started");
+  console.log("🔵 [FRONTEND] Token being sent to server:", token?.substring(0, 50) + "...");
+  console.log("🔵 [FRONTEND] Full token length:", token?.length);
+  console.log("🔵 [FRONTEND] Timestamp:", new Date().toISOString());
 
   const res = await fetch(`${API_URL}/api/users/google-signin`, {
     method: 'POST',
@@ -60,7 +63,8 @@ export async function googleSignIn({ token }) {
   });
 
   const data = await res.json();
-  console.log("Frontend received response:", data); // ✅ see backend response
+  console.log("🔵 [FRONTEND] Response received from server:", data);
+  console.log("🔵 [FRONTEND] Response timestamp:", new Date().toISOString());
 
   if (data.token) {
     localStorage.setItem('token', data.token);

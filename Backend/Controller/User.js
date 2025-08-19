@@ -99,9 +99,20 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
+  console.log("🟢 [BACKEND] Google Sign-In request received");
+  console.log("🟢 [BACKEND] Request timestamp:", new Date().toISOString());
+  console.log("🟢 [BACKEND] Request body keys:", Object.keys(req.body));
+  console.log("🟢 [BACKEND] Request IP:", req.ip || req.connection.remoteAddress);
+  
   try {
     const { token } = req.body;
-    if (!token) return res.status(400).json({ error: 'Google token missing.' });
+    console.log("🟢 [BACKEND] Token received:", token ? `${token.substring(0, 50)}...` : 'NO TOKEN');
+    console.log("🟢 [BACKEND] Token length:", token?.length || 0);
+    
+    if (!token) {
+      console.log("🔴 [BACKEND] ERROR: Google token missing");
+      return res.status(400).json({ error: 'Google token missing.' });
+    }
 
     // Handle mock tokens for testing
     if (token.startsWith('mock_google_token_')) {
@@ -162,6 +173,9 @@ async function googleSignIn(req, res) {
         process.env.JWT_SECRET,
         { expiresIn: "1h" },
       );
+      console.log("🟢 [BACKEND] Mock Google login successful for user:", mockEmail);
+      console.log("🟢 [BACKEND] Mock response sent at:", new Date().toISOString());
+      
       return res.json({
         message: "Google login successful (mock)",
         token: jwtToken,
@@ -257,12 +271,18 @@ async function googleSignIn(req, res) {
         process.env.JWT_SECRET,
         { expiresIn: "1h" },
       );
+      
+      console.log("🟢 [BACKEND] Google login successful for user:", email);
+      console.log("🟢 [BACKEND] Response sent at:", new Date().toISOString());
+      
       return res.json({
         message: "Google login successful",
         token: jwtToken,
         user: sanitizeUser(user),
       });
     } catch (googleError) {
+      console.log("🔴 [BACKEND] Google token verification failed:", googleError.message);
+      console.log("🔴 [BACKEND] Error timestamp:", new Date().toISOString());
       logger.error("Google token verification failed:", googleError);
       return res.status(401).json({ error: "Invalid Google token." });
     }

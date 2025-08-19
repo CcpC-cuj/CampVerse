@@ -45,12 +45,17 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
   };
 
   const handleGoogleSignIn = async () => {
+    console.log("🔵 [LOGIN MODAL] Google Sign-In button clicked");
+    console.log("🔵 [LOGIN MODAL] Timestamp:", new Date().toISOString());
     setError("");
     setForceLogout(false);
     try {
       setIsLoading(true);
+      console.log("🔵 [LOGIN MODAL] Getting Google token...");
       const token = await getGoogleToken();
+      console.log("🔵 [LOGIN MODAL] Token received, calling API...");
       const response = await googleSignIn({ token });
+      console.log("🔵 [LOGIN MODAL] API response received:", response);
 
       if (response.token) {
         authLogin(response.token, response.user);
