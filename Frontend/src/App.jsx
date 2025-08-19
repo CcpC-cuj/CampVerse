@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -13,6 +13,30 @@ import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import "remixicon/fonts/remixicon.css";
 
+// Component to handle OAuth detection and redirection
+const OAuthDetector = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if current URL has OAuth token in hash
+    const hash = window.location.hash;
+    const isOAuthToken = hash.includes('id_token=') || hash.includes('access_token=');
+    
+    // If we're not on the oauth-callback route but have an OAuth token, redirect
+    if (isOAuthToken && location.pathname !== '/oauth-callback') {
+      console.log("🔵 [OAUTH DETECTOR] OAuth token detected on non-callback route, redirecting...");
+      console.log("🔵 [OAUTH DETECTOR] Current path:", location.pathname);
+      console.log("🔵 [OAUTH DETECTOR] Hash contains token:", !!isOAuthToken);
+      
+      // Navigate to oauth-callback while preserving the hash
+      navigate('/oauth-callback', { replace: true });
+    }
+  }, [location, navigate]);
+
+  return null; // This component doesn't render anything
+};
+
 function App() {
   useEffect(() => {
     console.log("API URL from env:", import.meta.env.VITE_API_URL);
@@ -21,6 +45,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <OAuthDetector />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route
