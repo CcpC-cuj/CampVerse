@@ -203,7 +203,6 @@ const Settings = () => {
     ].filter(s => s.el);
 
     const observer = new IntersectionObserver((entries) => {
-      // pick the entry most visible
       const visible = entries
         .filter(e => e.isIntersecting)
         .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
@@ -219,7 +218,7 @@ const Settings = () => {
 
   return (
     // MATCHED to Dashboard outer gradient + typography
-    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+    <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* mobile overlay for sidebar */}
       {sidebarOpen && (
         <div
@@ -283,7 +282,7 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* logout on right — updated to purple tone to match UI */}
+              {/* logout on right — purple tone to match UI */}
               <button
                 onClick={handleLogout}
                 className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#cbb3ff] hover:bg-[#9b5de5]/10"
@@ -318,7 +317,7 @@ const Settings = () => {
               className="scroll-mt-24 snap-start"
             >
               <div className="space-y-6">
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
                   <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
 
                   <div className="space-y-4">
@@ -522,13 +521,16 @@ const Settings = () => {
               </div>
             </section>
 
-            {/* ===== Authentication (SECOND) ===== */}
+            {/* ===== Authentication (SECOND) — now full-width with matching card wrapper ===== */}
             <section
               id="authentication"
               ref={authRef}
               className="mt-8 scroll-mt-24 snap-start"
             >
-              <AuthenticationSettings />
+              <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-0 sm:p-6 text-white">
+                {/* No functionality change; just wrapped for full-width and visual parity */}
+                <AuthenticationSettings />
+              </div>
             </section>
 
             {/* ===== Notifications ===== */}
@@ -538,7 +540,7 @@ const Settings = () => {
               className="mt-8 scroll-mt-24 snap-start"
             >
               <div className="space-y-6">
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
                   <h3 className="text-xl font-semibold mb-4">Notification Preferences</h3>
 
                   <div className="space-y-4">
@@ -645,7 +647,7 @@ const Settings = () => {
               className="mt-8 scroll-mt-24 snap-start"
             >
               <div className="space-y-6">
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
                   <h3 className="text-xl font-semibold mb-4">Privacy Settings</h3>
 
                   <div className="space-y-4">
@@ -677,7 +679,7 @@ const Settings = () => {
               className="mt-8 mb-8 scroll-mt-24 snap-start"
             >
               <div className="space-y-6">
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
                   <h3 className="text-xl font-semibold mb-4">Security Settings</h3>
 
                   <div className="space-y-4">
@@ -711,16 +713,17 @@ const Settings = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border border-red-500/30 rounded-lg bg-red-500/10">
+                    {/* Delete Account — colors switched from red to purple, no functionality change */}
+                    <div className="flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
                       <div>
-                        <h4 className="font-medium text-red-300">Delete Account</h4>
-                        <p className="text-sm text-red-300/80">
+                        <h4 className="font-medium text-[#cbb3ff]">Delete Account</h4>
+                        <p className="text-sm text-[#cbb3ff]/80">
                           Permanently delete your account and all data
                         </p>
                       </div>
                       <button
                         onClick={handleDeleteAccount}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-button"
+                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
                       >
                         Request Deletion
                       </button>
