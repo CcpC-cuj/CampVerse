@@ -57,14 +57,15 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-
+// Basic security headers
+app.use(helmet());
 
 // Enable CORS for local frontend development
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://campverse-frontend.onrender.com', // production frontend
-  '*', // temporarily allow all origins for debugging
+  'https://campverse-frontend.onrender.com',
+  'https://campverse-alqa.onrender.com/' // production frontend
 ];
 
 app.use(
@@ -86,8 +87,6 @@ app.use(
   }),
 );
 
-// Basic security headers
-app.use(helmet());
 app.use(express.json({ limit: '1mb' }));
 
 // Connect Redis client

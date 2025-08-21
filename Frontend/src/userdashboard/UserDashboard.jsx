@@ -5,8 +5,8 @@ import Sidebar from '../userdashboard/sidebar';
 import OnboardingModal from './OnboardingModal';
 import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
-import NotificationBell from './notificationbell'; // ✅ use our bell component
-import CalendarDropdown from "./CalendarDropdown";
+import GradientCircularProgress from "../components/GradientCircularProgress.jsx";
+import NavBar from './NavBar.jsx';
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -62,7 +62,14 @@ const UserDashboard = () => {
     }
   }, [location]);
 
-  if (!user || loadingGate) return <div>Loading...</div>;
+  if (!user || loadingGate) {
+  return (
+    <div className="h-screen flex items-center justify-center  bg-[#141a45]">
+      <GradientCircularProgress />
+    </div>
+  );
+}
+
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
@@ -82,49 +89,10 @@ const UserDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
+        
 
         {/* Top Navigation */}
-        <div className="sticky top-0 z-30 bg-transparent">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
-
-              {/* Hamburger Button */}
-              <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white hover:scale-105"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <i className="ri-menu-line text-lg"></i>
-              </button>
-
-              {/* Search Bar */}
-              <div className="relative flex-1 min-w-[220px] max-w-xl">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <i className="ri-search-line text-gray-400 w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  className="h-11 bg-gray-800/60 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#9b5de5] outline-none"
-                  placeholder="Search events, colleges, or categories..."
-                />
-              </div>
-
-              {/* Right Nav Buttons */}
-              <div className="flex items-center gap-2 sm:gap-4">
-                {/* ✅ Notification Bell */}
-                <NotificationBell notifications={[]} />
-
-                {/* ✅ Calendar Dropdown */}
-                <CalendarDropdown events={eventsData} />
-
-                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button flex items-center gap-2 hover:scale-105">
-                  <i className="ri-add-line" />
-                  <span className="hidden sm:inline">Host Event</span>
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </div>
+        <NavBar />
 
         {/* Main Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
