@@ -8,7 +8,7 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory";
+import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import "remixicon/fonts/remixicon.css";
@@ -32,18 +32,10 @@ const OAuthDetector = () => {
                               location.pathname !== '/oauth-callback.html';
     
     if (isOAuthToken && isNonCallbackRoute && !redirectProcessed) {
-      console.log("🔵 [OAUTH DETECTOR] OAuth token detected on non-callback route, redirecting...");
-      console.log("🔵 [OAUTH DETECTOR] Current path:", location.pathname);
-      console.log("🔵 [OAUTH DETECTOR] Hash contains token:", !!isOAuthToken);
-      console.log("🔵 [OAUTH DETECTOR] Full hash:", hash);
-      
       // Mark that we're processing this redirect
       sessionStorage.setItem('oauth_redirect_processed', 'true');
-      
       // Navigate to oauth-callback while preserving the hash
-      // Use window.location to ensure hash is preserved
       const redirectUrl = `${window.location.origin}/oauth-callback${hash}`;
-      console.log("🔵 [OAUTH DETECTOR] Redirecting to:", redirectUrl);
       window.location.replace(redirectUrl);
     }
     
@@ -58,7 +50,7 @@ const OAuthDetector = () => {
 
 function App() {
   useEffect(() => {
-    console.log("API URL from env:", import.meta.env.VITE_API_URL);
+    // API URL from env: import.meta.env.VITE_API_URL
   }, []);
 
   return (
@@ -75,6 +67,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/settings"
             element={
@@ -84,13 +77,14 @@ function App() {
             }
           />
           <Route
-            path="/eventhistory"
+            path="/dashboard/events"
             element={
               <ProtectedRoute>
-                <EventHistory />
+                <Events />
               </ProtectedRoute>
             }
           />
+          {/* Help Center route */}
           <Route
             path="/help"
             element={
