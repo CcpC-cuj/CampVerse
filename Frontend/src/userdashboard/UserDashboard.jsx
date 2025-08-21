@@ -7,6 +7,7 @@ import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
 import NotificationBell from './notificationbell'; // ✅ use our bell component
 import CalendarDropdown from "./CalendarDropdown";
+import GradientCircularProgress from "../components/GradientCircularProgress.jsx";
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -62,7 +63,14 @@ const UserDashboard = () => {
     }
   }, [location]);
 
-  if (!user || loadingGate) return <div>Loading...</div>;
+  if (!user || loadingGate) {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <GradientCircularProgress />
+    </div>
+  );
+}
+
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
