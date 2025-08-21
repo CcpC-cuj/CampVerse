@@ -11,6 +11,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
+import ResetPassword from "./pages/ResetPassword";
 import "remixicon/fonts/remixicon.css";
 
 // Component to handle OAuth detection and redirection
@@ -101,6 +102,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="*" element={<Landing />} />
         </Routes>
