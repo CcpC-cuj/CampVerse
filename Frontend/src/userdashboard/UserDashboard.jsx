@@ -8,6 +8,7 @@ import DiscoverEvents from './DiscoverEvents';
 import NotificationBell from './notificationbell'; // ✅ use our bell component
 import CalendarDropdown from "./CalendarDropdown";
 import GradientCircularProgress from "../components/GradientCircularProgress.jsx";
+import SearchBar from '../components/SearchBar.jsx';
 
 const UserDashboard = () => {
   const { user } = useAuth();
@@ -106,16 +107,7 @@ const UserDashboard = () => {
               </button>
 
               {/* Search Bar */}
-              <div className="relative flex-1 min-w-[220px] max-w-xl">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <i className="ri-search-line text-gray-400 w-5 h-5" />
-                </div>
-                <input
-                  type="text"
-                  className="h-11 bg-gray-800/60 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#9b5de5] outline-none"
-                  placeholder="Search events, colleges, or categories..."
-                />
-              </div>
+              <SearchBar />
 
               {/* Right Nav Buttons */}
               <div className="flex items-center gap-2 sm:gap-4">
