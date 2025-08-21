@@ -16,13 +16,11 @@ const OAuthCallback = () => {
     
     // If hash is empty, don't process
     if (!hash || hash.trim() === '') {
-      console.log("🟡 [OAUTH CALLBACK] Empty hash, skipping processing");
       return;
     }
     
     // Prevent multiple simultaneous processing
     if (isProcessing) {
-      console.log("🟡 [OAUTH CALLBACK] Already processing, skipping...");
       return;
     }
 
@@ -31,15 +29,7 @@ const OAuthCallback = () => {
     const accessToken = params.get('access_token');
     const oauthToken = idToken || accessToken;
 
-    console.log("🔵 [OAUTH CALLBACK] Processing OAuth callback");
-    console.log("🔵 [OAUTH CALLBACK] Timestamp:", new Date().toISOString());
-    console.log("🔵 [OAUTH CALLBACK] Hash:", hash);
-    console.log("🔵 [OAUTH CALLBACK] ID Token found:", !!idToken);
-    console.log("🔵 [OAUTH CALLBACK] Access Token found:", !!accessToken);
-    console.log("🔵 [OAUTH CALLBACK] Final token selected:", oauthToken ? `${oauthToken.substring(0, 50)}...` : 'NONE');
-
     if (!oauthToken) {
-      console.log("🔴 [OAUTH CALLBACK] ERROR: No token found in URL");
       setError('No Google OAuth token found in URL.');
       return;
     }
@@ -47,7 +37,6 @@ const OAuthCallback = () => {
     // Check if this token was already processed
     const processedToken = sessionStorage.getItem('last_processed_oauth_token');
     if (processedToken === oauthToken) {
-      console.log("🟡 [OAUTH CALLBACK] Token already processed, skipping...");
       return;
     }
 
@@ -57,22 +46,17 @@ const OAuthCallback = () => {
     // Clear in-progress flags
     sessionStorage.removeItem('google_oauth_in_progress');
     sessionStorage.removeItem('google_oauth_nonce');
-
-    console.log("🔵 [OAUTH CALLBACK] Calling googleSignIn API...");
     // Exchange token for JWT/user with backend (supports id_token or access_token)
     googleSignIn({ token: oauthToken })
       .then((response) => {
-        console.log("🔵 [OAUTH CALLBACK] API response received:", response);
         setIsProcessing(false); // Reset processing flag
         
         if (response.token) {
-          console.log("🔵 [OAUTH CALLBACK] Login successful, redirecting to dashboard");
           login(response.token, response.user);
           // Clear the hash to prevent re-processing
           window.location.hash = '';
           navigate('/dashboard');
         } else if (response.error) {
-          console.error('🔴 [OAUTH CALLBACK] Google sign-in error:', response.error);
           setError(response.error);
           if (response.error.includes('academic emails')) {
             setShowLogout(true);
@@ -82,7 +66,6 @@ const OAuthCallback = () => {
         }
       })
       .catch((err) => {
-        console.error('🔴 [OAUTH CALLBACK] Google sign-in catch error:', err);
         setIsProcessing(false); // Reset processing flag
         setError('Google sign-in failed: ' + err.message);
       });

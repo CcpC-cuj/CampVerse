@@ -24,10 +24,7 @@ const errorHandler = require('./Middleware/errorHandler');
 
 const app = express();
 
-console.log('MONGO_URI:', process.env.MONGO_URI);
-console.log('REDIS_URL:', process.env.REDIS_URL);
-
-// Winston logger setup
+// Environment variables and Winston logger setup
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -78,13 +75,11 @@ app.use(
       if (!origin) return callback(null, true);
       
       if (allowedOrigins.indexOf(origin) === -1 && origin !== undefined && allowedOrigins.indexOf('*') === -1) {
-        console.log(`CORS blocked origin: ${origin}`);
         return callback(null, false);
       }
-      console.log(`CORS allowed origin: ${origin}`);
       return callback(null, true);
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
     preflightContinue: false,
@@ -166,8 +161,7 @@ mongoose
   .catch((err) => {
     console.error('Failed to connect to MongoDB', err);
   });
-console.log('MONGO_URI:', process.env.MONGO_URI);
-console.log('REDIS_URL:', process.env.REDIS_URL);
+
 
 // Export app for testing
 module.exports = app;
