@@ -18,8 +18,8 @@ const Settings = () => {
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // tabs (moved to top navbar)
-  const [activeTab, setActiveTab] = useState('authentication');
+  // active section highlight for top navbar (purely visual; content is stacked)
+  const [activeTab, setActiveTab] = useState('profile');
 
   // notifications state (unchanged functionality)
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -45,6 +45,14 @@ const Settings = () => {
   const phoneInputRef = useRef(null);
   const locationInputRef = useRef(null);
   const bioInputRef = useRef(null);
+
+  // section refs for stacked scrolling
+  const containerRef = useRef(null);
+  const profileRef = useRef(null);
+  const authRef = useRef(null);
+  const notificationsRef = useRef(null);
+  const privacyRef = useRef(null);
+  const securityRef = useRef(null);
 
   // keep inputs synced with user unless editing
   useEffect(() => {
@@ -154,417 +162,60 @@ const Settings = () => {
     }
   };
 
+  // NAV TABS — reordered so Profile comes first, then Authentication
   const tabs = [
-    { id: 'authentication', label: 'Authentication', icon: 'ri-shield-keyhole-line' },
-    { id: 'profile', label: 'Profile', icon: 'ri-user-settings-line' },
-    { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line' },
-    { id: 'privacy', label: 'Privacy', icon: 'ri-lock-line' },
-    { id: 'security', label: 'Security', icon: 'ri-shield-check-line' }
+    { id: 'profile', label: 'Profile', icon: 'ri-user-settings-line', ref: profileRef },
+    { id: 'authentication', label: 'Authentication', icon: 'ri-shield-keyhole-line', ref: authRef },
+    { id: 'notifications', label: 'Notifications', icon: 'ri-notification-3-line', ref: notificationsRef },
+    { id: 'privacy', label: 'Privacy', icon: 'ri-lock-line', ref: privacyRef },
+    { id: 'security', label: 'Security', icon: 'ri-shield-check-line', ref: securityRef }
   ];
 
-  const TabContent = () => {
-    switch (activeTab) {
-      case 'authentication':
-        return <AuthenticationSettings />;
-
-      case 'profile':
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={profilePhoto}
-                    alt="Profile"
-                    className="w-16 h-16 rounded-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/default-avatar.png';
-                    }}
-                  />
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={profileSaving}
-                      className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button transition-colors"
-                    >
-                      Change Photo
-                    </button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={fileInputRef}
-                      style={{ display: 'none' }}
-                      onChange={handlePhotoChange}
-                    />
-                  </div>
-                  {profileMessage && (
-                    <span className="text-sm text-gray-300">{profileMessage}</span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label className="block text-sm text-gray-300 mb-1">Full Name</label>
-                      {editingField !== 'name' ? (
-                        <button
-                          type="button"
-                          onClick={() => startEditing('name')}
-                          className="text-sm text-[#cbb3ff]"
-                        >
-                          Edit
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={stopEditing}
-                          className="text-sm text-gray-400"
-                        >
-                          Done
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      ref={nameInputRef}
-                      value={name}
-                      readOnly={editingField !== 'name'}
-                      onChange={(e) => setName(e.target.value)}
-                      className={`w-full p-2 rounded bg-gray-900 border ${
-                        editingField !== 'name'
-                          ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                          : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-300 mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={user?.email || ''}
-                      disabled
-                      className="w-full p-2 rounded bg-gray-900 border border-gray-800 text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label className="block text-sm text-gray-300 mb-1">Phone</label>
-                      {editingField !== 'phone' ? (
-                        <button
-                          type="button"
-                          onClick={() => startEditing('phone')}
-                          className="text-sm text-[#cbb3ff]"
-                        >
-                          Edit
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={stopEditing}
-                          className="text-sm text-gray-400"
-                        >
-                          Done
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="tel"
-                      ref={phoneInputRef}
-                      value={phone}
-                      readOnly={editingField !== 'phone'}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className={`w-full p-2 rounded bg-gray-900 border ${
-                        editingField !== 'phone'
-                          ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                          : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label className="block text-sm text-gray-300 mb-1">Location</label>
-                      {editingField !== 'location' ? (
-                        <button
-                          type="button"
-                          onClick={() => startEditing('location')}
-                          className="text-sm text-[#cbb3ff]"
-                        >
-                          Edit
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={stopEditing}
-                          className="text-sm text-gray-400"
-                        >
-                          Done
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      ref={locationInputRef}
-                      value={location}
-                      readOnly={editingField !== 'location'}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className={`w-full p-2 rounded bg-gray-900 border ${
-                        editingField !== 'location'
-                          ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                          : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between">
-                    <label className="block text-sm text-gray-300 mb-1">Bio</label>
-                    {editingField !== 'bio' ? (
-                      <button
-                        type="button"
-                        onClick={() => startEditing('bio')}
-                        className="text-sm text-[#cbb3ff]"
-                      >
-                        Edit
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={stopEditing}
-                        className="text-sm text-gray-400"
-                      >
-                        Done
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    rows={3}
-                    ref={bioInputRef}
-                    value={bio}
-                    readOnly={editingField !== 'bio'}
-                    onChange={(e) => setBio(e.target.value)}
-                    className={`w-full p-2 rounded bg-gray-900 border ${
-                      editingField !== 'bio'
-                        ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                        : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                    }`}
-                    placeholder="Tell us about yourself..."
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSaveProfile}
-                    disabled={profileSaving}
-                    className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-button transition-colors disabled:opacity-50"
-                  >
-                    {profileSaving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-semibold mb-4">Notification Preferences</h3>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                  <div>
-                    <h4 className="font-medium">Email Notifications</h4>
-                    <p className="text-sm text-gray-400">Receive notifications via email</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={emailNotifications}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setEmailNotifications(checked);
-                        const updated = { ...notifPrefs, email: { ...notifPrefs.email } };
-                        for (const k of ['rsvp','certificate','cohost','event_verification','host_request']) {
-                          updated.email[k] = checked;
-                        }
-                        setNotifPrefs(updated);
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
-                  </label>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                  <div>
-                    <h4 className="font-medium">Push Notifications</h4>
-                    <p className="text-sm text-gray-400">Receive in-app notifications</p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={pushNotifications}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setPushNotifications(checked);
-                        const updated = { ...notifPrefs, inApp: { ...notifPrefs.inApp } };
-                        for (const k of ['rsvp','certificate','cohost','event_verification','host_request']) {
-                          updated.inApp[k] = checked;
-                        }
-                        setNotifPrefs(updated);
-                      }}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
-                  </label>
-                </div>
-
-                {['rsvp','certificate','cohost','event_verification','host_request'].map((cat) => (
-                  <div key={`cat-${cat}`} className="grid grid-cols-1 md:grid-cols-3 items-center p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                    <div className="md:col-span-1">
-                      <h4 className="font-medium capitalize">{cat.replace('_',' ')}</h4>
-                      <p className="text-sm text-gray-400">Email and in-app</p>
-                    </div>
-                    <div className="flex items-center justify-between md:col-span-2">
-                      <label className="flex items-center gap-2">
-                        <span className="text-sm text-gray-300">Email</span>
-                        <input
-                          type="checkbox"
-                          checked={!!notifPrefs.email[cat]}
-                          onChange={(e) =>
-                            setNotifPrefs({ ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } })
-                          }
-                        />
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <span className="text-sm text-gray-300">In-App</span>
-                        <input
-                          type="checkbox"
-                          checked={!!notifPrefs.inApp[cat]}
-                          onChange={(e) =>
-                            setNotifPrefs({ ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } })
-                          }
-                        />
-                      </label>
-                    </div>
-                  </div>
-                ))}
-
-                <div className="flex justify-end gap-2">
-                  {notifMessage && (
-                    <span className="text-sm text-gray-300 self-center">{notifMessage}</span>
-                  )}
-                  <button
-                    onClick={saveNotificationPrefs}
-                    disabled={notifSaving}
-                    className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button disabled:opacity-50"
-                  >
-                    {notifSaving ? 'Saving...' : 'Save Preferences'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'privacy':
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-semibold mb-4">Privacy Settings</h3>
-
-              <div className="space-y-4">
-                {[
-                  { title: 'Profile Visibility', desc: 'Make your profile visible to other users', def: true },
-                  { title: 'Activity Status', desc: "Show when you're active on the platform", def: true },
-                  { title: 'Data Analytics', desc: 'Allow usage data to improve the product', def: true }
-                ].map((row, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                    <div>
-                      <h4 className="font-medium">{row.title}</h4>
-                      <p className="text-sm text-gray-400">{row.desc}</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" defaultChecked={row.def} className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'security':
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
-              <h3 className="text-xl font-semibold mb-4">Security Settings</h3>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                  <div>
-                    <h4 className="font-medium">Two-Factor Authentication</h4>
-                    <p className="text-sm text-gray-400">Add an extra layer of security</p>
-                  </div>
-                  <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button">
-                    Enable 2FA
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                  <div>
-                    <h4 className="font-medium">Login History</h4>
-                    <p className="text-sm text-gray-400">View recent login activity</p>
-                  </div>
-                  <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
-                    View History
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
-                  <div>
-                    <h4 className="font-medium">Active Sessions</h4>
-                    <p className="text-sm text-gray-400">Manage your active sessions</p>
-                  </div>
-                  <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
-                    Manage Sessions
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-4 border border-red-500/30 rounded-lg bg-red-500/10">
-                  <div>
-                    <h4 className="font-medium text-red-300">Delete Account</h4>
-                    <p className="text-sm text-red-300/80">
-                      Permanently delete your account and all data
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDeleteAccount}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-button"
-                  >
-                    Request Deletion
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return <AuthenticationSettings />;
-    }
+  // Smooth-scroll to a section inside scroll container
+  const scrollTo = (sectionRef) => {
+    const node = sectionRef?.current;
+    const container = containerRef?.current;
+    if (!node || !container) return;
+    const containerTop = container.getBoundingClientRect().top;
+    const nodeTop = node.getBoundingClientRect().top;
+    const currentScroll = container.scrollTop;
+    const offset = nodeTop - containerTop - 12; // small padding for sticky bar
+    container.scrollTo({ top: currentScroll + offset, behavior: 'smooth' });
   };
+
+  // Highlight active tab while scrolling (design only)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const options = {
+      root: container,
+      rootMargin: '0px 0px -55% 0px',
+      threshold: 0.2
+    };
+
+    const sections = [
+      { id: 'profile', el: profileRef.current },
+      { id: 'authentication', el: authRef.current },
+      { id: 'notifications', el: notificationsRef.current },
+      { id: 'privacy', el: privacyRef.current },
+      { id: 'security', el: securityRef.current }
+    ].filter(s => s.el);
+
+    const observer = new IntersectionObserver((entries) => {
+      // pick the entry most visible
+      const visible = entries
+        .filter(e => e.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) {
+        const hit = sections.find(s => s.el === visible.target);
+        if (hit?.id) setActiveTab(hit.id);
+      }
+    }, options);
+
+    sections.forEach(s => observer.observe(s.el));
+    return () => observer.disconnect();
+  }, []);
 
   return (
     // MATCHED to Dashboard outer gradient + typography
@@ -588,13 +239,13 @@ const Settings = () => {
 
       {/* main column — MATCHED to Dashboard lighter surface */}
       <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full bg-[#141a45]">
-        {/* sticky top bar with back + horizontal tabs */}
-        <div className="sticky top-0 z-30 bg-transparent">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center gap-3 sm:gap-4 bg-gray-800/60 border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
+        {/* sticky top bar with back + horizontal tabs (enhanced mobile clarity) */}
+        <div className="sticky top-0 z-30">
+          <div className="px-3 sm:px-6 py-2 sm:py-3 bg-[#141a45]/90 backdrop-blur supports-[backdrop-filter]:bg-[#141a45]/80 border-b border-gray-700/60 shadow-md">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* hamburger for mobile */}
               <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white"
+                className="sm:hidden p-2 rounded-lg bg-gray-800/80 text-white"
                 onClick={() => setSidebarOpen(true)}
                 aria-label="Open sidebar"
               >
@@ -611,13 +262,14 @@ const Settings = () => {
                 <span className="hidden sm:inline">Back</span>
               </button>
 
-              {/* tabs as top nav */}
+              {/* tabs as top nav (scroll-to-section) */}
               <div className="flex-1 overflow-x-auto">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-max">
                   {tabs.map((t) => (
                     <button
                       key={t.id}
-                      onClick={() => setActiveTab(t.id)}
+                      onClick={() => scrollTo(t.ref)}
+                      aria-current={activeTab === t.id ? 'page' : undefined}
                       className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap flex items-center gap-2 transition-colors ${
                         activeTab === t.id
                           ? 'bg-[#9b5de5] text-white'
@@ -631,10 +283,10 @@ const Settings = () => {
                 </div>
               </div>
 
-              {/* logout on right */}
+              {/* logout on right — updated to purple tone to match UI */}
               <button
                 onClick={handleLogout}
-                className="px-3 py-2 rounded-button border border-red-500/40 text-red-300 hover:bg-red-500/10"
+                className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#cbb3ff] hover:bg-[#9b5de5]/10"
                 title="Logout"
               >
                 <i className="ri-logout-box-r-line"></i>
@@ -643,8 +295,11 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* scrollable content — MATCHED surface color */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
+        {/* scrollable content — MATCHED surface color; stacked sections for scroll-through */}
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45] scroll-smooth snap-y snap-proximity"
+        >
           <div className="max-w-6xl mx-auto">
             <h1
               className="text-2xl sm:text-3xl font-bold mb-4"
@@ -656,7 +311,425 @@ const Settings = () => {
               Manage your account settings and preferences
             </p>
 
-            <TabContent />
+            {/* ===== Profile (FIRST) ===== */}
+            <section
+              id="profile"
+              ref={profileRef}
+              className="scroll-mt-24 snap-start"
+            >
+              <div className="space-y-6">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                  <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <img
+                        src={profilePhoto}
+                        alt="Profile"
+                        className="w-16 h-16 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = '/default-avatar.png';
+                        }}
+                      />
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={profileSaving}
+                          className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button transition-colors"
+                        >
+                          Change Photo
+                        </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={fileInputRef}
+                          style={{ display: 'none' }}
+                          onChange={handlePhotoChange}
+                        />
+                      </div>
+                      {profileMessage && (
+                        <span className="text-sm text-gray-300">{profileMessage}</span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Full Name</label>
+                          {editingField !== 'name' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('name')}
+                              className="text-sm text-[#cbb3ff]"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-sm text-gray-400"
+                            >
+                              Done
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          ref={nameInputRef}
+                          value={name}
+                          readOnly={editingField !== 'name'}
+                          onChange={(e) => setName(e.target.value)}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'name'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={user?.email || ''}
+                          disabled
+                          className="w-full p-2 rounded bg-gray-900 border border-gray-800 text-gray-500"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Phone</label>
+                          {editingField !== 'phone' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('phone')}
+                              className="text-sm text-[#cbb3ff]"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-sm text-gray-400"
+                            >
+                              Done
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="tel"
+                          ref={phoneInputRef}
+                          value={phone}
+                          readOnly={editingField !== 'phone'}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'phone'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Location</label>
+                          {editingField !== 'location' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('location')}
+                              className="text-sm text-[#cbb3ff]"
+                            >
+                              Edit
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-sm text-gray-400"
+                            >
+                              Done
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          ref={locationInputRef}
+                          value={location}
+                          readOnly={editingField !== 'location'}
+                          onChange={(e) => setLocation(e.target.value)}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'location'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm text-gray-300 mb-1">Bio</label>
+                        {editingField !== 'bio' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditing('bio')}
+                            className="text-sm text-[#cbb3ff]"
+                          >
+                            Edit
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopEditing}
+                            className="text-sm text-gray-400"
+                          >
+                            Done
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        rows={3}
+                        ref={bioInputRef}
+                        value={bio}
+                        readOnly={editingField !== 'bio'}
+                        onChange={(e) => setBio(e.target.value)}
+                        className={`w-full p-2 rounded bg-gray-900 border ${
+                          editingField !== 'bio'
+                            ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                            : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                        }`}
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSaveProfile}
+                        disabled={profileSaving}
+                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-button transition-colors disabled:opacity-50"
+                      >
+                        {profileSaving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ===== Authentication (SECOND) ===== */}
+            <section
+              id="authentication"
+              ref={authRef}
+              className="mt-8 scroll-mt-24 snap-start"
+            >
+              <AuthenticationSettings />
+            </section>
+
+            {/* ===== Notifications ===== */}
+            <section
+              id="notifications"
+              ref={notificationsRef}
+              className="mt-8 scroll-mt-24 snap-start"
+            >
+              <div className="space-y-6">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                  <h3 className="text-xl font-semibold mb-4">Notification Preferences</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                      <div>
+                        <h4 className="font-medium">Email Notifications</h4>
+                        <p className="text-sm text-gray-400">Receive notifications via email</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={emailNotifications}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setEmailNotifications(checked);
+                            const updated = { ...notifPrefs, email: { ...notifPrefs.email } };
+                            for (const k of ['rsvp','certificate','cohost','event_verification','host_request']) {
+                              updated.email[k] = checked;
+                            }
+                            setNotifPrefs(updated);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                      <div>
+                        <h4 className="font-medium">Push Notifications</h4>
+                        <p className="text-sm text-gray-400">Receive in-app notifications</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={pushNotifications}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setPushNotifications(checked);
+                            const updated = { ...notifPrefs, inApp: { ...notifPrefs.inApp } };
+                            for (const k of ['rsvp','certificate','cohost','event_verification','host_request']) {
+                              updated.inApp[k] = checked;
+                            }
+                            setNotifPrefs(updated);
+                          }}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
+                      </label>
+                    </div>
+
+                    {['rsvp','certificate','cohost','event_verification','host_request'].map((cat) => (
+                      <div key={`cat-${cat}`} className="grid grid-cols-1 md:grid-cols-3 items-center p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                        <div className="md:col-span-1">
+                          <h4 className="font-medium capitalize">{cat.replace('_',' ')}</h4>
+                          <p className="text-sm text-gray-400">Email and in-app</p>
+                        </div>
+                        <div className="flex items-center justify-between md:col-span-2">
+                          <label className="flex items-center gap-2">
+                            <span className="text-sm text-gray-300">Email</span>
+                            <input
+                              type="checkbox"
+                              checked={!!notifPrefs.email[cat]}
+                              onChange={(e) =>
+                                setNotifPrefs({ ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } })
+                              }
+                            />
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <span className="text-sm text-gray-300">In-App</span>
+                            <input
+                              type="checkbox"
+                              checked={!!notifPrefs.inApp[cat]}
+                              onChange={(e) =>
+                                setNotifPrefs({ ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } })
+                              }
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex justify-end gap-2">
+                      {notifMessage && (
+                        <span className="text-sm text-gray-300 self-center">{notifMessage}</span>
+                      )}
+                      <button
+                        onClick={saveNotificationPrefs}
+                        disabled={notifSaving}
+                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button disabled:opacity-50"
+                      >
+                        {notifSaving ? 'Saving...' : 'Save Preferences'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ===== Privacy ===== */}
+            <section
+              id="privacy"
+              ref={privacyRef}
+              className="mt-8 scroll-mt-24 snap-start"
+            >
+              <div className="space-y-6">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                  <h3 className="text-xl font-semibold mb-4">Privacy Settings</h3>
+
+                  <div className="space-y-4">
+                    {[
+                      { title: 'Profile Visibility', desc: 'Make your profile visible to other users', def: true },
+                      { title: 'Activity Status', desc: "Show when you're active on the platform", def: true },
+                      { title: 'Data Analytics', desc: 'Allow usage data to improve the product', def: true }
+                    ].map((row, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                        <div>
+                          <h4 className="font-medium">{row.title}</h4>
+                          <p className="text-sm text-gray-400">{row.desc}</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" defaultChecked={row.def} className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-5 after:h-5 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-full"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ===== Security ===== */}
+            <section
+              id="security"
+              ref={securityRef}
+              className="mt-8 mb-8 scroll-mt-24 snap-start"
+            >
+              <div className="space-y-6">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
+                  <h3 className="text-xl font-semibold mb-4">Security Settings</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                      <div>
+                        <h4 className="font-medium">Two-Factor Authentication</h4>
+                        <p className="text-sm text-gray-400">Add an extra layer of security</p>
+                      </div>
+                      <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button">
+                        Enable 2FA
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                      <div>
+                        <h4 className="font-medium">Login History</h4>
+                        <p className="text-sm text-gray-400">View recent login activity</p>
+                      </div>
+                      <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
+                        View History
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-gray-700 rounded-lg bg-gray-900/40">
+                      <div>
+                        <h4 className="font-medium">Active Sessions</h4>
+                        <p className="text-sm text-gray-400">Manage your active sessions</p>
+                      </div>
+                      <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
+                        Manage Sessions
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-red-500/30 rounded-lg bg-red-500/10">
+                      <div>
+                        <h4 className="font-medium text-red-300">Delete Account</h4>
+                        <p className="text-sm text-red-300/80">
+                          Permanently delete your account and all data
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleDeleteAccount}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-button"
+                      >
+                        Request Deletion
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
           </div>
         </div>
       </div>

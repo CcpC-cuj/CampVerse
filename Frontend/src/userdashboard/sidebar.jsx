@@ -183,3 +183,4 @@ const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-[#9b5de5]", end 
 };
 
 export default Sidebar;
+ 
