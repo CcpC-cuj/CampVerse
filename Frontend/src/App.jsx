@@ -8,9 +8,9 @@ import Landing from "./pages/landing";
 import UserDashboard from "./userdashboard/UserDashboard";
 import Settings from "./userdashboard/Settings";
 import OAuthCallback from "./pages/OAuthCallback";
-import EventHistory from "./userdashboard/EventHistory";
-import HelpCenter from "./userdashboard/HelpCenter";
-import Feedback from "./userdashboard/Feedback";
+import Events from "./userdashboard/Events";
+import HelpCenter from "./userdashboard/HelpCenter"; // already added earlier
+import Feedback from "./userdashboard/Feedback";     // ← NEW
 import "remixicon/fonts/remixicon.css";
 
 // Component to handle OAuth detection and redirection
@@ -75,6 +75,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          
           <Route
             path="/settings"
             element={
@@ -84,13 +85,14 @@ function App() {
             }
           />
           <Route
-            path="/eventhistory"
-            element={
-              <ProtectedRoute>
-                <EventHistory />
-              </ProtectedRoute>
-            }
-          />
+  path="/dashboard/events"
+  element={
+    <ProtectedRoute>
+      <Events />
+    </ProtectedRoute>
+  }
+/>
+          {/* Help Center route */}
           <Route
             path="/help"
             element={
