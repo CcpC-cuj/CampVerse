@@ -65,7 +65,7 @@ const UserDashboard = () => {
 
   if (!user || loadingGate) {
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="h-screen flex items-center justify-center  bg-[#141a45]">
       <GradientCircularProgress />
     </div>
   );
@@ -90,6 +90,7 @@ const UserDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
+        
 
         {/* Top Navigation */}
         <div className="sticky top-0 z-30 bg-transparent">
