@@ -65,7 +65,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://campverse-frontend.onrender.com',
-  'https://campverse-alqa.onrender.com/' // production frontend
+  'https://campverse-alqa.onrender.com' // production frontend
 ];
 
 app.use(
