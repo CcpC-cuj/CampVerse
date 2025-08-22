@@ -1,7 +1,11 @@
 import React, { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 const Navbar = ({ onLoginClick, onSignupClick }) => {
   const [hovered, setHovered] = useState("login"); // Default: hover on "login"
+  const [isOpen, setIsOpen] = useState(false); // Mobile menu toggle
+
+  const navLinks = ["features", "events", "testimonials", "faq"];
 
   return (
     <nav className="fixed top-0 left-0 w-full z-20 backdrop-blur-md bg-[#0b0f2b]/70 border-b border-gray-300 transition-all duration-300">
@@ -11,9 +15,9 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
           CampVerse
         </span>
 
-        {/* Nav links */}
+        {/* Desktop Nav links */}
         <div className="hidden md:flex space-x-10">
-          {["features", "events", "testimonials", "faq"].map((item) => (
+          {navLinks.map((item) => (
             <a
               key={item}
               href={`#${item}`}
@@ -24,10 +28,10 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
           ))}
         </div>
 
-        {/* Auth buttons */}
-        <div className="flex space-x-4">
-          {/* Log In */}
+        {/* Desktop Auth buttons */}
+        <div className="hidden md:flex space-x-4">
           <button
+            aria-label="Open login modal"
             onClick={onLoginClick}
             onMouseEnter={() => setHovered("login")}
             onMouseLeave={() => setHovered(null)}
@@ -38,17 +42,60 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
             Log In
           </button>
 
-          {/* Sign Up */}
           <button
+            aria-label="Open signup modal"
             onClick={onSignupClick}
             onMouseEnter={() => setHovered("signup")}
             onMouseLeave={() => setHovered(null)}
-            className="px-5 py-2 rounded-full text-white bg-primary hover:bg-white/10 hover:scale-105 transition duration-300"
+            className="px-5 py-2 rounded-full text-white bg-[#9b5de5] hover:bg-white/10 hover:scale-105 transition duration-300"
           >
             Sign Up
           </button>
         </div>
+
+        {/* Mobile Hamburger */}
+        <div className="md:hidden">
+          <button onClick={() => setIsOpen(!isOpen)} className="text-white" aria-label="Toggle menu">
+            {isOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden px-6 pb-4 space-y-4 bg-[#0b0f2b]/90 backdrop-blur-md">
+          {navLinks.map((item) => (
+            <a
+              key={item}
+              href={`#${item}`}
+              onClick={() => setIsOpen(false)}
+              className="block text-gray-300 hover:text-white transition-colors duration-300"
+            >
+              {item.charAt(0).toUpperCase() + item.slice(1)}
+            </a>
+          ))}
+
+          <button
+            onClick={() => {
+              onLoginClick();
+              setIsOpen(false);
+            }}
+            className="block w-full text-left px-5 py-2 rounded-full text-white bg-white/10 hover:scale-105 transition duration-300"
+          >
+            Log In
+          </button>
+
+          <button
+            onClick={() => {
+              onSignupClick();
+              setIsOpen(false);
+            }}
+            className="block w-full text-left px-5 py-2 rounded-full text-white bg-[#9b5de5] hover:bg-white/10 hover:scale-105 transition duration-300"
+          >
+            Sign Up
+          </button>
+        </div>
+      )}
     </nav>
   );
 };

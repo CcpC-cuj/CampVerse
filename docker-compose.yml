@@ -1,0 +1,77 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        - VITE_GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - campverse
+
+
+  backend:
+    build: ./Backend
+    ports:
+      - "5001:5001"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/campverse
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=48hJ9dKf
+      # - EMAIL_USER=imkkrish05@gmail.com
+      # - EMAIL_PASSWORD=znbafaztvcqjkskd
+      - ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
+      - ML_API_KEY=your_ml_api_key_here
+      - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
+      - FRONTEND_URL=http://localhost:3000
+      # Alternative email service (uncomment if Gmail doesn't work)
+      - EMAIL_USER=krish.hansdiha@gmail.com
+      - EMAIL_PASSWORD=zeyf wiyznnuhpacu
+      # Google Drive config
+      - GOOGLE_DRIVE_KEY_FILE=/usr/src/app/credentials/service-account.json
+      # - GOOGLE_DRIVE_FOLDER_ID=1JiL9bB2pt2DG1mc0LUsQdshFEDtjxRQ2 # Profile images folder ID
+      # - DRIVE_LOGO_FOLDER_ID=1RLKXcxFwBx3k0SIA11cWGDkb8NMGmabc   # Event logos folder ID
+      # - DRIVE_BANNER_FOLDER_ID=1cFmh70UHTafPmuoL8-rVBwhVHsPDgKOm # Event banners folder ID
+      - FIREBASE_KEY_FILE=/usr/src/app/credentials/service-account.json
+    volumes:
+      - ./Backend/credentials:/usr/src/app/credentials:ro
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - campverse
+
+  # ml:
+  #   build: ./ML/Recommendation
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     - mongo
+  #   networks:
+  #     - campverse
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - campverse
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    networks:
+      - campverse
+
+volumes:
+  mongo_data:
+
+networks:
+  campverse:
+    driver: bridge 

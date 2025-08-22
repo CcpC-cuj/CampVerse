@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Moderation - CampVerse Platform Admin Panel</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>
+tailwind.config = {
+theme: {
+extend: {
+colors: {
+primary: '#3B82F6',
+secondary: '#8B5CF6'
+},
+borderRadius: {
+'none': '0px',
+'sm': '4px',
+DEFAULT: '8px',
+'md': '12px',
+'lg': '16px',
+'xl': '20px',
+'2xl': '24px',
+'3xl': '32px',
+'full': '9999px',
+'button': '8px'
+}
+}
+}
+}
+</script>
+<style>
+:where([class^="ri-"])::before {
+content: "\f3c2";
+}
+</style>
+</head>
+<body class="bg-slate-900">
+<div class="flex h-screen">
+<aside class="w-64 bg-slate-800 shadow-lg flex flex-col border-r border-slate-700">
+<div class="p-6 border-b border-slate-700">
+<h1 class="text-2xl font-['Pacifico'] text-primary">CampVerse</h1>
+<p class="text-sm text-slate-400 mt-1">Platform Admin</p>
+</div>
+<nav class="flex-1 p-4 space-y-2">
+<a href="https://readdy.ai/home/2026130d-b9e8-43ad-ae4e-6fea5d59043e/ca990cf1-c5d3-49fe-ab4e-0705f6704207" data-readdy="true" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-dashboard-line"></i>
+</div>
+<span>Dashboard</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-flag-line"></i>
+</div>
+<span>Content Moderation</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-building-line"></i>
+</div>
+<span>Institutions</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-user-settings-line"></i>
+</div>
+<span>Role Management</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-bar-chart-line"></i>
+</div>
+<span>Analytics</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-settings-line"></i>
+</div>
+<span>Settings</span>
+</a>
+<a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-700/50">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-file-list-line"></i>
+</div>
+<span>Activity Logs</span>
+</a>
+</nav>
+</aside>
+
+<div class="flex-1 flex flex-col">
+<header class="bg-slate-800/50 shadow-sm border-b border-slate-700 px-6 py-4 backdrop-blur-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-semibold text-slate-100">Content Moderation</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input type="text" placeholder="Search flagged content..." class="w-80 px-4 py-2 pl-10 bg-slate-800 border border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-slate-200 placeholder-slate-400">
+<div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+<i class="ri-search-line text-slate-400"></i>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button id="notificationBtn" class="relative p-2 text-slate-300 hover:text-slate-100 hover:bg-slate-700 rounded-lg">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-notification-line"></i>
+</div>
+<span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+</button>
+<div class="flex items-center gap-3 pl-3 border-l border-slate-600">
+<img src="https://readdy.ai/api/search-image?query=professional%20admin%20user%20avatar%20portrait%20with%20clean%20background%20modern%20style&width=40&height=40&seq=admin-avatar&orientation=squarish" alt="Admin" class="w-8 h-8 rounded-full object-cover">
+<div class="text-sm">
+<p class="font-medium text-slate-100">Sarah Johnson</p>
+<p class="text-slate-400">Platform Admin</p>
+</div>
+<button class="p-1 text-slate-300 hover:text-slate-100">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+
+<main class="flex-1 p-6 overflow-y-auto">
+<div class="grid grid-cols-4 gap-6 mb-8">
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-slate-400">Pending Items</p>
+<p class="text-2xl font-bold text-slate-100 mt-1">47</p>
+<p class="text-sm text-red-400 mt-1">Requires attention</p>
+</div>
+<div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+<i class="ri-flag-fill text-red-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-slate-400">Under Review</p>
+<p class="text-2xl font-bold text-slate-100 mt-1">23</p>
+<p class="text-sm text-yellow-400 mt-1">In progress</p>
+</div>
+<div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+<i class="ri-time-fill text-yellow-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-slate-400">Resolved Today</p>
+<p class="text-2xl font-bold text-slate-100 mt-1">156</p>
+<p class="text-sm text-green-400 mt-1">+34 from yesterday</p>
+</div>
+<div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+<i class="ri-check-fill text-green-600 text-xl"></i>
+</div>
+</div>
+</div>
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-slate-400">Avg Response Time</p>
+<p class="text-2xl font-bold text-slate-100 mt-1">2.4h</p>
+<p class="text-sm text-blue-400 mt-1">-0.3h improvement</p>
+</div>
+<div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+<i class="ri-timer-fill text-blue-600 text-xl"></i>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 mb-8">
+<div class="p-6 border-b border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-semibold text-slate-100">Advanced Filters</h3>
+<button id="clearFiltersBtn" class="text-sm text-slate-400 hover:text-slate-200">Clear All</button>
+</div>
+<div class="grid grid-cols-6 gap-4">
+<div>
+<label class="block text-sm font-medium text-slate-300 mb-2">Content Type</label>
+<div class="relative">
+<button id="contentTypeBtn" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-left text-slate-200 text-sm hover:bg-slate-600 focus:ring-2 focus:ring-primary">
+<span id="contentTypeText">All Types</span>
+<div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line text-slate-400"></i>
+</div>
+</button>
+<div id="contentTypeDropdown" class="hidden absolute z-10 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg shadow-lg">
+<div class="py-1">
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="all">All Types</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="events">Events</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="comments">Comments</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="posts">Posts</button>
+</div>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+<div class="relative">
+<button id="statusBtn" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-left text-slate-200 text-sm hover:bg-slate-600 focus:ring-2 focus:ring-primary">
+<span id="statusText">All Status</span>
+<div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line text-slate-400"></i>
+</div>
+</button>
+<div id="statusDropdown" class="hidden absolute z-10 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg shadow-lg">
+<div class="py-1">
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="all">All Status</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="pending">Pending</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="review">Under Review</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="resolved">Resolved</button>
+</div>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-300 mb-2">Priority</label>
+<div class="relative">
+<button id="priorityBtn" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-left text-slate-200 text-sm hover:bg-slate-600 focus:ring-2 focus:ring-primary">
+<span id="priorityText">All Priority</span>
+<div class="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 flex items-center justify-center">
+<i class="ri-arrow-down-s-line text-slate-400"></i>
+</div>
+</button>
+<div id="priorityDropdown" class="hidden absolute z-10 w-full mt-1 bg-slate-700 border border-slate-600 rounded-lg shadow-lg">
+<div class="py-1">
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="all">All Priority</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="high">High</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="medium">Medium</button>
+<button class="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-600" data-value="low">Low</button>
+</div>
+</div>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-300 mb-2">Date From</label>
+<input type="date" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 text-sm focus:ring-2 focus:ring-primary">
+</div>
+<div>
+<label class="block text-sm font-medium text-slate-300 mb-2">Date To</label>
+<input type="date" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 text-sm focus:ring-2 focus:ring-primary">
+</div>
+<div class="flex items-end">
+<button class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 text-sm font-medium !rounded-button whitespace-nowrap">Apply Filters</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bg-slate-800 rounded-xl shadow-sm border border-slate-700 mb-8">
+<div class="p-6 border-b border-slate-700">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<h3 class="text-lg font-semibold text-slate-100">Moderation Queue</h3>
+<span class="bg-red-500/20 text-red-400 text-sm font-medium px-2 py-1 rounded-full">47 pending</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<input type="checkbox" id="selectAll" class="w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+<label for="selectAll" class="text-sm text-slate-300">Select All</label>
+</div>
+<div class="flex gap-2">
+<button id="batchApproveBtn" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium !rounded-button whitespace-nowrap disabled:opacity-50" disabled>
+<div class="w-4 h-4 flex items-center justify-center mr-1">
+<i class="ri-check-line"></i>
+</div>
+Approve Selected
+</button>
+<button id="batchRemoveBtn" class="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium !rounded-button whitespace-nowrap disabled:opacity-50" disabled>
+<div class="w-4 h-4 flex items-center justify-center mr-1">
+<i class="ri-close-line"></i>
+</div>
+Remove Selected
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full">
+<thead class="bg-slate-700/50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">
+<input type="checkbox" class="w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Content</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Type</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Reports</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Priority</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Reported</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-300 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="bg-slate-800 divide-y divide-slate-700">
+<tr class="hover:bg-slate-700/30">
+<td class="px-6 py-4">
+<input type="checkbox" class="item-checkbox w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img src="https://readdy.ai/api/search-image?query=technology%20conference%20event%20banner%20with%20modern%20design%20professional%20layout%20blue%20gradient%20background&width=60&height=40&seq=tech-conf-1&orientation=landscape" alt="Event" class="w-12 h-8 rounded object-cover">
+<div>
+<p class="text-sm font-medium text-slate-100 cursor-pointer hover:text-primary" onclick="openDetailModal('tech-conference-2024')">Advanced AI Conference 2024</p>
+<p class="text-xs text-slate-400">Reported for inappropriate content</p>
+<p class="text-xs text-slate-500">ID: #MC-2024-001</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">Event</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="text-sm text-slate-200">5 reports</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-line text-slate-400"></i>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-500/20 text-red-400">High</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-400">Under Review</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">2 hours ago</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex gap-2">
+<button class="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg !rounded-button whitespace-nowrap">Approve</button>
+<button class="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg !rounded-button whitespace-nowrap">Remove</button>
+<button onclick="openDetailModal('tech-conference-2024')" class="px-3 py-1 text-sm text-slate-300 bg-slate-600 hover:bg-slate-500 rounded-lg !rounded-button whitespace-nowrap">Details</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-700/30">
+<td class="px-6 py-4">
+<input type="checkbox" class="item-checkbox w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-8 bg-slate-600 rounded flex items-center justify-center">
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-chat-3-line text-slate-400"></i>
+</div>
+</div>
+<div>
+<p class="text-sm font-medium text-slate-100 cursor-pointer hover:text-primary" onclick="openDetailModal('inappropriate-comment')">Inappropriate comment on Machine Learning Workshop</p>
+<p class="text-xs text-slate-400">Reported for harassment</p>
+<p class="text-xs text-slate-500">ID: #MC-2024-002</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">Comment</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="text-sm text-slate-200">3 reports</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-line text-slate-400"></i>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-500/20 text-orange-400">Medium</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-500/20 text-red-400">Pending</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">4 hours ago</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex gap-2">
+<button class="px-3 py-1 text-sm text-white bg-green-600 hover:bg-green-700 rounded-lg !rounded-button whitespace-nowrap">Approve</button>
+<button class="px-3 py-1 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg !rounded-button whitespace-nowrap">Remove</button>
+<button onclick="openDetailModal('inappropriate-comment')" class="px-3 py-1 text-sm text-slate-300 bg-slate-600 hover:bg-slate-500 rounded-lg !rounded-button whitespace-nowrap">Details</button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-700/30">
+<td class="px-6 py-4">
+<input type="checkbox" class="item-checkbox w-4 h-4 text-primary bg-slate-700 border-slate-600 rounded focus:ring-primary focus:ring-2">
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<img src="https://readdy.ai/api/search-image?query=data%20science%20workshop%20educational%20event%20poster%20with%20charts%20graphs%20modern%20professional%20design&width=60&height=40&seq=data-workshop-1&orientation=landscape" alt="Post" class="w-12 h-8 rounded object-cover">
+<div>
+<p class="text-sm font-medium text-slate-100 cursor-pointer hover:text-primary" onclick="openDetailModal('spam-post')">Data Science Bootcamp - Free Registration</p>
+<p class="text-xs text-slate-400">Reported for spam content</p>
+<p class="text-xs text-slate-500">ID: #MC-2024-003</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">Post</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="text-sm text-slate-200">2 reports</span>
+<div class="w-4 h-4 flex items-center justify-center">
+<i class="ri-user-line text-slate-400"></i>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-slate-500/20 text-slate-400">Low</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-400">Resolved</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-300">6 hours ago</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex gap-2">
+<button class="px-3 py-1 text-sm text-slate-500 bg-slate-700 rounded-lg !rounded-button whitespace-nowrap" disabled>Approved</button>
+<button onclick="openDetailModal('spam-post')" class="px-3 py-1 text-sm text-slate-300 bg-slate-600 hover:bg-slate-500 rounded-lg !rounded-button whitespace-nowrap">Details</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
+<div class="flex items-center gap-2 text-sm text-slate-400">
+<span>Showing 1-3 of 47 items</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 text-sm text-slate-400 bg-slate-700 rounded-lg hover:bg-slate-600 disabled:opacity-50 !rounded-button whitespace-nowrap" disabled>Previous</button>
+<button class="px-3 py-1 text-sm text-slate-200 bg-primary rounded-lg !rounded-button whitespace-nowrap">1</button>
+<button class="px-3 py-1 text-sm text-slate-400 bg-slate-700 rounded-lg hover:bg-slate-600 !rounded-button whitespace-nowrap">2</button>
+<button class="px-3 py-1 text-sm text-slate-400 bg-slate-700 rounded-lg hover:bg-slate-600 !rounded-button whitespace-nowrap">3</button>
+<button class="px-3 py-1 text-sm text-slate-400 bg-slate-700 rounded-lg hover:bg-slate-600 !rounded-button whitespace-nowrap">Next</button>
+</div>
+</div>
+</div>
+
+<div class="grid grid-cols-2 gap-6 mb-8">
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<h3 class="text-lg font-semibold text-slate-100 mb-4">Moderation Trends</h3>
+<div id="moderationChart" style="width: 100%; height: 300px;"></div>
+</div>
+<div class="bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-700">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-semibold text-slate-100">Moderation History</h3>
+<button class="text-primary hover:text-secondary text-sm font-medium !rounded-button whitespace-nowrap">Export Report</button>
+</div>
+<div class="space-y-4">
+<div class="flex items-start gap-3 p-3 bg-slate-700/50 rounded-lg">
+<div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-check-line text-green-400"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-200">Event Approved</p>
+<p class="text-xs text-slate-400">Advanced AI Conference 2024 - Approved by Sarah Johnson</p>
+<p class="text-xs text-slate-500 mt-1">15 minutes ago</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 bg-slate-700/50 rounded-lg">
+<div class="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-close-line text-red-400"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-200">Comment Removed</p>
+<p class="text-xs text-slate-400">Inappropriate comment removed - Violation: Harassment</p>
+<p class="text-xs text-slate-500 mt-1">32 minutes ago</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 bg-slate-700/50 rounded-lg">
+<div class="w-8 h-8 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-flag-line text-yellow-400"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-200">Content Escalated</p>
+<p class="text-xs text-slate-400">Data Science Workshop - Escalated to senior moderator</p>
+<p class="text-xs text-slate-500 mt-1">1 hour ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+<div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div class="bg-slate-800 rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+<div class="p-6 border-b border-slate-700">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-semibold text-slate-100">Content Review Details</h3>
+<button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-200">
+<div class="w-6 h-6 flex items-center justify-center">
+<i class="ri-close-line text-xl"></i>
+</div>
+</button>
+</div>
+</div>
+<div class="p-6">
+<div class="grid grid-cols-3 gap-6">
+<div class="col-span-2">
+<div class="bg-slate-700/50 p-4 rounded-lg mb-6">
+<h4 class="text-lg font-semibold text-slate-100 mb-3">Content Information</h4>
+<div class="space-y-3">
+<div>
+<label class="text-sm font-medium text-slate-300">Title</label>
+<p class="text-slate-100">Advanced AI Conference 2024</p>
+</div>
+<div>
+<label class="text-sm font-medium text-slate-300">Description</label>
+<p class="text-slate-200 text-sm">Join us for the most comprehensive AI conference of the year featuring industry leaders, cutting-edge research presentations, and hands-on workshops covering machine learning, deep learning, and artificial intelligence applications.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-sm font-medium text-slate-300">Event Date</label>
+<p class="text-slate-200">March 15-17, 2024</p>
+</div>
+<div>
+<label class="text-sm font-medium text-slate-300">Location</label>
+<p class="text-slate-200">San Francisco Convention Center</p>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-slate-700/50 p-4 rounded-lg">
+<h4 class="text-lg font-semibold text-slate-100 mb-3">Report Details</h4>
+<div class="space-y-4">
+<div class="border-l-4 border-red-500 pl-4">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-slate-200">Content Violation Report</p>
+<span class="text-xs text-slate-400">2 hours ago</span>
+</div>
+<p class="text-sm text-slate-300">Reported by: Michael Chen</p>
+<p class="text-sm text-slate-400">Reason: Contains misleading information about AI capabilities</p>
+</div>
+<div class="border-l-4 border-orange-500 pl-4">
+<div class="flex items-center justify-between mb-2">
+<p class="text-sm font-medium text-slate-200">Spam Report</p>
+<span class="text-xs text-slate-400">3 hours ago</span>
+</div>
+<p class="text-sm text-slate-300">Reported by: Lisa Rodriguez</p>
+<p class="text-sm text-slate-400">Reason: Excessive promotional content</p>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div class="bg-slate-700/50 p-4 rounded-lg mb-6">
+<h4 class="text-lg font-semibold text-slate-100 mb-3">Quick Actions</h4>
+<div class="space-y-3">
+<button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center mr-2">
+<i class="ri-check-line"></i>
+</div>
+Approve Content
+</button>
+<button class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center mr-2">
+<i class="ri-close-line"></i>
+</div>
+Remove Content
+</button>
+<button class="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center mr-2">
+<i class="ri-flag-line"></i>
+</div>
+Escalate to Senior
+</button>
+<button class="w-full px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 !rounded-button whitespace-nowrap">
+<div class="w-4 h-4 flex items-center justify-center mr-2">
+<i class="ri-message-line"></i>
+</div>
+Request More Info
+</button>
+</div>
+</div>
+<div class="bg-slate-700/50 p-4 rounded-lg">
+<h4 class="text-lg font-semibold text-slate-100 mb-3">Content Stats</h4>
+<div class="space-y-2">
+<div class="flex justify-between">
+<span class="text-sm text-slate-300">Total Reports</span>
+<span class="text-sm text-slate-100">5</span>
+</div>
+<div class="flex justify-between">
+<span class="text-sm text-slate-300">Views</span>
+<span class="text-sm text-slate-100">2,847</span>
+</div>
+<div class="flex justify-between">
+<span class="text-sm text-slate-300">Engagement</span>
+<span class="text-sm text-slate-100">156 interactions</span>
+</div>
+<div class="flex justify-between">
+<span class="text-sm text-slate-300">Created</span>
+<span class="text-sm text-slate-100">Jan 10, 2024</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6">
+<h4 class="text-lg font-semibold text-slate-100 mb-3">Moderation History</h4>
+<div class="bg-slate-700/50 p-4 rounded-lg">
+<div class="space-y-3">
+<div class="flex items-start gap-3 p-3 bg-slate-600/50 rounded-lg">
+<div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-eye-line text-blue-400"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-200">Under Review</p>
+<p class="text-xs text-slate-400">Content flagged and moved to review queue - Sarah Johnson</p>
+<p class="text-xs text-slate-500 mt-1">2 hours ago</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 bg-slate-600/50 rounded-lg">
+<div class="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+<i class="ri-flag-line text-red-400"></i>
+</div>
+<div class="flex-1">
+<p class="text-sm font-medium text-slate-200">Content Reported</p>
+<p class="text-xs text-slate-400">Initial report received from Michael Chen</p>
+<p class="text-xs text-slate-500 mt-1">2 hours ago</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script id="dropdownHandlers">
+document.addEventListener('DOMContentLoaded', function() {
+const dropdowns = [
+{btn: 'contentTypeBtn', dropdown: 'contentTypeDropdown', text: 'contentTypeText'},
+{btn: 'statusBtn', dropdown: 'statusDropdown', text: 'statusText'},
+{btn: 'priorityBtn', dropdown: 'priorityDropdown', text: 'priorityText'}
+];
+
+dropdowns.forEach(({btn, dropdown, text}) => {
+const button = document.getElementById(btn);
+const dropdownEl = document.getElementById(dropdown);
+const textEl = document.getElementById(text);
+
+button.addEventListener('click', function(e) {
+e.stopPropagation();
+dropdowns.forEach(({dropdown: otherDropdown}) => {
+if (otherDropdown !== dropdown) {
+document.getElementById(otherDropdown).classList.add('hidden');
+}
+});
+dropdownEl.classList.toggle('hidden');
+});
+
+dropdownEl.addEventListener('click', function(e) {
+if (e.target.tagName === 'BUTTON') {
+textEl.textContent = e.target.textContent;
+dropdownEl.classList.add('hidden');
+}
+});
+});
+
+document.addEventListener('click', function(e) {
+dropdowns.forEach(({dropdown}) => {
+const dropdownEl = document.getElementById(dropdown);
+if (!dropdownEl.contains(e.target) && !document.getElementById(dropdown.replace('Dropdown', 'Btn')).contains(e.target)) {
+dropdownEl.classList.add('hidden');
+}
+});
+});
+});
+</script>
+
+<script id="batchActions">
+document.addEventListener('DOMContentLoaded', function() {
+const selectAllCheckbox = document.getElementById('selectAll');
+const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+const batchApproveBtn = document.getElementById('batchApproveBtn');
+const batchRemoveBtn = document.getElementById('batchRemoveBtn');
+function updateBatchButtons() {
+const checkedItems = document.querySelectorAll('.item-checkbox:checked');
+const hasCheckedItems = checkedItems.length > 0;
+batchApproveBtn.disabled = !hasCheckedItems;
+batchRemoveBtn.disabled = !hasCheckedItems;
+}
+
+selectAllCheckbox.addEventListener('change', function() {
+itemCheckboxes.forEach(checkbox => {
+checkbox.checked = this.checked;
+});
+updateBatchButtons();
+});
+
+itemCheckboxes.forEach(checkbox => {
+checkbox.addEventListener('change', function() {
+const allChecked = Array.from(itemCheckboxes).every(cb => cb.checked);
+const someChecked = Array.from(itemCheckboxes).some(cb => cb.checked);
+selectAllCheckbox.checked = allChecked;
+selectAllCheckbox.indeterminate = someChecked && !allChecked;
+updateBatchButtons();
+});
+});
+updateBatchButtons();
+});
+</script>
+
+<script id="modalHandlers">
+function openDetailModal(contentId) {
+document.getElementById('detailModal').classList.remove('hidden');
+document.body.style.overflow = 'hidden';
+}
+
+function closeDetailModal() {
+document.getElementById('detailModal').classList.add('hidden');
+document.body.style.overflow = 'auto';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+document.getElementById('detailModal').addEventListener('click', function(e) {
+if (e.target === this) {
+closeDetailModal();
+}
+});
+});
+</script>
+
+<script id="moderationChart">
+document.addEventListener('DOMContentLoaded', function() {
+const moderationChart = echarts.init(document.getElementById('moderationChart'));
+const moderationOption = {
+animation: false,
+grid: { top: 20, right: 20, bottom: 40, left: 60 },
+tooltip: {
+trigger: 'axis',
+backgroundColor: 'rgba(30, 41, 59, 0.9)',
+borderColor: '#475569',
+borderWidth: 1,
+textStyle: { color: '#f1f5f9' }
+},
+xAxis: {
+type: 'category',
+data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+axisLabel: { color: '#94a3b8' },
+axisLine: { lineStyle: { color: '#475569' } }
+},
+yAxis: {
+type: 'value',
+axisLabel: { color: '#94a3b8' },
+axisLine: { lineStyle: { color: '#475569' } },
+splitLine: { lineStyle: { color: '#334155' } }
+},
+series: [{
+name: 'Reports',
+data: [23, 45, 32, 67, 41, 28, 35],
+type: 'line',
+smooth: true,
+lineStyle: { color: 'rgba(87, 181, 231, 1)', width: 3 },
+itemStyle: { color: 'rgba(87, 181, 231, 1)' },
+areaStyle: {
+color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+{offset: 0, color: 'rgba(87, 181, 231, 0.3)'},
+{offset: 1, color: 'rgba(87, 181, 231, 0.05)'}
+])
+}
+}, {
+name: 'Resolved',
+data: [18, 38, 29, 58, 35, 22, 31],
+type: 'line',
+smooth: true,
+lineStyle: { color: 'rgba(141, 211, 199, 1)', width: 3 },
+itemStyle: { color: 'rgba(141, 211, 199, 1)' },
+areaStyle: {
+color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+{offset: 0, color: 'rgba(141, 211, 199, 0.3)'},
+{offset: 1, color: 'rgba(141, 211, 199, 0.05)'}
+])
+}
+}]
+};
+moderationChart.setOption(moderationOption);
+});
+</script>
+
+</body>
+</html>

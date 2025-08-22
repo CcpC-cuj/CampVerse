@@ -8,20 +8,20 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Logo and Description */}
           <div className="md:col-span-1">
-            <a href="#" className="logo text-2xl font-bold text-white glow-text mb-4 inline-block">
+            <a href="#home" className="logo text-2xl font-bold text-white glow-text mb-4 inline-block">
               CampVerse
             </a>
             <p className="text-gray-400 mt-4">
               Uniting campuses across India through a shared platform for events, opportunities, and connections.
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary/20 transition-colors">
+              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#9b5de5]/20 transition-colors" aria-label="Instagram">
                 <i className="ri-instagram-line ri-lg"></i>
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary/20 transition-colors">
+              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#9b5de5]/20 transition-colors" aria-label="Twitter">
                 <i className="ri-twitter-x-line ri-lg"></i>
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-primary/20 transition-colors">
+              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#9b5de5]/20 transition-colors" aria-label="LinkedIn">
                 <i className="ri-linkedin-line ri-lg"></i>
               </a>
             </div>

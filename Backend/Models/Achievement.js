@@ -6,7 +6,7 @@ const achievementSchema = new mongoose.Schema({
   badgeIcon: String,
   points: { type: Number, default: 0 },
   rank: Number,
-  earnedAt: { type: Date, default: Date.now }
+  earnedAt: { type: Date, default: Date.now },
 });
 
 module.exports = mongoose.model('Achievement', achievementSchema);

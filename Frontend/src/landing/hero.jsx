@@ -4,7 +4,7 @@ import React from "react";
 // Accept onSignupClick prop
 const Hero = ({ onSignupClick }) => {
   return (
-    <section className="hero-bg relative z-0 py-20 md:py-32">
+    <section id="home" className="hero-bg relative z-0 py-20 md:py-32">
       <div className="container mx-auto px-6 w-full">
         <div className="flex flex-col md:flex-row items-center">
           {/* Left Content */}
@@ -24,15 +24,18 @@ const Hero = ({ onSignupClick }) => {
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               {/* Join button */}
               <button
+                aria-label="Join with College Email"
                 onClick={onSignupClick}
-                className="px-6 py-3 bg-primary text-white rounded-full text-lg font-semibold shadow-lg focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
+                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
               >
                 Join with College Email
               </button>
 
               {/* Explore button */}
               <button
-                className="px-6 py-3 border border-primary text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary transition-colors whitespace-nowrap"
+                aria-label="Explore events"
+                onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}
+                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
               >
                 Explore Events
               </button>
