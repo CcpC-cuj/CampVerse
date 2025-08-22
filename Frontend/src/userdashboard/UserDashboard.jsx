@@ -15,6 +15,8 @@ const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [eventsData, setEventsData] = useState([]);
+  const [search, setSearch] = useState('');
+  const [events, setEvents] = useState([]); 
 
   const discoverEventsRef = useRef(null);
   const location = useLocation();
@@ -92,7 +94,14 @@ const UserDashboard = () => {
         
 
         {/* Top Navigation */}
-        <NavBar />
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={eventsData}
+          searchQuery={search}
+          setSearchQuery={setSearch}
+        />
+
+
 
         {/* Main Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
