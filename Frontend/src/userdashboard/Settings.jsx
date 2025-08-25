@@ -10,6 +10,7 @@ import {
   updateMe,
   uploadProfilePhoto
 } from '../api';
+import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -53,6 +54,9 @@ const Settings = () => {
   const notificationsRef = useRef(null);
   const privacyRef = useRef(null);
   const securityRef = useRef(null);
+
+  // ✅ ADDED: local state to control the host modal
+  const [showHostModal, setShowHostModal] = useState(false);
 
   // keep inputs synced with user unless editing
   useEffect(() => {
@@ -516,6 +520,24 @@ const Settings = () => {
                         {profileSaving ? 'Saving...' : 'Save Changes'}
                       </button>
                     </div>
+
+                    {/* ✅ ADDED: Become a Host CTA (non-destructive) */}
+                    <div className="mt-4 flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
+                      <div>
+                        <h4 className="font-medium text-[#cbb3ff]">Want to become a host?</h4>
+                        <p className="text-sm text-[#cbb3ff]/80">
+                          Start hosting events and manage attendees from your host dashboard.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowHostModal(true)}
+                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                      >
+                        Become a Host
+                      </button>
+                    </div>
+                    {/* ✅ /ADDED */}
                   </div>
                 </div>
               </div>
@@ -736,6 +758,14 @@ const Settings = () => {
           </div>
         </div>
       </div>
+
+      {/* ✅ ADDED: Modal mount */}
+      <HostRegistrationModal
+        open={showHostModal}
+        onClose={() => setShowHostModal(false)}
+        defaultEmail={user?.email || ''}
+      />
+      {/* ✅ /ADDED */}
     </div>
   );
 };

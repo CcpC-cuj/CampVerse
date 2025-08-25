@@ -13,6 +13,7 @@ import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import ResetPassword from "./pages/ResetPassword";
 import "remixicon/fonts/remixicon.css";
+import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {
@@ -102,8 +103,19 @@ function App() {
               </ProtectedRoute>
             }
           />
-            <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
+
+          {/* ✅ NEW: Host Registration (protected) */}
+          <Route
+            path="/host/registration"
+            element={
+              <ProtectedRoute>
+                <HostRegistration />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Landing />} />
         </Routes>
       </Router>
