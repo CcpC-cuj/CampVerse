@@ -15,6 +15,15 @@ import ResetPassword from "./pages/ResetPassword";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 
+// ✅ Host dashboard module imports (added)
+import {
+  HostDashboard,
+  HostEvents,
+  HostApplications,
+  HostAnalytics,
+  HostSettings,
+} from "./hostdashboard";
+
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {
   const navigate = useNavigate();
@@ -112,6 +121,48 @@ function App() {
             element={
               <ProtectedRoute>
                 <HostRegistration />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ NEW: Host Dashboard routes (protected) */}
+          <Route
+            path="/host/dashboard"
+            element={
+              <ProtectedRoute>
+                <HostDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/host/events"
+            element={
+              <ProtectedRoute>
+                <HostEvents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/host/applications"
+            element={
+              <ProtectedRoute>
+                <HostApplications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/host/analytics"
+            element={
+              <ProtectedRoute>
+                <HostAnalytics />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/host/settings"
+            element={
+              <ProtectedRoute>
+                <HostSettings />
               </ProtectedRoute>
             }
           />
