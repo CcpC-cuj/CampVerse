@@ -14,6 +14,7 @@ import Testimonials from "../landing/testimonial";
 import FaqCta from "../landing/faq";
 import Footer from "../landing/footer";
 import FeaturesSection from "../landing/features";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ const Landing = () => {
   // NEW: State for OTP modal
   const [showOtp, setShowOtp] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
+
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // OAuth handling directly in landing page as fallback
   useEffect(() => {
@@ -110,6 +113,17 @@ const Landing = () => {
             setShowLogin(false);
             setShowSignup(true);
           }}
+          onForgotPassword={() => {
+            setShowLogin(false);
+            setShowForgotPassword(true);
+          }}
+        />
+      )}
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <ForgotPasswordModal
+          onClose={() => setShowForgotPassword(false)}
         />
       )}
 

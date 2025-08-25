@@ -102,7 +102,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="*" element={<Landing />} />
         </Routes>

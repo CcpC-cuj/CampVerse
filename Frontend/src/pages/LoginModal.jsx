@@ -4,7 +4,7 @@ import { googleSignIn, login } from "../api";
 import { initializeGoogleAuth, getGoogleToken } from "../utils/googleAuth";
 import { useAuth } from "../contexts/AuthContext";
 
-const LoginModal = ({ onClose, onSwitchToSignup }) => {
+const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -150,6 +150,15 @@ const LoginModal = ({ onClose, onSwitchToSignup }) => {
             {isLoading ? 'Logging in...' : 'Log In'}
           </button>
         </form>
+              <div className="flex justify-end mt-2">
+                <button
+                  type="button"
+                  className="text-purple-400 hover:text-purple-300 text-sm underline"
+                  onClick={typeof onForgotPassword === 'function' ? onForgotPassword : undefined}
+                >
+                  Forgot Password?
+                </button>
+              </div>
 
         {/* Or divider */}
         <div className="flex items-center my-4">

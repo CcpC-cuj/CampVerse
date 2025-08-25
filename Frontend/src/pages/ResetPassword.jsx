@@ -1,10 +1,18 @@
 // src/pages/ResetPassword.js
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { resetPassword } from "../api";
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    // Fallback: if user does not click reset, redirect to landing page after 2 minutes
+    const timer = setTimeout(() => {
+      navigate("/");
+    }, 120000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const token = searchParams.get("token");
 
@@ -36,19 +44,10 @@ export default function ResetPassword() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("https://campverse-26hm.onrender.com/api/users/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token, password }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setMessage("Password reset successful! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 3000);
+      const data = await resetPassword({ token, password });
+      if (!data.error && !data.message?.toLowerCase().includes('invalid')) {
+        setMessage("Password reset successful! Redirecting to home...");
+        setTimeout(() => navigate("/"), 3000);
       } else {
         setError(data.message || "Invalid or expired link.");
       }
@@ -60,55 +59,54 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="w-full max-w-md p-6 bg-gray-800 rounded-2xl shadow-lg">
-        <h2 className="text-2xl font-semibold text-center text-white mb-6">
-          🔑 Reset Your Password
-        </h2>
+    <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="relative w-full max-w-md p-8 bg-[rgba(21,23,41,0.92)] border border-purple-600 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={() => navigate("/login")}
+          className="absolute top-4 right-4 text-gray-300 hover:text-white text-2xl"
+        >
+          &times;
+        </button>
 
-        {error && <p className="text-red-400 mb-4 text-center">{error}</p>}
-        {message && <p className="text-green-400 mb-4 text-center">{message}</p>}
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-2">
+            <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-purple-700/30 border border-purple-500">
+              <i className="ri-key-2-line text-3xl text-purple-400" />
+            </span>
+          </div>
+          <h2 className="text-3xl font-bold text-white">Reset Your Password</h2>
+          <p className="text-sm text-purple-300">Enter your new password below</p>
+        </div>
+
+        {error && <div className="text-red-500 text-center mb-2">{error}</div>}
+        {message && <div className="text-green-400 text-center mb-2">{message}</div>}
 
         {!message && (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-gray-300">New Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full mt-1 px-3 py-2 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-indigo-500"
-                placeholder="Enter new password"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-300">Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full mt-1 px-3 py-2 rounded-lg bg-gray-700 text-white focus:ring-2 focus:ring-indigo-500"
-                placeholder="Confirm new password"
-                required
-              />
-            </div>
-
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="New Password"
+              required
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              placeholder="Confirm Password"
+              required
+            />
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
             >
               {loading ? "Resetting..." : "Reset Password"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate("/login")}
-              className="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition"
-            >
-              Cancel
             </button>
           </form>
         )}

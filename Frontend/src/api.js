@@ -271,3 +271,12 @@ export async function deleteMyAccount() {
 }
 
 // Add more API functions as needed (e.g., getProfile, updateProfile, etc.)
+// Reset password with token
+export async function resetPassword({ token, password }) {
+  const res = await fetch(`${API_URL}/api/users/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password })
+  });
+  return res.json();
+}
