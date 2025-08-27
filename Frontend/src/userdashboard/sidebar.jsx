@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
-
+import logo from "../assets/logo.png";
 const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
@@ -33,7 +33,7 @@ const Sidebar = ({ onDiscoverClick }) => {
       <div className="p-4 border-b border-gray-700 flex items-center">
 
         <div className="text-xl font-['Pacifico'] text-white">
-          <img src="../assets/logo.png" alt="logo" />
+          <img src={logo} alt="logo" className="h-8 w-8" />
           CampVerse</div>
       </div>
 
