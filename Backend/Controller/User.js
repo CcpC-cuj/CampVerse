@@ -1228,17 +1228,40 @@ async function requestHostAccess(req, res) {
       return res.status(400).json({ error: "User is already a host." });
     }
 
-    // Handle file uploads
+    // Handle file uploads with validation and Firebase Storage
+    const bucket = require('../firebase');
+    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
     let idCardPhotoUrl = "";
     let eventPermissionUrl = "";
     if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
-      // For demo: store as base64 string, in production use cloud storage and save URL
-      idCardPhotoUrl = `data:${req.files.idCardPhoto[0].mimetype};base64,${req.files.idCardPhoto[0].buffer.toString('base64')}`;
+      const file = req.files.idCardPhoto[0];
+      if (!allowedTypes.includes(file.mimetype)) {
+        return res.status(400).json({ error: "Invalid ID card photo type." });
+      }
+      if (file.size > maxSize) {
+        return res.status(400).json({ error: "ID card photo too large (max 2MB)." });
+      }
+      const fileName = `campverse/hostRequests/${userId}/idCardPhoto_${Date.now()}`;
+      const fileUpload = bucket.file(fileName);
+      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      idCardPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     } else {
       return res.status(400).json({ error: "ID card photo is required." });
     }
+
     if (req.files && req.files.eventPermission && req.files.eventPermission[0]) {
-      eventPermissionUrl = `data:${req.files.eventPermission[0].mimetype};base64,${req.files.eventPermission[0].buffer.toString('base64')}`;
+      const file = req.files.eventPermission[0];
+      if (!allowedTypes.includes(file.mimetype)) {
+        return res.status(400).json({ error: "Invalid event permission file type." });
+      }
+      if (file.size > maxSize) {
+        return res.status(400).json({ error: "Event permission file too large (max 2MB)." });
+      }
+      const fileName = `campverse/hostRequests/${userId}/eventPermission_${Date.now()}`;
+      const fileUpload = bucket.file(fileName);
+      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      eventPermissionUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     }
 
     user.hostEligibilityStatus = {
