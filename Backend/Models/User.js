@@ -70,6 +70,8 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   canHost: { type: Boolean, default: false },
   hostEligibilityStatus: hostEligibilityStatusSchema,
+  hostRequestIdCardPhoto: { type: String }, // URL to uploaded ID card photo
+  hostRequestEventPermission: { type: String }, // URL to uploaded event permission document (optional)
   verifierEligibilityStatus: verifierEligibilityStatusSchema,
   interests: [String],
   skills: [String],

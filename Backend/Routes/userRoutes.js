@@ -941,7 +941,17 @@ router.get(
  *       500:
  *         description: Server error
  */
-router.post('/me/request-host', authenticateToken, requestHostAccess);
+const upload = require('../Middleware/upload');
+// Accept two files: idCardPhoto (required), eventPermission (optional)
+router.post(
+  '/me/request-host',
+  authenticateToken,
+  upload.fields([
+    { name: 'idCardPhoto', maxCount: 1 },
+    { name: 'eventPermission', maxCount: 1 },
+  ]),
+  requestHostAccess
+);
 
 /**
  * @swagger

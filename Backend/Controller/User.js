@@ -1227,11 +1227,27 @@ async function requestHostAccess(req, res) {
     if (user.roles.includes("host")) {
       return res.status(400).json({ error: "User is already a host." });
     }
+
+    // Handle file uploads
+    let idCardPhotoUrl = "";
+    let eventPermissionUrl = "";
+    if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
+      // For demo: store as base64 string, in production use cloud storage and save URL
+      idCardPhotoUrl = `data:${req.files.idCardPhoto[0].mimetype};base64,${req.files.idCardPhoto[0].buffer.toString('base64')}`;
+    } else {
+      return res.status(400).json({ error: "ID card photo is required." });
+    }
+    if (req.files && req.files.eventPermission && req.files.eventPermission[0]) {
+      eventPermissionUrl = `data:${req.files.eventPermission[0].mimetype};base64,${req.files.eventPermission[0].buffer.toString('base64')}`;
+    }
+
     user.hostEligibilityStatus = {
       status: "pending",
       requestedAt: new Date(),
       remarks,
     };
+    user.hostRequestIdCardPhoto = idCardPhotoUrl;
+    user.hostRequestEventPermission = eventPermissionUrl;
     await user.save();
 
     // Notify platform admins about new host request
