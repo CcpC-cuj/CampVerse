@@ -31,7 +31,10 @@ const Sidebar = ({ onDiscoverClick }) => {
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
       {/* Top Logo */}
       <div className="p-4 border-b border-gray-700 flex items-center">
-        <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
+
+        <div className="text-xl font-['Pacifico'] text-white">
+          <img src="../assets/logo.png" alt="logo" />
+          CampVerse</div>
       </div>
 
       {/* Scrollable Section */}
