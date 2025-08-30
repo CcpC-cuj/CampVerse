@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Institution = require('../Models/Institution');
 const User = require('../Models/User');
 const Event = require('../Models/Event');
@@ -78,8 +79,9 @@ async function requestInstitutionVerification(req, res) {
     const institution = await Institution.findById(req.params.id);
     if (!institution)
       return res.status(404).json({ error: 'Institution not found.' });
-    const { institutionName, email, website, phone, type, info } =
-      req.body || {};
+    
+    const { institutionName, email, website, phone, type, info } = req.body || {};
+    
     institution.verificationRequested = true;
     institution.verificationRequests = institution.verificationRequests || [];
     institution.verificationRequests.push({
@@ -90,15 +92,31 @@ async function requestInstitutionVerification(req, res) {
       phone: phone || '',
       type: type || institution.type,
       info: info || '',
+      status: 'pending',
     });
+
+    // Add to verification history
+    institution.verificationHistory.push({
+      action: 'requested',
+      performedBy: req.user.id,
+      performedAt: new Date(),
+      remarks: 'Institution verification requested by student',
+      newData: {
+        institutionName: institutionName || institution.name,
+        website: website || '',
+        phone: phone || '',
+        info: info || '',
+      },
+    });
+
     await institution.save();
 
-    // Optionally update user's status to pending (already default on registration)
+    // Update user's status to pending
     await User.findByIdAndUpdate(req.user.id, {
       institutionVerificationStatus: 'pending',
     });
 
-    // Notify platform admins in-app
+    // Notify verifiers and admins
     try {
       const user = await User.findById(req.user.id).select('name email');
       await notifyInstitutionRequest({
@@ -112,37 +130,92 @@ async function requestInstitutionVerification(req, res) {
       // non-blocking
     }
 
-    res.json({ message: 'Verification request submitted.' });
+    res.json({ message: 'Verification request submitted to verifiers.' });
   } catch (err) {
     res.status(500).json({ error: 'Error requesting verification.' });
   }
 }
 
-// Approve institution verification (admin only)
+// Approve institution verification (verifier or admin)
 async function approveInstitutionVerification(req, res) {
   try {
-    const { location, website, phone, info } = req.body || {};
+    const { location, website, phone, info, remarks } = req.body || {};
+    const verifierId = req.user.id;
 
     const institution = await Institution.findById(req.params.id);
     if (!institution)
       return res.status(404).json({ error: 'Institution not found.' });
 
-    // Update institution with admin-provided details
+    // Check if user is verifier or admin
+    const isVerifier = req.user.roles.includes('verifier');
+    const isAdmin = req.user.roles.includes('platformAdmin');
+    
+    if (!isVerifier && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'Only verifiers or platform admins can approve institutions.' 
+      });
+    }
+
+    // Validate website if provided
+    if (website && website.trim()) {
+      const urlPattern = /^https?:\/\/.+/i;
+      if (!urlPattern.test(website.trim())) {
+        return res.status(400).json({
+          error: 'Website must be a valid URL starting with http:// or https://'
+        });
+      }
+    }
+
+    // Store previous data for history
+    const previousData = {
+      isVerified: institution.isVerified,
+      website: institution.website,
+      phone: institution.phone,
+      info: institution.info,
+      location: institution.location,
+    };
+
+    // Update institution with verifier-provided details
     institution.isVerified = true;
     institution.verificationRequested = false;
 
-    // Admin can add/update location and other details during approval
+    // Verifier can add/update location and other details during approval
     if (location) {
       institution.location = {
-        city: location.city || '',
-        state: location.state || '',
-        country: location.country || '',
+        city: location.city || institution.location?.city || '',
+        state: location.state || institution.location?.state || '',
+        country: location.country || institution.location?.country || '',
       };
     }
 
-    if (website) institution.website = website;
-    if (phone) institution.phone = phone;
-    if (info) institution.info = info;
+    if (website && website.trim()) institution.website = website.trim();
+    if (phone && phone.trim()) institution.phone = phone.trim();
+    if (info && info.trim()) institution.info = info.trim();
+
+    // Update verification requests status
+    if (institution.verificationRequests && institution.verificationRequests.length > 0) {
+      const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];
+      latestRequest.status = 'approved';
+      latestRequest.verifiedBy = verifierId;
+      latestRequest.verifiedAt = new Date();
+      latestRequest.verifierRemarks = remarks || 'Approved by verifier';
+    }
+
+    // Add to verification history
+    institution.verificationHistory.push({
+      action: 'approved',
+      performedBy: verifierId,
+      performedAt: new Date(),
+      remarks: remarks || 'Institution approved after verification',
+      previousData,
+      newData: {
+        isVerified: true,
+        website: institution.website,
+        phone: institution.phone,
+        info: institution.info,
+        location: institution.location,
+      },
+    });
 
     await institution.save();
 
@@ -153,17 +226,12 @@ async function approveInstitutionVerification(req, res) {
     );
 
     // Auto-merge: Update ALL users with the same email domain to use this verified institution
-    // This handles cases where multiple unverified institutions exist for the same domain
     const usersWithSameDomain = await User.find({
       email: { $regex: `@${institution.emailDomain}$`, $options: 'i' },
-      institutionId: { $ne: institution._id }, // Not already using this institution
+      institutionId: { $ne: institution._id },
     });
 
     if (usersWithSameDomain.length > 0) {
-      console.log(
-        `Auto-merging ${usersWithSameDomain.length} users from same domain to verified institution`,
-      );
-
       // Update all users with same domain to use the verified institution
       await User.updateMany(
         { email: { $regex: `@${institution.emailDomain}$`, $options: 'i' } },
@@ -181,9 +249,6 @@ async function approveInstitutionVerification(req, res) {
       });
 
       if (duplicateInstitutions.length > 0) {
-        console.log(
-          `Deleting ${duplicateInstitutions.length} duplicate unverified institutions`,
-        );
         await Institution.deleteMany({
           emailDomain: institution.emailDomain,
           _id: { $ne: institution._id },
@@ -194,6 +259,7 @@ async function approveInstitutionVerification(req, res) {
 
     res.json({
       message: 'Institution verified successfully.',
+      verifiedBy: isVerifier ? 'verifier' : 'admin',
       institution: {
         id: institution._id,
         name: institution.name,
@@ -204,6 +270,7 @@ async function approveInstitutionVerification(req, res) {
         website: institution.website,
         phone: institution.phone,
         info: institution.info,
+        verificationHistory: institution.verificationHistory,
       },
     });
   } catch (err) {
@@ -212,17 +279,112 @@ async function approveInstitutionVerification(req, res) {
   }
 }
 
-// Reject institution verification (admin only)
+// Reject institution verification (verifier or admin)
 async function rejectInstitutionVerification(req, res) {
   try {
+    const { remarks } = req.body || {};
+    const verifierId = req.user.id;
+
     const institution = await Institution.findById(req.params.id);
     if (!institution)
       return res.status(404).json({ error: 'Institution not found.' });
+
+    // Check if user is verifier or admin
+    const isVerifier = req.user.roles.includes('verifier');
+    const isAdmin = req.user.roles.includes('platformAdmin');
+    
+    if (!isVerifier && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'Only verifiers or platform admins can reject institutions.' 
+      });
+    }
+
     institution.verificationRequested = false;
+
+    // Update verification requests status
+    if (institution.verificationRequests && institution.verificationRequests.length > 0) {
+      const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];
+      latestRequest.status = 'rejected';
+      latestRequest.verifiedBy = verifierId;
+      latestRequest.verifiedAt = new Date();
+      latestRequest.verifierRemarks = remarks || 'Rejected by verifier';
+    }
+
+    // Add to verification history
+    institution.verificationHistory.push({
+      action: 'rejected',
+      performedBy: verifierId,
+      performedAt: new Date(),
+      remarks: remarks || 'Institution verification rejected',
+    });
+
     await institution.save();
-    res.json({ message: 'Institution verification rejected.' });
+
+    // Update users with this institution to rejected status
+    await User.updateMany(
+      { institutionId: institution._id },
+      { institutionVerificationStatus: 'rejected' },
+    );
+
+    res.json({ 
+      message: 'Institution verification rejected.',
+      rejectedBy: isVerifier ? 'verifier' : 'admin',
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error rejecting verification.' });
+  }
+}
+
+// Get pending institution verifications (verifier or admin)
+async function getPendingInstitutionVerifications(req, res) {
+  try {
+    // Check if user is verifier or admin
+    const isVerifier = req.user.roles.includes('verifier');
+    const isAdmin = req.user.roles.includes('platformAdmin');
+    
+    if (!isVerifier && !isAdmin) {
+      return res.status(403).json({ 
+        error: 'Only verifiers or platform admins can view pending verifications.' 
+      });
+    }
+
+    const pendingInstitutions = await Institution.find({
+      verificationRequested: true,
+      isVerified: false,
+    })
+    .populate('verificationRequests.requestedBy', 'name email')
+    .sort({ updatedAt: -1 });
+
+    const formattedInstitutions = pendingInstitutions.map(institution => {
+      const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];
+      return {
+        id: institution._id,
+        name: institution.name,
+        type: institution.type,
+        emailDomain: institution.emailDomain,
+        website: institution.website,
+        phone: institution.phone,
+        info: institution.info,
+        location: institution.location,
+        latestRequest: {
+          requestedBy: latestRequest?.requestedBy,
+          institutionName: latestRequest?.institutionName,
+          website: latestRequest?.website,
+          phone: latestRequest?.phone,
+          info: latestRequest?.info,
+          createdAt: latestRequest?.createdAt,
+          status: latestRequest?.status,
+        },
+        requestedAt: institution.updatedAt,
+      };
+    });
+
+    res.json({
+      pendingInstitutions: formattedInstitutions,
+      count: formattedInstitutions.length,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching pending verifications.' });
   }
 }
 
@@ -232,123 +394,259 @@ async function getInstitutionAnalytics(req, res) {
     const institutionId = req.params.id;
     const studentCount = await User.countDocuments({ institutionId });
     const eventCount = await Event.countDocuments({ institutionId });
-    // Optionally, add more analytics (certificates, achievements, etc.)
     res.json({ studentCount, eventCount });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching analytics.' });
   }
 }
 
-// Get institution dashboard (institution or admin)
+// Get institution dashboard (institution or admin) - Optimized with aggregation
 async function getInstitutionDashboard(req, res) {
   try {
     const institutionId = req.params.id;
-    // Total students
-    const studentCount = await User.countDocuments({ institutionId });
-    // Total events
-    const eventCount = await Event.countDocuments({ institutionId });
-    // Total event participations
-    const participationLogs = await EventParticipationLog.find({
-      eventId: {
-        $in: (await Event.find({ institutionId }, '_id')).map((e) => e._id),
+    
+    // Check if dashboard is public or user has access
+    const institution = await Institution.findById(institutionId);
+    if (!institution) {
+      return res.status(404).json({ error: 'Institution not found.' });
+    }
+
+    // If dashboard is not public, check permissions
+    if (!institution.publicDashboard.enabled) {
+      const isAdmin = req.user?.roles?.includes('platformAdmin');
+      const isFromSameInstitution = req.user?.institutionId?.toString() === institutionId;
+      
+      if (!isAdmin && !isFromSameInstitution) {
+        return res.status(403).json({ 
+          error: 'This institution dashboard is not public.' 
+        });
+      }
+    }
+
+    // Use aggregation pipeline to get all data in fewer queries
+    const [dashboardData] = await Institution.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(institutionId) } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: 'institutionId',
+          as: 'students'
+        }
       },
-    });
-    const participationCount = participationLogs.length;
-    // Participation rate
-    const participationRate =
-      studentCount > 0 ? participationCount / studentCount : 0;
-    // Certificates issued
-    const certificateCount = await Certificate.countDocuments({
-      eventId: {
-        $in: (await Event.find({ institutionId }, '_id')).map((e) => e._id),
+      {
+        $lookup: {
+          from: 'events',
+          localField: '_id',
+          foreignField: 'institutionId',
+          as: 'events'
+        }
       },
+      {
+        $lookup: {
+          from: 'eventparticipationlogs',
+          let: { eventIds: '$events._id' },
+          pipeline: [
+            { $match: { $expr: { $in: ['$eventId', '$eventIds'] } } }
+          ],
+          as: 'participationLogs'
+        }
+      },
+      {
+        $lookup: {
+          from: 'certificates',
+          let: { eventIds: '$events._id' },
+          pipeline: [
+            { $match: { $expr: { $in: ['$eventId', '$eventIds'] } } }
+          ],
+          as: 'certificates'
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          type: 1,
+          isVerified: 1,
+          publicDashboard: 1,
+          studentCount: { $size: '$students' },
+          eventCount: { $size: '$events' },
+          participationCount: { $size: '$participationLogs' },
+          certificateCount: { $size: '$certificates' },
+          activeStudents: {
+            $size: {
+              $setUnion: ['$participationLogs.userId', []]
+            }
+          },
+          recentEvents: {
+            $slice: [
+              {
+                $sortArray: {
+                  input: '$events',
+                  sortBy: { 'schedule.start': -1 }
+                }
+              },
+              5
+            ]
+          },
+          eventTypes: {
+            $arrayToObject: {
+              $map: {
+                input: {
+                  $setUnion: ['$events.type', []]
+                },
+                as: 'type',
+                in: {
+                  k: '$type',
+                  v: {
+                    $size: {
+                      $filter: {
+                        input: '$events',
+                        cond: { $eq: ['$this.type', '$type'] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          participationLogs: 1,
+          events: 1
+        }
+      }
+    ]);
+
+    if (!dashboardData) {
+      return res.status(404).json({ error: 'Institution not found.' });
+    }
+
+    // Calculate participation rate
+    const participationRate = dashboardData.studentCount > 0 
+      ? Math.round((dashboardData.participationCount / dashboardData.studentCount) * 100)
+      : 0;
+
+    // Calculate inactive students
+    const inactiveStudents = dashboardData.studentCount - dashboardData.activeStudents;
+
+    // Process event breakdown for recent events
+    const eventBreakdown = dashboardData.recentEvents.map(event => {
+      const eventLogs = dashboardData.participationLogs.filter(
+        log => log.eventId.toString() === event._id.toString()
+      );
+      return {
+        id: event._id,
+        title: event.title,
+        registered: eventLogs.length,
+        attended: eventLogs.filter(l => l.status === 'attended').length,
+        waitlisted: eventLogs.filter(l => l.status === 'waitlisted').length,
+      };
     });
-    // Active students (participated in at least one event)
-    const activeStudentIds = [
-      ...new Set(participationLogs.map((log) => log.userId.toString())),
-    ];
-    const activeStudents = activeStudentIds.length;
-    // Inactive students
-    const inactiveStudents = studentCount - activeStudents;
-    // Recent/upcoming events
-    const now = new Date();
-    const recentEvents = await Event.find({ institutionId })
-      .sort({ 'schedule.start': -1 })
-      .limit(5);
-    // Event participation breakdown
-    const eventBreakdown = await Promise.all(
-      recentEvents.map(async (event) => {
-        const logs = participationLogs.filter(
-          (log) => log.eventId.toString() === event._id.toString(),
-        );
-        return {
-          id: event._id,
-          title: event.title,
-          registered: logs.length,
-          attended: logs.filter((l) => l.status === 'attended').length,
-          waitlisted: logs.filter((l) => l.status === 'waitlisted').length,
-        };
-      }),
-    );
-    // Top events (by participation)
+
+    // Top events by participation
     const topEvents = eventBreakdown
       .sort((a, b) => b.registered - a.registered)
       .slice(0, 3);
-    // Top students (by participations/certificates)
-    const studentParticipationMap = {};
-    participationLogs.forEach((log) => {
-      const id = log.userId.toString();
-      studentParticipationMap[id] = (studentParticipationMap[id] || 0) + 1;
-    });
-    const topStudents = Object.entries(studentParticipationMap)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([id, participations]) => ({
-        id,
-        participations,
-      }));
-    // Event types breakdown
-    const events = await Event.find({ institutionId });
-    const eventTypes = {};
-    events.forEach((event) => {
-      eventTypes[event.type] = (eventTypes[event.type] || 0) + 1;
-    });
-    // Pending verifications (students/events)
-    const pendingStudentVerifications = await User.countDocuments({
-      institutionId,
-      isVerified: false,
-    });
-    const pendingEventVerifications = await Event.countDocuments({
-      institutionId,
-      verificationStatus: { $ne: 'approved' },
-    });
-    // Feedback/ratings (if available)
-    // Placeholder: If you have a Feedback model, aggregate here
-    const feedback = {
-      averageRating: null,
-      recentComments: [],
-    };
+
     res.json({
-      studentCount,
-      eventCount,
-      participationCount,
+      institution: {
+        id: dashboardData._id,
+        name: dashboardData.name,
+        type: dashboardData.type,
+        isVerified: dashboardData.isVerified,
+        publicDashboard: dashboardData.publicDashboard,
+      },
+      studentCount: dashboardData.studentCount,
+      eventCount: dashboardData.eventCount,
+      participationCount: dashboardData.participationCount,
       participationRate,
-      certificateCount,
-      activeStudents,
+      certificateCount: dashboardData.certificateCount,
+      activeStudents: dashboardData.activeStudents,
       inactiveStudents,
-      recentEvents,
+      recentEvents: dashboardData.recentEvents,
       eventBreakdown,
       topEvents,
-      topStudents,
-      eventTypes,
-      pendingVerifications: {
-        students: pendingStudentVerifications,
-        events: pendingEventVerifications,
-      },
-      feedback,
+      eventTypes: dashboardData.eventTypes || {},
     });
   } catch (err) {
+    console.error('Dashboard aggregation error:', err);
     res.status(500).json({ error: 'Error fetching dashboard.' });
+  }
+}
+
+// Request public dashboard (institution user)
+async function requestPublicDashboard(req, res) {
+  try {
+    const institutionId = req.params.id;
+    const userId = req.user.id;
+
+    const institution = await Institution.findById(institutionId);
+    if (!institution) {
+      return res.status(404).json({ error: 'Institution not found.' });
+    }
+
+    // Check if user belongs to this institution
+    const user = await User.findById(userId);
+    if (user.institutionId?.toString() !== institutionId) {
+      return res.status(403).json({ 
+        error: 'You can only request dashboard access for your own institution.' 
+      });
+    }
+
+    // Check if already requested or enabled
+    if (institution.publicDashboard.enabled) {
+      return res.status(400).json({ 
+        error: 'Public dashboard is already enabled for this institution.' 
+      });
+    }
+
+    if (institution.publicDashboard.requestedBy) {
+      return res.status(400).json({ 
+        error: 'Public dashboard access has already been requested.' 
+      });
+    }
+
+    // Update institution with request
+    institution.publicDashboard.requestedBy = userId;
+    institution.publicDashboard.requestedAt = new Date();
+
+    await institution.save();
+
+    res.json({ 
+      message: 'Public dashboard access requested. Awaiting admin approval.' 
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error requesting public dashboard.' });
+  }
+}
+
+// Approve public dashboard (admin only)
+async function approvePublicDashboard(req, res) {
+  try {
+    const institutionId = req.params.id;
+    const adminId = req.user.id;
+
+    if (!req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ 
+        error: 'Only platform admins can approve public dashboard requests.' 
+      });
+    }
+
+    const institution = await Institution.findById(institutionId);
+    if (!institution) {
+      return res.status(404).json({ error: 'Institution not found.' });
+    }
+
+    institution.publicDashboard.enabled = true;
+    institution.publicDashboard.approvedBy = adminId;
+    institution.publicDashboard.approvedAt = new Date();
+
+    await institution.save();
+
+    res.json({ 
+      message: 'Public dashboard approved and enabled.',
+      dashboardUrl: `/institutions/${institutionId}/dashboard`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error approving public dashboard.' });
   }
 }
 
@@ -417,10 +715,9 @@ async function requestNewInstitution(req, res) {
     const institutionData = {
       name: name.trim(),
       type,
-      // Location will be set by admin during approval
       emailDomain: computedDomain,
-      isVerified: false, // Always false for user requests
-      isTemporary: false, // Not temporary, just unverified
+      isVerified: false,
+      isTemporary: false,
       verificationRequested: true,
       verificationRequests: [
         {
@@ -431,6 +728,22 @@ async function requestNewInstitution(req, res) {
           phone: phone || '',
           type,
           info: info || '',
+          status: 'pending',
+        },
+      ],
+      verificationHistory: [
+        {
+          action: 'requested',
+          performedBy: req.user.id,
+          performedAt: new Date(),
+          remarks: 'New institution requested by student',
+          newData: {
+            name: name.trim(),
+            type,
+            website: website || '',
+            phone: phone || '',
+            info: info || '',
+          },
         },
       ],
     };
@@ -443,7 +756,7 @@ async function requestNewInstitution(req, res) {
       institutionVerificationStatus: 'pending',
     });
 
-    // Notify platform admins about the new institution request
+    // Notify verifiers and admins about the new institution request
     try {
       await notifyInstitutionRequest({
         requesterId: req.user.id,
@@ -459,7 +772,7 @@ async function requestNewInstitution(req, res) {
 
     return res.status(201).json({
       message:
-        'Institution request submitted successfully. It will be reviewed by administrators.',
+        'Institution request submitted successfully. It will be reviewed by verifiers.',
       institution: {
         id: institution._id,
         name: institution.name,
@@ -469,7 +782,7 @@ async function requestNewInstitution(req, res) {
         verificationRequested: institution.verificationRequested,
         createdAt: institution.createdAt,
       },
-      note: 'This institution is currently unverified. Only platform administrators can verify it.',
+      note: 'This institution is currently unverified. Verifiers will review and approve it.',
     });
   } catch (err) {
     // Handle specific validation errors
@@ -506,8 +819,11 @@ module.exports = {
   requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
+  getPendingInstitutionVerifications,
   getInstitutionAnalytics,
   getInstitutionDashboard,
+  requestPublicDashboard,
+  approvePublicDashboard,
   searchInstitutions,
   requestNewInstitution,
 };

@@ -19,12 +19,20 @@ function authenticateToken(req, res, next) {
 }
 
 /**
- * Middleware to require a specific user role.
- * Usage: requireRole('platformAdmin')
+ * Middleware to require a specific user role or one of multiple roles.
+ * Usage: requireRole('platformAdmin') or requireRole(['verifier', 'platformAdmin'])
  */
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.user || !req.user.roles || !req.user.roles.includes(role)) {
+    if (!req.user || !req.user.roles) {
+      return res.status(403).json({ error: 'Forbidden: insufficient role.' });
+    }
+
+    // Handle both single role and array of roles
+    const requiredRoles = Array.isArray(role) ? role : [role];
+    const hasRequiredRole = requiredRoles.some(r => req.user.roles.includes(r));
+
+    if (!hasRequiredRole) {
       return res.status(403).json({ error: 'Forbidden: insufficient role.' });
     }
     next();

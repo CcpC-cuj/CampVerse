@@ -119,6 +119,34 @@ userSchema.pre('save', function (next) {
   next();
 });
 
+// Performance indexes for common queries
+userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ institutionId: 1 });
+userSchema.index({ roles: 1 });
+userSchema.index({ isVerified: 1 });
+userSchema.index({ institutionVerificationStatus: 1 });
+userSchema.index({ canHost: 1 });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ lastLogin: -1 });
+
+// Compound indexes for complex queries
+userSchema.index({ institutionId: 1, roles: 1 });
+userSchema.index({ institutionId: 1, isVerified: 1 });
+userSchema.index({ roles: 1, canHost: 1 });
+userSchema.index({ email: 1, isVerified: 1 });
+
+// Text search index for user search
+userSchema.index({ 
+  name: 'text', 
+  email: 'text', 
+  bio: 'text' 
+}, {
+  weights: { name: 10, email: 5, bio: 1 },
+  name: 'user_text_search'
+});
+
+// Sparse indexes for optional fields
+userSchema.index({ googleId: 1 }, { sparse: true });
+userSchema.index({ deletionScheduledFor: 1 }, { sparse: true });
 
 module.exports = mongoose.model('User', userSchema);

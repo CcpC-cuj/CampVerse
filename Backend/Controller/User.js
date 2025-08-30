@@ -99,20 +99,12 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
-  console.log("🟢 [BACKEND] Google Sign-In request received");
-  console.log("🟢 [BACKEND] Request timestamp:", new Date().toISOString());
-  console.log("🟢 [BACKEND] Request body keys:", Object.keys(req.body));
-  console.log("🟢 [BACKEND] Request IP:", req.ip || req.connection.remoteAddress);
-  
-  try {
-    const { token } = req.body;
-    console.log("🟢 [BACKEND] Token received:", token ? `${token.substring(0, 50)}...` : 'NO TOKEN');
-    console.log("🟢 [BACKEND] Token length:", token?.length || 0);
-    
-    if (!token) {
-      console.log("🔴 [BACKEND] ERROR: Google token missing");
-      return res.status(400).json({ error: 'Google token missing.' });
-    }
+try {
+const { token } = req.body;
+
+if (!token) {
+return res.status(400).json({ error: 'Google token missing.' });
+}
 
     // Handle mock tokens for testing
     if (token.startsWith('mock_google_token_')) {

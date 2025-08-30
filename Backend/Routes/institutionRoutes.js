@@ -8,8 +8,11 @@ const {
   requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
+  getPendingInstitutionVerifications,
   getInstitutionAnalytics,
   getInstitutionDashboard,
+  requestPublicDashboard,
+  approvePublicDashboard,
   searchInstitutions,
   requestNewInstitution,
 } = require('../Controller/institution');
@@ -259,6 +262,50 @@ router.get('/search', authenticateToken, searchInstitutions);
  *                 details: { type: string, description: "Error details (only in development)" }
  */
 router.post('/request-new', authenticateToken, requestNewInstitution);
+
+// New: Get pending institution verifications (verifier or admin)
+/**
+ * @swagger
+ * /api/institutions/pending-verifications:
+ *   get:
+ *     summary: Get pending institution verifications (verifier or admin)
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: 
+ *         description: List of pending institution verifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pendingInstitutions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *                       type: { type: string }
+ *                       emailDomain: { type: string }
+ *                       website: { type: string }
+ *                       phone: { type: string }
+ *                       info: { type: string }
+ *                       latestRequest:
+ *                         type: object
+ *                         properties:
+ *                           requestedBy: { type: object }
+ *                           institutionName: { type: string }
+ *                           website: { type: string }
+ *                           phone: { type: string }
+ *                           info: { type: string }
+ *                           createdAt: { type: string }
+ *                           status: { type: string }
+ *                 count: { type: number }
+ *       403: { description: Forbidden - only verifiers or admins can access }
+ */
+router.get('/pending-verifications', authenticateToken, requireRole(['verifier', 'platformAdmin']), getPendingInstitutionVerifications);
 
 /**
  * @swagger
@@ -620,7 +667,7 @@ router.post(
 router.post(
   '/:id/approve-verification',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['verifier', 'platformAdmin']),
   approveInstitutionVerification,
 );
 
@@ -645,7 +692,7 @@ router.post(
 router.post(
   '/:id/reject-verification',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['verifier', 'platformAdmin']),
   rejectInstitutionVerification,
 );
 

@@ -20,19 +20,30 @@ const institutionRoutes = require('./Routes/institutionRoutes');
 const eventRoutes = require('./Routes/eventRoutes');
 const certificateRoutes = require('./Routes/certificateRoutes');
 const recommendationRoutes = require('./Routes/recommendationRoutes');
-const errorHandler = require('./Middleware/errorHandler');
+const { errorHandler, addCorrelationId, logger } = require('./Middleware/errorHandler');
+const { sanitizeInput } = require('./Middleware/validation');
+const { smartTimeout, queueMiddleware } = require('./Middleware/timeout');
+const { cacheService } = require('./Services/cacheService');
+const { memoryManager } = require('./Utils/memoryManager');
 
 const app = express();
 
-// Environment variables and Winston logger setup
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  transports: [
-    new winston.transports.Console(),
-    // Add file or remote transports for production
-  ],
-});
+// Initialize services
+(async () => {
+  try {
+    await cacheService.connect();
+    memoryManager.init();
+    logger.info('All services initialized successfully');
+  } catch (error) {
+    logger.error('Service initialization failed:', error);
+  }
+})();
+
+// Early middleware
+app.use(addCorrelationId);
+app.use(sanitizeInput);
+app.use(queueMiddleware);
+app.use(smartTimeout);
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -148,18 +159,80 @@ app.use('/api/users/verify', authLimiter);
 // Centralized error handler (should be last)
 app.use(errorHandler);
 
+// MongoDB connection configuration with pooling
+const mongoOptions = {
+  // Connection pool settings
+  maxPoolSize: 10, // Maximum number of connections in the pool
+  minPoolSize: 2,  // Minimum number of connections in the pool
+  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
+  serverSelectionTimeoutMS: 5000, // How long to try selecting a server
+  socketTimeoutMS: 45000, // How long to wait for a response
+  connectTimeoutMS: 10000, // How long to wait for initial connection
+  
+  // Retry settings
+  retryWrites: true,
+  retryReads: true,
+  
+  // Buffer settings
+  bufferMaxEntries: 0, // Disable mongoose buffering
+  bufferCommands: false, // Disable mongoose buffering
+  
+  // Heartbeat settings
+  heartbeatFrequencyMS: 10000, // Heartbeat every 10 seconds
+  
+  // Other settings
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+};
+
 // Connect MongoDB and start server
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, mongoOptions)
   .then(() => {
-    console.log('MongoDB connected');
+    logger.info('MongoDB connected with connection pooling');
+    
+    // Log connection pool events
+    mongoose.connection.on('connected', () => {
+      logger.info('MongoDB connection established');
+    });
+    
+    mongoose.connection.on('error', (err) => {
+      logger.error('MongoDB connection error:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('MongoDB disconnected');
+    });
+    
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      logger.info('Received SIGINT, closing MongoDB connection...');
+      await mongoose.connection.close();
+      process.exit(0);
+    });
+    
     const PORT = process.env.PORT || 5001;
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log('Server is running on port 5001');
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info(`Server is running on port ${PORT}`);
+    });
+    
+    // Server timeout configuration
+    server.timeout = 30000; // 30 seconds
+    server.keepAliveTimeout = 65000; // 65 seconds
+    server.headersTimeout = 66000; // 66 seconds
+    
+    // Graceful server shutdown
+    process.on('SIGTERM', () => {
+      logger.info('Received SIGTERM, shutting down gracefully...');
+      server.close(() => {
+        logger.info('Server closed');
+        mongoose.connection.close();
+      });
     });
   })
   .catch((err) => {
-    console.error('Failed to connect to MongoDB', err);
+    logger.error('Failed to connect to MongoDB:', err);
+    process.exit(1);
   });
 
 

@@ -55,8 +55,48 @@ const eventSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
+// Performance indexes for common queries
 eventSchema.index({ institutionId: 1 });
 eventSchema.index({ hostUserId: 1 });
 eventSchema.index({ coHosts: 1 });
+eventSchema.index({ verificationStatus: 1 });
+eventSchema.index({ isPaid: 1 });
+eventSchema.index({ type: 1 });
+eventSchema.index({ createdAt: -1 });
+eventSchema.index({ updatedAt: -1 });
+eventSchema.index({ 'schedule.start': 1 });
+eventSchema.index({ 'schedule.end': 1 });
+
+// Compound indexes for complex queries
+eventSchema.index({ institutionId: 1, verificationStatus: 1 });
+eventSchema.index({ hostUserId: 1, verificationStatus: 1 });
+eventSchema.index({ institutionId: 1, 'schedule.start': 1 });
+eventSchema.index({ verificationStatus: 1, 'schedule.start': 1 });
+eventSchema.index({ type: 1, verificationStatus: 1 });
+eventSchema.index({ isPaid: 1, verificationStatus: 1 });
+
+// Text search index for event search
+eventSchema.index({ 
+  title: 'text', 
+  description: 'text',
+  organizer: 'text',
+  tags: 'text'
+}, {
+  weights: { title: 10, organizer: 5, description: 3, tags: 2 },
+  name: 'event_text_search'
+});
+
+// Geospatial index if location is added later
+// eventSchema.index({ location: '2dsphere' });
+
+// Array indexes for participants and waitlist
+eventSchema.index({ participants: 1 });
+eventSchema.index({ waitlist: 1 });
+
+// Update timestamp on save
+eventSchema.pre('save', function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
 module.exports = mongoose.model('Event', eventSchema);

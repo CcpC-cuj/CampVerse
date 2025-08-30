@@ -16,6 +16,7 @@
  *
  * These comments are for documentation and planning only; they do not affect code execution.
  */
+const mongoose = require('mongoose');
 const Event = require('../Models/Event');
 const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
@@ -141,83 +142,149 @@ async function deleteEvent(req, res) {
   }
 }
 
-// RSVP/register for event (user)
+// RSVP/register for event (user) - Fixed race condition with atomic operations
 async function rsvpEvent(req, res) {
+  const session = await mongoose.startSession();
+  
   try {
-    const { eventId } = req.body;
-    const userId = req.user.id;
-    const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    // Waitlist logic
-    const registeredCount = await EventParticipationLog.countDocuments({
-      eventId,
-      status: 'registered',
-    });
-    const isFull = event.capacity && registeredCount >= event.capacity;
-    const status = isFull ? 'waitlisted' : 'registered';
-    // Generate QR token
-    const qrToken = `${eventId}_${userId}_${Date.now()}`;
-    // Generate QR code image
-    const qrImage = await qrcode.toDataURL(qrToken);
-    // Create participation log
-    const log = await EventParticipationLog.create({
-      userId,
-      eventId,
-      status,
-      qrToken,
-    });
-    // Update event waitlist if waitlisted
-    if (status === 'waitlisted') {
-      if (
-        !event.waitlist.map((id) => id.toString()).includes(userId.toString())
-      ) {
-        event.waitlist.push(userId);
-        await event.save();
+    await session.withTransaction(async () => {
+      const { eventId } = req.body;
+      const userId = req.user.id;
+      
+      // Check if user already registered
+      const existingLog = await EventParticipationLog.findOne({
+        eventId,
+        userId
+      }).session(session);
+      
+      if (existingLog) {
+        throw new Error('User already registered for this event');
       }
-    } else {
-      // If user was previously waitlisted, remove from waitlist
-      event.waitlist = event.waitlist.filter(
-        (id) => id.toString() !== userId.toString(),
-      );
-      await event.save();
-    }
-    // Email QR code to user
-    await sendQrEmail(req.user.email, qrImage, event.title);
-    console.log(
-      `[AUDIT] RSVP: user ${userId} for event ${eventId} as ${status}`,
-    );
-    res
-      .status(201)
-      .json({
-        message: `RSVP successful. Status: ${status}. QR code sent to email.`,
+      
+      const event = await Event.findById(eventId).session(session);
+      if (!event) {
+        throw new Error('Event not found');
+      }
+      
+      // Use atomic operation to check capacity and register
+      let status = 'registered';
+      let qrToken = null;
+      
+      if (event.capacity) {
+        // Atomic increment and check capacity
+        const registeredCount = await EventParticipationLog.countDocuments({
+          eventId,
+          status: 'registered'
+        }).session(session);
+        
+        if (registeredCount >= event.capacity) {
+          status = 'waitlisted';
+        }
+      }
+      
+      // Generate secure QR token
+      const crypto = require('crypto');
+      qrToken = crypto.randomBytes(32).toString('hex');
+      
+      // Create participation log atomically
+      const log = await EventParticipationLog.create([{
+        userId,
+        eventId,
+        status,
+        qrToken,
+        registeredAt: new Date()
+      }], { session });
+      
+      // Update event waitlist atomically
+      if (status === 'waitlisted') {
+        await Event.findByIdAndUpdate(
+          eventId,
+          { $addToSet: { waitlist: userId } },
+          { session }
+        );
+      } else {
+        // Remove from waitlist if previously waitlisted
+        await Event.findByIdAndUpdate(
+          eventId,
+          { $pull: { waitlist: userId } },
+          { session }
+        );
+      }
+      
+      // Generate QR code image
+      const qrImage = await qrcode.toDataURL(qrToken);
+      
+      // Store data for response (outside transaction)
+      req.rsvpData = {
+        status,
         qrImage,
-      });
-    // Notify user (confirmation)
-    await notifyUser({
-      userId,
-      type: 'rsvp',
-      message: `You have successfully registered for ${event.title}.`,
-      data: { eventId, eventTitle: event.title },
-      emailOptions: {
-        to: req.user.email,
-        subject: `RSVP Confirmation for ${event.title}`,
-        html: `<p>Hi ${req.user.name},<br>You have successfully registered for <b>${event.title}</b>.</p>`,
-      },
+        qrToken,
+        event,
+        log: log[0]
+      };
     });
-    // Notify host/co-hosts (new registration)
-    const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])]
-      .filter((id) => id != null) // Remove null/undefined values
-      .map((id) => String(id)) // Safely convert to string
-      .filter((id) => id !== userId); // Exclude the current user
-    await notifyUsers({
-      userIds: hostAndCoHosts,
-      type: 'rsvp',
-      message: `${req.user.name} has registered for your event: ${event.title}.`,
-      data: { eventId, userId },
-      emailOptionsFn: async (hostId) => null, // Only in-app for hosts/co-hosts for now
+    
+    // Send response and notifications outside transaction
+    const { status, qrImage, event } = req.rsvpData;
+    
+    // Email QR code to user (non-blocking)
+    sendQrEmail(req.user.email, qrImage, event.title).catch(err => {
+      console.error('Failed to send QR email:', err);
     });
+    
+    res.status(201).json({
+      message: `RSVP successful. Status: ${status}. QR code sent to email.`,
+      qrImage,
+      status
+    });
+    
+    // Async notifications (non-blocking)
+    setImmediate(async () => {
+      try {
+        // Notify user (confirmation)
+        await notifyUser({
+          userId: req.user.id,
+          type: 'rsvp',
+          message: `You have successfully registered for ${event.title}.`,
+          data: { eventId: event._id, eventTitle: event.title },
+          emailOptions: {
+            to: req.user.email,
+            subject: `RSVP Confirmation for ${event.title}`,
+            html: `<p>Hi ${req.user.name},<br>You have successfully registered for <b>${event.title}</b>.</p>`,
+          },
+        });
+        
+        // Notify host/co-hosts (new registration)
+        const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])]
+          .filter((id) => id != null)
+          .map((id) => String(id))
+          .filter((id) => id !== req.user.id);
+          
+        if (hostAndCoHosts.length > 0) {
+          await notifyUsers({
+            userIds: hostAndCoHosts,
+            type: 'rsvp',
+            message: `${req.user.name} has registered for your event: ${event.title}.`,
+            data: { eventId: event._id, userId: req.user.id },
+            emailOptionsFn: async () => null,
+          });
+        }
+      } catch (notificationError) {
+        console.error('Notification error:', notificationError);
+      }
+    });
+    
   } catch (err) {
+    if (err.message === 'User already registered for this event') {
+      return res.status(409).json({ error: err.message });
+    }
+    if (err.message === 'Event not found') {
+      return res.status(404).json({ error: err.message });
+    }
+    console.error('RSVP error:', err);
     res.status(500).json({ error: 'Error registering for event.' });
+  } finally {
+    await session.endSession();
   }
 }
 
