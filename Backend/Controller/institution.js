@@ -4,7 +4,7 @@ const User = require('../Models/User');
 const Event = require('../Models/Event');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const Certificate = require('../Models/Certificate');
-const { notifyInstitutionRequest } = require('../Services/notification');
+const { notifyInstitutionRequest, notifyInstitutionStatusUpdate } = require('../Services/notification');
 
 // Create a new institution (admin only)
 async function createInstitution(req, res) {
@@ -73,68 +73,9 @@ async function deleteInstitution(req, res) {
   }
 }
 
-// Request institution verification (student)
-async function requestInstitutionVerification(req, res) {
-  try {
-    const institution = await Institution.findById(req.params.id);
-    if (!institution)
-      return res.status(404).json({ error: 'Institution not found.' });
-    
-    const { institutionName, email, website, phone, type, info } = req.body || {};
-    
-    institution.verificationRequested = true;
-    institution.verificationRequests = institution.verificationRequests || [];
-    institution.verificationRequests.push({
-      requestedBy: req.user.id,
-      institutionName: institutionName || institution.name,
-      officialEmail: email || '',
-      website: website || '',
-      phone: phone || '',
-      type: type || institution.type,
-      info: info || '',
-      status: 'pending',
-    });
-
-    // Add to verification history
-    institution.verificationHistory.push({
-      action: 'requested',
-      performedBy: req.user.id,
-      performedAt: new Date(),
-      remarks: 'Institution verification requested by student',
-      newData: {
-        institutionName: institutionName || institution.name,
-        website: website || '',
-        phone: phone || '',
-        info: info || '',
-      },
-    });
-
-    await institution.save();
-
-    // Update user's status to pending
-    await User.findByIdAndUpdate(req.user.id, {
-      institutionVerificationStatus: 'pending',
-    });
-
-    // Notify verifiers and admins
-    try {
-      const user = await User.findById(req.user.id).select('name email');
-      await notifyInstitutionRequest({
-        requesterId: req.user.id,
-        requesterName: user?.name || 'Unknown',
-        requesterEmail: user?.email || '',
-        institutionName: institutionName || institution.name,
-        type: type || institution.type,
-      });
-    } catch (e) {
-      // non-blocking
-    }
-
-    res.json({ message: 'Verification request submitted to verifiers.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Error requesting verification.' });
-  }
-}
+// REMOVED: requestInstitutionVerification function
+// This workflow was redundant - users are auto-linked by domain
+// Only the request-new-institution workflow is needed
 
 // Approve institution verification (verifier or admin)
 async function approveInstitutionVerification(req, res) {
@@ -257,6 +198,21 @@ async function approveInstitutionVerification(req, res) {
       }
     }
 
+    // Notify all affected users about approval
+    try {
+      const verifierUser = await User.findById(verifierId).select('name');
+      await notifyInstitutionStatusUpdate({
+        institutionId: institution._id,
+        institutionName: institution.name,
+        status: 'approved',
+        remarks: remarks || 'Institution verified and approved',
+        verifierName: verifierUser?.name || 'Administrator',
+      });
+    } catch (e) {
+      console.error('Failed to notify users about institution approval:', e);
+      // Non-blocking - continue with response
+    }
+
     res.json({
       message: 'Institution verified successfully.',
       verifiedBy: isVerifier ? 'verifier' : 'admin',
@@ -325,6 +281,21 @@ async function rejectInstitutionVerification(req, res) {
       { institutionId: institution._id },
       { institutionVerificationStatus: 'rejected' },
     );
+
+    // Notify all affected users about rejection
+    try {
+      const verifierUser = await User.findById(verifierId).select('name');
+      await notifyInstitutionStatusUpdate({
+        institutionId: institution._id,
+        institutionName: institution.name,
+        status: 'rejected',
+        remarks: remarks || 'Institution verification rejected',
+        verifierName: verifierUser?.name || 'Administrator',
+      });
+    } catch (e) {
+      console.error('Failed to notify users about institution rejection:', e);
+      // Non-blocking - continue with response
+    }
 
     res.json({ 
       message: 'Institution verification rejected.',
@@ -816,7 +787,6 @@ module.exports = {
   getInstitutionById,
   updateInstitution,
   deleteInstitution,
-  requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getPendingInstitutionVerifications,

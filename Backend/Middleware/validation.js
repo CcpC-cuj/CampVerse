@@ -154,14 +154,7 @@ const institutionSchemas = {
     info: commonSchemas.description.optional(),
   }).strict(),
 
-  requestVerification: joi.object({
-    institutionName: commonSchemas.name.optional(),
-    email: commonSchemas.email.optional(),
-    website: commonSchemas.url.optional(),
-    phone: commonSchemas.phone.optional(),
-    type: joi.string().valid('college', 'university', 'org', 'temporary').optional(),
-    info: commonSchemas.description.optional(),
-  }).strict(),
+  // REMOVED: requestVerification schema (redundant workflow removed)
 
   approveVerification: joi.object({
     website: commonSchemas.url.optional(),

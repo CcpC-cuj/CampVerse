@@ -5,7 +5,6 @@ const {
   getInstitutionById,
   updateInstitution,
   deleteInstitution,
-  requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
   getPendingInstitutionVerifications,
@@ -402,29 +401,8 @@ router.delete(
   deleteInstitution,
 );
 
-/**
- * @swagger
- * /api/institutions/{id}/request-verification:
- *   post:
- *     summary: Request institution verification (student)
- *     tags: [Institution]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200: { description: Verification request submitted }
- *       403: { description: Forbidden }
- */
-router.post(
-  '/:id/request-verification',
-  authenticateToken,
-  requestInstitutionVerification,
-);
+// REMOVED: Redundant verification request endpoint
+// Users are auto-linked by domain, no need for separate verification requests
 
 /**
  * @swagger
