@@ -941,7 +941,7 @@ router.get(
  *       500:
  *         description: Server error
  */
-const upload = require('../Middleware/upload');
+// const upload = require('../Middleware/upload');
 // Accept two files: idCardPhoto (required), eventPermission (optional)
 router.post(
   '/me/request-host',
