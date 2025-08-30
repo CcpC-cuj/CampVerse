@@ -352,8 +352,8 @@ async function getPendingInstitutionVerifications(req, res) {
       verificationRequested: true,
       isVerified: false,
     })
-    .populate('verificationRequests.requestedBy', 'name email')
-    .sort({ updatedAt: -1 });
+      .populate('verificationRequests.requestedBy', 'name email')
+      .sort({ updatedAt: -1 });
 
     const formattedInstitutions = pendingInstitutions.map(institution => {
       const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];

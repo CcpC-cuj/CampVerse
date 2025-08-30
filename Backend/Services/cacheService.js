@@ -71,7 +71,10 @@ class CacheService {
    * Get value from cache
    */
   async get(key) {
-    if (!this.isConnected) return null;
+    if (!this.isConnected) {
+      logger.warn(`Cache not connected, returning null for key: ${key}`);
+      return null;
+    }
 
     try {
       const cacheKey = this._generateKey(key);
@@ -86,6 +89,7 @@ class CacheService {
       return null;
     } catch (error) {
       logger.error(`Cache get error for key ${key}:`, error);
+      // Don't throw, just return null to allow fallback
       return null;
     }
   }
@@ -94,7 +98,10 @@ class CacheService {
    * Set value in cache with TTL
    */
   async set(key, value, ttl = this.defaultTTL) {
-    if (!this.isConnected) return false;
+    if (!this.isConnected) {
+      logger.warn(`Cache not connected, cannot set key: ${key}`);
+      return false;
+    }
 
     try {
       const cacheKey = this._generateKey(key);
@@ -221,19 +228,19 @@ class CacheService {
   async invalidateInstitution(institutionId) {
     await this.delPattern(`institution:${institutionId}:*`);
     await this.delPattern(`dashboard:institution:${institutionId}`);
-    await this.delPattern(`institutions:*`);
+    await this.delPattern('institutions:*');
   }
 
   async invalidateEvent(eventId) {
     await this.delPattern(`event:${eventId}:*`);
-    await this.delPattern(`events:*`);
-    await this.delPattern(`recommendations:*`);
+    await this.delPattern('events:*');
+    await this.delPattern('recommendations:*');
   }
 
   async invalidateGlobal() {
-    await this.delPattern(`events:*`);
-    await this.delPattern(`institutions:*`);
-    await this.delPattern(`analytics:*`);
+    await this.delPattern('events:*');
+    await this.delPattern('institutions:*');
+    await this.delPattern('analytics:*');
   }
 
   /**
@@ -264,7 +271,7 @@ class CacheService {
       return {
         connected: this.isConnected,
         memory: info,
-        keyspace: keyspace,
+        keyspace,
         timestamp: new Date().toISOString()
       };
     } catch (error) {

@@ -49,6 +49,7 @@ const {
   authenticateToken,
   requireRole,
   requireSelfOrRole,
+  logout,
 } = require('../Middleware/Auth');
 const upload = require('../Middleware/upload');
 
@@ -941,7 +942,6 @@ router.get(
  *       500:
  *         description: Server error
  */
-const upload = require('../Middleware/upload');
 // Accept two files: idCardPhoto (required), eventPermission (optional)
 router.post(
   '/me/request-host',
@@ -1178,6 +1178,13 @@ router.patch('/notifications/read-all', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 });
+
+// Logout route
+router.post(
+  '/logout',
+  authenticateToken,
+  logout,
+);
 
 // Only admin can delete any user
 router.delete(

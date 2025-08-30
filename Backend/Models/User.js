@@ -53,8 +53,8 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, required: false },
   location: { type: String },
   bio: { type: String },
-  Gender: { type: String },
-  DOB: { type: Date },
+  gender: { type: String }, // Changed from Gender to gender
+  dateOfBirth: { type: Date }, // Changed from DOB to dateOfBirth
   passwordHash: { type: String, required: true },
   // Indicates whether the user has explicitly set a password (Google-only users start as false)
   passwordSetup: { type: Boolean, default: true },

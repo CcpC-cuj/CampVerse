@@ -89,30 +89,70 @@ class MemoryManager {
    * Clean up global objects that may cause memory leaks
    */
   cleanupGlobalObjects() {
-    // Clean up QR scan rate limiting
-    if (global.scanRateLimit) {
-      const now = Date.now();
-      const expiredKeys = [];
-      
-      for (const [key, timestamp] of Object.entries(global.scanRateLimit)) {
-        if (now - timestamp > 60000) { // 1 minute expiry
-          expiredKeys.push(key);
+    try {
+      // Clean up QR scan rate limiting
+      if (global.scanRateLimit) {
+        const now = Date.now();
+        const expiredKeys = [];
+        
+        for (const [key, timestamp] of Object.entries(global.scanRateLimit)) {
+          if (now - timestamp > 60000) { // 1 minute expiry
+            expiredKeys.push(key);
+          }
+        }
+        
+        expiredKeys.forEach(key => {
+          try {
+            delete global.scanRateLimit[key];
+          } catch (err) {
+            logger.error(`Failed to delete scan rate limit key ${key}:`, err);
+          }
+        });
+        
+        if (expiredKeys.length > 0) {
+          logger.debug(`Cleaned up ${expiredKeys.length} expired QR scan rate limit entries`);
         }
       }
-      
-      expiredKeys.forEach(key => delete global.scanRateLimit[key]);
-      
-      if (expiredKeys.length > 0) {
-        logger.debug(`Cleaned up ${expiredKeys.length} expired QR scan rate limit entries`);
-      }
-    }
 
-    // Clean up any other global objects
-    this.globalObjects.forEach((value, key) => {
-      if (value.expiry && Date.now() > value.expiry) {
-        this.globalObjects.delete(key);
-      }
-    });
+      // Clean up any other global objects
+      this.globalObjects.forEach((value, key) => {
+        try {
+          if (value.expiry && Date.now() > value.expiry) {
+            this.globalObjects.delete(key);
+            logger.debug(`Cleaned up expired global object: ${key}`);
+          }
+        } catch (err) {
+          logger.error(`Error cleaning up global object ${key}:`, err);
+          // Remove problematic objects
+          this.globalObjects.delete(key);
+        }
+      });
+
+      // Clean up any other potential global objects
+      const globalKeys = Object.keys(global);
+      const suspiciousKeys = globalKeys.filter(key => 
+        key.includes('temp') || 
+        key.includes('cache') || 
+        key.includes('rateLimit') ||
+        key.includes('session')
+      );
+
+      suspiciousKeys.forEach(key => {
+        try {
+          if (global[key] && typeof global[key] === 'object') {
+            const obj = global[key];
+            if (obj.timestamp && Date.now() - obj.timestamp > 300000) { // 5 minutes
+              delete global[key];
+              logger.debug(`Cleaned up suspicious global object: ${key}`);
+            }
+          }
+        } catch (err) {
+          logger.error(`Error cleaning up suspicious global object ${key}:`, err);
+        }
+      });
+    } catch (error) {
+      logger.error('Error in global objects cleanup:', error);
+    }
   }
 
   /**
@@ -309,7 +349,7 @@ const memoryUtils = {
     
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))  } ${  sizes[i]}`;
   },
 
   /**
@@ -340,7 +380,7 @@ const memoryUtils = {
     if (!obj || typeof obj !== 'object') return;
     
     keys.forEach(key => {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         delete obj[key];
       }
     });

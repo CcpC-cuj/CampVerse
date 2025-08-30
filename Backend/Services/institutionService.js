@@ -269,8 +269,8 @@ class InstitutionService {
       verificationRequested: true,
       isVerified: false,
     })
-    .populate('verificationRequests.requestedBy', 'name email')
-    .sort({ updatedAt: -1 });
+      .populate('verificationRequests.requestedBy', 'name email')
+      .sort({ updatedAt: -1 });
 
     return pendingInstitutions.map(institution => {
       const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];

@@ -19,13 +19,13 @@ function createTimeoutMiddleware(timeout = 30000, message = 'Request timeout') {
           correlationId: req.correlationId,
           userAgent: req.get('User-Agent'),
           ip: req.ip,
-          timeout: timeout
+          timeout
         });
 
         res.status(408).json({
           success: false,
           error: message,
-          timeout: timeout,
+          timeout,
           correlationId: req.correlationId,
           timestamp: new Date().toISOString()
         });

@@ -90,7 +90,9 @@ function validatePhone(phone) {
 }
 
 function validatePassword(password) {
-  return password && password.length >= 6;
+  // Strong password policy: min 8 chars, uppercase, lowercase, number, special char
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return password && passwordRegex.test(password);
 }
 
 function validateName(name) {
@@ -99,12 +101,12 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
-try {
-const { token } = req.body;
+  try {
+    const { token } = req.body;
 
-if (!token) {
-return res.status(400).json({ error: 'Google token missing.' });
-}
+    if (!token) {
+      return res.status(400).json({ error: 'Google token missing.' });
+    }
 
     // Handle mock tokens for testing
     if (token.startsWith('mock_google_token_')) {
@@ -165,8 +167,7 @@ return res.status(400).json({ error: 'Google token missing.' });
         process.env.JWT_SECRET,
         { expiresIn: "1h" },
       );
-      console.log("🟢 [BACKEND] Mock Google login successful for user:", mockEmail);
-      console.log("🟢 [BACKEND] Mock response sent at:", new Date().toISOString());
+      logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
       
       return res.json({
         message: "Google login successful (mock)",
@@ -264,8 +265,7 @@ return res.status(400).json({ error: 'Google token missing.' });
         { expiresIn: "1h" },
       );
       
-      console.log("🟢 [BACKEND] Google login successful for user:", email);
-      console.log("🟢 [BACKEND] Response sent at:", new Date().toISOString());
+      logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
       
       return res.json({
         message: "Google login successful",
@@ -273,8 +273,7 @@ return res.status(400).json({ error: 'Google token missing.' });
         user: sanitizeUser(user),
       });
     } catch (googleError) {
-      console.log("🔴 [BACKEND] Google token verification failed:", googleError.message);
-      console.log("🔴 [BACKEND] Error timestamp:", new Date().toISOString());
+      logger.error("Google token verification failed:", { error: googleError.message, timestamp: new Date().toISOString() });
       logger.error("Google token verification failed:", googleError);
       return res.status(401).json({ error: "Invalid Google token." });
     }
@@ -307,7 +306,7 @@ async function setupPasswordForGoogleUser(req, res) {
     // Validate new password
     if (!validatePassword(newPassword)) {
       return res.status(400).json({
-        error: "Password must be at least 6 characters long.",
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
       });
     }
 
@@ -356,7 +355,7 @@ async function changePassword(req, res) {
     // Validate new password
     if (!validatePassword(newPassword)) {
       return res.status(400).json({
-        error: "Password must be at least 6 characters long.",
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
       });
     }
 
@@ -650,7 +649,7 @@ async function register(req, res) {
     if (!validatePassword(password)) {
       return res
         .status(400)
-        .json({ error: "Password must be at least 6 characters long." });
+        .json({ error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters." });
     }
 
     const existingUser = await User.findOne({ email });
@@ -862,8 +861,8 @@ async function updatePreferences(req, res) {
     const allowedFields = [
       "name",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
       "interests",
@@ -924,8 +923,8 @@ async function updateMe(req, res) {
     const allowedFields = [
       "name",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
       "interests",
@@ -1036,8 +1035,8 @@ async function getDashboard(req, res) {
       "name",
       "email",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
     ];
@@ -1619,6 +1618,29 @@ async function updateMyNotificationPreferences(req, res) {
   }
 }
 
+// ---------------- Logout ----------------
+async function logout(req, res) {
+  try {
+    const token = req.token;
+    if (token) {
+      // Add token to blacklist with expiration
+      const decoded = jwt.decode(token);
+      const exp = decoded.exp || Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
+      const ttl = exp - Math.floor(Date.now() / 1000);
+      
+      if (ttl > 0) {
+        await redisClient.setEx(`blacklist:${token}`, ttl, 'revoked');
+        logger.info(`Token blacklisted for user ${req.user.id}`);
+      }
+    }
+    
+    res.json({ message: 'Logged out successfully.' });
+  } catch (error) {
+    logger.error('Logout error:', error);
+    res.status(500).json({ error: 'Logout failed.' });
+  }
+}
+
 // ---------------- Settings: Delete My Account (schedule) ----------------
 async function deleteMe(req, res) {
   try {
@@ -1954,4 +1976,5 @@ module.exports = {
   updateMyNotificationPreferences,
   deleteMe,
   unlinkGoogleAccount,
+  logout,
 };
