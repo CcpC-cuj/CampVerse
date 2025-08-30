@@ -21,7 +21,7 @@ const NotificationBell = ({ notifications = [] }) => {
         onClick={() => setOpen((prev) => !prev)}
         className="bg-gray-800/60 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/80 relative"
       >
-        <i className="ri-notification-3-line" />
+        <i className="ri-notification-3-line text-xl" />
         {notifications.length > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
             {notifications.length}
@@ -30,15 +30,18 @@ const NotificationBell = ({ notifications = [] }) => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-4 z-50">
+        <div className="fixed top-16 right-16 w-80 sm:w-96 bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-4 z-50">
+          <div className="flex justify-between items-center mb-2">
+           
+          </div>
           {notifications.length === 0 ? (
             <p className="text-gray-400 text-sm">No notifications</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 max-h-64 overflow-y-auto">
               {notifications.map((n, i) => (
                 <li
                   key={i}
-                  className="text-sm text-white border-b border-gray-700 pb-1 last:border-none"
+                  className="text-sm text-white border-b border-gray-700 pb-1 last:border-none break-words"
                 >
                   {n}
                 </li>
