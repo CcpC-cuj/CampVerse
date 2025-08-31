@@ -1,5 +1,5 @@
 import React from "react";
-import NotificationBell from "./NotificationBell";
+import NotificationBell from "./notificationBell";
 import CalendarDropdown from "./CalendarDropdown";
 import SearchBar from "./SearchBar"; // reusable component
 
