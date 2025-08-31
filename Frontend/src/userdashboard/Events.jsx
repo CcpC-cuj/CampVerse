@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Sidebar from "../userdashboard/sidebar";
-import NotificationBell from "../userdashboard/notificationbell";
+import NotificationBell from "../userdashboard/NotificationBell";
 import NavBar from "./NavBar";
 
 const Events = () => {
