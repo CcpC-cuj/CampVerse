@@ -159,8 +159,6 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                 otp:
- *                   type: string
  *       400:
  *         description: Validation error
  *       500:

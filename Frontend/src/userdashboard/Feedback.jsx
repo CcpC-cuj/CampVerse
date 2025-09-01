@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
+import { submitFeedback } from "../api/feedback";
 
 /**
  * Feedback (frontend only)
@@ -56,25 +57,35 @@ const Feedback = () => {
     setSubmitting(true);
 
     try {
-      // TODO: BACKEND — create Feedback API endpoint
-      // POST /api/feedback  (multipart/form-data if attachment present)
-      // Body: { rating, category, subject, message, email }
-      // File: attachment
-      // Example integration after you add it to ../api:
-      // const res = await submitFeedback({ rating, category, subject, message, email, attachment })
-      // setFeedback(res.message || "Thanks for your feedback!")
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
+      formData.append('rating', rating.toString());
+      formData.append('category', category);
+      formData.append('subject', subject);
+      formData.append('message', message);
+      formData.append('email', email);
+      
+      if (attachment) {
+        formData.append('attachment', attachment);
+      }
 
-      await new Promise((r) => setTimeout(r, 900)); // simulate
-      setFeedback("Thanks! Your feedback has been received.");
-      setSubject("");
-      setMessage("");
-      setAttachment(null);
-      setRating(0);
+      const res = await submitFeedback(formData);
+      
+      if (res.error) {
+        setFeedback(res.error);
+      } else {
+        setFeedback(res.message || "Thanks! Your feedback has been received.");
+        setSubject("");
+        setMessage("");
+        setAttachment(null);
+        setRating(0);
+      }
     } catch (err) {
+      console.error('Feedback submission error:', err);
       setFeedback("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
-      setTimeout(() => setFeedback(""), 3000);
+      setTimeout(() => setFeedback(""), 5000);
     }
   };
 
@@ -252,7 +263,10 @@ const Feedback = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <i className="ri-attachment-2 text-gray-300"></i>
-                    <span className="text-sm text-gray-300">Attach screenshot (optional)</span>
+                    <span className="text-sm text-gray-300">
+                      Attach screenshot (optional)
+                      {attachment && ` - ${attachment.name}`}
+                    </span>
                     <input
                       type="file"
                       className="hidden"
@@ -285,7 +299,7 @@ const Feedback = () => {
                 )}
               </form>
 
-              {/* TODO: BACKEND — optionally show recent feedback or status list for the user here */}
+              {/* Recent feedback could be added here using getMyFeedback() API */}
             </div>
 
             {/* Side info */}
@@ -306,7 +320,7 @@ const Feedback = () => {
                   <li>Tell us your goal (why you need the change)</li>
                 </ul>
               </div>
-              {/* TODO: BACKEND — link to public changelog once available */}
+              {/* Public changelog link - coming soon */}
               <button
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
                 onClick={() => alert("Coming soon: Public changelog")}

@@ -44,6 +44,9 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Advanced event search (filter, sort, paginate) - placed before '/:id' to avoid route collisions
+router.get('/search', authenticateToken, advancedEventSearch);
+
 /**
  * @swagger
  * /api/events:
@@ -306,7 +309,7 @@ router.get(
  *       404: { description: Event not found }
  *       500: { description: Error nominating co-host }
  */
-router.post('/nominate-cohost', authenticateToken, nominateCoHost);
+router.post('/nominate-cohost', authenticateToken, requireRole('host'), nominateCoHost);
 
 /**
  * @swagger
@@ -419,7 +422,6 @@ router.post(
 router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 
 // Advanced event search (filter, sort, paginate)
-router.get('/search', authenticateToken, advancedEventSearch);
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
 // Platform insights (global stats)

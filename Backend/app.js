@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const { createClient } = require('redis');
 const userRoutes = require('./Routes/userRoutes');
 const hostRoutes = require('./Routes/hostRoutes');
@@ -33,6 +34,9 @@ function generateCorrelationId() {
 }
 
 const app = express();
+
+// Trust Render/Proxy to get correct client IPs for rate limiting and security
+app.set('trust proxy', 1);
 
 // Initialize services
 (async () => {
@@ -96,8 +100,8 @@ app.use('/api/feedback', apiLimiter);
 app.use('/api/support', apiLimiter);
 
 // Apply strict rate limiting to sensitive operations
-app.use('/api/users/:id/host-access', strictLimiter);
-app.use('/api/users/:id/verifier-access', strictLimiter);
+app.use('/api/users/:id/grant-host', strictLimiter);
+app.use('/api/users/:id/grant-verifier', strictLimiter);
 app.use('/api/events/:id/participants', strictLimiter);
 
 // Swagger setup
@@ -152,7 +156,7 @@ app.use(helmet({
   noSniff: true,
   permittedCrossDomainPolicies: { permittedPolicies: 'none' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  xssFilter: true,
+  // xssFilter removed (deprecated),
 }));
 
 // Additional security middleware
@@ -176,18 +180,23 @@ app.use((req, res, next) => {
 });
 
 // Enable CORS for local frontend development
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-  ? [
-    'https://campverse-frontend.onrender.com',
-    'https://campverse-alqa.onrender.com'
-  ]
-  : [
+const allowedOrigins = (() => {
+  if (process.env.NODE_ENV === 'production') {
+    const origins = [
+      'https://campverse-frontend.onrender.com',
+      'https://campverse-alqa.onrender.com'
+    ];
+    if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
+    return origins;
+  }
+  return [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:3001',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173'
   ];
+})();
 
 app.use(
   cors({
@@ -210,26 +219,23 @@ app.use(
   }),
 );
 
+// Enable compression for better performance
+app.use(compression({
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  },
+  level: 6,
+  threshold: 1024,
+}));
+
 app.use(express.json({ limit: '1mb' }));
 
 // Connect Redis client with fallback
 const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-  retry_strategy: (options) => {
-    if (options.error && options.error.code === 'ECONNREFUSED') {
-      logger.error('Redis connection refused, will retry...');
-      return Math.min(options.attempt * 100, 3000);
-    }
-    if (options.total_retry_time > 1000 * 60 * 60) {
-      logger.error('Redis retry time exhausted');
-      return new Error('Retry time exhausted');
-    }
-    if (options.attempt > 10) {
-      logger.error('Redis max retry attempts reached');
-      return undefined;
-    }
-    return Math.min(options.attempt * 100, 3000);
-  },
   socket: {
     connectTimeout: 10000,
     keepAlive: 30000,

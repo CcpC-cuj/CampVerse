@@ -30,11 +30,12 @@ function loadServiceAccount() {
   }
 }
 
+let serviceAccount = null;
 if (!admin.apps.length) {
-  const sa = loadServiceAccount();
+  serviceAccount = loadServiceAccount();
   try {
-    if (sa) {
-      admin.initializeApp({ credential: admin.credential.cert(sa) });
+    if (serviceAccount) {
+      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } else {
       admin.initializeApp();
     }
@@ -47,5 +48,9 @@ if (!admin.apps.length) {
   }
 }
 
-const bucketName = process.env.FIREBASE_BUCKET || 'ccpccuj.appspot.com';
+// Prefer explicit FIREBASE_BUCKET; otherwise derive from service account project_id
+const derivedBucket = serviceAccount && serviceAccount.project_id
+  ? `${serviceAccount.project_id}.appspot.com`
+  : null;
+const bucketName = process.env.FIREBASE_BUCKET || derivedBucket || 'ccpccuj.appspot.com';
 module.exports = admin.storage().bucket(bucketName);

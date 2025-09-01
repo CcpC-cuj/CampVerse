@@ -222,7 +222,6 @@ router.get('/stats', authenticateToken, getCertificateStats);
  *       500:
  *         description: Server error
  */
-router.get('/:id', authenticateToken, getCertificateById);
 
 /**
  * @swagger
@@ -684,5 +683,8 @@ router.post(
   authenticateToken,
   bulkRetryFailedCertificates,
 );
+
+// Keep parameterized route last to avoid collisions with static and prefixed routes
+router.get('/:id', authenticateToken, getCertificateById);
 
 module.exports = router;
