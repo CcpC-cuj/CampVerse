@@ -58,12 +58,14 @@ class FirebaseStorageService {
       const token = randomUUID();
       
       const uploadMetadata = {
-        contentType: mimetype,
         metadata: {
-          firebaseStorageDownloadTokens: token,
-          originalName: filename,
-          uploadedAt: new Date().toISOString(),
-          ...metadata
+          contentType: mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: token,
+            originalName: filename,
+            uploadedAt: new Date().toISOString(),
+            ...metadata
+          }
         }
       };
 

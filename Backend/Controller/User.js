@@ -165,7 +165,11 @@ async function googleSignIn(req, res) {
       const jwtToken = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
       logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
       
@@ -262,7 +266,11 @@ async function googleSignIn(req, res) {
       const jwtToken = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
       
       logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
@@ -770,7 +778,11 @@ async function verifyOtp(req, res) {
       const token = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
       return res.json({
         message: "OTP verified, logged in.",
@@ -803,7 +815,11 @@ async function verifyOtp(req, res) {
     const token = jwt.sign(
       { id: user._id, roles: user.roles },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      {
+        expiresIn: "1h",
+        issuer: "campverse",
+        audience: "campverse-users",
+      },
     );
     return res.status(201).json({
       message: "Registration successful, logged in.",
@@ -838,7 +854,11 @@ async function login(req, res) {
     const token = jwt.sign(
       { id: user._id, roles: user.roles },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      {
+        expiresIn: "1h",
+        issuer: "campverse",
+        audience: "campverse-users",
+      },
     );
 
     return res.json({
@@ -1235,7 +1255,7 @@ async function requestHostAccess(req, res) {
       }
       const fileName = `campverse/hostRequests/${userId}/idCardPhoto_${Date.now()}`;
       const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
       idCardPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     } else {
       return res.status(400).json({ error: "ID card photo is required." });
@@ -1251,7 +1271,7 @@ async function requestHostAccess(req, res) {
       }
       const fileName = `campverse/hostRequests/${userId}/eventPermission_${Date.now()}`;
       const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
       eventPermissionUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     }
 
@@ -1835,8 +1855,14 @@ async function uploadProfilePhotoHandler(req, res) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found." });
-    // Delete old profile photo if exists
-    if (user.profilePhoto) await deleteProfilePhoto(user.profilePhoto);
+    // Delete old profile photo if exists (best-effort)
+    if (user.profilePhoto) {
+      try {
+        await deleteProfilePhoto(user.profilePhoto);
+      } catch (_) {
+        // ignore deletion failures
+      }
+    }
     // Upload new photo
     const url = await uploadProfilePhoto(
       req.file.buffer,

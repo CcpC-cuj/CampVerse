@@ -65,6 +65,64 @@ Your CI/CD can loop through these or trigger based on changes.
 
 ---
 
+## Project Overview
+
+CampVerse is a full-stack platform for event discovery and management with certificates, support ticketing, and institution verification workflows.
+
+Frontend: React (Vite) under `Frontend/`.
+Backend: Node + Express under `Backend/` with MongoDB and Redis. ML service optional under `ML/`.
+
+API docs: when backend is running, visit `/api-docs`.
+
+## Environment setup (local)
+
+1. Prerequisites: Node.js LTS, npm, Docker (optional), MongoDB, Redis.
+2. Backend env: copy `Backend/env.test.example` to `Backend/.env` and fill values; keep existing hard-coded values in code unchanged.
+3. Install deps:
+   ```bash
+   cd Backend && npm install
+   cd ../Frontend && npm install
+   ```
+4. Run locally:
+   ```bash
+   # Backend
+   cd Backend && npm run dev
+   # Frontend
+   cd ../Frontend && npm run dev
+   ```
+
+Backends runs on http://localhost:5001, Frontend on http://localhost:5173 by default.
+
+## Folder structure
+
+- `Frontend/` React app (Vite)
+  - `src/api/` API wrappers: events, certificates, support, host, institution, user, notification
+  - `src/components`, `src/pages`, `src/userdashboard`, etc.
+- `Backend/` Node + Express API
+  - `Routes/`, `Controller/`, `Models/`, `Services/`, `Middleware/`
+- `ML/` Optional recommendation service
+- `docs/` Documentation including `backend-overview.md`
+
+## Backend endpoints and frontend usage
+
+- Events (`/api/events`): list/create/get/update/delete, RSVP, participants, analytics, co-host, search. Use `src/api/events.js`.
+- Hosts (`/api/hosts`): dashboard, my-events, CRUD, participants. Use `src/api/host.js`.
+- Institutions (`/api/institutions`): search, request-new, approvals, analytics, dashboard. Use `src/api/institution.js`.
+- Certificates (`/api/certificates`): generate, stats, verify, progress, dashboard. Use `src/api/certificates.js`.
+- Support (`/api/support`): tickets, admin operations, analytics. Use `src/api/support.js`.
+- Feedback (`/api/feedback`): submit from UI (multipart if attachment). Use a simple fetch from components or add wrapper if needed.
+- Users (`/api/users`): auth/profile/notifications. Use `src/api/user.js` and `src/api/notification.js`.
+
+## Changes and fixes from latest audit
+
+- Added frontend API wrappers aligned with backend:
+  - `src/api/events.js`, `src/api/certificates.js`, `src/api/support.js`, completed `src/api/host.js`, extended `src/api/institution.js`.
+  - Updated `src/api/index.js` to export all wrappers.
+- Safe handling of removed backend endpoint: institution `request-verification` now a no-op on frontend to avoid crashes.
+- No code style changes to hard-coded values; deployment configuration preserved for Render.
+
+See `docs/backend-overview.md` for a concise backend module and endpoint summary.
+
 ## 🚀 Quick Start with Docker Compose
 
 ### 1. Build and Start All Services

@@ -145,6 +145,9 @@ export async function getDashboard() {
   const res = await fetch(`${API_URL}/api/users`, {
     headers: { ...getAuthHeaders() }
   });
+  if (res.status === 401) {
+    return { error: 'unauthorized', message: 'Please log in again.' };
+  }
   return res.json();
 }
 

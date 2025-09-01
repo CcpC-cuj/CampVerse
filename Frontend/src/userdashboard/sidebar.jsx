@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
-import logo from "../assets/logo.png";
+
 const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
@@ -31,10 +31,7 @@ const Sidebar = ({ onDiscoverClick }) => {
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
       {/* Top Logo */}
       <div className="p-4 border-b border-gray-700 flex items-center">
-
-        <div className="text-xl font-['Pacifico'] text-white">
-          <img src={logo} alt="logo" className="h-8 w-8" />
-          CampVerse</div>
+        <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
       </div>
 
       {/* Scrollable Section */}
@@ -43,12 +40,15 @@ const Sidebar = ({ onDiscoverClick }) => {
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="relative">
+              <div className="w-12 h-12 rounded-full object-cover">
               <img
                 src={profileUrl}
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover"
                 onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/default-avatar.png'; }}
               />
+              </div>
+              
               <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-gray-800"></div>
             </div>
             <div>
