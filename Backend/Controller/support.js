@@ -1,5 +1,5 @@
 const SupportTicket = require('../Models/SupportTicket');
-const { uploadProfilePhoto } = require('../Services/driveService');
+const { uploadUserDocument } = require('../Services/firebaseStorageService');
 const {
   sendSupportTicketConfirmation,
   sendSupportTicketUpdate,
@@ -22,9 +22,10 @@ async function submitTicket(req, res) {
     let attachment = null;
     if (req.file) {
       try {
-        const url = await uploadProfilePhoto(
+        const url = await uploadUserDocument(
           req.file.buffer,
           req.file.originalname,
+          'support',
           userId,
           req.file.mimetype,
         );

@@ -49,6 +49,7 @@ const {
   authenticateToken,
   requireRole,
   requireSelfOrRole,
+  logout,
 } = require('../Middleware/Auth');
 const upload = require('../Middleware/upload');
 
@@ -157,8 +158,6 @@ const router = express.Router();
  *               type: object
  *               properties:
  *                 message:
- *                   type: string
- *                 otp:
  *                   type: string
  *       400:
  *         description: Validation error
@@ -1178,6 +1177,13 @@ router.patch('/notifications/read-all', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 });
+
+// Logout route
+router.post(
+  '/logout',
+  authenticateToken,
+  logout,
+);
 
 // Only admin can delete any user
 router.delete(

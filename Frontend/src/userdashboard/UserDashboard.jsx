@@ -35,9 +35,10 @@ const UserDashboard = () => {
         const data = await getDashboard();
         if (!mounted) return;
         const u = data?.user || {};
-        const basicFieldsFilled = Boolean(u.name && u.phone && u.Gender && u.DOB);
+        const basicFieldsFilled = Boolean(u.name && u.phone && u.gender && u.dateOfBirth);
         const hasInstitution = Boolean(u.institutionId);
-        setShowOnboarding(!basicFieldsFilled || !hasInstitution);
+        const shouldShow = !u.onboardingCompleted && (!basicFieldsFilled || !hasInstitution);
+        setShowOnboarding(shouldShow);
         setStats(data?.stats || null);
 
         // 🔹 Prepare events for calendar

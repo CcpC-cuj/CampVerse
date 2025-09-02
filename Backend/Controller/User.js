@@ -90,7 +90,9 @@ function validatePhone(phone) {
 }
 
 function validatePassword(password) {
-  return password && password.length >= 6;
+  // Strong password policy: min 8 chars, uppercase, lowercase, number, special char
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return password && passwordRegex.test(password);
 }
 
 function validateName(name) {
@@ -99,18 +101,10 @@ function validateName(name) {
 
 // ---------------- Google Sign-In ----------------
 async function googleSignIn(req, res) {
-  console.log("🟢 [BACKEND] Google Sign-In request received");
-  console.log("🟢 [BACKEND] Request timestamp:", new Date().toISOString());
-  console.log("🟢 [BACKEND] Request body keys:", Object.keys(req.body));
-  console.log("🟢 [BACKEND] Request IP:", req.ip || req.connection.remoteAddress);
-  
   try {
     const { token } = req.body;
-    console.log("🟢 [BACKEND] Token received:", token ? `${token.substring(0, 50)}...` : 'NO TOKEN');
-    console.log("🟢 [BACKEND] Token length:", token?.length || 0);
-    
+
     if (!token) {
-      console.log("🔴 [BACKEND] ERROR: Google token missing");
       return res.status(400).json({ error: 'Google token missing.' });
     }
 
@@ -171,10 +165,13 @@ async function googleSignIn(req, res) {
       const jwtToken = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
-      console.log("🟢 [BACKEND] Mock Google login successful for user:", mockEmail);
-      console.log("🟢 [BACKEND] Mock response sent at:", new Date().toISOString());
+      logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
       
       return res.json({
         message: "Google login successful (mock)",
@@ -269,11 +266,14 @@ async function googleSignIn(req, res) {
       const jwtToken = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
       
-      console.log("🟢 [BACKEND] Google login successful for user:", email);
-      console.log("🟢 [BACKEND] Response sent at:", new Date().toISOString());
+      logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
       
       return res.json({
         message: "Google login successful",
@@ -281,8 +281,7 @@ async function googleSignIn(req, res) {
         user: sanitizeUser(user),
       });
     } catch (googleError) {
-      console.log("🔴 [BACKEND] Google token verification failed:", googleError.message);
-      console.log("🔴 [BACKEND] Error timestamp:", new Date().toISOString());
+      logger.error("Google token verification failed:", { error: googleError.message, timestamp: new Date().toISOString() });
       logger.error("Google token verification failed:", googleError);
       return res.status(401).json({ error: "Invalid Google token." });
     }
@@ -315,7 +314,7 @@ async function setupPasswordForGoogleUser(req, res) {
     // Validate new password
     if (!validatePassword(newPassword)) {
       return res.status(400).json({
-        error: "Password must be at least 6 characters long.",
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
       });
     }
 
@@ -364,7 +363,7 @@ async function changePassword(req, res) {
     // Validate new password
     if (!validatePassword(newPassword)) {
       return res.status(400).json({
-        error: "Password must be at least 6 characters long.",
+        error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.",
       });
     }
 
@@ -658,7 +657,7 @@ async function register(req, res) {
     if (!validatePassword(password)) {
       return res
         .status(400)
-        .json({ error: "Password must be at least 6 characters long." });
+        .json({ error: "Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters." });
     }
 
     const existingUser = await User.findOne({ email });
@@ -779,7 +778,11 @@ async function verifyOtp(req, res) {
       const token = jwt.sign(
         { id: user._id, roles: user.roles },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
       );
       return res.json({
         message: "OTP verified, logged in.",
@@ -812,7 +815,11 @@ async function verifyOtp(req, res) {
     const token = jwt.sign(
       { id: user._id, roles: user.roles },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      {
+        expiresIn: "1h",
+        issuer: "campverse",
+        audience: "campverse-users",
+      },
     );
     return res.status(201).json({
       message: "Registration successful, logged in.",
@@ -847,7 +854,11 @@ async function login(req, res) {
     const token = jwt.sign(
       { id: user._id, roles: user.roles },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      {
+        expiresIn: "1h",
+        issuer: "campverse",
+        audience: "campverse-users",
+      },
     );
 
     return res.json({
@@ -870,8 +881,8 @@ async function updatePreferences(req, res) {
     const allowedFields = [
       "name",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
       "interests",
@@ -932,8 +943,8 @@ async function updateMe(req, res) {
     const allowedFields = [
       "name",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
       "interests",
@@ -1044,8 +1055,8 @@ async function getDashboard(req, res) {
       "name",
       "email",
       "phone",
-      "Gender",
-      "DOB",
+      "gender",
+      "dateOfBirth",
       "profilePhoto",
       "collegeIdNumber",
     ];
@@ -1244,7 +1255,7 @@ async function requestHostAccess(req, res) {
       }
       const fileName = `campverse/hostRequests/${userId}/idCardPhoto_${Date.now()}`;
       const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
       idCardPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     } else {
       return res.status(400).json({ error: "ID card photo is required." });
@@ -1260,7 +1271,7 @@ async function requestHostAccess(req, res) {
       }
       const fileName = `campverse/hostRequests/${userId}/eventPermission_${Date.now()}`;
       const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { contentType: file.mimetype });
+      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
       eventPermissionUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     }
 
@@ -1627,6 +1638,29 @@ async function updateMyNotificationPreferences(req, res) {
   }
 }
 
+// ---------------- Logout ----------------
+async function logout(req, res) {
+  try {
+    const token = req.token;
+    if (token) {
+      // Add token to blacklist with expiration
+      const decoded = jwt.decode(token);
+      const exp = decoded.exp || Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
+      const ttl = exp - Math.floor(Date.now() / 1000);
+      
+      if (ttl > 0) {
+        await redisClient.setEx(`blacklist:${token}`, ttl, 'revoked');
+        logger.info(`Token blacklisted for user ${req.user.id}`);
+      }
+    }
+    
+    res.json({ message: 'Logged out successfully.' });
+  } catch (error) {
+    logger.error('Logout error:', error);
+    res.status(500).json({ error: 'Logout failed.' });
+  }
+}
+
 // ---------------- Settings: Delete My Account (schedule) ----------------
 async function deleteMe(req, res) {
   try {
@@ -1821,9 +1855,22 @@ async function uploadProfilePhotoHandler(req, res) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded." });
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found." });
-    // Delete old profile photo if exists
-    if (user.profilePhoto) await deleteProfilePhoto(user.profilePhoto);
-    // Upload new photo
+    // Delete old profile photo if exists (best-effort)
+    if (user.profilePhoto) {
+      try {
+        logger.info(`Attempting to delete old profile photo: ${user.profilePhoto}`);
+        const deleted = await deleteProfilePhoto(user.profilePhoto);
+        if (deleted) {
+          logger.info(`Successfully deleted old profile photo: ${user.profilePhoto}`);
+        } else {
+          logger.warn(`Failed to delete old profile photo: ${user.profilePhoto}`);
+        }
+      } catch (error) {
+        logger.error(`Error deleting old profile photo: ${user.profilePhoto}`, error);
+        // ignore deletion failures - don't break the upload process
+      }
+    }
+    // Upload new photo to storage
     const url = await uploadProfilePhoto(
       req.file.buffer,
       req.file.originalname,
@@ -1833,7 +1880,7 @@ async function uploadProfilePhotoHandler(req, res) {
     user.profilePhoto = url;
     await user.save();
     return res.json({
-      message: "Profile photo updated.",
+      message: "Profile photo updated (stored locally).",
       user: sanitizeUser(user),
     });
   } catch (err) {
@@ -1962,4 +2009,5 @@ module.exports = {
   updateMyNotificationPreferences,
   deleteMe,
   unlinkGoogleAccount,
+  logout,
 };

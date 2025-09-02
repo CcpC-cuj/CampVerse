@@ -5,11 +5,13 @@ const {
   getInstitutionById,
   updateInstitution,
   deleteInstitution,
-  requestInstitutionVerification,
   approveInstitutionVerification,
   rejectInstitutionVerification,
+  getPendingInstitutionVerifications,
   getInstitutionAnalytics,
   getInstitutionDashboard,
+  requestPublicDashboard,
+  approvePublicDashboard,
   searchInstitutions,
   requestNewInstitution,
 } = require('../Controller/institution');
@@ -260,6 +262,50 @@ router.get('/search', authenticateToken, searchInstitutions);
  */
 router.post('/request-new', authenticateToken, requestNewInstitution);
 
+// New: Get pending institution verifications (verifier or admin)
+/**
+ * @swagger
+ * /api/institutions/pending-verifications:
+ *   get:
+ *     summary: Get pending institution verifications (verifier or admin)
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: 
+ *         description: List of pending institution verifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pendingInstitutions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: { type: string }
+ *                       name: { type: string }
+ *                       type: { type: string }
+ *                       emailDomain: { type: string }
+ *                       website: { type: string }
+ *                       phone: { type: string }
+ *                       info: { type: string }
+ *                       latestRequest:
+ *                         type: object
+ *                         properties:
+ *                           requestedBy: { type: object }
+ *                           institutionName: { type: string }
+ *                           website: { type: string }
+ *                           phone: { type: string }
+ *                           info: { type: string }
+ *                           createdAt: { type: string }
+ *                           status: { type: string }
+ *                 count: { type: number }
+ *       403: { description: Forbidden - only verifiers or admins can access }
+ */
+router.get('/pending-verifications', authenticateToken, requireRole(['verifier', 'platformAdmin']), getPendingInstitutionVerifications);
+
 /**
  * @swagger
  * /api/institutions:
@@ -355,29 +401,8 @@ router.delete(
   deleteInstitution,
 );
 
-/**
- * @swagger
- * /api/institutions/{id}/request-verification:
- *   post:
- *     summary: Request institution verification (student)
- *     tags: [Institution]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200: { description: Verification request submitted }
- *       403: { description: Forbidden }
- */
-router.post(
-  '/:id/request-verification',
-  authenticateToken,
-  requestInstitutionVerification,
-);
+// REMOVED: Redundant verification request endpoint
+// Users are auto-linked by domain, no need for separate verification requests
 
 /**
  * @swagger
@@ -620,7 +645,7 @@ router.post(
 router.post(
   '/:id/approve-verification',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['verifier', 'platformAdmin']),
   approveInstitutionVerification,
 );
 
@@ -645,7 +670,7 @@ router.post(
 router.post(
   '/:id/reject-verification',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['verifier', 'platformAdmin']),
   rejectInstitutionVerification,
 );
 

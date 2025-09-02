@@ -1,13 +1,18 @@
 // Test environment setup
+require('dotenv').config({ path: '.env.test' });
+
+// Set test environment
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-secret-key-for-jwt-signing';
-process.env.MONGO_URI = 'mongodb://localhost:27017/test';
-process.env.REDIS_URL = 'redis://localhost:6379';
-process.env.EMAIL_USER = 'test@example.com';
-process.env.EMAIL_PASSWORD = 'test-password';
-process.env.PORT = '5001';
-process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
-process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';
+
+// Use environment variables with fallbacks for testing
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-jwt-signing';
+process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/test';
+process.env.REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+process.env.EMAIL_USER = process.env.EMAIL_USER || 'test@example.com';
+process.env.EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || 'test-password';
+process.env.PORT = process.env.PORT || '5001';
+process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'test-google-client-id';
+process.env.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'test-google-client-secret';
 
 // Increase timeout for tests
 jest.setTimeout(15000);
@@ -18,7 +23,7 @@ const testUtils = {
   createTestUser: (overrides = {}) => ({
     name: 'Test User',
     email: 'test@example.com',
-    password: 'testpassword123',
+    password: 'TestPassword123!', // Strong password for testing
     phone: '+1234567890',
     ...overrides,
   }),

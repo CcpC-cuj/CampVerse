@@ -36,10 +36,44 @@ export async function requestNewInstitution(payload) {
 }
 
 export async function requestInstitutionVerification(institutionId, payload) {
-  const res = await fetch(`${API_URL}/api/institutions/${institutionId}/request-verification`, {
+  // Backend removed standalone request-verification; keep a no-op to prevent crashes
+  return { error: 'request-verification endpoint removed; use requestNewInstitution or admin approval flow' };
+}
+
+export async function getPendingInstitutionVerifications() {
+  const res = await fetch(`${API_URL}/api/institutions/pending-verifications`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+export async function approveInstitutionVerificationAPI(id, payload = {}) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/approve-verification`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
+  });
+  return res.json();
+}
+
+export async function rejectInstitutionVerificationAPI(id) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/reject-verification`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+export async function getInstitutionAnalytics(id) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/analytics`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+export async function getInstitutionDashboard(id) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/dashboard`, {
+    headers: { ...getAuthHeaders() },
   });
   return res.json();
 }
