@@ -1,9 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import hackathonImg from "../assets/img/de_1.jpeg";
 import workshopImg from "../assets/img/de_2.jpeg";
 import seminarImg from "../assets/img/de_3.jpeg";
+import EventDetails from "./EventDetails";
+import { useEventContext } from "./EventContext";
 
 const DiscoverEvents = () => {
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const { rsvpEvent } = useEventContext();
+  
+
   const events = [
     {
       id: 1,
@@ -12,6 +18,8 @@ const DiscoverEvents = () => {
       location: "CUJ Campus",
       image: hackathonImg,
       tags: ["AI", "Hackathon", "Coding"],
+      description:
+        "Join our 24-hour hackathon at CUJ! Collaborate with peers, build innovative solutions in AI and coding, and compete for prizes.",
     },
     {
       id: 2,
@@ -20,6 +28,8 @@ const DiscoverEvents = () => {
       location: "Online",
       image: workshopImg,
       tags: ["Skills", "Training"],
+      description:
+        "An online hands-on workshop designed to build real-world technical and soft skills. Get guidance from industry experts.",
     },
     {
       id: 3,
@@ -28,8 +38,20 @@ const DiscoverEvents = () => {
       location: "Ranchi",
       image: seminarImg,
       tags: ["Networking", "Talk"],
+      description:
+        "A one-day seminar bringing together professionals, researchers, and students for discussions, talks, and networking opportunities.",
     },
   ];
+
+  if (selectedEvent) {
+    return (
+      <EventDetails
+        event={selectedEvent}
+        onBack={() => setSelectedEvent(null)}
+        onRSVP={rsvpEvent}
+      />
+    );
+  }
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
@@ -60,7 +82,10 @@ const DiscoverEvents = () => {
                   </span>
                 ))}
               </div>
-              <button className="mt-4 bg-[#9b5de5] hover:bg-[#8c4be1] px-4 py-2 rounded-button w-full transition-colors text-white">
+              <button
+                onClick={() => setSelectedEvent(event)}
+                className="mt-4 bg-[#9b5de5] hover:bg-[#8c4be1] px-4 py-2 rounded-button w-full transition-colors text-white"
+              >
                 View Details
               </button>
             </div>

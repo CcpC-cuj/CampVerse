@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Sidebar from "../userdashboard/sidebar";
-import NotificationBell from "../userdashboard/notificationbell";
 import NavBar from "./NavBar";
 
 const Events = () => {
@@ -38,7 +37,7 @@ const Events = () => {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           {/* Events Categories */}
           {["Registered", "Waitlisted", "Saved", "Past Events"].map((category, idx) => (
-            <div key={idx} className="bg-gradient-to-r from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15">
+            <div key={idx} className="bg-gray-800  from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15">
               <h2 className="text-xl font-bold mb-4">{category}</h2>
               <p className="text-gray-400">No {category.toLowerCase()} yet.</p>
             </div>

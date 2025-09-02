@@ -1,5 +1,5 @@
 import React from "react";
-import NotificationBell from "../userdashboard/notificationbell";
+import NotificationBell from "../userdashboard/NotificationBell";
 import CalendarDropdown from "../userdashboard/CalendarDropdown";
 import SearchBar from "../userdashboard/SearchBar";
 

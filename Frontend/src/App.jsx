@@ -14,6 +14,9 @@ import Feedback from "./userdashboard/Feedback";
 import ResetPassword from "./pages/ResetPassword";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
+import { EventProvider } from "./userdashboard/EventContext";
+
+
 
 // ✅ Host dashboard module imports (added)
 import {
@@ -47,6 +50,7 @@ const OAuthDetector = () => {
       sessionStorage.setItem('oauth_redirect_processed', 'true');
       // Navigate to oauth-callback while preserving the hash
       const redirectUrl = `${window.location.origin}/oauth-callback${hash}`;
+
       window.location.replace(redirectUrl);
     }
     
@@ -60,118 +64,113 @@ const OAuthDetector = () => {
 };
 
 function App() {
-  useEffect(() => {
-    // API URL from env: import.meta.env.VITE_API_URL
-  }, []);
-
   return (
     <AuthProvider>
-      <Router>
-        <OAuthDetector />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route
-            path="/dashboard/*"
-            element={
-              <ProtectedRoute>
-                <UserDashboard />
-              </ProtectedRoute>
-            }
-          />
-          
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/events"
-            element={
-              <ProtectedRoute>
-                <Events />
-              </ProtectedRoute>
-            }
-          />
-          {/* Help Center route */}
-          <Route
-            path="/help"
-            element={
-              <ProtectedRoute>
-                <HelpCenter />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/feedback"
-            element={
-              <ProtectedRoute>
-                <Feedback />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/oauth-callback" element={<OAuthCallback />} />
+      <EventProvider>
+        <Router>
+          <OAuthDetector />
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route
+              path="/dashboard/*"
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/events"
+              element={
+                <ProtectedRoute>
+                  <Events />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/help"
+              element={
+                <ProtectedRoute>
+                  <HelpCenter />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/feedback"
+              element={
+                <ProtectedRoute>
+                  <Feedback />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
 
-          {/* ✅ NEW: Host Registration (protected) */}
-          <Route
-            path="/host/registration"
-            element={
-              <ProtectedRoute>
-                <HostRegistration />
-              </ProtectedRoute>
-            }
-          />
+            {/* Host routes */}
+            <Route
+              path="/host/registration"
+              element={
+                <ProtectedRoute>
+                  <HostRegistration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/dashboard"
+              element={
+                <ProtectedRoute>
+                  <HostDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/events"
+              element={
+                <ProtectedRoute>
+                  <HostEvents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/applications"
+              element={
+                <ProtectedRoute>
+                  <HostApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/analytics"
+              element={
+                <ProtectedRoute>
+                  <HostAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/settings"
+              element={
+                <ProtectedRoute>
+                  <HostSettings />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* ✅ NEW: Host Dashboard routes (protected) */}
-          <Route
-            path="/host/dashboard"
-            element={
-              <ProtectedRoute>
-                <HostDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/events"
-            element={
-              <ProtectedRoute>
-                <HostEvents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/applications"
-            element={
-              <ProtectedRoute>
-                <HostApplications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/analytics"
-            element={
-              <ProtectedRoute>
-                <HostAnalytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/host/settings"
-            element={
-              <ProtectedRoute>
-                <HostSettings />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Landing />} />
-        </Routes>
-      </Router>
+            <Route path="*" element={<Landing />} />
+          </Routes>
+        </Router>
+      </EventProvider>
     </AuthProvider>
   );
 }
+
 
 export default App;
