@@ -184,9 +184,11 @@ const allowedOrigins = (() => {
   if (process.env.NODE_ENV === 'production') {
     const origins = [
       'https://campverse-frontend.onrender.com',
-      'https://campverse-alqa.onrender.com'
+      'https://campverse-alqa.onrender.com',
+      'https://campverse-26hm.onrender.com'  // Add current backend URL
     ];
     if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
+    if (process.env.BACKEND_URL) origins.push(process.env.BACKEND_URL);
     return origins;
   }
   return [
@@ -205,9 +207,10 @@ app.use(
       if (!origin) return callback(null, true);
       
       if (allowedOrigins.indexOf(origin) === -1) {
-        logger.warn(`CORS blocked origin: ${origin}`);
-        return callback(new Error('Not allowed by CORS'), false);
+        logger.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+        return callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
       }
+      logger.info(`CORS allowed origin: ${origin}`);
       return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
