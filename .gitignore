@@ -4,3 +4,8 @@ Frontend/node_modules/
 .idea/
 Backend/.env
 Backend/credentials/
+
+# Sensitive configuration files
+Backend/config/supabase.env
+*.env
+**/supabase.env
