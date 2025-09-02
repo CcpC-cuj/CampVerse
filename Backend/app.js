@@ -390,7 +390,7 @@ app.get('/health', async (req, res) => {
 const requiredEnv = ['JWT_SECRET'];
 for (const key of requiredEnv) {
   if (!process.env[key]) {
-    console.warn(`Missing environment variable: ${key}. Using dev fallback.`);
+    logger.warn(`Missing environment variable: ${key}. Using dev fallback.`);
   }
 }
 

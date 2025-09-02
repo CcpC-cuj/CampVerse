@@ -28,6 +28,7 @@ const qrcode = require('qrcode');
 const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
+const { logger } = require('../Middleware/errorHandler');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
@@ -44,6 +45,8 @@ async function createEvent(req, res) {
       capacity,
     } = req.body;
     let logoURL, bannerURL;
+    
+    // File upload using storage service
     if (req.files && req.files['logo']) {
       const f = req.files['logo'][0];
       logoURL = await uploadEventImage(
@@ -134,6 +137,7 @@ async function deleteEvent(req, res) {
   try {
     const event = await Event.findByIdAndDelete(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+    // Delete associated files from storage
     if (event.logoURL) await deleteEventImage(event.logoURL);
     if (event.bannerURL) await deleteEventImage(event.bannerURL);
     res.json({ message: 'Event deleted.' });

@@ -1858,12 +1858,19 @@ async function uploadProfilePhotoHandler(req, res) {
     // Delete old profile photo if exists (best-effort)
     if (user.profilePhoto) {
       try {
-        await deleteProfilePhoto(user.profilePhoto);
-      } catch (_) {
-        // ignore deletion failures
+        logger.info(`Attempting to delete old profile photo: ${user.profilePhoto}`);
+        const deleted = await deleteProfilePhoto(user.profilePhoto);
+        if (deleted) {
+          logger.info(`Successfully deleted old profile photo: ${user.profilePhoto}`);
+        } else {
+          logger.warn(`Failed to delete old profile photo: ${user.profilePhoto}`);
+        }
+      } catch (error) {
+        logger.error(`Error deleting old profile photo: ${user.profilePhoto}`, error);
+        // ignore deletion failures - don't break the upload process
       }
     }
-    // Upload new photo
+    // Upload new photo to storage
     const url = await uploadProfilePhoto(
       req.file.buffer,
       req.file.originalname,
@@ -1873,7 +1880,7 @@ async function uploadProfilePhotoHandler(req, res) {
     user.profilePhoto = url;
     await user.save();
     return res.json({
-      message: "Profile photo updated.",
+      message: "Profile photo updated (stored locally).",
       user: sanitizeUser(user),
     });
   } catch (err) {

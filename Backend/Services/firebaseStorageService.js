@@ -18,19 +18,61 @@
  *     └── logos/
  */
 
-const multer = require('multer');
+const admin = require('firebase-admin');
 const path = require('path');
 const { randomUUID } = require('crypto');
 const { logger } = require('../Middleware/errorHandler');
 
-// Firebase Storage integration
-const bucket = require('../firebase');
-
 class FirebaseStorageService {
   constructor() {
-    this.bucket = bucket;
+    this.initialized = false;
+    this.bucket = null;
     this.baseFolder = 'CampVerse';
-    this.initialized = true;
+    
+    this.initializeFirebase();
+  }
+
+  initializeFirebase() {
+    try {
+      // Initialize Firebase Admin if not already initialized
+      if (!admin.apps.length) {
+        const serviceAccount = this.loadServiceAccount();
+        
+        if (serviceAccount) {
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+          });
+        } else {
+          admin.initializeApp({
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+          });
+        }
+      }
+
+      // Get storage bucket
+      const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'ccpccuj.appspot.com';
+      this.bucket = admin.storage().bucket(bucketName);
+      this.initialized = true;
+      
+      logger.info('Firebase Storage Service initialized');
+    } catch (error) {
+      logger.error('Failed to initialize Firebase Storage Service:', error);
+      this.initialized = false;
+    }
+  }
+
+  loadServiceAccount() {
+    const keyPath = process.env.FIREBASE_KEY_FILE;
+    if (!keyPath) return null;
+
+    try {
+      const fs = require('fs');
+      return JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+    } catch (error) {
+      logger.warn('Could not load Firebase service account key:', error.message);
+      return null;
+    }
   }
 
   /**
@@ -54,6 +96,10 @@ class FirebaseStorageService {
    */
   async uploadFile(fileBuffer, filename, filePath, mimetype, metadata = {}) {
     try {
+      if (!this.initialized) {
+        throw new Error('Firebase Storage Service not initialized');
+      }
+
       const file = this.bucket.file(filePath);
       const token = randomUUID();
       
@@ -73,7 +119,7 @@ class FirebaseStorageService {
       
       const url = `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodeURIComponent(filePath)}?alt=media&token=${token}`;
       
-      logger.info(`File uploaded successfully: ${filePath}`);
+      logger.info(`File uploaded to Firebase successfully: ${filePath}`);
       
       return {
         url,
@@ -83,7 +129,7 @@ class FirebaseStorageService {
         size: fileBuffer.length
       };
     } catch (error) {
-      logger.error(`Failed to upload file: ${filePath}`, error);
+      logger.error(`Failed to upload file to Firebase: ${filePath}`, error);
       throw error;
     }
   }
@@ -109,10 +155,10 @@ class FirebaseStorageService {
 
       const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
       
-      logger.info(`Event ${type} uploaded successfully: ${filename}`);
+      logger.info(`Event ${type} uploaded to Firebase successfully: ${filename}`);
       return result.url; // Return URL for backward compatibility
     } catch (error) {
-      logger.error(`Failed to upload event ${type}:`, error);
+      logger.error(`Failed to upload event ${type} to Firebase:`, error);
       throw error;
     }
   }
@@ -138,10 +184,10 @@ class FirebaseStorageService {
 
       const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
       
-      logger.info(`Profile photo uploaded successfully for user: ${userId}`);
+      logger.info(`Profile photo uploaded to Firebase successfully for user: ${userId}`);
       return result.url; // Return URL for backward compatibility
     } catch (error) {
-      logger.error(`Failed to upload profile photo for user ${userId}:`, error);
+      logger.error(`Failed to upload profile photo to Firebase for user ${userId}:`, error);
       throw error;
     }
   }
@@ -168,10 +214,10 @@ class FirebaseStorageService {
 
       const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
       
-      logger.info(`User document uploaded successfully: ${documentType} for user ${userId}`);
+      logger.info(`User document uploaded to Firebase successfully: ${documentType} for user ${userId}`);
       return result.url;
     } catch (error) {
-      logger.error('Failed to upload user document:', error);
+      logger.error('Failed to upload user document to Firebase:', error);
       throw error;
     }
   }
@@ -198,10 +244,10 @@ class FirebaseStorageService {
 
       const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
       
-      logger.info(`Certificate uploaded successfully for event ${eventId}, user ${userId}`);
+      logger.info(`Certificate uploaded to Firebase successfully for event ${eventId}, user ${userId}`);
       return result.url;
     } catch (error) {
-      logger.error('Failed to upload certificate:', error);
+      logger.error('Failed to upload certificate to Firebase:', error);
       throw error;
     }
   }
@@ -227,10 +273,10 @@ class FirebaseStorageService {
 
       const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
       
-      logger.info(`Institution logo uploaded successfully for institution: ${institutionId}`);
+      logger.info(`Institution logo uploaded to Firebase successfully for institution: ${institutionId}`);
       return result.url;
     } catch (error) {
-      logger.error('Failed to upload institution logo:', error);
+      logger.error('Failed to upload institution logo to Firebase:', error);
       throw error;
     }
   }
@@ -240,10 +286,16 @@ class FirebaseStorageService {
    */
   async deleteFile(fileUrl) {
     try {
+      if (!this.initialized) {
+        throw new Error('Firebase Storage Service not initialized');
+      }
+
       if (!fileUrl) {
         logger.warn('No file URL provided for deletion');
         return false;
       }
+
+      logger.info(`Attempting to delete Firebase file: ${fileUrl}`);
 
       let filePath = null;
       
@@ -252,32 +304,35 @@ class FirebaseStorageService {
         const match = fileUrl.match(/\/o\/([^?]+)/);
         if (match) {
           filePath = decodeURIComponent(match[1]);
+          logger.info(`Extracted file path from Firebase URL: ${filePath}`);
         }
       } else {
         // Handle legacy URLs or direct paths
         const match = fileUrl.match(/\/CampVerse\/.*$/);
         if (match) {
           filePath = match[0].substring(1);
+          logger.info(`Extracted legacy file path: ${filePath}`);
         }
       }
 
       if (!filePath) {
-        logger.warn(`Could not extract file path from URL: ${fileUrl}`);
+        logger.warn(`Could not extract file path from Firebase URL: ${fileUrl}`);
         return false;
       }
 
+      logger.info(`Deleting Firebase file at path: ${filePath}`);
       await this.bucket.file(filePath).delete();
       
-      logger.info(`File deleted successfully: ${filePath}`);
+      logger.info(`File deleted from Firebase successfully: ${filePath}`);
       return true;
     } catch (error) {
       if (error.code === 404) {
-        logger.warn(`File not found for deletion: ${fileUrl}`);
+        logger.warn(`File not found for deletion in Firebase: ${fileUrl}`);
         return false;
       }
       
-      logger.error(`Failed to delete file: ${fileUrl}`, error);
-      throw error;
+      logger.error(`Failed to delete file from Firebase: ${fileUrl}`, error);
+      return false; // Don't throw - deletion failures shouldn't break the app
     }
   }
 
@@ -286,6 +341,10 @@ class FirebaseStorageService {
    */
   async listFiles(folderPath) {
     try {
+      if (!this.initialized) {
+        throw new Error('Firebase Storage Service not initialized');
+      }
+
       const [files] = await this.bucket.getFiles({
         prefix: `${this.baseFolder}/${folderPath}`
       });
@@ -317,32 +376,10 @@ class FirebaseStorageService {
 
       const validFiles = fileList.filter(file => file !== null);
       
-      logger.info(`Listed ${validFiles.length} files in folder: ${folderPath}`);
+      logger.info(`Listed ${validFiles.length} files in Firebase folder: ${folderPath}`);
       return validFiles;
     } catch (error) {
-      logger.error(`Failed to list files in folder: ${folderPath}`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get file metadata
-   */
-  async getFileMetadata(filePath) {
-    try {
-      const file = this.bucket.file(filePath);
-      const [metadata] = await file.getMetadata();
-      
-      return {
-        name: metadata.name,
-        size: metadata.size,
-        contentType: metadata.contentType,
-        timeCreated: metadata.timeCreated,
-        updated: metadata.updated,
-        customMetadata: metadata.metadata || {}
-      };
-    } catch (error) {
-      logger.error(`Failed to get file metadata: ${filePath}`, error);
+      logger.error(`Failed to list files in Firebase folder: ${folderPath}`, error);
       throw error;
     }
   }
@@ -352,6 +389,14 @@ class FirebaseStorageService {
    */
   async healthCheck() {
     try {
+      if (!this.initialized) {
+        return {
+          status: 'error',
+          message: 'Firebase Storage service not initialized',
+          initialized: false
+        };
+      }
+
       // Test bucket access
       await this.bucket.getMetadata();
       
@@ -365,96 +410,17 @@ class FirebaseStorageService {
       return {
         status: 'error',
         message: error.message,
-        bucket: this.bucket.name,
+        bucket: this.bucket?.name,
         initialized: this.initialized
       };
     }
   }
 }
 
-// Multer configuration for file uploads
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp|pdf/;
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase(),
-    );
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only image files (JPEG, PNG, GIF, WebP) and PDF documents are allowed!'));
-    }
-  },
-});
-
 // Create singleton instance
 const firebaseStorageService = new FirebaseStorageService();
 
-// Export functions for backward compatibility with existing code
-async function uploadEventImage(fileBuffer, filename, type, mimetype) {
-  return await firebaseStorageService.uploadEventImage(fileBuffer, filename, type, mimetype);
-}
-
-async function deleteEventImage(fileUrl) {
-  return await firebaseStorageService.deleteFile(fileUrl);
-}
-
-async function uploadProfilePhoto(fileBuffer, filename, userId, mimetype) {
-  return await firebaseStorageService.uploadProfilePhoto(fileBuffer, filename, userId, mimetype);
-}
-
-async function deleteProfilePhoto(fileUrl) {
-  return await firebaseStorageService.deleteFile(fileUrl);
-}
-
-// New functions for enhanced functionality
-async function uploadUserDocument(fileBuffer, filename, documentType, userId, mimetype) {
-  return await firebaseStorageService.uploadUserDocument(fileBuffer, filename, documentType, userId, mimetype);
-}
-
-async function uploadCertificate(fileBuffer, filename, eventId, userId, mimetype) {
-  return await firebaseStorageService.uploadCertificate(fileBuffer, filename, eventId, userId, mimetype);
-}
-
-async function uploadInstitutionLogo(fileBuffer, filename, institutionId, mimetype) {
-  return await firebaseStorageService.uploadInstitutionLogo(fileBuffer, filename, institutionId, mimetype);
-}
-
-async function listFiles(folderPath) {
-  return await firebaseStorageService.listFiles(folderPath);
-}
-
-async function getFileMetadata(filePath) {
-  return await firebaseStorageService.getFileMetadata(filePath);
-}
-
 module.exports = {
-  // Service class
   FirebaseStorageService,
-  firebaseStorageService,
-  
-  // Multer upload middleware
-  upload,
-  
-  // Backward compatibility functions
-  uploadEventImage,
-  deleteEventImage,
-  uploadProfilePhoto,
-  deleteProfilePhoto,
-  
-  // Enhanced functions
-  uploadUserDocument,
-  uploadCertificate,
-  uploadInstitutionLogo,
-  listFiles,
-  getFileMetadata,
-  
-  // Utility functions
-  deleteFile: firebaseStorageService.deleteFile.bind(firebaseStorageService),
-  healthCheck: firebaseStorageService.healthCheck.bind(firebaseStorageService)
+  firebaseStorageService
 };
