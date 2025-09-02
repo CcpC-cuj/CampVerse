@@ -156,7 +156,7 @@ app.use(helmet({
   noSniff: true,
   permittedCrossDomainPolicies: { permittedPolicies: 'none' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  // xssFilter removed (deprecated),
+  // xssFilter removed (deprecated)
 }));
 
 // Additional security middleware
