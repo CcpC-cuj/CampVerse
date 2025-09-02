@@ -1,5 +1,8 @@
 # 🚀 Render Deployment Environment Variables
 
+## 🔐 IMPORTANT SECURITY NOTE
+**These are the ONLY production credentials for Supabase. No sensitive configuration files are stored in the repository for security.**
+
 ## Storage Configuration for Production
 
 ### Required Environment Variables for Render:
