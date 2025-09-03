@@ -74,22 +74,65 @@ app.use((req, res, next) => {
 // Trust Render/Proxy to get correct client IPs for rate limiting and security
 app.set('trust proxy', 1);
 
-// Priority CORS handler - This must be FIRST to ensure CORS headers are always set
+// CRITICAL: Move allowedOrigins definition to the very top
+const allowedOrigins = (() => {
+  const environment = process.env.NODE_ENV || 'development';
+  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL;
+  const port = process.env.PORT || 5001;
+  const isRenderPort = port == 10000;
+  const isProduction = environment === 'production' || isRender || isRenderPort;
+  
+  logger.info(`Environment: ${environment}, Render: ${!!isRender}, Port: ${port}, Production: ${isProduction}`);
+  
+  if (isProduction || isRenderPort) {
+    const origins = [
+      'https://campverse-alqa.onrender.com',
+      'https://campverse-26hm.onrender.com'
+    ];
+    if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
+    if (process.env.BACKEND_URL) origins.push(process.env.BACKEND_URL);
+    logger.info(`Production CORS origins: ${origins.join(', ')}`);
+    return origins;
+  }
+  
+  const devOrigins = [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173'
+  ];
+  logger.info(`Development CORS origins: ${devOrigins.join(', ')}`);
+  return devOrigins;
+})();
+
+// ABSOLUTE FIRST: Priority CORS handler - MUST handle ALL requests with origins
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Only set CORS headers for allowed origins or no-origin requests
-  if (!origin) {
-    // Allow requests with no origin (like mobile apps, direct server requests)
-    res.setHeader('Access-Control-Allow-Origin', '*');
+  logger.info(`🔍 CORS CHECK: ${req.method} ${req.url} from origin: ${origin || 'no-origin'}`);
+  logger.info(`🔍 Allowed origins: ${allowedOrigins.join(', ')}`);
+  
+  // Always set CORS headers for allowed origins OR no-origin requests
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Max-Age', '86400');
+    logger.info(`✅ CORS headers set for: ${origin || 'no-origin'}`);
+  } else {
+    logger.warn(`❌ CORS BLOCKED: ${origin} not in allowed origins`);
+    // Still set basic headers to help with debugging
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
   
   // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
+    logger.info(`🔄 Handling OPTIONS preflight for: ${origin}`);
     res.status(204).end();
     return;
   }
@@ -233,85 +276,6 @@ app.use((req, res, next) => {
   // Add request ID for tracking
   if (!req.correlationId) {
     req.correlationId = generateCorrelationId();
-  }
-  
-  next();
-});
-
-// Enable CORS for local frontend development
-const allowedOrigins = (() => {
-  const environment = process.env.NODE_ENV || 'development';
-  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL;
-  const port = process.env.PORT || 5001;
-  const isRenderPort = port == 10000; // Render typically uses port 10000
-  const isProduction = environment === 'production' || isRender || isRenderPort;
-  
-  // Debug: Log all relevant environment variables
-  logger.info(`NODE_ENV: ${process.env.NODE_ENV}`);
-  logger.info(`PORT: ${process.env.PORT}`);
-  logger.info(`RENDER: ${process.env.RENDER}`);
-  logger.info(`RENDER_SERVICE_ID: ${process.env.RENDER_SERVICE_ID}`);
-  logger.info(`RENDER_EXTERNAL_URL: ${process.env.RENDER_EXTERNAL_URL}`);
-  logger.info(`Running in environment: ${environment}`);
-  logger.info(`Render detected: ${!!isRender}`);
-  logger.info(`Render port detected: ${isRenderPort}`);
-  logger.info(`Treating as production: ${isProduction}`);
-  
-  // For Render deployment, always use production origins regardless of NODE_ENV
-  if (isProduction || isRenderPort) {
-    const origins = [
-      'https://campverse-alqa.onrender.com',
-      'https://campverse-26hm.onrender.com'  // Add current backend URL
-    ];
-    if (process.env.FRONTEND_URL) {
-      origins.push(process.env.FRONTEND_URL);
-      logger.info(`Added FRONTEND_URL to origins: ${process.env.FRONTEND_URL}`);
-    }
-    if (process.env.BACKEND_URL) {
-      origins.push(process.env.BACKEND_URL);
-      logger.info(`Added BACKEND_URL to origins: ${process.env.BACKEND_URL}`);
-    }
-    logger.info(`Production CORS origins: ${origins.join(', ')}`);
-    return origins;
-  }
-  
-  const devOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
-  ];
-  logger.info(`Development CORS origins: ${devOrigins.join(', ')}`);
-  return devOrigins;
-})();
-
-// Manual CORS middleware for better debugging and control
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  
-  logger.info(`Incoming request from origin: ${origin || 'no-origin'}`);
-  logger.info(`Method: ${req.method}, URL: ${req.url}`);
-  logger.info(`Allowed origins: ${allowedOrigins.join(', ')}`);
-  
-  // Set CORS headers for all requests
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    
-    logger.info(`CORS headers set for origin: ${origin || 'no-origin'}`);
-  } else {
-    logger.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
-  }
-  
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    logger.info('Handling OPTIONS preflight request');
-    res.status(204).end();
-    return;
   }
   
   next();
