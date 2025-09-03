@@ -42,17 +42,15 @@ app.set('trust proxy', 1);
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   
-  // Always set basic CORS headers for preflight and actual requests
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else {
+  // Only set CORS headers for allowed origins or no-origin requests
+  if (!origin) {
+    // Allow requests with no origin (like mobile apps, direct server requests)
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
   }
-  
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Max-Age', '86400');
   
   // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
@@ -207,9 +205,14 @@ app.use((req, res, next) => {
 // Enable CORS for local frontend development
 const allowedOrigins = (() => {
   const environment = process.env.NODE_ENV || 'development';
-  logger.info(`Running in environment: ${environment}`);
+  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID;
+  const isProduction = environment === 'production' || isRender;
   
-  if (environment === 'production') {
+  logger.info(`Running in environment: ${environment}`);
+  logger.info(`Render detected: ${!!isRender}`);
+  logger.info(`Treating as production: ${isProduction}`);
+  
+  if (isProduction) {
     const origins = [
       'https://campverse-frontend.onrender.com',
       'https://campverse-alqa.onrender.com',
