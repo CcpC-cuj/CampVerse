@@ -214,7 +214,6 @@ const allowedOrigins = (() => {
   
   if (isProduction) {
     const origins = [
-      'https://campverse-frontend.onrender.com',
       'https://campverse-alqa.onrender.com',
       'https://campverse-26hm.onrender.com'  // Add current backend URL
     ];
