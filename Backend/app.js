@@ -38,6 +38,31 @@ const app = express();
 // Trust Render/Proxy to get correct client IPs for rate limiting and security
 app.set('trust proxy', 1);
 
+// Priority CORS handler - This must be FIRST to ensure CORS headers are always set
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Always set basic CORS headers for preflight and actual requests
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Handle preflight requests immediately
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  
+  next();
+});
+
 // Initialize services
 (async () => {
   try {
@@ -181,25 +206,70 @@ app.use((req, res, next) => {
 
 // Enable CORS for local frontend development
 const allowedOrigins = (() => {
-  if (process.env.NODE_ENV === 'production') {
+  const environment = process.env.NODE_ENV || 'development';
+  logger.info(`Running in environment: ${environment}`);
+  
+  if (environment === 'production') {
     const origins = [
       'https://campverse-frontend.onrender.com',
       'https://campverse-alqa.onrender.com',
       'https://campverse-26hm.onrender.com'  // Add current backend URL
     ];
-    if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
-    if (process.env.BACKEND_URL) origins.push(process.env.BACKEND_URL);
+    if (process.env.FRONTEND_URL) {
+      origins.push(process.env.FRONTEND_URL);
+      logger.info(`Added FRONTEND_URL to origins: ${process.env.FRONTEND_URL}`);
+    }
+    if (process.env.BACKEND_URL) {
+      origins.push(process.env.BACKEND_URL);
+      logger.info(`Added BACKEND_URL to origins: ${process.env.BACKEND_URL}`);
+    }
+    logger.info(`Production CORS origins: ${origins.join(', ')}`);
     return origins;
   }
-  return [
+  
+  const devOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:3001',
     'http://127.0.0.1:3000',
     'http://127.0.0.1:5173'
   ];
+  logger.info(`Development CORS origins: ${devOrigins.join(', ')}`);
+  return devOrigins;
 })();
 
+// Manual CORS middleware for better debugging and control
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  logger.info(`Incoming request from origin: ${origin || 'no-origin'}`);
+  logger.info(`Method: ${req.method}, URL: ${req.url}`);
+  logger.info(`Allowed origins: ${allowedOrigins.join(', ')}`);
+  
+  // Set CORS headers for all requests
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    
+    logger.info(`CORS headers set for origin: ${origin || 'no-origin'}`);
+  } else {
+    logger.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+  }
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    logger.info('Handling OPTIONS preflight request');
+    res.status(204).end();
+    return;
+  }
+  
+  next();
+});
+
+// Backup CORS middleware (keep the original one as backup)
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -207,10 +277,9 @@ app.use(
       if (!origin) return callback(null, true);
       
       if (allowedOrigins.indexOf(origin) === -1) {
-        logger.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
+        logger.warn(`CORS backup middleware blocked origin: ${origin}`);
         return callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
       }
-      logger.info(`CORS allowed origin: ${origin}`);
       return callback(null, true);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -218,7 +287,7 @@ app.use(
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    maxAge: 86400, // Cache preflight for 24 hours
+    maxAge: 86400,
   }),
 );
 
@@ -396,6 +465,21 @@ for (const key of requiredEnv) {
     logger.warn(`Missing environment variable: ${key}. Using dev fallback.`);
   }
 }
+
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.json({
+    message: 'CORS is working!',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString(),
+    headers: {
+      'access-control-allow-origin': res.getHeader('Access-Control-Allow-Origin'),
+      'access-control-allow-methods': res.getHeader('Access-Control-Allow-Methods'),
+      'access-control-allow-headers': res.getHeader('Access-Control-Allow-Headers'),
+      'access-control-allow-credentials': res.getHeader('Access-Control-Allow-Credentials')
+    }
+  });
+});
 
 // Routes
 app.use('/api/users', userRoutes);
