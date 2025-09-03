@@ -281,28 +281,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Backup CORS middleware (keep the original one as backup)
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl requests)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.indexOf(origin) === -1) {
-        logger.warn(`CORS backup middleware blocked origin: ${origin}`);
-        return callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
-      }
-      return callback(null, true);
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Correlation-ID'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-    maxAge: 86400,
-  }),
-);
-
 // Enable compression for better performance
 app.use(compression({
   filter: (req, res) => {
