@@ -205,14 +205,24 @@ app.use((req, res, next) => {
 // Enable CORS for local frontend development
 const allowedOrigins = (() => {
   const environment = process.env.NODE_ENV || 'development';
-  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID;
-  const isProduction = environment === 'production' || isRender;
+  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL;
+  const port = process.env.PORT || 5001;
+  const isRenderPort = port == 10000; // Render typically uses port 10000
+  const isProduction = environment === 'production' || isRender || isRenderPort;
   
+  // Debug: Log all relevant environment variables
+  logger.info(`NODE_ENV: ${process.env.NODE_ENV}`);
+  logger.info(`PORT: ${process.env.PORT}`);
+  logger.info(`RENDER: ${process.env.RENDER}`);
+  logger.info(`RENDER_SERVICE_ID: ${process.env.RENDER_SERVICE_ID}`);
+  logger.info(`RENDER_EXTERNAL_URL: ${process.env.RENDER_EXTERNAL_URL}`);
   logger.info(`Running in environment: ${environment}`);
   logger.info(`Render detected: ${!!isRender}`);
+  logger.info(`Render port detected: ${isRenderPort}`);
   logger.info(`Treating as production: ${isProduction}`);
   
-  if (isProduction) {
+  // For Render deployment, always use production origins regardless of NODE_ENV
+  if (isProduction || isRenderPort) {
     const origins = [
       'https://campverse-alqa.onrender.com',
       'https://campverse-26hm.onrender.com'  // Add current backend URL
