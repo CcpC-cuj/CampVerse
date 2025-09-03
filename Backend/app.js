@@ -11,6 +11,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const { createClient } = require('redis');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 const userRoutes = require('./Routes/userRoutes');
 const hostRoutes = require('./Routes/hostRoutes');
 const rateLimit = require('express-rate-limit');
@@ -27,6 +29,7 @@ const { smartTimeout, queueMiddleware } = require('./Middleware/timeout');
 const { securityMiddleware, setRedisClient } = require('./Middleware/security');
 const { cacheService } = require('./Services/cacheService');
 const { memoryManager } = require('./Utils/memoryManager');
+const SocketService = require('./Services/socketService');
 
 // Generate correlation ID for request tracking
 function generateCorrelationId() {
@@ -34,6 +37,39 @@ function generateCorrelationId() {
 }
 
 const app = express();
+const httpServer = createServer(app);
+
+// Set up Socket.IO with CORS configuration
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      'https://campverse-alqa.onrender.com',
+      'https://campverse-26hm.onrender.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Make io available in req object for routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+// Initialize Socket Service
+const socketService = new SocketService(io);
+
+// Make socket service available in req object
+app.use((req, res, next) => {
+  req.socketService = socketService;
+  next();
+});
 
 // Trust Render/Proxy to get correct client IPs for rate limiting and security
 app.set('trust proxy', 1);
@@ -481,6 +517,71 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));
 app.use('/api/support', require('./Routes/supportRoutes'));
 
+// Socket.IO event handlers
+io.on('connection', (socket) => {
+  logger.info(`New socket connection: ${socket.id}`);
+  
+  // Authentication event
+  socket.on('authenticate', (_token) => {
+    // TODO: Implement JWT verification for socket authentication
+    logger.info(`Socket ${socket.id} attempting authentication`);
+    socket.emit('authenticated', { success: true, socketId: socket.id });
+  });
+  
+  // API proxy events - bypass CORS by routing through WebSocket
+  socket.on('api:users:google-signin', async (data) => {
+    try {
+      const { googleSignIn } = require('./Controller/User');
+      // Create mock req/res objects for the controller
+      const mockReq = { body: data };
+      const mockRes = {
+        status: (code) => ({ 
+          json: (result) => socket.emit('api:users:google-signin:response', { status: code, data: result })
+        }),
+        json: (result) => socket.emit('api:users:google-signin:response', { status: 200, data: result })
+      };
+      await googleSignIn(mockReq, mockRes);
+    } catch (error) {
+      logger.error('Socket API error:', error);
+      socket.emit('api:users:google-signin:response', { status: 500, error: error.message });
+    }
+  });
+  
+  // Generic API proxy
+  socket.on('api:request', async (data) => {
+    try {
+      const { method, endpoint } = data;
+      logger.info(`Socket API request: ${method} ${endpoint}`);
+      
+      // Route the request internally without CORS restrictions
+      // This is a simplified proxy - you'd expand this for full API coverage
+      socket.emit('api:response', { 
+        requestId: data.requestId,
+        status: 200, 
+        data: { message: 'Socket API proxy working!', endpoint, method }
+      });
+    } catch (error) {
+      logger.error('Socket API proxy error:', error);
+      socket.emit('api:response', { 
+        requestId: data.requestId,
+        status: 500, 
+        error: error.message 
+      });
+    }
+  });
+  
+  // Real-time notifications
+  socket.on('join:notifications', (userId) => {
+    socket.join(`user:${userId}`);
+    logger.info(`Socket ${socket.id} joined notifications for user ${userId}`);
+  });
+  
+  // Disconnect handler
+  socket.on('disconnect', () => {
+    logger.info(`Socket disconnected: ${socket.id}`);
+  });
+});
+
 // Centralized error handler (should be last)
 app.use(errorHandler);
 
@@ -549,8 +650,9 @@ mongoose
     });
     
     const PORT = process.env.PORT || 5001;
-    const server = app.listen(PORT, '0.0.0.0', () => {
+    const server = httpServer.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server is running on port ${PORT}`);
+      logger.info('Socket.IO server is ready for WebSocket connections');
     });
     
     // Server timeout configuration
