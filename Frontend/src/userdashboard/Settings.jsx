@@ -156,6 +156,7 @@ const Settings = () => {
       if (res.user) {
         setProfileMessage('Profile updated!');
         setUser(res.user);
+        stopEditing(); // Auto-close editing mode after save
       } else {
         setProfileMessage(res.error || 'Failed to update profile');
       }
@@ -164,6 +165,14 @@ const Settings = () => {
     } finally {
       setTimeout(() => setProfileMessage(''), 2000);
       setProfileSaving(false);
+    }
+  };
+
+  // Handle Enter key press for profile fields
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && editingField) {
+      e.preventDefault();
+      handleSaveProfile();
     }
   };
 
@@ -318,17 +327,19 @@ const Settings = () => {
                             <button
                               type="button"
                               onClick={() => startEditing('name')}
-                              className="text-sm text-[#cbb3ff]"
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit name"
                             >
-                              Edit
+                              <i className="ri-pencil-line text-sm"></i>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={stopEditing}
-                              className="text-sm text-gray-400"
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
                             >
-                              Done
+                              <i className="ri-close-line text-sm"></i>
                             </button>
                           )}
                         </div>
@@ -338,6 +349,7 @@ const Settings = () => {
                           value={name}
                           readOnly={editingField !== 'name'}
                           onChange={(e) => setName(e.target.value)}
+                          onKeyPress={handleKeyPress}
                           className={`w-full p-2 rounded bg-gray-900 border ${
                             editingField !== 'name'
                               ? 'border-gray-800 text-gray-500 cursor-not-allowed'
@@ -363,17 +375,19 @@ const Settings = () => {
                             <button
                               type="button"
                               onClick={() => startEditing('phone')}
-                              className="text-sm text-[#cbb3ff]"
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit phone"
                             >
-                              Edit
+                              <i className="ri-pencil-line text-sm"></i>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={stopEditing}
-                              className="text-sm text-gray-400"
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
                             >
-                              Done
+                              <i className="ri-close-line text-sm"></i>
                             </button>
                           )}
                         </div>
@@ -383,6 +397,7 @@ const Settings = () => {
                           value={phone}
                           readOnly={editingField !== 'phone'}
                           onChange={(e) => setPhone(e.target.value)}
+                          onKeyPress={handleKeyPress}
                           className={`w-full p-2 rounded bg-gray-900 border ${
                             editingField !== 'phone'
                               ? 'border-gray-800 text-gray-500 cursor-not-allowed'
@@ -398,17 +413,19 @@ const Settings = () => {
                             <button
                               type="button"
                               onClick={() => startEditing('location')}
-                              className="text-sm text-[#cbb3ff]"
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit location"
                             >
-                              Edit
+                              <i className="ri-pencil-line text-sm"></i>
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={stopEditing}
-                              className="text-sm text-gray-400"
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
                             >
-                              Done
+                              <i className="ri-close-line text-sm"></i>
                             </button>
                           )}
                         </div>
@@ -418,6 +435,7 @@ const Settings = () => {
                           value={location}
                           readOnly={editingField !== 'location'}
                           onChange={(e) => setLocation(e.target.value)}
+                          onKeyPress={handleKeyPress}
                           className={`w-full p-2 rounded bg-gray-900 border ${
                             editingField !== 'location'
                               ? 'border-gray-800 text-gray-500 cursor-not-allowed'
@@ -434,17 +452,19 @@ const Settings = () => {
                           <button
                             type="button"
                             onClick={() => startEditing('bio')}
-                            className="text-sm text-[#cbb3ff]"
+                            className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                            title="Edit bio"
                           >
-                            Edit
+                            <i className="ri-pencil-line text-sm"></i>
                           </button>
                         ) : (
                           <button
                             type="button"
                             onClick={stopEditing}
-                            className="text-sm text-gray-400"
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                            title="Cancel editing"
                           >
-                            Done
+                            <i className="ri-close-line text-sm"></i>
                           </button>
                         )}
                       </div>
@@ -454,6 +474,7 @@ const Settings = () => {
                         value={bio}
                         readOnly={editingField !== 'bio'}
                         onChange={(e) => setBio(e.target.value)}
+                        onKeyPress={handleKeyPress}
                         className={`w-full p-2 rounded bg-gray-900 border ${
                           editingField !== 'bio'
                             ? 'border-gray-800 text-gray-500 cursor-not-allowed'
@@ -576,23 +597,31 @@ const Settings = () => {
                         <div className="flex items-center justify-between md:col-span-2">
                           <label className="flex items-center gap-2">
                             <span className="text-sm text-gray-300">Email</span>
-                            <input
-                              type="checkbox"
-                              checked={!!notifPrefs.email[cat]}
-                              onChange={(e) =>
-                                setNotifPrefs({ ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } })
-                              }
-                            />
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!!notifPrefs.email[cat]}
+                                onChange={(e) =>
+                                  setNotifPrefs({ ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } })
+                                }
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-4 after:h-4 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-4"></div>
+                            </label>
                           </label>
                           <label className="flex items-center gap-2">
                             <span className="text-sm text-gray-300">In-App</span>
-                            <input
-                              type="checkbox"
-                              checked={!!notifPrefs.inApp[cat]}
-                              onChange={(e) =>
-                                setNotifPrefs({ ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } })
-                              }
-                            />
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={!!notifPrefs.inApp[cat]}
+                                onChange={(e) =>
+                                  setNotifPrefs({ ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } })
+                                }
+                                className="sr-only peer"
+                              />
+                              <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-4 after:h-4 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-4"></div>
+                            </label>
                           </label>
                         </div>
                       </div>
