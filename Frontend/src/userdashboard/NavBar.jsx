@@ -6,8 +6,8 @@ import SearchBar from "./SearchBar"; // reusable component
 const NavBar = ({ onOpenSidebar, eventsData, searchQuery, setSearchQuery }) => {
   return (
     <div className="sticky top-0 z-30 bg-transparent">
-      <div className="px-4 sm:px-6 py-3">
-        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
+      <div className="px-4 sm:px-6 py-1">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-2">
 
           {/* Hamburger Button (mobile only) */}
           <button
