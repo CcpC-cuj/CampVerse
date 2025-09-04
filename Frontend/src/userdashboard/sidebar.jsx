@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
-import logo from "../assets/logo.png";
 
 const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
@@ -33,7 +32,7 @@ const Sidebar = ({ onDiscoverClick }) => {
       {/* Top Logo */}
       <div className="px-4 py-4.5 border-b border-gray-700 flex items-center">
         <img 
-          src={logo} 
+          src="/logo.png" 
           alt="CampVerse Logo" 
           className="h-7 w-7 mr-2" 
         />
