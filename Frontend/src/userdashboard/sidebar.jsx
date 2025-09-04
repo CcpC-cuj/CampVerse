@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
+import logo from "../assets/logo.png";
 
 const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
@@ -31,6 +32,11 @@ const Sidebar = ({ onDiscoverClick }) => {
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
       {/* Top Logo */}
       <div className="p-4 border-b border-gray-700 flex items-center">
+        <img 
+          src={logo} 
+          alt="CampVerse Logo" 
+          className="h-7 w-7 mr-2" 
+        />
         <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
       </div>
 
