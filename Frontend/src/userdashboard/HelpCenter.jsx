@@ -206,25 +206,28 @@ const HelpCenter = () => {
               {/* Quick Links */}
               <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-5">
                 <h4 className="text-white font-semibold mb-3">Quick Links</h4>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <a
                     href="#contact"
-                    className="block px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
+                    className="flex items-center justify-start px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all text-gray-200 hover:text-white"
                   >
-                    <i className="ri-bug-line mr-2"></i> Report a bug
+                    <i className="ri-bug-line mr-3 text-lg"></i> 
+                    <span>Report a bug</span>
                   </a>
                   <a
                     href="#contact"
-                    className="block px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
+                    className="flex items-center justify-start px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all text-gray-200 hover:text-white"
                   >
-                    <i className="ri-lightbulb-flash-line mr-2"></i> Request a feature
+                    <i className="ri-lightbulb-flash-line mr-3 text-lg"></i> 
+                    <span>Request a feature</span>
                   </a>
                   {/* TODO: BACKEND—Add route to view user tickets, e.g. /support/tickets */}
                   <button
-                    className="w-full text-left px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
+                    className="w-full flex items-center justify-start px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all text-gray-200 hover:text-white"
                     onClick={() => alert("Coming soon: ticket history")}
                   >
-                    <i className="ri-file-list-3-line mr-2"></i> View my tickets
+                    <i className="ri-file-list-3-line mr-3 text-lg"></i> 
+                    <span>View my tickets</span>
                   </button>
                 </div>
               </div>
@@ -281,8 +284,9 @@ const HelpCenter = () => {
                     required
                   />
 
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                  {/* Attachment Section */}
+                  <div className="flex items-center justify-start">
+                    <label className="flex items-center gap-2 cursor-pointer hover:text-[#9b5de5] transition-colors">
                       <i className="ri-attachment-2 text-gray-300"></i>
                       <span className="text-sm text-gray-300">Attach screenshot (optional)</span>
                       <input
@@ -294,23 +298,25 @@ const HelpCenter = () => {
                         }
                       />
                     </label>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <a
-                        href="mailto:support@campverse.app"
-                        className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all"
-                      >
-                        <i className="ri-mail-send-line mr-1"></i>
-                        Mail Instead
-                      </a>
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="px-4 py-2 rounded-button bg-[#9b5de5] hover:bg-[#8c4be1] disabled:opacity-60 text-white transition-all"
-                      >
-                        {submitting ? "Sending…" : "Send Message"}
-                      </button>
-                    </div>
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <a
+                      href="mailto:support@campverse.app"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[#9b5de5]/40 text-[#e9ddff] hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all font-medium"
+                    >
+                      <i className="ri-mail-send-line"></i>
+                      <span>Mail Instead</span>
+                    </a>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-[#9b5de5] hover:bg-[#8c4be1] disabled:opacity-60 text-white transition-all font-medium min-w-[140px] justify-center"
+                    >
+                      <i className="ri-send-plane-line"></i>
+                      <span>{submitting ? "Sending…" : "Send Message"}</span>
+                    </button>
                   </div>
 
                   {feedback && (
