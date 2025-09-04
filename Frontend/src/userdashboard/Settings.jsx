@@ -11,6 +11,7 @@ import {
   uploadProfilePhoto
 } from '../api';
 import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
+import NavBar from './NavBar';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -242,61 +243,13 @@ const Settings = () => {
 
       {/* main column — MATCHED to Dashboard lighter surface */}
       <div className="flex-1 flex flex-col overflow-hidden sm:pl-0 sm:ml-0 sm:w-full bg-[#141a45]">
-        {/* sticky top bar with back + horizontal tabs (enhanced mobile clarity) */}
-        <div className="sticky top-0 z-30">
-          <div className="px-3 sm:px-6 py-2 sm:py-3 bg-[#141a45]/90 backdrop-blur supports-[backdrop-filter]:bg-[#141a45]/80 border-b border-gray-700/60 shadow-md">
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* hamburger for mobile */}
-              <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/80 text-white"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-              >
-                <i className="ri-menu-line text-lg"></i>
-              </button>
-
-              {/* back to dashboard */}
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-3 py-2 rounded-button bg-gray-800/60 hover:bg-gray-800/80 flex items-center gap-2"
-                title="Back to Dashboard"
-              >
-                <i className="ri-arrow-left-line"></i>
-                <span className="hidden sm:inline">Back</span>
-              </button>
-
-              {/* tabs as top nav (scroll-to-section) */}
-              <div className="flex-1 overflow-x-auto">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-max">
-                  {tabs.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => scrollTo(t.ref)}
-                      aria-current={activeTab === t.id ? 'page' : undefined}
-                      className={`px-3 sm:px-4 py-2 rounded-full whitespace-nowrap flex items-center gap-2 transition-colors ${
-                        activeTab === t.id
-                          ? 'bg-[#9b5de5] text-white'
-                          : 'text-gray-300 hover:bg-[#9b5de5]/20'
-                      }`}
-                    >
-                      <i className={t.icon}></i>
-                      <span>{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* logout on right — purple tone to match UI */}
-              <button
-                onClick={handleLogout}
-                className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#cbb3ff] hover:bg-[#9b5de5]/10"
-                title="Logout"
-              >
-                <i className="ri-logout-box-r-line"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Top Navigation */}
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={[]}
+          searchQuery={""}
+          setSearchQuery={() => {}}
+        />
 
         {/* scrollable content — MATCHED surface color; stacked sections for scroll-through */}
         <div

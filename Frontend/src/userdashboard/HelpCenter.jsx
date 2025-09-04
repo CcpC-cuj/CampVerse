@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
+import NavBar from "./NavBar";
 
 /**
  * Help Center (frontend only)
@@ -135,51 +136,13 @@ const HelpCenter = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        {/* Sticky top bar (same family as Dashboard) */}
-        <div className="sticky top-0 z-30 bg-transparent">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
-              {/* Hamburger (mobile) */}
-              <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white transition-transform hover:scale-105"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-              >
-                <i className="ri-menu-line text-lg"></i>
-              </button>
-
-              {/* Search */}
-              <div className="relative flex-1 min-w-[220px] max-w-xl">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <i className="ri-search-line text-gray-400 w-5 h-5" />
-                </div>
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  type="text"
-                  className="h-11 bg-gray-800/60 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-[#9b5de5] outline-none"
-                  placeholder="Search help articles, e.g. OTP, register, notifications..."
-                />
-              </div>
-
-              {/* Quick CTAs */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                <a
-                  href="mailto:support@campverse.app"
-                  className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all"
-                >
-                  <i className="ri-mail-line mr-1"></i> Email Support
-                </a>
-                <a
-                  href="#contact"
-                  className="px-3 py-2 rounded-button bg-[#9b5de5] hover:bg-[#8c4be1] text-white transition-colors"
-                >
-                  <i className="ri-customer-service-2-line mr-1"></i> Contact Us
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Top Navigation */}
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={[]}
+          searchQuery={query}
+          setSearchQuery={setQuery}
+        />
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">

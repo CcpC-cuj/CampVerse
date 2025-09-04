@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
 import { submitFeedback } from "../api/feedback";
+import NavBar from "./NavBar";
 
 /**
  * Feedback (frontend only)
@@ -117,48 +118,13 @@ const Feedback = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        {/* Sticky top bar */}
-        <div className="sticky top-0 z-30 bg-transparent">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
-              {/* Hamburger */}
-              <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white transition-transform hover:scale-105"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-              >
-                <i className="ri-menu-line text-lg"></i>
-              </button>
-
-              {/* Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#9b5de5]/20 flex items-center justify-center">
-                  <i className="ri-feedback-line text-[#9b5de5] text-xl"></i>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold leading-5">Feedback</div>
-                  <div className="text-xs text-gray-300">Help us make CampVerse better</div>
-                </div>
-              </div>
-
-              {/* CTAs */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                <a
-                  href={mailHref}
-                  className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all"
-                >
-                  <i className="ri-mail-send-line mr-1"></i> Mail Instead
-                </a>
-                <a
-                  href="#feedback-form"
-                  className="px-3 py-2 rounded-button bg-[#9b5de5] hover:bg-[#8c4be1] text-white transition-colors"
-                >
-                  <i className="ri-edit-2-line mr-1"></i> Write Feedback
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Top Navigation */}
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={[]}
+          searchQuery={""}
+          setSearchQuery={() => {}}
+        />
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
