@@ -92,16 +92,17 @@ const Sidebar = ({ onDiscoverClick }) => {
             label="Discover Events"
             end
           />
-          <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+         
 
 
 
 
           <SidebarSection title="Events" />
-          <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
+           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+          {/* <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
           <SidebarLink icon="ri-time-line" to="/events/waitlisted" label="Waitlisted" />
           <SidebarLink icon="ri-bookmark-line" to="/events/saved" label="Saved" />
-          <SidebarLink icon="ri-history-line" to="/events/past" label="Past Events" />
+          <SidebarLink icon="ri-history-line" to="/events/past" label="Past Events" /> */}
 
           <SidebarSection title="Community" />
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
