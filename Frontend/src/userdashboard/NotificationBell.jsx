@@ -30,10 +30,14 @@ const NotificationBell = ({ notifications = [] }) => {
       </button>
 
       {open && (
-        <div className="fixed top-16 right-16 w-80 sm:w-96 bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-4 z-50">
-          <div className="flex justify-between items-center mb-2">
-           
-          </div>
+        <div
+          className="
+            fixed top-16 left-1/2 -translate-x-1/2 w-80 sm:w-96 
+            sm:left-auto sm:right-16 sm:translate-x-0
+            bg-gray-900 border border-gray-700 rounded-lg shadow-lg p-4 z-50
+          "
+        >
+          <div className="flex justify-between items-center mb-2"></div>
           {notifications.length === 0 ? (
             <p className="text-gray-400 text-sm">No notifications</p>
           ) : (

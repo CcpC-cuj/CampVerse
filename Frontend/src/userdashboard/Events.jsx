@@ -6,6 +6,7 @@ import NavBar from "./NavBar";
 const Events = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
@@ -28,22 +29,28 @@ const Events = () => {
       </div>
 
       {/* Main Content */}
-      <div className=" flex-1 flex flex-col overflow-hidden bg-[#141a45]">
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
         
         {/* Top Navigation */}
-      <NavBar />
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={[]} // pass real events here
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-          {/* Events Categories */}
           {["Registered", "Waitlisted", "Saved", "Past Events"].map((category, idx) => (
-            <div key={idx} className="bg-gray-800  from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15">
+            <div
+              key={idx}
+              className="bg-gray-800 from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15"
+            >
               <h2 className="text-xl font-bold mb-4">{category}</h2>
               <p className="text-gray-400">No {category.toLowerCase()} yet.</p>
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

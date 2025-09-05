@@ -37,19 +37,30 @@ const CalendarDropdown = ({ events = [] }) => {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 z-50 bg-gray-900 p-4 rounded-xl border border-gray-700 shadow-lg">
+        <div
+          className="
+            fixed top-20 left-1/2 -translate-x-1/2 
+            sm:absolute sm:top-auto sm:right-0 sm:left-auto sm:translate-x-0 sm:mt-2
+            z-50 bg-gray-900 p-4 rounded-xl border border-gray-700 shadow-lg
+          "
+        >
           <Calendar
             tileClassName={tileClassName}
             className="!bg-transparent text-purple-300"
             nextLabel="›"
             prevLabel="‹"
             navigationLabel={({ date }) =>
-              date.toLocaleDateString("default", { month: "long", year: "numeric" })
+              date.toLocaleDateString("default", {
+                month: "long",
+                year: "numeric",
+              })
             }
           />
 
           {events.length === 0 && (
-            <p className="text-purple-500 text-sm text-center mt-2">No events</p>
+            <p className="text-purple-500 text-sm text-center mt-2">
+              No events
+            </p>
           )}
         </div>
       )}
