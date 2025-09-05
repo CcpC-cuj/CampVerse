@@ -643,7 +643,7 @@ const Settings = () => {
                 </div>
               </div>
             </section>
-
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 mb-8">
             {/* ===== Privacy ===== */}
             <section
               id="privacy"
@@ -718,7 +718,13 @@ const Settings = () => {
                     </div>
 
                     {/* Delete Account — colors switched from red to purple, no functionality change */}
-                    <div className="flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
+                    
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          <div className="flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
                       <div>
                         <h4 className="font-medium text-[#cbb3ff]">Delete Account</h4>
                         <p className="text-sm text-[#cbb3ff]/80">
@@ -732,14 +738,11 @@ const Settings = () => {
                         Request Deletion
                       </button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </section>
 
           </div>
         </div>
       </div>
+
 
       {/* ✅ ADDED: Modal mount */}
       <HostRegistrationModal
