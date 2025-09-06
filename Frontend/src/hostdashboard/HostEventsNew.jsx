@@ -5,6 +5,8 @@ import { createEvent, updateEvent, deleteEvent, createEventWithFiles, updateEven
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
 import HostEventCard from "./HostEventCard";
+import EnhancedHostEventCard from "./EnhancedHostEventCard";
+import ParticipantsModal from "./ParticipantsModal";
 
 const HostEvents = () => {
   // Add URLs for instant preview
@@ -33,6 +35,8 @@ const HostEvents = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [error, setError] = useState(null);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [selectedEventForParticipants, setSelectedEventForParticipants] = useState(null);
 
   // Form state for event creation/editing
   const [eventForm, setEventForm] = useState({
@@ -42,8 +46,11 @@ const HostEvents = () => {
     endDate: '',
     location: '',
     venue: '',
+    organizer: '',
+    organizationName: '',
     category: '',
     maxParticipants: '',
+    isPaid: false,
     fee: '',
     tags: '',
     requirements: '',
@@ -216,8 +223,11 @@ const HostEvents = () => {
       endDate: '',
       location: '',
       venue: '',
+      organizer: '',
+      organizationName: '',
       category: '',
       maxParticipants: '',
+      isPaid: false,
       fee: '',
       tags: '',
       requirements: '',
@@ -281,15 +291,14 @@ const HostEvents = () => {
           type: eventForm.location,
           venue: eventForm.venue
         },
+        capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
         schedule: {
           start: eventForm.date,
           end: eventForm.endDate || eventForm.date, // If no end date, use start date
         },
-        isPaid: eventForm.fee && parseFloat(eventForm.fee) > 0,
-        price: eventForm.fee ? parseFloat(eventForm.fee) : 0,
+        isPaid: eventForm.isPaid,
+        price: eventForm.isPaid && eventForm.fee ? parseFloat(eventForm.fee) : 0,
         tags: eventForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        // Note: requirements, contactEmail, contactPhone are not in the Event model
-        // You may want to add them to the model or store them differently
       };
 
       console.log('Sending event data:', eventData);
@@ -299,8 +308,8 @@ const HostEvents = () => {
         // Create FormData for file upload
         const formData = new FormData();
         Object.keys(eventData).forEach(key => {
-          if (key === 'schedule') {
-            formData.append('schedule', JSON.stringify(eventData[key]));
+          if (key === 'schedule' || key === 'location') {
+            formData.append(key, JSON.stringify(eventData[key]));
           } else if (key === 'tags') {
             formData.append(key, JSON.stringify(eventData[key]));
           } else if (eventData[key] !== null && eventData[key] !== undefined) {
@@ -315,7 +324,7 @@ const HostEvents = () => {
         response = await createEvent(eventData);
       }
 
-      if (response._id && !response.error) { // Check if we got an event object back (has _id) and no error
+      if (response.success && response.event) { // Check for success response
         setShowCreateModal(false);
         resetForm();
         loadEvents(); // Reload events
@@ -497,6 +506,11 @@ const HostEvents = () => {
     return filtered;
   };
 
+  const handleViewParticipants = (event) => {
+    setSelectedEventForParticipants(event);
+    setShowParticipantsModal(true);
+  };
+
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
       {/* Mobile Sidebar Overlay */}
@@ -596,11 +610,12 @@ const HostEvents = () => {
                 </div>
               ) : (
                 getFilteredEvents().map((event) => (
-                  <HostEventCard
+                  <EnhancedHostEventCard
                     key={event._id}
                     event={event}
                     onEdit={() => handleEditEvent(event)}
                     onDelete={() => handleDeleteEvent(event._id)}
+                    onViewParticipants={handleViewParticipants}
                   />
                 ))
               )}
@@ -647,6 +662,32 @@ const HostEvents = () => {
                     rows={4}
                     className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Organizer *</label>
+                  <input
+                    type="text"
+                    name="organizer"
+                    value={eventForm.organizer}
+                    onChange={handleFormChange}
+                    required
+                    placeholder="e.g., Computer Science Club, Tech Society"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Organization Name (Optional)</label>
+                  <input
+                    type="text"
+                    name="organizationName"
+                    value={eventForm.organizationName}
+                    onChange={handleFormChange}
+                    placeholder="e.g., Central University of Jharkhand, Tech Corp"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">If organizing on behalf of an organization, enter its name here. This will be displayed with the organization logo.</p>
                 </div>
 
                 {/* Date and Time */}
@@ -740,31 +781,63 @@ const HostEvents = () => {
                   </div>
                 </div>
 
-                {/* Fee and Tags */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Registration Fee (₹)</label>
-                    <input
-                      type="number"
-                      name="fee"
-                      value={eventForm.fee}
-                      onChange={handleFormChange}
-                      min="0"
-                      step="0.01"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
+                {/* Event Type and Fee */}
+                <div>
+                  <label className="block text-sm font-medium mb-3">Event Type</label>
+                  <div className="flex items-center gap-6 mb-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isPaid"
+                        value="false"
+                        checked={!eventForm.isPaid}
+                        onChange={(e) => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
+                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                      />
+                      <span className="text-white">Free Event</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isPaid"
+                        value="true"
+                        checked={eventForm.isPaid}
+                        onChange={(e) => setEventForm(prev => ({ ...prev, isPaid: true }))}
+                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                      />
+                      <span className="text-white">Paid Event</span>
+                    </label>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
-                    <input
-                      type="text"
-                      name="tags"
-                      value={eventForm.tags}
-                      onChange={handleFormChange}
-                      placeholder="e.g., Technology, AI, Innovation"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
+                  
+                  {eventForm.isPaid && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Registration Fee (₹) *</label>
+                      <input
+                        type="number"
+                        name="fee"
+                        value={eventForm.fee}
+                        onChange={handleFormChange}
+                        min="1"
+                        step="0.01"
+                        required={eventForm.isPaid}
+                        placeholder="Enter amount"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={eventForm.tags}
+                    onChange={handleFormChange}
+                    placeholder="e.g., Technology, AI, Innovation"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
                 </div>
 
                 {/* Contact Information */}
@@ -1036,6 +1109,17 @@ const HostEvents = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Participants Modal */}
+      {showParticipantsModal && selectedEventForParticipants && (
+        <ParticipantsModal
+          event={selectedEventForParticipants}
+          onClose={() => {
+            setShowParticipantsModal(false);
+            setSelectedEventForParticipants(null);
+          }}
+        />
       )}
     </div>
   );

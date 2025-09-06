@@ -127,7 +127,14 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
             {/* Location */}
             <div className="flex items-center gap-2">
               <span className="text-[#9b5de5]">📍</span>
-              <span>{eventDetails.location || 'Location TBD'}</span>
+              <span>
+                {eventDetails.location?.venue || eventDetails.venue || 'Location TBD'}
+                {eventDetails.location?.type && (
+                  <span className="ml-2 text-sm text-gray-400">
+                    ({eventDetails.location.type})
+                  </span>
+                )}
+              </span>
             </div>
 
             {/* Description */}

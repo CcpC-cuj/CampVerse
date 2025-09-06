@@ -39,10 +39,11 @@ async function createEvent(req, res) {
       tags,
       type,
       organizer,
+      location,
+      capacity,
       schedule,
       isPaid,
       price,
-      capacity,
     } = req.body;
     let logoURL, bannerURL;
     
@@ -71,16 +72,21 @@ async function createEvent(req, res) {
       tags,
       type,
       organizer,
+      location,
+      capacity,
       schedule,
       isPaid,
       price,
-      capacity,
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
-    res.status(201).json(event);
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      event: event
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error creating event.' });
   }

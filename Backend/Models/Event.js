@@ -12,6 +12,11 @@ const eventSchema = new mongoose.Schema({
   organizer: { type: String, required: true }, // Name of the organizing entity (club, department, society, etc.)
   logoURL: { type: String }, // URL to event logo image
   bannerURL: { type: String }, // URL to event banner image
+  location: {
+    type: { type: String, enum: ['online', 'offline', 'hybrid'] },
+    venue: { type: String }
+  },
+  capacity: { type: Number }, // Maximum number of participants
   schedule: {
     start: Date,
     end: Date,

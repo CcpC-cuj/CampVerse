@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useEventParticipants } from "../hooks/useEventParticipants";
 
-const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
+const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const { participantStats, loading: participantsLoading, error: participantsError, refetch } = useEventParticipants(event._id);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -31,8 +33,8 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
 
   const getEventStatus = () => {
     const now = new Date();
-    const eventDate = new Date(event.date);
-    const endDate = event.endDate ? new Date(event.endDate) : eventDate;
+    const eventDate = new Date(event.date || event.schedule?.start);
+    const endDate = event.endDate ? new Date(event.endDate) : (event.schedule?.end ? new Date(event.schedule.end) : eventDate);
 
     if (now < eventDate) return 'upcoming';
     if (now > endDate) return 'past';
@@ -41,6 +43,10 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
 
   const statusInfo = getStatusInfo(event.status);
   const eventStatus = getEventStatus();
+
+  // Use real participant count or fallback to event data
+  const participantCount = participantStats.total || event.participants || event.registrations || 0;
+  const maxParticipants = event.maxParticipants || event.capacity;
 
   return (
     <div className="bg-gray-800/60 rounded-xl overflow-hidden border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all duration-300 group">
@@ -107,6 +113,18 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
                   View Participants
+                </button>
+                <button
+                  onClick={() => {
+                    refetch(); // Refresh participant data
+                    setShowDropdown(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800 flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh Data
                 </button>
                 <button
                   onClick={() => {
@@ -185,11 +203,23 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
           )}
         </div>
 
-        {/* Participants Info */}
+        {/* Participants Info with Real-time Data */}
         <div className="mt-3 flex items-center justify-between">
           <div className="text-sm text-gray-400">
-            <span className="text-white font-medium">{event.participants || event.registrations || 0}</span>
-            {(event.maxParticipants || event.capacity) && ` / ${event.maxParticipants || event.capacity}`} participants
+            <div className="flex items-center gap-2">
+              <span className="text-white font-medium">{participantCount}</span>
+              {maxParticipants && ` / ${maxParticipants}`} participants
+              {participantsLoading && (
+                <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+              )}
+            </div>
+            {participantStats.total > 0 && (
+              <div className="text-xs text-gray-500 mt-1">
+                {participantStats.registered > 0 && `${participantStats.registered} registered`}
+                {participantStats.waitlisted > 0 && `, ${participantStats.waitlisted} waitlisted`}
+                {participantStats.attended > 0 && `, ${participantStats.attended} attended`}
+              </div>
+            )}
           </div>
           
           {(event.fee !== undefined || event.price !== undefined) && (
@@ -263,7 +293,10 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
-            View Participants ({event.participants || event.registrations || 0})
+            View Participants ({participantCount})
+            {participantsError && (
+              <span className="text-red-400 text-xs ml-1">⚠</span>
+            )}
           </button>
         </div>
       </div>
@@ -279,4 +312,4 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   );
 };
 
-export default HostEventCard;
+export default EnhancedHostEventCard;
