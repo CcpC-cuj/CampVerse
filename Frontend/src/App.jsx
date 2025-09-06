@@ -22,6 +22,7 @@ import { EventProvider } from "./userdashboard/EventContext";
 import {
   HostDashboard,
   HostEvents,
+  HostEventsNew,
   HostApplications,
   HostAnalytics,
   HostSettings,
@@ -135,7 +136,15 @@ function App() {
               path="/host/events"
               element={
                 <ProtectedRoute>
-                  <HostEvents />
+                  <HostEventsNew />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/events-new"
+              element={
+                <ProtectedRoute>
+                  <HostEventsNew />
                 </ProtectedRoute>
               }
             />

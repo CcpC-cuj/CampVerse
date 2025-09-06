@@ -37,10 +37,34 @@ const router = express.Router();
 // Public list events endpoint for browsing (used by tests and landing pages)
 router.get('/', async (req, res) => {
   try {
-    const events = await require('../Models/Event').find().limit(50);
-    res.json(events);
+    // Check if user is authenticated
+    const isAuthenticated = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
+    
+    let query = {};
+    if (!isAuthenticated) {
+      // Only show approved events to anonymous users
+      query.verificationStatus = 'approved';
+    }
+    // Authenticated users can see all events (approved, pending) so they can RSVP
+    
+    const events = await require('../Models/Event')
+      .find(query)
+      .populate('hostUserId', 'name email profilePicture')
+      .limit(50)
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: {
+        events: events,
+        total: events.length
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching events.' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching events.',
+      message: 'Failed to load events'
+    });
   }
 });
 
@@ -465,5 +489,49 @@ router.get(
   requireRole('platformAdmin'),
   getZeroResultSearches,
 );
+
+// Get user's registered events
+router.get('/user', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get events user has registered for via EventParticipationLog
+    const participationLogs = await require('../Models/EventParticipationLog')
+      .find({ userId })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'hostUserId',
+          select: 'name email profilePicture'
+        }
+      })
+      .sort({ registeredAt: -1 });
+    
+    // Extract events and add user-specific info
+    const events = participationLogs.map(log => ({
+      ...log.eventId.toObject(),
+      userRegistration: {
+        status: log.status,
+        registeredAt: log.registeredAt,
+        qrToken: log.qrToken
+      }
+    }));
+    
+    res.json({
+      success: true,
+      data: {
+        events,
+        total: events.length
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching user events:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching user events.',
+      message: 'Failed to load your events'
+    });
+  }
+});
 
 module.exports = router;

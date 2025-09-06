@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { getHostDashboard, getMyEvents } from "../api/host";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
 import HostEventCard from "./HostEventCard";
-// (Optional) import from your api if you already have these; otherwise the mock below will render
-// import { getHostDashboard } from "../api";
 
 const HostDashboard = () => {
   const { user } = useAuth();
@@ -12,69 +11,148 @@ const HostDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [events, setEvents] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    
+    const loadDashboardData = async () => {
       try {
-        // --- Replace with your real API calls if available ---
-        // const data = await getHostDashboard();
-        // if (!mounted) return;
-        // setStats(data?.stats || {});
-        // setEvents(data?.events || []);
+        setLoading(true);
+        setError(null);
+        console.log("Loading host dashboard data...");
 
-        // Mock so UI works immediately
+        // Try to load dashboard stats
+        let dashboardData = null;
+        try {
+          dashboardData = await getHostDashboard();
+          console.log("Dashboard data:", dashboardData);
+        } catch (dashboardError) {
+          console.error("Dashboard API failed:", dashboardError);
+        }
+
+        // Load events separately
+        let eventsData = [];
+        try {
+          eventsData = await getMyEvents();
+          console.log("Events data:", eventsData);
+          
+          if (Array.isArray(eventsData)) {
+            eventsData = eventsData;
+          } else if (eventsData && eventsData.events) {
+            eventsData = eventsData.events;
+          } else {
+            eventsData = [];
+          }
+        } catch (eventsError) {
+          console.error("Events API failed:", eventsError);
+          eventsData = [];
+        }
+
         if (!mounted) return;
-        setStats({
-          activeEvents: 3,
-          totalRegistrations: 248,
-          pendingApprovals: 12,
-          revenue: "₹1.25L",
-        });
-        setEvents([
-          {
-            id: "evt_1",
-            title: "Inter-College Hackathon 2025",
-            date: "2025-09-06T10:00:00Z",
-            status: "Live",
-            registrations: 120,
-            cover:
-              "https://readdy.ai/api/search-image?query=hackathon%20poster%203D%20purple%20galaxy&width=800&height=400&seq=9",
-          },
-          {
-            id: "evt_2",
-            title: "Design Sprint Marathon",
-            date: "2025-09-20T09:00:00Z",
-            status: "Draft",
-            registrations: 0,
-            cover:
-              "https://readdy.ai/api/search-image?query=design%20sprint%20poster%20purple%20glassmorphism&width=800&height=400&seq=7",
-          },
-          {
-            id: "evt_3",
-            title: "AI & Robotics Expo",
-            date: "2025-10-02T11:00:00Z",
-            status: "Upcoming",
-            registrations: 128,
-            cover:
-              "https://readdy.ai/api/search-image?query=robotics%20expo%20banner%20purple%20neon&width=800&height=400&seq=5",
-          },
-        ]);
-      } catch (e) {
-        // fall back to empty
+
+        // Set stats from dashboard API or calculate from events
+        if (dashboardData && !dashboardData.error) {
+          setStats({
+            activeEvents: dashboardData.totalEvents || eventsData.length,
+            totalRegistrations: dashboardData.totalParticipants || 0,
+            pendingApprovals: dashboardData.pendingApprovals || 0,
+            revenue: `₹${(dashboardData.totalRevenue || 0).toLocaleString()}`,
+          });
+        } else {
+          // Calculate stats from events data
+          const activeEvents = eventsData.filter(e => 
+            e.verificationStatus === 'approved' || e.verificationStatus === 'pending'
+          ).length;
+          const totalRegistrations = eventsData.reduce((sum, e) => 
+            sum + (e.participants?.length || 0), 0
+          );
+          
+          setStats({
+            activeEvents,
+            totalRegistrations,
+            pendingApprovals: eventsData.filter(e => e.verificationStatus === 'pending').length,
+            revenue: "₹0",
+          });
+        }
+
+        // Transform events data for display
+        const transformedEvents = eventsData.map(event => ({
+          id: event._id,
+          title: event.title,
+          date: event.schedule?.start || event.createdAt,
+          status: getEventStatus(event),
+          registrations: event.participants?.length || 0,
+          cover: event.logoURL || event.bannerURL || "/placeholder-event.jpg",
+          verificationStatus: event.verificationStatus,
+        }));
+
+        setEvents(transformedEvents);
+        
+      } catch (error) {
+        console.error("Error loading dashboard:", error);
+        setError("Failed to load dashboard data");
+        
+        // Set empty state
+        if (mounted) {
+          setStats({
+            activeEvents: 0,
+            totalRegistrations: 0,
+            pendingApprovals: 0,
+            revenue: "₹0",
+          });
+          setEvents([]);
+        }
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    };
+
+    loadDashboardData();
+    
     return () => {
       mounted = false;
     };
   }, []);
 
+  // Helper function to determine event status
+  const getEventStatus = (event) => {
+    if (event.verificationStatus === 'pending') return 'Draft';
+    if (event.verificationStatus === 'rejected') return 'Rejected';
+    
+    const now = new Date();
+    const eventDate = new Date(event.schedule?.start || event.createdAt);
+    
+    if (eventDate > now) return 'Upcoming';
+    if (eventDate < now) return 'Past';
+    return 'Live';
+  };
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#141a45] text-white">
-        <i className="ri-loader-4-line animate-spin text-3xl" />
+        <div className="flex flex-col items-center gap-4">
+          <i className="ri-loader-4-line animate-spin text-3xl text-[#9b5de5]" />
+          <p className="text-gray-300">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#141a45] text-white">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <i className="ri-error-warning-line text-4xl text-red-400" />
+          <h2 className="text-xl font-semibold">Error Loading Dashboard</h2>
+          <p className="text-gray-300">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg font-medium transition-all"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }

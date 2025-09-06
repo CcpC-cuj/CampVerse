@@ -2,12 +2,45 @@
 import { API_URL, getAuthHeaders } from './user';
 
 // Public: list events (limited)
-export async function listEvents() {
-  const res = await fetch(`${API_URL}/api/events`);
+export async function listEvents(filters = {}) {
+  const queryParams = new URLSearchParams(filters).toString();
+  const url = queryParams ? `${API_URL}/api/events?${queryParams}` : `${API_URL}/api/events`;
+  const res = await fetch(url);
   return res.json();
 }
 
-export async function createEvent(formData) {
+// Get events for current user (student dashboard)
+export async function getUserEvents() {
+  const res = await fetch(`${API_URL}/api/events/user`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Search events
+export async function searchEvents(query, filters = {}) {
+  const params = new URLSearchParams({ q: query, ...filters }).toString();
+  const res = await fetch(`${API_URL}/api/events/search?${params}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Create event (for hosts)
+export async function createEvent(eventData) {
+  const res = await fetch(`${API_URL}/api/events`, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...getAuthHeaders() 
+    },
+    body: JSON.stringify(eventData),
+  });
+  return res.json();
+}
+
+// Create event with file upload (for hosts with images)
+export async function createEventWithFiles(formData) {
   const res = await fetch(`${API_URL}/api/events`, {
     method: 'POST',
     headers: { ...getAuthHeaders() },
@@ -23,7 +56,20 @@ export async function getEventById(id) {
   return res.json();
 }
 
-export async function updateEvent(id, formData) {
+export async function updateEvent(id, eventData) {
+  const res = await fetch(`${API_URL}/api/events/${id}`, {
+    method: 'PATCH',
+    headers: { 
+      'Content-Type': 'application/json',
+      ...getAuthHeaders() 
+    },
+    body: JSON.stringify(eventData),
+  });
+  return res.json();
+}
+
+// Update event with file upload
+export async function updateEventWithFiles(id, formData) {
   const res = await fetch(`${API_URL}/api/events/${id}`, {
     method: 'PATCH',
     headers: { ...getAuthHeaders() },
@@ -45,6 +91,32 @@ export async function rsvpEvent(eventId) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ eventId }),
+  });
+  return res.json();
+}
+
+// Cancel RSVP - removed duplicate, using POST /cancel-rsvp version below
+
+// Get event participants (for hosts)
+export async function getEventParticipants(eventId) {
+  const res = await fetch(`${API_URL}/api/events/${eventId}/participants`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Get upcoming events
+export async function getUpcomingEvents() {
+  const res = await fetch(`${API_URL}/api/events/upcoming`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Get past events
+export async function getPastEvents() {
+  const res = await fetch(`${API_URL}/api/events/past`, {
+    headers: { ...getAuthHeaders() },
   });
   return res.json();
 }

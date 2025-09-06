@@ -1,87 +1,100 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { getMyEvents } from "../api/host";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
 import HostEventCard from "./HostEventCard";
 
 const HostEvents = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockEvents = [
-      {
-        id: "evt_1",
-        title: "Annual Tech Symposium 2025",
-        description: "A comprehensive technology symposium featuring the latest innovations",
-        date: "2025-06-15T09:00:00Z",
-        status: "active",
-        registrations: 312,
-        maxRegistrations: 500,
-        venue: "Memorial Auditorium",
-        category: "Technology",
-        cover: "https://readdy.ai/api/search-image?query=tech%20symposium%20modern%20auditorium&width=400&height=200&seq=1",
-        tags: ["Technology", "Innovation", "Networking"]
-      },
-      {
-        id: "evt_2",
-        title: "Summer Hackathon 2025",
-        description: "48-hour coding marathon for innovative solutions",
-        date: "2025-07-08T10:00:00Z",
-        status: "upcoming",
-        registrations: 156,
-        maxRegistrations: 200,
-        venue: "Engineering Quad",
-        category: "Programming",
-        cover: "https://readdy.ai/api/search-image?query=hackathon%20coding%20event&width=400&height=200&seq=2",
-        tags: ["Programming", "Innovation", "Competition"]
-      },
-      {
-        id: "evt_3",
-        title: "International Cultural Festival",
-        description: "Celebrating diversity and cultural exchange",
-        date: "2025-08-05T11:00:00Z",
-        status: "draft",
-        registrations: 89,
-        maxRegistrations: 400,
-        venue: "Main Quad",
-        category: "Cultural",
-        cover: "https://readdy.ai/api/search-image?query=cultural%20festival%20colorful&width=400&height=200&seq=3",
-        tags: ["Culture", "International", "Diversity"]
-      },
-      {
-        id: "evt_4",
-        title: "AI & Machine Learning Workshop",
-        description: "Deep dive into artificial intelligence and ML concepts",
-        date: "2025-05-20T14:00:00Z",
-        status: "past",
-        registrations: 95,
-        maxRegistrations: 100,
-        venue: "Computer Science Building",
-        category: "Technology",
-        cover: "https://readdy.ai/api/search-image?query=AI%20machine%20learning%20workshop&width=400&height=200&seq=4",
-        tags: ["AI", "Machine Learning", "Technology"]
-      }
-    ];
-    
-    setTimeout(() => {
-      setEvents(mockEvents);
-      setLoading(false);
-    }, 1000);
+    loadEvents();
   }, []);
 
+  // Helper function to determine event status
+  const getEventStatus = (event) => {
+    if (event.verificationStatus === 'pending') return 'draft';
+    if (event.verificationStatus === 'rejected') return 'rejected';
+    
+    const now = new Date();
+    const eventDate = new Date(event.schedule?.start || event.createdAt);
+    
+    if (eventDate > now) return 'upcoming';
+    if (eventDate < now) return 'past';
+    return 'active';
+  };
+
+  const loadEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("Loading events for host...");
+      console.log("User data:", user);
+      
+      const response = await getMyEvents();
+      console.log("Events response:", response);
+      
+      // Check if response is an error object
+      if (response.error) {
+        console.error("API Error:", response);
+        setError(response.error || "Failed to load events");
+        setEvents([]);
+        return;
+      }
+      
+      // Response should be an array of events directly
+      const eventsData = Array.isArray(response) ? response : [];
+      console.log("Raw events data:", eventsData);
+      
+      // Transform events to include proper status, dates, and fields
+      const transformedEvents = eventsData.map(event => ({
+        ...event,
+        id: event._id,
+        status: getEventStatus(event),
+        date: event.schedule?.start || event.createdAt,
+        category: event.type || 'Uncategorized',
+        participants: event.participants || [],
+        cover: event.logoURL || event.bannerURL || "/placeholder-event.jpg",
+        venue: event.venue || "Location TBD",
+        registrations: event.participants?.length || 0,
+        maxRegistrations: event.maxParticipants || 100,
+        tags: Array.isArray(event.tags) ? event.tags : (event.tags ? [event.tags] : []),
+        description: event.description || "No description available"
+      }));
+      
+      console.log("Transformed events:", transformedEvents);
+      setEvents(transformedEvents);
+        
+    } catch (err) {
+      console.error("Error loading events:", err);
+      // Check if it's a 403 or role-related error
+      if (err.message?.includes('403') || err.message?.includes('Forbidden')) {
+        setError("You don't have host permissions. Please complete your host registration first.");
+      } else {
+        setError("Failed to load events. Please try again.");
+      }
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredEvents = events.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.category?.toLowerCase().includes(searchQuery.toLowerCase());
     
     if (selectedTab === "all") return matchesSearch;
-    if (selectedTab === "active") return matchesSearch && event.status === "active";
+    if (selectedTab === "active") return matchesSearch && (event.status === "active" || event.status === "upcoming");
     if (selectedTab === "upcoming") return matchesSearch && event.status === "upcoming";
     if (selectedTab === "draft") return matchesSearch && event.status === "draft";
     if (selectedTab === "past") return matchesSearch && event.status === "past";
@@ -94,7 +107,8 @@ const HostEvents = () => {
       active: { bg: "bg-green-500/20", text: "text-green-400", label: "Active" },
       upcoming: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Upcoming" },
       draft: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Draft" },
-      past: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Past" }
+      past: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Past" },
+      rejected: { bg: "bg-red-500/20", text: "text-red-400", label: "Rejected" }
     };
     
     const config = statusConfig[status] || statusConfig.draft;
@@ -107,7 +121,7 @@ const HostEvents = () => {
 
   const stats = {
     total: events.length,
-    active: events.filter(e => e.status === "active").length,
+    active: events.filter(e => e.status === "active" || e.status === "upcoming").length,
     upcoming: events.filter(e => e.status === "upcoming").length,
     draft: events.filter(e => e.status === "draft").length,
     past: events.filter(e => e.status === "past").length
@@ -119,6 +133,34 @@ const HostEvents = () => {
         <div className="flex flex-col items-center gap-4">
           <i className="ri-loader-4-line animate-spin text-3xl text-[#9b5de5]" />
           <p className="text-gray-300">Loading your events...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#141a45] text-white">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+          <i className="ri-error-warning-line text-4xl text-red-400" />
+          <h2 className="text-xl font-semibold">Error Loading Events</h2>
+          <p className="text-gray-300">{error}</p>
+          <div className="flex gap-3">
+            <button 
+              onClick={loadEvents}
+              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg font-medium transition-all"
+            >
+              Try Again
+            </button>
+            {error.includes('host permissions') && (
+              <button 
+                onClick={() => navigate('/host/registration')}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all"
+              >
+                Complete Host Registration
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -160,7 +202,10 @@ const HostEvents = () => {
               <p className="text-gray-300 mt-1">Create, manage, and track all your events</p>
             </div>
             
-            <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all hover:shadow-[0_0_15px_rgba(155,93,229,0.35)]">
+            <button 
+              onClick={() => navigate('/host/events-new')}
+              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all hover:shadow-[0_0_15px_rgba(155,93,229,0.35)]"
+            >
               <i className="ri-add-line text-lg"></i>
               Create New Event
             </button>
@@ -221,7 +266,10 @@ const HostEvents = () => {
               <p className="text-gray-400 mb-6">
                 {searchQuery ? "Try adjusting your search terms" : "Start by creating your first event"}
               </p>
-              <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg font-medium transition-all">
+              <button 
+                onClick={() => navigate('/host/events-new')}
+                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg font-medium transition-all"
+              >
                 Create Your First Event
               </button>
             </div>

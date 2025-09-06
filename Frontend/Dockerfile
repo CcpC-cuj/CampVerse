@@ -1,9 +1,17 @@
 # Stage 1: Build
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm install
+
+# Clear npm cache and install dependencies
+RUN npm cache clean --force && \
+    npm install --verbose
+
+# Copy source code
 COPY . .
+
 # Accept build-time env vars
 ARG VITE_GOOGLE_CLIENT_ID
 ARG VITE_API_URL
@@ -12,7 +20,8 @@ ARG VITE_API_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN npm run build
+# Verify vite is installed and run build
+RUN npx vite --version && npm run build
 
 # Stage 2: Serve
 FROM nginx:alpine
