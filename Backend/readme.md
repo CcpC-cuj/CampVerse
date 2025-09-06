@@ -707,5 +707,4 @@ For technical support or questions:
 
 ---
 
-_Last updated: July 2025_
 _Version: 1.0.0_
