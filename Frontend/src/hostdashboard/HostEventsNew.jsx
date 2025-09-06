@@ -7,6 +7,22 @@ import HostNavBar from "./HostNavBar";
 import HostEventCard from "./HostEventCard";
 
 const HostEvents = () => {
+  // Add URLs for instant preview
+  const [bannerUrl, setBannerUrl] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(null);
+
+  // Dummy upload function (replace with real Firebase/Supabase upload)
+  const uploadImage = async (file, type) => {
+    // TODO: Replace with actual upload logic
+    // Simulate upload and return a local preview URL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,9 +47,10 @@ const HostEvents = () => {
     fee: '',
     tags: '',
     requirements: '',
-    contactEmail: '',
-    contactPhone: '',
-    coverImage: null,
+    contactEmail: user?.email || '',
+    contactPhone: user?.phone || '',
+    bannerImage: null,
+    logoImage: null,
     socialLinks: {
       website: '',
       linkedin: ''
@@ -170,7 +187,15 @@ const HostEvents = () => {
     const { name, value, type, files } = e.target;
     
     if (type === 'file') {
-      setEventForm(prev => ({ ...prev, [name]: files[0] }));
+      const file = files[0];
+      setEventForm(prev => ({ ...prev, [name]: file }));
+      // Instant upload and preview
+      if (name === 'bannerImage' && file) {
+        uploadImage(file, 'banner').then(url => setBannerUrl(url));
+      }
+      if (name === 'logoImage' && file) {
+        uploadImage(file, 'logo').then(url => setLogoUrl(url));
+      }
     } else if (name.includes('.')) {
       // Handle nested objects like socialLinks.website
       const [parent, child] = name.split('.');
@@ -197,13 +222,16 @@ const HostEvents = () => {
       tags: '',
       requirements: '',
       contactEmail: user?.email || '',
-      contactPhone: '',
-      coverImage: null,
+      contactPhone: user?.phone || '',
+      bannerImage: null,
+      logoImage: null,
       socialLinks: {
         website: '',
         linkedin: ''
       }
     });
+    setBannerUrl(null);
+    setLogoUrl(null);
   };
 
   const handleCreateEvent = async (e) => {
@@ -267,7 +295,7 @@ const HostEvents = () => {
       console.log('Sending event data:', eventData);
 
       let response;
-      if (eventForm.coverImage) {
+      if (eventForm.bannerImage || eventForm.logoImage) {
         // Create FormData for file upload
         const formData = new FormData();
         Object.keys(eventData).forEach(key => {
@@ -279,7 +307,9 @@ const HostEvents = () => {
             formData.append(key, eventData[key]);
           }
         });
-        formData.append('logo', eventForm.coverImage);
+        // Use 'banner' and 'logo' as field names for backend compatibility
+        if (eventForm.bannerImage) formData.append('banner', eventForm.bannerImage);
+        if (eventForm.logoImage) formData.append('logo', eventForm.logoImage);
         response = await createEventWithFiles(formData);
       } else {
         response = await createEvent(eventData);
@@ -745,8 +775,8 @@ const HostEvents = () => {
                       type="email"
                       name="contactEmail"
                       value={eventForm.contactEmail}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none cursor-not-allowed"
                     />
                   </div>
                   <div>
@@ -755,23 +785,46 @@ const HostEvents = () => {
                       type="tel"
                       name="contactPhone"
                       value={eventForm.contactPhone}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none cursor-not-allowed"
                     />
                   </div>
                 </div>
 
                 {/* Event Image */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Event Image (Logo/Cover)</label>
-                  <p className="text-xs text-gray-400 mb-2">Upload an image that represents your event. This will be displayed as the main event image.</p>
-                  <input
-                    type="file"
-                    name="coverImage"
-                    onChange={handleFormChange}
-                    accept="image/*"
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Banner Image</label>
+                    <p className="text-xs text-gray-400 mb-2">Upload a banner image for your event. This will be displayed as the main event banner.</p>
+                    <input
+                      type="file"
+                      name="bannerImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {bannerUrl && (
+                      <div className="mt-2 w-full h-24 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden border border-gray-700">
+                        <img src={bannerUrl} alt="Banner Preview" className="object-cover w-full h-full" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Logo Image</label>
+                    <p className="text-xs text-gray-400 mb-2">Upload a logo image for your event. This will be displayed as the event logo.</p>
+                    <input
+                      type="file"
+                      name="logoImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {logoUrl && (
+                      <div className="mt-2 flex items-center justify-center">
+                        <img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Requirements */}

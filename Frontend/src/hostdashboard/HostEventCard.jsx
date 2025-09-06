@@ -47,7 +47,7 @@ const HostEventCard = ({ event, onEdit, onDelete }) => {
       {/* Event Image */}
       <div className="relative">
         <img 
-          src={event.coverImage || event.cover || "https://via.placeholder.com/400x200?text=No+Image"} 
+          src={event.bannerImage || event.cover || "https://via.placeholder.com/400x200?text=No+Image"} 
           alt={event.title} 
           className="w-full h-36 object-cover"
         />

@@ -129,14 +129,11 @@ MONGO_URI=mongodb://localhost:27017/campverse
 REDIS_URL=redis://127.0.0.1:6379
 
 # Authentication
-JWT_SECRET=your_jwt_secret_here
 
 # Email Configuration
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
 
 # Google APIs
-GOOGLE_DRIVE_CLIENT_ID=your_google_client_id
 GOOGLE_DRIVE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_DRIVE_REDIRECT_URI=your_redirect_uri
 
@@ -145,15 +142,9 @@ ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
 ML_API_KEY=your_ml_api_key_here
 ```
 
-### **Running the Application**
-
-```bash
-# Development mode
-npm run dev
 
 # Production mode
 npm start
-
 # Run tests
 npm test
 ```
@@ -196,46 +187,20 @@ http://localhost:5001/api
 ## 🧩 Module Documentation
 
 ### **1. User Module** (`/api/users`)
-
-**Core Features:**
-
 - User registration with OTP verification
 - Google OAuth integration (academic emails only)
 - Profile management and preferences
 - Password reset functionality
 - Host request workflow
 - User dashboard and statistics
-
-**Key Endpoints:**
-
 ```bash
 # Authentication
-POST /api/users/register          # Register new user
-POST /api/users/verify            # Verify OTP
-POST /api/users/login             # Login with credentials
-POST /api/users/google-signin     # Google OAuth login
-
-# Profile Management
 GET    /api/users/me              # Get current user
 PATCH  /api/users/me              # Update profile
-POST   /api/users/updatePreferences # Update preferences
 
-# Host Management
-POST   /api/users/me/request-host # Request host access
-GET    /api/users/host-requests/pending # View pending requests (verifier)
-POST   /api/users/host-requests/:id/approve # Approve host request
-POST   /api/users/host-requests/:id/reject  # Reject host request
-
-# Password Reset
 POST   /api/users/forgot-password # Request password reset
 POST   /api/users/reset-password  # Reset password with token
-```
-
-**File Structure:**
-
-```
 Controller/User.js          # User controller logic
-Routes/userRoutes.js        # User route definitions
 Models/User.js             # User data model
 Services/email.js          # Email service
 Services/otp.js            # OTP generation service
