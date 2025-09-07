@@ -3,19 +3,14 @@ import { useAuth } from "../contexts/AuthContext";
 import { getUserEvents, getUpcomingEvents, getPastEvents, rsvpEvent as rsvpEventAPI, cancelRsvp } from "../api/events";
 import Sidebar from "../userdashboard/sidebar";
 import NavBar from "./NavBar";
-import EventDetailsModal from "./EventDetailsModal";
+import ShareButton from './ShareButton'; 
 
 const Events = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("registered");
-  const [events, setEvents] = useState({
-    registered: [],
-    upcoming: [],
-    past: [],
-    saved: []
-  });
+  const [events, setEvents] = useState({ registered: [], upcoming: [], past: [], saved: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -30,44 +25,26 @@ const Events = () => {
       setLoading(true);
       setError(null);
 
-      // Load user's events and RSVPs
       const [userEventsRes, upcomingRes, pastRes] = await Promise.all([
         getUserEvents().catch(() => ({ success: false })),
         getUpcomingEvents().catch(() => ({ success: false })),
-        getPastEvents().catch(() => ({ success: false }))
+        getPastEvents().catch(() => ({ success: false })),
       ]);
 
-      const newEvents = {
-        registered: [],
-        upcoming: [],
-        past: [],
-        saved: []
-      };
-
+      const newEvents = { registered: [], upcoming: [], past: [], saved: [] };
       const rsvpSet = new Set();
 
-      // Process user events (registered events)
       if (userEventsRes.success && userEventsRes.data) {
         const registeredEvents = userEventsRes.data.registeredEvents || userEventsRes.data.events || [];
         newEvents.registered = registeredEvents;
-        registeredEvents.forEach(event => rsvpSet.add(event._id));
-
-        if (userEventsRes.data.savedEvents) {
-          newEvents.saved = userEventsRes.data.savedEvents;
-        }
+        registeredEvents.forEach((event) => rsvpSet.add(event._id));
+        if (userEventsRes.data.savedEvents) newEvents.saved = userEventsRes.data.savedEvents;
       }
 
-      // Process upcoming events
-      if (upcomingRes.success && upcomingRes.data) {
-        newEvents.upcoming = upcomingRes.data.events || upcomingRes.data || [];
-      }
+      if (upcomingRes.success && upcomingRes.data) newEvents.upcoming = upcomingRes.data.events || upcomingRes.data || [];
+      if (pastRes.success && pastRes.data) newEvents.past = pastRes.data.events || pastRes.data || [];
 
-      // Process past events  
-      if (pastRes.success && pastRes.data) {
-        newEvents.past = pastRes.data.events || pastRes.data || [];
-      }
-
-      // If APIs fail, show mock data for demonstration
+      // Mock data if APIs fail
       if (!userEventsRes.success && !upcomingRes.success && !pastRes.success) {
         newEvents.registered = [
           {
@@ -81,10 +58,9 @@ const Events = () => {
             coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
             participants: 312,
             host: { name: "Tech Club CUJ", organization: "CUJ" },
-            registeredAt: "2025-09-01T10:00:00Z"
-          }
+            registeredAt: "2025-09-01T10:00:00Z",
+          },
         ];
-
         newEvents.upcoming = [
           {
             _id: "mock_up_1",
@@ -98,10 +74,10 @@ const Events = () => {
             participants: 87,
             maxParticipants: 50,
             fee: 500,
-            host: { name: "Code Club", organization: "CUJ" }
+            host: { name: "Code Club", organization: "CUJ" },
           },
           {
-            _id: "mock_up_2", 
+            _id: "mock_up_2",
             title: "Cultural Evening 2025",
             description: "An evening of music, dance and cultural performances",
             date: "2025-10-05T18:00:00Z",
@@ -111,14 +87,13 @@ const Events = () => {
             coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
             participants: 156,
             fee: 0,
-            host: { name: "Cultural Committee", organization: "CUJ" }
-          }
+            host: { name: "Cultural Committee", organization: "CUJ" },
+          },
         ];
-
         newEvents.past = [
           {
             _id: "mock_past_1",
-            title: "Spring Hackathon 2025", 
+            title: "Spring Hackathon 2025",
             description: "48-hour coding marathon completed",
             date: "2025-08-15T10:00:00Z",
             endDate: "2025-08-17T10:00:00Z",
@@ -128,19 +103,17 @@ const Events = () => {
             coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800",
             participants: 124,
             host: { name: "Programming Club", organization: "CUJ" },
-            completedAt: "2025-08-17T10:00:00Z"
-          }
+            completedAt: "2025-08-17T10:00:00Z",
+          },
         ];
-
         rsvpSet.add("mock_reg_1");
       }
 
       setEvents(newEvents);
       setUserRsvps(rsvpSet);
-
     } catch (err) {
-      console.error('Error loading events:', err);
-      setError('Failed to load events');
+      console.error("Error loading events:", err);
+      setError("Failed to load events");
     } finally {
       setLoading(false);
     }
@@ -149,148 +122,90 @@ const Events = () => {
   const handleRSVP = async (eventId) => {
     try {
       const isRsvped = userRsvps.has(eventId);
-      const response = isRsvped 
-        ? await cancelRsvp(eventId)
-        : await rsvpEventAPI(eventId);
+      const response = isRsvped ? await cancelRsvp(eventId) : await rsvpEventAPI(eventId);
 
       if (response.success) {
-        // Update local RSVP state
         const newRsvps = new Set(userRsvps);
         if (isRsvped) {
           newRsvps.delete(eventId);
-          // Remove from registered events
-          setEvents(prev => ({
-            ...prev,
-            registered: prev.registered.filter(event => event._id !== eventId)
-          }));
+          setEvents((prev) => ({ ...prev, registered: prev.registered.filter((e) => e._id !== eventId) }));
         } else {
           newRsvps.add(eventId);
-          // Move event from upcoming to registered
-          const event = events.upcoming.find(e => e._id === eventId);
+          const event = events.upcoming.find((e) => e._id === eventId);
           if (event) {
-            setEvents(prev => ({
+            setEvents((prev) => ({
               ...prev,
               registered: [...prev.registered, { ...event, registeredAt: new Date().toISOString() }],
-              upcoming: prev.upcoming.filter(e => e._id !== eventId)
+              upcoming: prev.upcoming.filter((e) => e._id !== eventId),
             }));
           }
         }
         setUserRsvps(newRsvps);
       } else {
-        alert(response.message || 'RSVP failed');
+        alert(response.message || "RSVP failed");
       }
     } catch (err) {
-      console.error('Error with RSVP:', err);
-      alert('RSVP failed');
+      console.error("Error with RSVP:", err);
+      alert("RSVP failed");
     }
   };
 
   const getFilteredEvents = (eventList) => {
     if (!searchQuery) return eventList;
-    
-    return eventList.filter(event =>
-      event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    return eventList.filter(
+      (event) =>
+        event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        event.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const EventCard = ({ event, showRSVPButton = false, showRegisteredBadge = false }) => (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 border border-gray-800 hover:border-[#9b5de5]/30">
-      {event.coverImage && (
-        <img
-          src={event.coverImage}
-          alt={event.title}
-          className="w-full h-48 object-cover"
-        />
-      )}
-      
+      {event.coverImage && <img src={event.coverImage} alt={event.title} className="w-full h-48 object-cover" />}
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-bold text-white">{event.title}</h3>
           {showRegisteredBadge && (
-            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
-              Registered
-            </span>
+            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">Registered</span>
           )}
         </div>
-        
-        <p className="text-gray-400 text-sm mb-2">
-          📅 {formatDate(event.date)}
-        </p>
-        
-        <p className="text-gray-400 text-sm mb-3">
-          📍 {event.location || 'Location TBD'}
-        </p>
-
-        {event.description && (
-          <p className="text-gray-300 text-sm mb-3 line-clamp-2">
-            {event.description}
-          </p>
-        )}
-
+        <p className="text-gray-400 text-sm mb-2">📅 {formatDate(event.date)}</p>
+        <p className="text-gray-400 text-sm mb-3">📍 {event.location || "Location TBD"}</p>
+        {event.description && <p className="text-gray-300 text-sm mb-3 line-clamp-2">{event.description}</p>}
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {event.tags.slice(0, 3).map((tag, idx) => (
-              <span
-                key={idx}
-                className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs"
-              >
-                {tag}
-              </span>
+              <span key={idx} className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs">{tag}</span>
             ))}
-            {event.tags.length > 3 && (
-              <span className="text-gray-400 text-xs px-2 py-1">
-                +{event.tags.length - 3} more
-              </span>
-            )}
+            {event.tags.length > 3 && <span className="text-gray-400 text-xs px-2 py-1">+{event.tags.length - 3} more</span>}
           </div>
         )}
-
         <div className="flex items-center justify-between mb-3">
-          <p className="text-gray-400 text-xs">
-            👥 {event.participants || 0} participants
-          </p>
+          <p className="text-gray-400 text-xs">👥 {event.participants || 0} participants</p>
           {event.fee !== undefined && (
-            <p className="text-sm font-medium">
-              {event.fee === 0 ? (
-                <span className="text-green-400">Free</span>
-              ) : (
-                <span className="text-blue-400">₹{event.fee}</span>
-              )}
-            </p>
+            <p className="text-sm font-medium">{event.fee === 0 ? <span className="text-green-400">Free</span> : <span className="text-blue-400">₹{event.fee}</span>}</p>
           )}
         </div>
-
         <div className="flex gap-2">
-          <button
-            onClick={() => setSelectedEvent(event)}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg transition-colors text-white text-sm"
-          >
+          <button onClick={() => setSelectedEvent(event)} className="flex-1 bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg transition-colors text-white text-sm">
             View Details
           </button>
           {showRSVPButton && (
-            <button
-              onClick={() => handleRSVP(event._id)}
-              className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                userRsvps.has(event._id)
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-[#9b5de5] hover:bg-[#8c4be1] text-white'
-              }`}
-            >
-              {userRsvps.has(event._id) ? 'Cancel' : 'RSVP'}
+            <button onClick={() => handleRSVP(event._id)} className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${userRsvps.has(event._id) ? "bg-red-600 hover:bg-red-700 text-white" : "bg-[#9b5de5] hover:bg-[#8c4be1] text-white"}`}>
+              {userRsvps.has(event._id) ? "Cancel" : "RSVP"}
             </button>
           )}
         </div>
@@ -300,74 +215,33 @@ const Events = () => {
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
-      
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 sm:translate-x-0`}
-      >
+      {sidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden" onClick={() => setSidebarOpen(false)} />}
+      <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 sm:translate-x-0`}>
         <Sidebar />
       </div>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        
-        {/* Top Navigation */}
-        <NavBar
-          onOpenSidebar={() => setSidebarOpen(true)}
-          eventsData={[]} 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-        />
-
-        {/* Page Content */}
+        <NavBar onOpenSidebar={() => setSidebarOpen(true)} eventsData={[]} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold text-white">My Events</h1>
               <p className="text-gray-400 mt-1">Manage your event registrations and discover new events</p>
             </div>
-            <button
-              onClick={loadUserEvents}
-              className="mt-4 sm:mt-0 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors text-sm"
-            >
-              🔄 Refresh
-            </button>
+            <button onClick={loadUserEvents} className="mt-4 sm:mt-0 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors text-sm">🔄 Refresh</button>
           </div>
-
-          {/* Tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
             {[
               { key: "registered", label: "Registered", count: events.registered.length },
               { key: "upcoming", label: "Discover", count: events.upcoming.length },
               { key: "past", label: "Past Events", count: events.past.length },
-              { key: "saved", label: "Saved", count: events.saved.length }
+              { key: "saved", label: "Saved", count: events.saved.length },
             ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setSelectedTab(tab.key)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedTab === tab.key
-                    ? "bg-[#9b5de5] text-white"
-                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                }`}
-              >
+              <button key={tab.key} onClick={() => setSelectedTab(tab.key)} className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedTab === tab.key ? "bg-[#9b5de5] text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}>
                 {tab.label} ({tab.count})
               </button>
             ))}
           </div>
 
-          {/* Loading State */}
           {loading && (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9b5de5]"></div>
@@ -375,20 +249,13 @@ const Events = () => {
             </div>
           )}
 
-          {/* Error State */}
           {error && (
             <div className="bg-red-900/20 border border-red-500 rounded-lg p-4 mb-6">
               <p className="text-red-400">{error}</p>
-              <button
-                onClick={loadUserEvents}
-                className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-              >
-                Retry
-              </button>
+              <button onClick={loadUserEvents} className="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors">Retry</button>
             </div>
           )}
 
-          {/* Events Content */}
           {!loading && !error && (
             <div>
               {selectedTab === "registered" && (
@@ -467,19 +334,82 @@ const Events = () => {
         </div>
       </div>
 
-      {/* Event Details Modal */}
-      {selectedEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <EventDetailsModal
-              event={selectedEvent}
-              onBack={() => setSelectedEvent(null)}
-              onRSVP={handleRSVP}
-              isRsvped={userRsvps.has(selectedEvent._id)}
-            />
-          </div>
+      {/* Fully Styled Event Details Modal */}
+{selectedEvent && (
+  <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-6 bg-black/40 backdrop-blur-sm">
+    <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl md:max-w-2xl lg:max-w-2xl xl:max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-700 p-6 relative">
+
+      {/* Close Button (Top Left) */}
+      <button
+        onClick={() => setSelectedEvent(null)}
+        className="absolute top-5 left-5 text-gray-400 hover:text-white transition-colors text-2xl font-bold z-50"
+      >
+        &times;
+      </button>
+
+      {/* Share Button (Top Right) */}
+      <div className="absolute top-5 right-5 z-50">
+        <ShareButton event={selectedEvent} />
+      </div>
+
+      {/* Event Image - make it rounded */}
+  {selectedEvent.coverImage && (
+        <div className="flex justify-center mb-4">
+          <img
+            src={selectedEvent.coverImage}
+            alt={selectedEvent.title}
+            className="w-65 sm:w-80 md:w-80 lg:w-80 h-48 sm:h-52 md:h-56 lg:h-56 object-cover rounded-2xl "
+          />
         </div>
       )}
+      {/* Rest of modal content remains same */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <h2 className="text-2xl font-bold text-white">{selectedEvent.title}</h2>
+        <span className="mt-2 sm:mt-0 px-3 py-1 bg-[#9b5de5]/20 text-[#d9c4ff] rounded-full text-sm font-medium">
+          {selectedEvent.category}
+        </span>
+      </div>
+
+      <p className="text-gray-400 text-sm mb-2">📅 {formatDate(selectedEvent.date)}</p>
+      <p className="text-gray-400 text-sm mb-4">📍 {selectedEvent.location || "Location TBD"}</p>
+
+      {selectedEvent.description && <p className="text-gray-300 text-sm mb-4">{selectedEvent.description}</p>}
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <p className="text-gray-400 text-sm">👥 {selectedEvent.participants || 0} participants</p>
+        {selectedEvent.fee !== undefined && (
+          <p className="text-sm font-medium mt-2 sm:mt-0">
+            {selectedEvent.fee === 0 ? <span className="text-green-400">Free</span> : <span className="text-blue-400">₹{selectedEvent.fee}</span>}
+          </p>
+        )}
+      </div>
+
+      {selectedEvent.host && (
+        <p className="text-gray-400 text-sm mb-4">🏢 Hosted by: {selectedEvent.host.name} ({selectedEvent.host.organization})</p>
+      )}
+
+      {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {selectedEvent.tags.map((tag, idx) => (
+            <span key={idx} className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row gap-2 mt-4">
+        <button
+          onClick={() => handleRSVP(selectedEvent._id)}
+          className={`flex-1 px-4 py-2 rounded-lg transition-colors text-white font-medium ${
+            userRsvps.has(selectedEvent._id) ? "bg-red-600 hover:bg-red-700" : "bg-[#9b5de5] hover:bg-[#8c4be1]"
+          }`}
+        >
+          {userRsvps.has(selectedEvent._id) ? "Cancel RSVP" : "RSVP"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
