@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import hackathonImg from "../assets/img/de_1.jpeg";
 import workshopImg from "../assets/img/de_2.jpeg";
 import seminarImg from "../assets/img/de_3.jpeg";
-import { Share2, X } from "lucide-react";
+import { X } from "lucide-react";
+import ShareButton from "./ShareButton";
 
 const DiscoverEvents = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -131,19 +132,18 @@ const DiscoverEvents = () => {
         >
           <div className="bg-gray-900/95 rounded-lg max-w-4xl w-full sm:w-[90%] md:w-[80%] overflow-y-auto shadow-xl p-4 sm:p-6 relative">
             {/* Top Bar */}
-            <div className="flex justify-between items-center mb-2 sm:mb-4">
+            <div className="flex justify-between items-center mb-2 sm:mb-4 relative">
               <button
                 onClick={() => setSelectedEvent(null)}
                 className="text-white p-1 rounded-full hover:bg-gray-700"
               >
                 <X className="w-5 h-5" />
               </button>
-              <button
-                className="text-white p-1 rounded-full hover:bg-gray-700"
-                onClick={() => navigator.clipboard.writeText(window.location.href)}
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+
+              <ShareButton
+                title={selectedEvent.title}
+                description={selectedEvent.description}
+              />
             </div>
 
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
