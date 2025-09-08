@@ -739,30 +739,17 @@ const HostEvents = () => {
                 </div>
 
                 {/* Date and Time */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Start Date *</label>
-                    <input
-                      type="datetime-local"
-                      name="date"
-                      value={eventForm.date}
-                      onChange={handleFormChange}
-                      min={getMinDate()}
-                      required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">End Date</label>
-                    <input
-                      type="datetime-local"
-                      name="endDate"
-                      value={eventForm.endDate}
-                      onChange={handleFormChange}
-                      min={eventForm.date || getMinDate()}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Date *</label>
+                  <input
+                    type="datetime-local"
+                    name="date"
+                    value={eventForm.date}
+                    onChange={handleFormChange}
+                    min={getMinDate()}
+                    required
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
                 </div>
 
                 {/* Location */}
