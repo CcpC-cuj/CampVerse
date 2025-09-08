@@ -22,6 +22,9 @@ const Settings = () => {
 
   // active section highlight for top navbar (purely visual; content is stacked)
   const [activeTab, setActiveTab] = useState('profile');
+  
+  // Flag to prevent initial scroll interference
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // notifications state (unchanged functionality)
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -58,6 +61,61 @@ const Settings = () => {
 
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
+
+  // Reset scroll position when component mounts and disable scroll restoration
+  useEffect(() => {
+    // Disable browser scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    
+    // Aggressive scroll reset function
+    const resetScroll = () => {
+      // Reset all possible scroll containers immediately
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+      }
+      
+      // Reset window and document scroll
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+      document.body.scrollTop = 0;
+      document.body.scrollLeft = 0;
+      
+      // Force scroll to top using requestAnimationFrame for immediate effect
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+      });
+    };
+    
+    // Reset immediately
+    resetScroll();
+    
+    // Multiple resets to handle different render phases
+    const timeouts = [
+      setTimeout(resetScroll, 0),
+      setTimeout(resetScroll, 10),
+      setTimeout(resetScroll, 50),
+      setTimeout(() => {
+        resetScroll();
+        setIsInitialLoad(false); // Allow intersection observer to work after reset
+      }, 100)
+    ];
+    
+    return () => {
+      timeouts.forEach(clearTimeout);
+      // Restore normal scroll behavior when leaving
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
 
   // keep inputs synced with user unless editing
   useEffect(() => {
@@ -200,35 +258,41 @@ const Settings = () => {
   // Highlight active tab while scrolling (design only)
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || isInitialLoad) return;
 
-    const options = {
-      root: container,
-      rootMargin: '0px 0px -55% 0px',
-      threshold: 0.2
-    };
+    // Delay the intersection observer to avoid interfering with initial scroll reset
+    const timeoutId = setTimeout(() => {
+      const options = {
+        root: container,
+        rootMargin: '0px 0px -55% 0px',
+        threshold: 0.2
+      };
 
-    const sections = [
-      { id: 'profile', el: profileRef.current },
-      { id: 'authentication', el: authRef.current },
-      { id: 'notifications', el: notificationsRef.current },
-      { id: 'privacy', el: privacyRef.current },
-      { id: 'security', el: securityRef.current }
-    ].filter(s => s.el);
+      const sections = [
+        { id: 'profile', el: profileRef.current },
+        { id: 'authentication', el: authRef.current },
+        { id: 'notifications', el: notificationsRef.current },
+        { id: 'privacy', el: privacyRef.current },
+        { id: 'security', el: securityRef.current }
+      ].filter(s => s.el);
 
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter(e => e.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (visible) {
-        const hit = sections.find(s => s.el === visible.target);
-        if (hit?.id) setActiveTab(hit.id);
-      }
-    }, options);
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) {
+          const hit = sections.find(s => s.el === visible.target);
+          if (hit?.id) setActiveTab(hit.id);
+        }
+      }, options);
 
-    sections.forEach(s => observer.observe(s.el));
-    return () => observer.disconnect();
-  }, []);
+      sections.forEach(s => observer.observe(s.el));
+      
+      return () => observer.disconnect();
+    }, 200); // Delay to let scroll reset complete
+
+    return () => clearTimeout(timeoutId);
+  }, [isInitialLoad]);
 
   return (
     // MATCHED to Dashboard outer gradient + typography
@@ -263,7 +327,8 @@ const Settings = () => {
         {/* scrollable content — MATCHED surface color; stacked sections for scroll-through */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45] scroll-smooth snap-y snap-proximity"
+          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]"
+          style={{ scrollBehavior: 'auto' }}
         >
           <div className="max-w-6xl mx-auto">
             <h1
@@ -280,7 +345,7 @@ const Settings = () => {
             <section
               id="profile"
               ref={profileRef}
-              className="scroll-mt-24 snap-start"
+              className="scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -521,7 +586,7 @@ const Settings = () => {
             <section
               id="authentication"
               ref={authRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-0 sm:p-6 text-white">
                 {/* No functionality change; just wrapped for full-width and visual parity */}
@@ -533,7 +598,7 @@ const Settings = () => {
             <section
               id="notifications"
               ref={notificationsRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -648,7 +713,7 @@ const Settings = () => {
             <section
               id="privacy"
               ref={privacyRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -680,7 +745,7 @@ const Settings = () => {
             <section
               id="security"
               ref={securityRef}
-              className="mt-8 mb-8 scroll-mt-24 snap-start"
+              className="mt-8 mb-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
