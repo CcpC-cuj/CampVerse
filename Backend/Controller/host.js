@@ -8,9 +8,7 @@ async function getHostDashboard(req, res) {
     const userId = req.user.id;
     const events = await Event.find({ hostUserId: userId });
     const totalEvents = events.length;
-    const upcomingEvents = events.filter(
-      (e) => e.schedule && e.schedule.start > new Date(),
-    );
+    const upcomingEvents = events.filter((e) => e.date && e.date > new Date());
 
     // Get detailed analytics for each event
     const eventsWithAnalytics = await Promise.all(

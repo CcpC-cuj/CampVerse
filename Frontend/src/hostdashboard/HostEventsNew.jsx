@@ -120,6 +120,67 @@ const HostEvents = () => {
         console.error('API Error:', response.error);
         setError(`Failed to load events: ${response.error}`);
         setEvents([]);
+      } else {
+        // Mock data for demonstration when API is not working
+        setEvents([
+          {
+            _id: "mock_1",
+            title: "Annual Tech Symposium 2025",
+            description: "A comprehensive technology symposium featuring the latest innovations in AI, blockchain, and cloud computing. Join industry leaders for keynotes, workshops, and networking opportunities.",
+            date: "2025-09-15T09:00:00Z",
+            endDate: "2025-09-15T17:00:00Z",
+            status: "published",
+            participants: 312,
+            maxParticipants: 500,
+            location: "offline",
+            venue: "Memorial Auditorium, CUJ Campus",
+            category: "Technology",
+            fee: 1500,
+            tags: ["Technology", "Innovation", "Networking", "AI"],
+            coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+            host: { name: user?.name || "You", organization: "CUJ" },
+            contactEmail: user?.email,
+            registrationDeadline: "2025-09-10T23:59:00Z"
+          },
+          {
+            _id: "mock_2", 
+            title: "Summer Hackathon 2025",
+            description: "48-hour coding marathon for innovative solutions. Build, innovate, and compete for amazing prizes. Open to all skill levels.",
+            date: "2025-09-22T10:00:00Z",
+            endDate: "2025-09-24T10:00:00Z",
+            status: "draft",
+            participants: 156,
+            maxParticipants: 200,
+            location: "offline",
+            venue: "Engineering Block, CUJ",
+            category: "Programming",
+            fee: 0,
+            tags: ["Programming", "Innovation", "Competition", "Hackathon"],
+            coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800",
+            host: { name: user?.name || "You", organization: "CUJ" },
+            contactEmail: user?.email,
+            registrationDeadline: "2025-09-20T23:59:00Z"
+          },
+          {
+            _id: "mock_3",
+            title: "International Cultural Festival",
+            description: "Celebrating diversity and cultural exchange through music, dance, art, and food from around the world.",
+            date: "2025-10-05T11:00:00Z", 
+            endDate: "2025-10-07T20:00:00Z",
+            status: "published",
+            participants: 789,
+            maxParticipants: 1000,
+            location: "offline",
+            venue: "Central Lawn, CUJ Campus",
+            category: "Cultural",
+            fee: 500,
+            tags: ["Cultural", "International", "Festival", "Music", "Dance"],
+            coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
+            host: { name: user?.name || "You", organization: "CUJ" },
+            contactEmail: user?.email,
+            registrationDeadline: "2025-10-01T23:59:00Z"
+          }
+        ]);
       }
     } catch (err) {
       console.error('Error loading events:', err);
@@ -220,25 +281,45 @@ const HostEvents = () => {
         }
       }
       
-      // Map frontend fields to backend Event model fields
-      const eventData = {
-        title: eventForm.title,
-        description: eventForm.description,
-        type: eventForm.category, // Map category to type
-        organizer: eventForm.organizer || 'Event Organizer', // Use dedicated organizer field
-        location: {
-          type: eventForm.location,
-          venue: eventForm.venue
-        },
-        capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
-        schedule: {
-          start: eventForm.date,
-          end: eventForm.endDate || eventForm.date, // If no end date, use start date
-        },
-        isPaid: eventForm.isPaid,
-        price: eventForm.isPaid && eventForm.fee ? parseFloat(eventForm.fee) : 0,
-        tags: eventForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-      };
+          const eventData = {
+            title: eventForm.title,
+            description: eventForm.description,
+            type: eventForm.category, // Map category to type
+            organizer: typeof eventForm.organizer === 'object' && eventForm.organizer !== null
+              ? eventForm.organizer.name || JSON.stringify(eventForm.organizer)
+              : eventForm.organizer || 'Event Organizer',
+            location: {
+              type: eventForm.location,
+              venue: eventForm.venue,
+              eventLink: eventForm.eventLink || ''
+            },
+            capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
+            schedule: {
+              start: eventForm.date,
+              end: eventForm.endDate || eventForm.date, // If no end date, use start date
+            },
+            isPaid: eventForm.isPaid,
+            price: eventForm.isPaid ? parseFloat(eventForm.fee) : 0,
+            tags: Array.isArray(eventForm.tags)
+              ? eventForm.tags
+              : typeof eventForm.tags === 'string'
+                ? eventForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+                : [],
+            requirements: eventForm.requirements
+              ? eventForm.requirements.split('\n').map(r => r.trim()).filter(Boolean)
+              : [],
+            socialLinks: {
+              website: eventForm.socialLinks?.website || '',
+              linkedin: eventForm.socialLinks?.linkedin || ''
+            },
+            participants: typeof eventForm.participants === 'number'
+              ? eventForm.participants
+              : Array.isArray(eventForm.participants)
+                ? eventForm.participants.length
+                : eventForm.participants && typeof eventForm.participants === 'object'
+                  ? Object.keys(eventForm.participants).length
+                  : 0,
+          };
 
       console.log('Sending event data:', eventData);
 
@@ -548,15 +629,43 @@ const HostEvents = () => {
                   </p>
                 </div>
               ) : (
-                getFilteredEvents().map((event) => (
-                  <EnhancedHostEventCard
-                    key={event._id}
-                    event={event}
-                    onEdit={() => handleEditEvent(event)}
-                    onDelete={() => handleDeleteEvent(event._id)}
-                    onViewParticipants={handleViewParticipants}
-                  />
-                ))
+                getFilteredEvents().map((event) => {
+                  // Defensive: ensure tags is always array
+                  const safeTags = Array.isArray(event.tags)
+                    ? event.tags
+                    : typeof event.tags === 'string'
+                      ? event.tags.split(',').map(t => t.trim()).filter(Boolean)
+                      : [];
+                  // Defensive: ensure participants is always a number
+                  let safeParticipants = 0;
+                  if (typeof event.participants === 'number') {
+                    safeParticipants = event.participants;
+                  } else if (Array.isArray(event.participants)) {
+                    safeParticipants = event.participants.length;
+                  } else if (event.participants && typeof event.participants === 'object') {
+                    safeParticipants = Object.keys(event.participants).length;
+                  }
+                  // Defensive: ensure organizer is string or object
+                  let safeOrganizer = event.organizer;
+                  if (typeof event.organizer === 'object' && event.organizer !== null) {
+                    safeOrganizer = event.organizer.name || JSON.stringify(event.organizer);
+                  }
+                  // Pass safe props to card
+                  return (
+                    <EnhancedHostEventCard
+                      key={event._id}
+                      event={{
+                        ...event,
+                        tags: safeTags,
+                        participants: safeParticipants,
+                        organizer: safeOrganizer
+                      }}
+                      onEdit={() => handleEditEvent(event)}
+                      onDelete={() => handleDeleteEvent(event._id)}
+                      onViewParticipants={handleViewParticipants}
+                    />
+                  );
+                })
               )}
             </div>
           )}
@@ -673,17 +782,34 @@ const HostEvents = () => {
                       <option value="hybrid">Hybrid</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Venue</label>
-                    <input
-                      type="text"
-                      name="venue"
-                      value={eventForm.venue}
-                      onChange={handleFormChange}
-                      placeholder="Venue name or online platform"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
+                  {eventForm.location === 'offline' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Venue *</label>
+                      <input
+                        type="text"
+                        name="venue"
+                        value={eventForm.venue}
+                        onChange={handleFormChange}
+                        required
+                        placeholder="Venue name"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
+                  {eventForm.location === 'online' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Event Link *</label>
+                      <input
+                        type="url"
+                        name="eventLink"
+                        value={eventForm.eventLink || ''}
+                        onChange={handleFormChange}
+                        required
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Category and Participants */}
@@ -730,7 +856,7 @@ const HostEvents = () => {
                         name="isPaid"
                         value="false"
                         checked={!eventForm.isPaid}
-                        onChange={(e) => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
+                        onChange={() => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
                         className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
                       />
                       <span className="text-white">Free Event</span>
@@ -741,13 +867,12 @@ const HostEvents = () => {
                         name="isPaid"
                         value="true"
                         checked={eventForm.isPaid}
-                        onChange={(e) => setEventForm(prev => ({ ...prev, isPaid: true }))}
+                        onChange={() => setEventForm(prev => ({ ...prev, isPaid: true }))}
                         className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
                       />
                       <span className="text-white">Paid Event</span>
                     </label>
                   </div>
-                  
                   {eventForm.isPaid && (
                     <div className="mb-4">
                       <label className="block text-sm font-medium mb-2">Registration Fee (₹) *</label>
@@ -762,6 +887,15 @@ const HostEvents = () => {
                         placeholder="Enter amount"
                         className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
                       />
+                      {/* Payment Info Button (disabled until required fields are filled) */}
+                      <button
+                        type="button"
+                        disabled={!eventForm.fee || !eventForm.title || !eventForm.date}
+                        className="mt-2 w-full px-3 py-2 bg-gray-600 text-white rounded-lg font-medium disabled:opacity-50"
+                        onClick={() => alert('Payment info integration coming soon!')}
+                      >
+                        Add Payment Info
+                      </button>
                     </div>
                   )}
                 </div>
@@ -803,7 +937,105 @@ const HostEvents = () => {
                   </div>
                 </div>
 
-                {/* Event Image */}
+                {/* Organizer Info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Organizer Name *</label>
+                    <input
+                      type="text"
+                      name="organizer.name"
+                      value={eventForm.organizer?.name || ''}
+                      onChange={handleFormChange}
+                      required
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Organizer Email *</label>
+                    <input
+                      type="email"
+                      name="organizer.email"
+                      value={eventForm.organizer?.email || ''}
+                      onChange={handleFormChange}
+                      required
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Organizer Institution</label>
+                  <input
+                    type="text"
+                    name="organizer.institution"
+                    value={eventForm.organizer?.institution || ''}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Co-hosts */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Co-hosts (comma-separated emails)</label>
+                  <input
+                    type="text"
+                    name="cohosts"
+                    value={eventForm.cohosts || ''}
+                    onChange={handleFormChange}
+                    placeholder="email1@example.com, email2@example.com"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Sessions/Agenda */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Sessions/Agenda</label>
+                  <textarea
+                    name="sessions"
+                    value={eventForm.sessions || ''}
+                    onChange={handleFormChange}
+                    rows={3}
+                    placeholder="Session 1: Title, Speaker, Time\nSession 2: ..."
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Verification & Featured */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Verified Event</label>
+                    <input
+                      type="checkbox"
+                      name="verified"
+                      checked={!!eventForm.verified}
+                      onChange={e => handleFormChange({ target: { name: 'verified', value: e.target.checked } })}
+                      className="mr-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Featured Event</label>
+                    <input
+                      type="checkbox"
+                      name="featured"
+                      checked={!!eventForm.featured}
+                      onChange={e => handleFormChange({ target: { name: 'featured', value: e.target.checked } })}
+                      className="mr-2"
+                    />
+                  </div>
+                </div>
+
+                {/* Waitlist */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Enable Waitlist</label>
+                  <input
+                    type="checkbox"
+                    name="waitlistEnabled"
+                    checked={!!eventForm.waitlistEnabled}
+                    onChange={e => handleFormChange({ target: { name: 'waitlistEnabled', value: e.target.checked } })}
+                    className="mr-2"
+                  />
+                </div>
+
+                {/* Event Images */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Event Banner Image</label>
@@ -815,9 +1047,9 @@ const HostEvents = () => {
                       accept="image/*"
                       className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
                     />
-                    {bannerUrl && (
+                    {(bannerUrl || eventForm.banner) && (
                       <div className="mt-2 w-full h-24 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden border border-gray-700">
-                        <img src={bannerUrl} alt="Banner Preview" className="object-cover w-full h-full" />
+                        <img src={bannerUrl || eventForm.banner} alt="Banner Preview" className="object-cover w-full h-full" />
                       </div>
                     )}
                   </div>
@@ -831,9 +1063,9 @@ const HostEvents = () => {
                       accept="image/*"
                       className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
                     />
-                    {logoUrl && (
+                    {(logoUrl || eventForm.logo) && (
                       <div className="mt-2 flex items-center justify-center">
-                        <img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
+                        <img src={logoUrl || eventForm.logo} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
                       </div>
                     )}
                   </div>

@@ -12,9 +12,104 @@ const HostApplications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with actual API call to fetch applications when backend is ready
-    setApplications([]);
-    setLoading(false);
+    // Mock data - replace with actual API call
+    const mockApplications = [
+      {
+        id: "app_1",
+        applicant: {
+          name: "Emily Morrison",
+          email: "emily.morrison@stanford.edu",
+          avatar: "https://readdy.ai/api/search-image?query=professional%20portrait%20young%20woman&width=100&height=100&seq=1",
+          department: "Computer Science",
+          year: "3rd Year",
+          gpa: "3.8"
+        },
+        event: "Annual Tech Symposium",
+        eventId: "evt_1",
+        appliedDate: "2025-06-10T14:30:00Z",
+        status: "pending",
+        message: "I'm very interested in participating in this symposium as it aligns with my research in AI.",
+        experience: "Previous experience in 3 hackathons and 2 tech conferences",
+        portfolio: "https://github.com/emily-morrison"
+      },
+      {
+        id: "app_2",
+        applicant: {
+          name: "Ryan Khatri",
+          email: "ryan.khatri@stanford.edu",
+          avatar: "https://readdy.ai/api/search-image?query=professional%20portrait%20young%20man&width=100&height=100&seq=2",
+          department: "Electrical Engineering",
+          year: "4th Year",
+          gpa: "3.9"
+        },
+        event: "Summer Hackathon 2025",
+        eventId: "evt_2",
+        appliedDate: "2025-06-09T09:15:00Z",
+        status: "pending",
+        message: "Looking forward to collaborating on innovative solutions during this hackathon.",
+        experience: "Team lead in university robotics club, 5+ hackathon participations",
+        portfolio: "https://ryankhatri.dev"
+      },
+      {
+        id: "app_3",
+        applicant: {
+          name: "Aisha Zhang",
+          email: "aisha.zhang@stanford.edu",
+          avatar: "https://readdy.ai/api/search-image?query=professional%20portrait%20young%20asian%20woman&width=100&height=100&seq=3",
+          department: "International Relations",
+          year: "2nd Year",
+          gpa: "3.7"
+        },
+        event: "International Cultural Festival",
+        eventId: "evt_3",
+        appliedDate: "2025-06-08T16:45:00Z",
+        status: "approved",
+        message: "As an international student, I would love to contribute to cultural exchange activities.",
+        experience: "Cultural ambassador, organized 3 international events",
+        portfolio: "https://linkedin.com/in/aisha-zhang"
+      },
+      {
+        id: "app_4",
+        applicant: {
+          name: "James Rodriguez",
+          email: "james.rodriguez@stanford.edu",
+          avatar: "https://readdy.ai/api/search-image?query=professional%20portrait%20latino%20man&width=100&height=100&seq=4",
+          department: "Business School",
+          year: "1st Year MBA",
+          gpa: "3.6"
+        },
+        event: "Annual Tech Symposium",
+        eventId: "evt_1",
+        appliedDate: "2025-06-08T11:20:00Z",
+        status: "rejected",
+        message: "Interested in the business applications of emerging technologies discussed in the symposium.",
+        experience: "5 years industry experience, startup founder",
+        portfolio: "https://jamesrodriguez.business"
+      },
+      {
+        id: "app_5",
+        applicant: {
+          name: "Sophie Chen",
+          email: "sophie.chen@stanford.edu",
+          avatar: "https://readdy.ai/api/search-image?query=professional%20portrait%20asian%20woman%20glasses&width=100&height=100&seq=5",
+          department: "Computer Science",
+          year: "PhD Candidate",
+          gpa: "4.0"
+        },
+        event: "Summer Hackathon 2025",
+        eventId: "evt_2",
+        appliedDate: "2025-06-07T13:10:00Z",
+        status: "waitlisted",
+        message: "PhD research focuses on machine learning applications. Would love to apply my research in practical solutions.",
+        experience: "Published 8 research papers, mentor at coding bootcamp",
+        portfolio: "https://sophiechen.research.stanford.edu"
+      }
+    ];
+    
+    setTimeout(() => {
+      setApplications(mockApplications);
+      setLoading(false);
+    }, 1000);
   }, []);
 
   const filteredApplications = applications.filter(app => {

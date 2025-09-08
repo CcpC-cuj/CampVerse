@@ -453,7 +453,7 @@ async function getInstitutionDashboard(req, res) {
               {
                 $sortArray: {
                   input: '$events',
-                  sortBy: { 'schedule.start': -1 }
+                  sortBy: { 'date': -1 }
                 }
               },
               5

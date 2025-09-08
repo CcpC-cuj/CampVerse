@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { listEvents, rsvpEvent as rsvpEventAPI, getEventById } from "../api/events";
+import React, { useState } from "react";
+import hackathonImg from "../assets/img/de_1.jpeg";
+import workshopImg from "../assets/img/de_2.jpeg";
+import seminarImg from "../assets/img/de_3.jpeg";
 import { X } from "lucide-react";
 import ShareButton from "./ShareButton";
 
@@ -7,57 +9,70 @@ const DiscoverEvents = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [userRsvps, setUserRsvps] = useState(new Set());
   const [successMsg, setSuccessMsg] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [events, setEvents] = useState([]);
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await listEvents();
-        const list = (res?.data && res.data.events) || res?.events || [];
-        if (!mounted) return;
-        const normalized = list.map(ev => ({
-          id: ev._id,
-          title: ev.title,
-          date: ev.date ? new Date(ev.date).toLocaleDateString() : '',
-          time: ev.date ? new Date(ev.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-          location: ev.location || 'Online',
-          host: ev.host?.name || ev.organizer,
-          participants: ev.participants || 0,
-          tags: Array.isArray(ev.tags) ? ev.tags : (typeof ev.tags === 'string' ? ev.tags.split(',').map(t => t.trim()).filter(Boolean) : []),
-          description: ev.description || '',
-          image: ev.coverImage || ev.bannerURL,
-        }));
-        setEvents(normalized);
-      } catch (e) {
-        setError('Failed to load events');
-        setEvents([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+  const events = [
+    {
+      id: 1,
+      title: "Annual Tech Symposium 2025",
+      date: "September 15, 2025",
+      time: "02:30 PM",
+      location: "CUJ Campus",
+      host: "CUJ Tech Club",
+      participants: 312,
+      tags: ["Technology", "Innovation", "Networking"],
+      description:
+        "A comprehensive technology symposium featuring the latest innovations in AI, robotics, and software development.",
+      sessions: [
+        { title: "Opening Keynote", time: "02:30 PM", speaker: "Dr. A. Kumar" },
+        { title: "AI & Robotics Panel", time: "03:30 PM", speaker: "Prof. S. Mehta" },
+        { title: "Networking & Closing", time: "05:00 PM", speaker: "CUJ Team" },
+      ],
+      image: hackathonImg,
+    },
+    {
+      id: 2,
+      title: "Hands-On Workshop",
+      date: "October 01, 2025",
+      time: "10:00 AM",
+      location: "Online",
+      host: "SkillUp Labs",
+      participants: 120,
+      tags: ["Skills", "Training"],
+      description:
+        "An online hands-on workshop designed to build real-world technical and soft skills. Get guidance from industry experts.",
+      sessions: [
+        { title: "Introduction & Setup", time: "10:00 AM", speaker: "Mr. R. Singh" },
+        { title: "Coding Challenge", time: "11:00 AM", speaker: "Ms. P. Sharma" },
+        { title: "Q&A & Wrap Up", time: "01:00 PM", speaker: "Team SkillUp" },
+      ],
+      image: workshopImg,
+    },
+    {
+      id: 3,
+      title: "Professional Seminar",
+      date: "October 10, 2025",
+      time: "09:00 AM",
+      location: "Ranchi Auditorium",
+      host: "CUJ Events",
+      participants: 200,
+      tags: ["Networking", "Talk"],
+      description:
+        "A one-day seminar bringing together professionals, researchers, and students for discussions, talks, and networking opportunities.",
+      sessions: [
+        { title: "Welcome & Introduction", time: "09:00 AM", speaker: "CUJ Team" },
+        { title: "Industry Insights", time: "10:00 AM", speaker: "Prof. K. Roy" },
+        { title: "Panel Discussion", time: "11:30 AM", speaker: "Guest Panelists" },
+      ],
+      image: seminarImg,
+    },
+  ];
 
-  const handleRSVP = async (event) => {
-    try {
-      const res = await rsvpEventAPI(event.id);
-      if (res?.success) {
+  const handleRSVP = (event) => {
+    if (!userRsvps.has(event.id)) {
       const newRsvps = new Set(userRsvps);
       newRsvps.add(event.id);
       setUserRsvps(newRsvps);
       setSuccessMsg("You have successfully RSVPed!");
-        setTimeout(() => setSuccessMsg(""), 3000);
-      } else {
-        setSuccessMsg(res?.error || res?.message || 'RSVP failed');
-        setTimeout(() => setSuccessMsg(""), 3000);
-      }
-    } catch (e) {
-      setSuccessMsg('RSVP failed');
       setTimeout(() => setSuccessMsg(""), 3000);
     }
   };
@@ -72,36 +87,24 @@ const DiscoverEvents = () => {
     <div className="bg-transparent rounded-lg p-4 sm:p-6">
       <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-white">Discover Events</h2>
 
-      {loading && (
-        <div className="text-gray-400">Loading events...</div>
-      )}
-      {error && (
-        <div className="text-red-400">{error}</div>
-      )}
-      {!loading && !error && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {events.length === 0 && (
-          <div className="text-gray-400 col-span-full">No events available</div>
-        )}
         {events.map((event) => (
           <div
             key={event.id}
             className="bg-gray-900 rounded-lg overflow-hidden shadow hover:shadow-xl transition duration-300 border border-gray-800 hover:border-[#9b5de5]/30"
           >
-            {event.image && (
             <img
               src={event.image}
               alt={event.title}
               className="w-full h-48 sm:h-52 md:h-56 object-cover"
             />
-            )}
             <div className="p-4 flex flex-col justify-between">
               <h3 className="text-lg sm:text-base font-bold text-white truncate">{event.title}</h3>
               <p className="text-gray-400 text-sm mt-1 truncate">
                 {event.date} • {event.location}
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
-                {event.tags && event.tags.map((tag, idx) => (
+                {event.tags.map((tag, idx) => (
                   <span
                     key={idx}
                     className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs sm:text-[10px]"
@@ -120,7 +123,6 @@ const DiscoverEvents = () => {
           </div>
         ))}
       </div>
-      )}
 
       {/* Event Modal */}
       {selectedEvent && (
@@ -182,8 +184,6 @@ const DiscoverEvents = () => {
                   <h3 className="font-semibold text-white">About</h3>
                   <p className="text-sm sm:text-base">{selectedEvent.description}</p>
 
-                  {Array.isArray(selectedEvent.sessions) && selectedEvent.sessions.length > 0 && (
-                    <>
                   <h3 className="font-semibold text-white mt-2">Sessions</h3>
                   <ul className="list-disc list-inside text-sm sm:text-base space-y-1">
                     {selectedEvent.sessions.map((s, i) => (
@@ -192,11 +192,7 @@ const DiscoverEvents = () => {
                       </li>
                     ))}
                   </ul>
-                    </>
-                  )}
 
-                  {Array.isArray(selectedEvent.tags) && selectedEvent.tags.length > 0 && (
-                    <>
                   <h3 className="font-semibold text-white mt-2">Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {selectedEvent.tags.map((tag, idx) => (
@@ -208,8 +204,6 @@ const DiscoverEvents = () => {
                       </span>
                     ))}
                   </div>
-                    </>
-                  )}
                 </div>
               </div>
 
@@ -221,13 +215,7 @@ const DiscoverEvents = () => {
 
               <div className="flex flex-col sm:flex-row gap-3 mt-4">
                 <button
-                  onClick={async () => {
-                    try {
-                      const details = await getEventById(selectedEvent.id);
-                      setSelectedEvent(prev => ({ ...prev, ...details }));
-                    } catch {}
-                    await handleRSVP(selectedEvent);
-                  }}
+                  onClick={() => handleRSVP(selectedEvent)}
                   className={`flex-1 px-4 py-2 rounded-lg text-white transition-colors text-sm sm:text-base ${
                     userRsvps.has(selectedEvent.id)
                       ? "bg-gray-400 cursor-not-allowed"

@@ -23,7 +23,7 @@ async function getEventRecommendations(req, res) {
 
     // Get user's event history
     const userHistory = await EventParticipationLog.find({ userId })
-      .populate('eventId', 'title description tags type organizer schedule')
+      .populate('eventId', 'title description tags type organizer date')
       .sort({ timestamp: -1 })
       .limit(20);
 
@@ -57,7 +57,7 @@ async function getEventRecommendations(req, res) {
     // Get available events for recommendation
     const availableEvents = await Event.find({
       verificationStatus: 'approved',
-      'schedule.start': { $gte: new Date() },
+      date: { $gte: new Date() },
     }).select(
       'title description tags type organizer schedule hostUserId institutionId',
     );
@@ -72,7 +72,7 @@ async function getEventRecommendations(req, res) {
         type: event.type,
         tags: event.tags || [],
         organizer: event.organizer,
-        schedule: event.schedule,
+        date: event.date,
       })),
       limit: parseInt(limit),
       page: parseInt(page),
@@ -248,7 +248,7 @@ async function getSimilarEvents(req, res) {
     const similarEvents = await Event.find({
       _id: { $ne: eventId },
       verificationStatus: 'approved',
-      'schedule.start': { $gte: new Date() },
+      date: { $gte: new Date() },
       $or: [
         { tags: { $in: event.tags || [] } },
         { type: event.type },
@@ -257,7 +257,7 @@ async function getSimilarEvents(req, res) {
     })
       .populate('hostUserId', 'name email')
       .limit(parseInt(limit))
-      .sort({ 'schedule.start': 1 });
+      .sort({ date: 1 });
 
     const recommendations = similarEvents.map((similarEvent) => ({
       eventId: similarEvent._id,
@@ -270,7 +270,7 @@ async function getSimilarEvents(req, res) {
         tags: similarEvent.tags,
         type: similarEvent.type,
         organizer: similarEvent.organizer,
-        schedule: similarEvent.schedule,
+        date: similarEvent.date,
         host: similarEvent.hostUserId,
         verificationStatus: similarEvent.verificationStatus,
         isPaid: similarEvent.isPaid,
