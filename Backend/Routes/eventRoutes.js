@@ -15,6 +15,7 @@ const {
   rejectCoHost,
   verifyEvent,
   getGoogleCalendarLink,
+  getUserQrCode,
 } = require('../Controller/event');
 const {
   advancedEventSearch,
@@ -31,45 +32,18 @@ const {
   requireHostOrCoHost,
   requireVerifier,
 } = require('../Middleware/permissions');
+// const EventParticipationLog = require('../Models/EventParticipationLog');
 
 const router = express.Router();
 
-// Public list events endpoint for browsing (used by tests and landing pages)
-router.get('/', async (req, res) => {
-  try {
-    // Check if user is authenticated
-    const isAuthenticated = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
-    
-    let query = {};
-    if (!isAuthenticated) {
-      // Only show approved events to anonymous users
-      query.verificationStatus = 'approved';
-    }
-    // Authenticated users can see all events (approved, pending) so they can RSVP
-    
-    const events = await require('../Models/Event')
-      .find(query)
-      .populate('hostUserId', 'name email profilePicture')
-      .limit(50)
-      .sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      data: {
-        events: events,
-        total: events.length
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error fetching events.',
-      message: 'Failed to load events'
-    });
-  }
-});
+// Public list events endpoint
+router.get('/', require('../Controller/event').listEvents);
 
 // Advanced event search (filter, sort, paginate) - placed before '/:id' to avoid route collisions
 router.get('/search', authenticateToken, advancedEventSearch);
+
+// Get user's registered events (place before '/:id' to avoid collisions)
+router.get('/user', authenticateToken, require('../Controller/event').getUserEvents);
 
 /**
  * @swagger
@@ -445,6 +419,9 @@ router.post(
  */
 router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 
+// Get current user's QR code image for an event they RSVPed to
+router.get('/:id/qrcode', authenticateToken, getUserQrCode);
+
 // Advanced event search (filter, sort, paginate)
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
@@ -489,49 +466,5 @@ router.get(
   requireRole('platformAdmin'),
   getZeroResultSearches,
 );
-
-// Get user's registered events
-router.get('/user', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    // Get events user has registered for via EventParticipationLog
-    const participationLogs = await require('../Models/EventParticipationLog')
-      .find({ userId })
-      .populate({
-        path: 'eventId',
-        populate: {
-          path: 'hostUserId',
-          select: 'name email profilePicture'
-        }
-      })
-      .sort({ registeredAt: -1 });
-    
-    // Extract events and add user-specific info
-    const events = participationLogs.map(log => ({
-      ...log.eventId.toObject(),
-      userRegistration: {
-        status: log.status,
-        registeredAt: log.registeredAt,
-        qrToken: log.qrToken
-      }
-    }));
-    
-    res.json({
-      success: true,
-      data: {
-        events,
-        total: events.length
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching user events:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error fetching user events.',
-      message: 'Failed to load your events'
-    });
-  }
-});
 
 module.exports = router;

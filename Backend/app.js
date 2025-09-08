@@ -448,6 +448,9 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Healthcheck endpoint for Docker and monitoring
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
+
 // Validate required environment variables (soft-fail locally to avoid exit on dev)
 const requiredEnv = ['JWT_SECRET'];
 for (const key of requiredEnv) {

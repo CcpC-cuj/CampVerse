@@ -44,70 +44,7 @@ const Events = () => {
       if (upcomingRes.success && upcomingRes.data) newEvents.upcoming = upcomingRes.data.events || upcomingRes.data || [];
       if (pastRes.success && pastRes.data) newEvents.past = pastRes.data.events || pastRes.data || [];
 
-      // Mock data if APIs fail
-      if (!userEventsRes.success && !upcomingRes.success && !pastRes.success) {
-        newEvents.registered = [
-          {
-            _id: "mock_reg_1",
-            title: "Annual Tech Symposium 2025",
-            description: "A comprehensive technology symposium featuring the latest innovations",
-            date: "2025-09-15T09:00:00Z",
-            location: "Memorial Auditorium, CUJ Campus",
-            category: "Technology",
-            tags: ["Technology", "Innovation", "Networking"],
-            coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-            participants: 312,
-            host: { name: "Tech Club CUJ", organization: "CUJ" },
-            registeredAt: "2025-09-01T10:00:00Z",
-          },
-        ];
-        newEvents.upcoming = [
-          {
-            _id: "mock_up_1",
-            title: "Web Development Workshop",
-            description: "Learn modern web development with React and Node.js",
-            date: "2025-09-20T14:00:00Z",
-            location: "Computer Lab, CUJ",
-            category: "Programming",
-            tags: ["Web Development", "React", "Node.js"],
-            coverImage: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800",
-            participants: 87,
-            maxParticipants: 50,
-            fee: 500,
-            host: { name: "Code Club", organization: "CUJ" },
-          },
-          {
-            _id: "mock_up_2",
-            title: "Cultural Evening 2025",
-            description: "An evening of music, dance and cultural performances",
-            date: "2025-10-05T18:00:00Z",
-            location: "Central Auditorium, CUJ",
-            category: "Cultural",
-            tags: ["Cultural", "Music", "Dance"],
-            coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
-            participants: 156,
-            fee: 0,
-            host: { name: "Cultural Committee", organization: "CUJ" },
-          },
-        ];
-        newEvents.past = [
-          {
-            _id: "mock_past_1",
-            title: "Spring Hackathon 2025",
-            description: "48-hour coding marathon completed",
-            date: "2025-08-15T10:00:00Z",
-            endDate: "2025-08-17T10:00:00Z",
-            location: "Engineering Block, CUJ",
-            category: "Programming",
-            tags: ["Hackathon", "Programming", "Competition"],
-            coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800",
-            participants: 124,
-            host: { name: "Programming Club", organization: "CUJ" },
-            completedAt: "2025-08-17T10:00:00Z",
-          },
-        ];
-        rsvpSet.add("mock_reg_1");
-      }
+      // No mock data: keep lists empty if APIs fail
 
       setEvents(newEvents);
       setUserRsvps(rsvpSet);

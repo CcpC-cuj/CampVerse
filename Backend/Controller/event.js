@@ -30,21 +30,127 @@ const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
 
+// Public list events endpoint (authenticated users see pending too)
+async function listEvents(req, res) {
+  try {
+    // Discover should show only approved events
+    const query = { verificationStatus: 'approved' };
+    const events = await Event
+      .find(query)
+      .populate('hostUserId', 'name email profilePicture')
+      .limit(50)
+      .sort({ createdAt: -1 });
+    // Participation counts
+    const eventIds = events.map((e) => e._id);
+    const counts = await EventParticipationLog.aggregate([
+      { $match: { eventId: { $in: eventIds } } },
+      {
+        $group: {
+          _id: '$eventId',
+          count: { $sum: 1 },
+          registered: { $sum: { $cond: [{ $eq: ['$status', 'registered'] }, 1, 0] } },
+          attended: { $sum: { $cond: [{ $eq: ['$status', 'attended'] }, 1, 0] } },
+        },
+      },
+    ]);
+    const countsMap = counts.reduce((acc, c) => { acc[String(c._id)] = c; return acc; }, {});
+    const mapped = events.map((ev) => {
+      const c = countsMap[String(ev._id)] || {};
+      const obj = ev.toObject();
+      return {
+        ...obj,
+        date: obj.schedule?.start,
+        endDate: obj.schedule?.end,
+        coverImage: obj.bannerURL,
+        category: obj.type,
+        fee: obj.isPaid ? obj.price || 0 : 0,
+        host: obj.hostUserId ? { name: obj.hostUserId.name, organization: obj.organizer } : undefined,
+        location: obj.location?.venue || (obj.location?.type === 'online' ? 'Online' : obj.organizer),
+        participants: typeof obj.participants?.length === 'number' ? obj.participants.length : c.count || 0,
+        participantsRegistered: c.registered || 0,
+        participantsAttended: c.attended || 0,
+        tags: Array.isArray(obj.tags)
+          ? obj.tags
+          : typeof obj.tags === 'string'
+            ? obj.tags.split(',').map((t) => t.trim()).filter(Boolean)
+            : [],
+      };
+    });
+    res.json({ success: true, data: { events: mapped, total: mapped.length } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Error fetching events.', message: 'Failed to load events' });
+  }
+}
+
+// Get events registered by current user
+async function getUserEvents(req, res) {
+  try {
+    const userId = req.user.id;
+    const participationLogs = await EventParticipationLog
+      .find({ userId })
+      .populate({
+        path: 'eventId',
+        populate: { path: 'hostUserId', select: 'name email profilePicture' }
+      })
+      .sort({ registeredAt: -1 });
+    const events = participationLogs
+      .filter((log) => !!log.eventId)
+      .map((log) => {
+        const eDoc = log.eventId;
+        const e = typeof eDoc.toObject === 'function' ? eDoc.toObject() : eDoc;
+        return {
+          ...e,
+          date: e?.schedule?.start,
+          endDate: e?.schedule?.end,
+          coverImage: e?.bannerURL,
+          category: e?.type,
+          fee: e?.isPaid ? e?.price || 0 : 0,
+          host: e?.hostUserId && e.hostUserId.name ? { name: e.hostUserId.name, organization: e.organizer } : undefined,
+          location: e?.location?.venue || (e?.location?.type === 'online' ? 'Online' : e?.organizer),
+          tags: Array.isArray(e?.tags)
+            ? e.tags
+            : typeof e?.tags === 'string'
+              ? e.tags.split(',').map((t) => t.trim()).filter(Boolean)
+              : [],
+          userRegistration: {
+            status: log.status,
+            registeredAt: log.registeredAt || log.timestamp,
+            qrToken: log.qrToken,
+          },
+        };
+      });
+    res.json({ success: true, data: { events, total: events.length } });
+  } catch (err) {
+    console.error('Error fetching user events:', err);
+    res.status(500).json({ success: false, error: 'Error fetching user events.', message: 'Failed to load your events' });
+  }
+}
+
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
   try {
     const {
       title,
       description,
-      tags,
       type,
       organizer,
-      location,
       capacity,
-      schedule,
       isPaid,
       price,
     } = req.body;
+    // Parse potentially stringified fields from multipart/form-data
+    let schedule = req.body.schedule;
+    let location = req.body.location;
+    let tags = req.body.tags;
+    if (typeof schedule === 'string') {
+      try { schedule = JSON.parse(schedule); } catch (_) {}
+    }
+    if (typeof location === 'string') {
+      try { location = JSON.parse(location); } catch (_) {}
+    }
+    if (typeof tags === 'string') {
+      try { tags = JSON.parse(tags); } catch (_) { tags = tags.split(',').map((t) => t.trim()).filter(Boolean); }
+    }
     let logoURL, bannerURL;
     
     // File upload using storage service
@@ -106,7 +212,17 @@ async function getEventById(req, res) {
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
-    const update = req.body;
+    const update = { ...req.body };
+    // Parse potentially stringified fields from multipart/form-data
+    if (typeof update.schedule === 'string') {
+      try { update.schedule = JSON.parse(update.schedule); } catch (_) {}
+    }
+    if (typeof update.location === 'string') {
+      try { update.location = JSON.parse(update.location); } catch (_) {}
+    }
+    if (typeof update.tags === 'string') {
+      try { update.tags = JSON.parse(update.tags); } catch (_) { update.tags = update.tags.split(',').map((t) => t.trim()).filter(Boolean); }
+    }
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
     if (req.files && req.files['logo']) {
@@ -220,6 +336,7 @@ async function rsvpEvent(req, res) {
     
     // Send response
     res.status(201).json({
+      success: true,
       message: `RSVP successful. Status: ${status}. QR code sent to email.`,
       qrImage,
       status
@@ -330,7 +447,7 @@ async function cancelRsvp(req, res) {
       }
     }
     console.log(`[AUDIT] Cancel RSVP: user ${userId} for event ${eventId}`);
-    res.json({ message: 'RSVP cancelled.' });
+    res.json({ success: true, message: 'RSVP cancelled.' });
   } catch (err) {
     res.status(500).json({ error: 'Error cancelling RSVP.' });
   }
@@ -727,7 +844,31 @@ async function getGoogleCalendarLink(req, res) {
   }
 }
 
+// Get current user's QR code for a specific event
+async function getUserQrCode(req, res) {
+  try {
+    const eventId = req.params.id;
+    const userId = req.user.id;
+    const log = await EventParticipationLog.findOne({ eventId, userId });
+    if (!log) {
+      return res.status(404).json({ success: false, error: 'No RSVP found for this event.' });
+    }
+    if (!log.qrToken) {
+      // Backward-compatible: generate a QR token if missing
+      const crypto = require('crypto');
+      log.qrToken = crypto.randomBytes(32).toString('hex');
+      await log.save();
+    }
+    const qrImage = await qrcode.toDataURL(log.qrToken);
+    return res.json({ success: true, qrcode: qrImage });
+  } catch (err) {
+    console.error('Error generating user QR code:', err);
+    return res.status(500).json({ success: false, error: 'Error generating QR code.' });
+  }
+}
+
 module.exports = {
+  listEvents,
   createEvent,
   getEventById,
   updateEvent,
@@ -742,4 +883,6 @@ module.exports = {
   rejectCoHost,
   verifyEvent,
   getGoogleCalendarLink,
+  getUserQrCode,
+  getUserEvents,
 };

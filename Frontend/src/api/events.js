@@ -5,7 +5,7 @@ import { API_URL, getAuthHeaders } from './user';
 export async function listEvents(filters = {}) {
   const queryParams = new URLSearchParams(filters).toString();
   const url = queryParams ? `${API_URL}/api/events?${queryParams}` : `${API_URL}/api/events`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { ...getAuthHeaders() } });
   return res.json();
 }
 
@@ -106,19 +106,31 @@ export async function getEventParticipants(eventId) {
 }
 
 // Get upcoming events
+
+// Utility: Filter upcoming events from listEvents
 export async function getUpcomingEvents() {
-  const res = await fetch(`${API_URL}/api/events/upcoming`, {
-    headers: { ...getAuthHeaders() },
+  const now = new Date();
+  const data = await listEvents();
+  const events = (data.data && data.data.events) || data.events || [];
+  return events.filter(ev => {
+    if (ev.schedule && ev.schedule.start) {
+      return new Date(ev.schedule.start) > now;
+    }
+    return false;
   });
-  return res.json();
 }
 
-// Get past events
+// Utility: Filter past events from listEvents
 export async function getPastEvents() {
-  const res = await fetch(`${API_URL}/api/events/past`, {
-    headers: { ...getAuthHeaders() },
+  const now = new Date();
+  const data = await listEvents();
+  const events = (data.data && data.data.events) || data.events || [];
+  return events.filter(ev => {
+    if (ev.schedule && ev.schedule.end) {
+      return new Date(ev.schedule.end) < now;
+    }
+    return false;
   });
-  return res.json();
 }
 
 export async function cancelRsvp(eventId) {
@@ -242,6 +254,15 @@ export async function getGrowthTrends() {
   const res = await fetch(`${API_URL}/api/events/admin/growth-trends`, {
     headers: { ...getAuthHeaders() },
   });
+  return res.json();
+}
+
+// Get QR code for an event
+export async function getEventQrCode(eventId) {
+  const res = await fetch(`${API_URL}/api/events/${eventId}/qrcode`, {
+    headers: { ...getAuthHeaders() },
+  });
+  // Expecting a response with { qrcode: 'data:image/png;base64,...' }
   return res.json();
 }
 

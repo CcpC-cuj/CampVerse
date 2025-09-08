@@ -120,67 +120,6 @@ const HostEvents = () => {
         console.error('API Error:', response.error);
         setError(`Failed to load events: ${response.error}`);
         setEvents([]);
-      } else {
-        // Mock data for demonstration when API is not working
-        setEvents([
-          {
-            _id: "mock_1",
-            title: "Annual Tech Symposium 2025",
-            description: "A comprehensive technology symposium featuring the latest innovations in AI, blockchain, and cloud computing. Join industry leaders for keynotes, workshops, and networking opportunities.",
-            date: "2025-09-15T09:00:00Z",
-            endDate: "2025-09-15T17:00:00Z",
-            status: "published",
-            participants: 312,
-            maxParticipants: 500,
-            location: "offline",
-            venue: "Memorial Auditorium, CUJ Campus",
-            category: "Technology",
-            fee: 1500,
-            tags: ["Technology", "Innovation", "Networking", "AI"],
-            coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-09-10T23:59:00Z"
-          },
-          {
-            _id: "mock_2", 
-            title: "Summer Hackathon 2025",
-            description: "48-hour coding marathon for innovative solutions. Build, innovate, and compete for amazing prizes. Open to all skill levels.",
-            date: "2025-09-22T10:00:00Z",
-            endDate: "2025-09-24T10:00:00Z",
-            status: "draft",
-            participants: 156,
-            maxParticipants: 200,
-            location: "offline",
-            venue: "Engineering Block, CUJ",
-            category: "Programming",
-            fee: 0,
-            tags: ["Programming", "Innovation", "Competition", "Hackathon"],
-            coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-09-20T23:59:00Z"
-          },
-          {
-            _id: "mock_3",
-            title: "International Cultural Festival",
-            description: "Celebrating diversity and cultural exchange through music, dance, art, and food from around the world.",
-            date: "2025-10-05T11:00:00Z", 
-            endDate: "2025-10-07T20:00:00Z",
-            status: "published",
-            participants: 789,
-            maxParticipants: 1000,
-            location: "offline",
-            venue: "Central Lawn, CUJ Campus",
-            category: "Cultural",
-            fee: 500,
-            tags: ["Cultural", "International", "Festival", "Music", "Dance"],
-            coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-10-01T23:59:00Z"
-          }
-        ]);
       }
     } catch (err) {
       console.error('Error loading events:', err);
