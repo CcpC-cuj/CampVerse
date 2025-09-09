@@ -21,7 +21,7 @@ const Event = require('../Models/Event');
 const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const {
-  uploadEventImage,
+  uploadEventImage: uploadEventImageLegacy,
   deleteEventImage,
 } = require('../Services/driveService');
 const qrcode = require('qrcode');
@@ -29,11 +29,23 @@ const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
+const { unifiedStorageService } = require('../Services/driveService');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
   try {
-    const {
+    // Validate required fields
+    const requiredFields = ['title', 'description', 'type', 'organizer', 'location', 'capacity', 'date'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ error: `Missing required field: ${field}` });
+      }
+    }
+    if (!req.files || !req.files['banner']) {
+      return res.status(400).json({ error: 'Banner image is required.' });
+    }
+    // Extract and parse fields
+    let {
       title,
       description,
       tags,
@@ -47,26 +59,36 @@ async function createEvent(req, res) {
       requirements,
       socialLinks,
     } = req.body;
-    let logoURL, bannerURL;
-    
-    // File upload using storage service
-    if (req.files && req.files['logo']) {
-      const f = req.files['logo'][0];
-      logoURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'logo',
-        f.mimetype,
-      );
+    // Parse organizer/location if sent as JSON strings (FormData)
+    if (typeof organizer === 'string') {
+      try {
+        organizer = JSON.parse(organizer);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid organizer format.' });
+      }
     }
-    if (req.files && req.files['banner']) {
+    if (typeof location === 'string') {
+      try {
+        location = JSON.parse(location);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid location format.' });
+      }
+    }
+    let logoURL, bannerURL;
+    // File upload using storage service
+    if (req.files['logo']) {
+      const f = req.files['logo'][0];
+      logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
+    }
+    if (req.files['banner']) {
       const f = req.files['banner'][0];
-      bannerURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'banner',
-        f.mimetype,
-      );
+      bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
+    }
+    // Validate isPaid and price
+    let eventIsPaid = isPaid === true || isPaid === 'true';
+    let eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
+    if (eventIsPaid && eventPrice <= 0) {
+      return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
     const event = await Event.create({
       title,
@@ -77,8 +99,8 @@ async function createEvent(req, res) {
       location,
       capacity,
       date,
-      isPaid,
-      price,
+      isPaid: eventIsPaid,
+      price: eventPrice,
       requirements,
       socialLinks,
       logoURL,
@@ -89,10 +111,15 @@ async function createEvent(req, res) {
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
-      event: event
+      event
     });
   } catch (err) {
-    res.status(500).json({ error: 'Error creating event.' });
+    if (process.env.NODE_ENV !== 'production') {
+      res.status(500).json({ error: 'Error creating event.', details: err?.message || err });
+    } else {
+      logger && logger.error ? logger.error('Error creating event:', err) : null;
+      res.status(500).json({ error: 'Error creating event.' });
+    }
   }
 }
 
@@ -110,37 +137,42 @@ async function getEventById(req, res) {
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
-  const update = req.body;
-  // Only allow requirements and socialLinks to be updated if present
-  if ('requirements' in req.body) update.requirements = req.body.requirements;
-  if ('socialLinks' in req.body) update.socialLinks = req.body.socialLinks;
+    const update = req.body;
+    // Validate required fields for update (if present)
+    const updatableFields = ['title', 'description', 'type', 'organizer', 'location', 'capacity', 'date'];
+    for (const field of updatableFields) {
+      if (field in update && !update[field]) {
+        return res.status(400).json({ error: `Field cannot be empty: ${field}` });
+      }
+    }
+    // Only allow requirements and socialLinks to be updated if present
+    if ('requirements' in req.body) update.requirements = req.body.requirements;
+    if ('socialLinks' in req.body) update.socialLinks = req.body.socialLinks;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
     if (req.files && req.files['logo']) {
       if (event.logoURL) await deleteEventImage(event.logoURL);
       const f = req.files['logo'][0];
-      update.logoURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'logo',
-        f.mimetype,
-      );
+      update.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
     }
     if (req.files && req.files['banner']) {
       if (event.bannerURL) await deleteEventImage(event.bannerURL);
       const f = req.files['banner'][0];
-      update.bannerURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'banner',
-        f.mimetype,
-      );
+      update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
-    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-    });
+    update.updatedAt = new Date();
+    // Validate isPaid and price
+    if ('isPaid' in update) {
+      update.isPaid = update.isPaid === true || update.isPaid === 'true';
+      update.price = update.isPaid ? (typeof update.price === 'number' ? update.price : parseFloat(update.price) || 0) : 0;
+      if (update.isPaid && update.price <= 0) {
+        return res.status(400).json({ error: 'Paid events must have a valid price.' });
+      }
+    }
+    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
   } catch (err) {
+  logger && logger.error ? logger.error('Error updating event:', err) : null;
     res.status(500).json({ error: 'Error updating event.' });
   }
 }
@@ -200,7 +232,7 @@ async function rsvpEvent(req, res) {
     qrToken = crypto.randomBytes(32).toString('hex');
     
     // Create participation log
-    const log = await EventParticipationLog.create({
+    await EventParticipationLog.create({
       userId,
       eventId,
       status,
@@ -235,9 +267,9 @@ async function rsvpEvent(req, res) {
     // Email QR code to user (non-blocking)
     try {
       await sendQrEmail(req.user.email, qrImage, event.title);
-      console.log(`QR code email sent successfully to ${req.user.email}`);
+  // Audit: QR code email sent successfully
     } catch (emailErr) {
-      console.error('Failed to send QR email:', emailErr);
+  logger && logger.error ? logger.error('Failed to send QR email:', emailErr) : null;
       // Don't fail the RSVP, just log the email error
     }
     
@@ -273,12 +305,12 @@ async function rsvpEvent(req, res) {
           });
         }
       } catch (notificationError) {
-        console.error('Notification error:', notificationError);
+  logger && logger.error ? logger.error('Notification error:', notificationError) : null;
       }
     });
     
   } catch (err) {
-    console.error('RSVP error:', err);
+  logger && logger.error ? logger.error('RSVP error:', err) : null;
     res.status(500).json({ error: 'Error registering for event.' });
   }
 }
@@ -336,7 +368,7 @@ async function cancelRsvp(req, res) {
         await event.save();
       }
     }
-    console.log(`[AUDIT] Cancel RSVP: user ${userId} for event ${eventId}`);
+  // Audit: Cancel RSVP: user ${userId} for event ${eventId}
     res.json({ message: 'RSVP cancelled.' });
   } catch (err) {
     res.status(500).json({ error: 'Error cancelling RSVP.' });
@@ -443,12 +475,10 @@ async function scanQr(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}`,
-    );
+  // Audit: Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}
     res.json({ message: 'Attendance marked.' });
   } catch (err) {
-    console.error('Error in scanQr:', err);
+  logger && logger.error ? logger.error('Error in scanQr:', err) : null;
     res.status(500).json({ error: 'Error marking attendance.' });
   }
 }
@@ -457,32 +487,58 @@ async function scanQr(req, res) {
 async function getEventAnalytics(req, res) {
   try {
     const eventId = req.params.id;
-    const logs = await EventParticipationLog.find({ eventId });
-    const totalRegistered = logs.length;
-    const totalAttended = logs.filter((l) => l.status === 'attended').length;
-    const totalWaitlisted = logs.filter(
-      (l) => l.status === 'waitlisted',
-    ).length;
-    const totalPaid = logs.filter((l) => l.paymentType === 'paid').length;
-    const totalFree = logs.filter((l) => l.paymentType === 'free').length;
-    const paymentSuccess = logs.filter(
-      (l) => l.paymentStatus === 'success',
-    ).length;
-    const paymentPending = logs.filter(
-      (l) => l.paymentStatus === 'pending',
-    ).length;
-
+    const pipeline = [
+      { $match: { eventId: mongoose.Types.ObjectId(eventId) } },
+      {
+        $group: {
+          _id: null,
+          totalRegistered: { $sum: 1 },
+          totalAttended: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'attended'] }, 1, 0]
+            }
+          },
+          totalWaitlisted: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'waitlisted'] }, 1, 0]
+            }
+          },
+          totalPaid: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentType', 'paid'] }, 1, 0]
+            }
+          },
+          totalFree: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentType', 'free'] }, 1, 0]
+            }
+          },
+          paymentSuccess: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'success'] }, 1, 0]
+            }
+          },
+          paymentPending: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'pending'] }, 1, 0]
+            }
+          }
+        }
+      }
+    ];
+    const result = await EventParticipationLog.aggregate(pipeline);
+    const stats = result[0] || {};
     res.json({
-      totalRegistered,
-      totalAttended,
-      totalWaitlisted,
-      totalPaid,
-      totalFree,
-      paymentSuccess,
-      paymentPending,
+      totalRegistered: stats.totalRegistered || 0,
+      totalAttended: stats.totalAttended || 0,
+      totalWaitlisted: stats.totalWaitlisted || 0,
+      totalPaid: stats.totalPaid || 0,
+      totalFree: stats.totalFree || 0,
+      paymentSuccess: stats.paymentSuccess || 0,
+      paymentPending: stats.paymentPending || 0,
       attendanceRate:
-        totalRegistered > 0
-          ? ((totalAttended / totalRegistered) * 100).toFixed(2)
+        (stats.totalRegistered || 0) > 0
+          ? ((stats.totalAttended || 0) / (stats.totalRegistered || 1) * 100).toFixed(2)
           : 0,
     });
   } catch (err) {
@@ -560,12 +616,10 @@ async function nominateCoHost(req, res) {
       },
     });
     // Audit log
-    console.log(
-      `[AUDIT] Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}`,
-    );
+  // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
-    console.error('Error in nominateCoHost:', err);
+  logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -621,12 +675,10 @@ async function approveCoHost(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}`,
-    );
+  // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
-    console.error('Error in approveCoHost:', err);
+  logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -678,12 +730,10 @@ async function rejectCoHost(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}`,
-    );
+  // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
-    console.error('Error in rejectCoHost:', err);
+  logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -735,6 +785,7 @@ async function getGoogleCalendarLink(req, res) {
     res.status(500).json({ error: 'Error generating calendar link.' });
   }
 }
+
 
 module.exports = {
   createEvent,

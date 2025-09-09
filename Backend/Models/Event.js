@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
  * Event Schema for CampVerse
  * Includes support for logo/banner images, co-hosts, and co-host requests
  */
+// Event schema for CampVerse. Participants are tracked via EventParticipationLog only.
 const eventSchema = new mongoose.Schema({
   audienceType: { type: String, enum: ['institution', 'public'], default: 'public' },
   requirements: [String],
@@ -58,8 +59,7 @@ const eventSchema = new mongoose.Schema({
     venue: { type: String }, // For offline
     link: { type: String },  // For online
   },
-  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  participantCount: { type: Number, default: 0 },
+  // participants and participantCount removed; use EventParticipationLog for tracking
   capacity: { type: Number },
   waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   sessions: [
@@ -72,8 +72,7 @@ const eventSchema = new mongoose.Schema({
   about: { type: String },
   isPaid: { type: Boolean, default: false },
   price: { type: Number },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  // createdAt and updatedAt handled by timestamps option
 });
 
 
@@ -94,13 +93,10 @@ eventSchema.index({
   name: 'event_text_search'
 });
 
-// Array indexes for participants
-eventSchema.index({ participants: 1 });
+// Removed participants index; not needed when using EventParticipationLog
 
 // Update timestamp on save
-eventSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
 
-module.exports = mongoose.model('Event', eventSchema);
+
+// Export with timestamps enabled
+module.exports = mongoose.model('Event', new mongoose.Schema(eventSchema.obj, { timestamps: true }));

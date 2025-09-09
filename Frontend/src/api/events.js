@@ -1,3 +1,8 @@
+// Upload event image (logo/banner) and return URL
+export async function uploadEventImage(file, type) {
+  // Legacy: not used anymore
+  throw new Error('uploadEventImage is deprecated');
+}
 // Event-related API functions aligned with Backend/Routes/eventRoutes.js
 import { API_URL, getAuthHeaders } from './user';
 

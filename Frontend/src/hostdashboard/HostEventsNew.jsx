@@ -15,15 +15,8 @@ const HostEvents = () => {
 
   // Dummy upload function (replace with real Firebase/Supabase upload)
   const uploadImage = async (file, type) => {
-    // TODO: Replace with actual upload logic
-    // Simulate upload and return a local preview URL
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
+  // Legacy: just set preview, actual upload happens in createEventWithFiles
+  return URL.createObjectURL(file);
   };
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -196,12 +189,12 @@ const HostEvents = () => {
     if (type === 'file') {
       const file = files[0];
       setEventForm(prev => ({ ...prev, [name]: file }));
-      // Instant upload and preview
+      // Instant preview only
       if (name === 'bannerImage' && file) {
-        uploadImage(file, 'banner').then(url => setBannerUrl(url));
+        setBannerUrl(URL.createObjectURL(file));
       }
       if (name === 'logoImage' && file) {
-        uploadImage(file, 'logo').then(url => setLogoUrl(url));
+        setLogoUrl(URL.createObjectURL(file));
       }
     } else if (name.includes('.')) {
       // Handle nested objects like socialLinks.website
@@ -223,7 +216,7 @@ const HostEvents = () => {
       endDate: '',
       location: '',
       venue: '',
-      organizer: '',
+  organizer: 'institution',
       organizationName: '',
       category: '',
       maxParticipants: '',
@@ -249,100 +242,78 @@ const HostEvents = () => {
     try {
       setLoading(true);
       
-      // Validate required fields
-      if (!eventForm.title.trim()) {
-        alert('Event title is required');
+      // Build organizer object from form state
+      const organizer = {
+        name: eventForm.organizationName || '', // required
+        type: eventForm.organizer || 'institution', // required, default to institution
+        contactEmail: eventForm.contactEmail || '',
+        contactPhone: eventForm.contactPhone || ''
+      };
+
+      // Validate required organizer fields
+      if (!organizer.name || !organizer.type) {
+        alert('Organizer name and type are required');
         setLoading(false);
         return;
       }
-      
-      if (!eventForm.date) {
-        alert('Event start date is required');
-        setLoading(false);
-        return;
-      }
-      
-      // Validate that the start date is in the future
-      const startDate = new Date(eventForm.date);
-      const now = new Date();
-      if (startDate <= now) {
-        alert('Event start date must be in the future');
-        setLoading(false);
-        return;
-      }
-      
-      // If end date is provided, validate it's after start date
-      if (eventForm.endDate) {
-        const endDate = new Date(eventForm.endDate);
-        if (endDate <= startDate) {
-          alert('Event end date must be after start date');
-          setLoading(false);
-          return;
-        }
-      }
-      
-          const eventData = {
-            title: eventForm.title,
-            description: eventForm.description,
-            type: eventForm.category, // Map category to type
-            organizer: typeof eventForm.organizer === 'object' && eventForm.organizer !== null
-              ? eventForm.organizer.name || JSON.stringify(eventForm.organizer)
-              : eventForm.organizer || 'Event Organizer',
-            location: {
-              type: eventForm.location,
-              venue: eventForm.venue,
-              eventLink: eventForm.eventLink || ''
-            },
-            capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
-            schedule: {
-              start: eventForm.date,
-              end: eventForm.endDate || eventForm.date, // If no end date, use start date
-            },
-            isPaid: eventForm.isPaid,
-            price: eventForm.isPaid ? parseFloat(eventForm.fee) : 0,
-            tags: Array.isArray(eventForm.tags)
-              ? eventForm.tags
-              : typeof eventForm.tags === 'string'
-                ? eventForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-                : [],
-            requirements: eventForm.requirements
-              ? eventForm.requirements.split('\n').map(r => r.trim()).filter(Boolean)
-              : [],
-            socialLinks: {
-              website: eventForm.socialLinks?.website || '',
-              linkedin: eventForm.socialLinks?.linkedin || ''
-            },
-            participants: typeof eventForm.participants === 'number'
-              ? eventForm.participants
-              : Array.isArray(eventForm.participants)
-                ? eventForm.participants.length
-                : eventForm.participants && typeof eventForm.participants === 'object'
-                  ? Object.keys(eventForm.participants).length
-                  : 0,
-          };
+
+      const eventData = {
+        title: eventForm.title,
+        description: eventForm.description,
+        type: eventForm.category, // Map category to type
+        organizer,
+        location: {
+          type: eventForm.location,
+          venue: eventForm.venue,
+          eventLink: eventForm.eventLink || ''
+        },
+        capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
+        date: eventForm.date,
+        endDate: eventForm.endDate || eventForm.date,
+        isPaid: eventForm.isPaid,
+        price: eventForm.isPaid ? parseFloat(eventForm.fee) : 0,
+        tags: Array.isArray(eventForm.tags)
+          ? eventForm.tags
+          : typeof eventForm.tags === 'string'
+            ? eventForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+            : [],
+        requirements: eventForm.requirements
+          ? eventForm.requirements.split('\n').map(r => r.trim()).filter(Boolean)
+          : [],
+        socialLinks: {
+          website: eventForm.socialLinks?.website || '',
+          linkedin: eventForm.socialLinks?.linkedin || ''
+        },
+        participants: typeof eventForm.participants === 'number'
+          ? eventForm.participants
+          : Array.isArray(eventForm.participants)
+            ? eventForm.participants.length
+            : eventForm.participants && typeof eventForm.participants === 'object'
+              ? Object.keys(eventForm.participants).length
+              : 0,
+        bannerURL: bannerUrl || '',
+        logoURL: logoUrl || '',
+      };
 
       console.log('Sending event data:', eventData);
 
-      let response;
-      if (eventForm.bannerImage || eventForm.logoImage) {
-        // Create FormData for file upload
-        const formData = new FormData();
-        Object.keys(eventData).forEach(key => {
-          if (key === 'schedule' || key === 'location') {
-            formData.append(key, JSON.stringify(eventData[key]));
-          } else if (key === 'tags') {
-            formData.append(key, JSON.stringify(eventData[key]));
-          } else if (eventData[key] !== null && eventData[key] !== undefined) {
-            formData.append(key, eventData[key]);
-          }
-        });
-        // Use 'banner' and 'logo' as field names for backend compatibility
-        if (eventForm.bannerImage) formData.append('banner', eventForm.bannerImage);
-        if (eventForm.logoImage) formData.append('logo', eventForm.logoImage);
-        response = await createEventWithFiles(formData);
-      } else {
-        response = await createEvent(eventData);
+      // Always use FormData for legacy backend
+      const formData = new FormData();
+      Object.keys(eventData).forEach(key => {
+        const value = eventData[key];
+        if (typeof value === 'object' && value !== null) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      if (eventForm.bannerImage instanceof File) {
+        formData.append('banner', eventForm.bannerImage);
       }
+      if (eventForm.logoImage instanceof File) {
+        formData.append('logo', eventForm.logoImage);
+      }
+      const response = await createEventWithFiles(formData);
 
       if (response.success && response.event) { // Check for success response
         setShowCreateModal(false);
@@ -942,13 +913,18 @@ const HostEvents = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Contact Phone</label>
-                    <input
-                      type="tel"
-                      name="contactPhone"
-                      value={eventForm.contactPhone}
-                      readOnly
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none cursor-not-allowed"
-                    />
+                    <label htmlFor="organizer-type">Organizer Type</label>
+                    <select
+                      id="organizer-type"
+                      name="organizer"
+                      value={eventForm.organizer}
+                      onChange={handleFormChange}
+                      required
+                    >
+                      <option value="club">Club</option>
+                      <option value="institution">Institution</option>
+                      <option value="person">Person</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1110,9 +1086,9 @@ const HostEvents = () => {
                   </button>
                 </div>
               </form>
-            </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Edit Event Modal */}
