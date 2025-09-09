@@ -953,39 +953,40 @@ const HostEvents = () => {
                 </div>
 
                 {/* Organizer Info */}
+                {/* Organizer Info (auto-filled, read-only) */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Organizer Name *</label>
+                    <label className="block text-sm font-medium mb-2">Organizer Name</label>
                     <input
                       type="text"
-                      name="organizer.name"
-                      value={eventForm.organizer?.name || ''}
-                      onChange={handleFormChange}
-                      required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      value={user?.name || ''}
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none cursor-not-allowed"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Organizer Email *</label>
+                    <label className="block text-sm font-medium mb-2">Organizer Email</label>
                     <input
                       type="email"
-                      name="organizer.email"
-                      value={eventForm.organizer?.email || ''}
-                      onChange={handleFormChange}
-                      required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      value={user?.email || ''}
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none cursor-not-allowed"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Organizer Institution</label>
-                  <input
-                    type="text"
-                    name="organizer.institution"
-                    value={eventForm.organizer?.institution || ''}
+                  <label className="block text-sm font-medium mb-2">Event Audience</label>
+                  <select
+                    name="audienceType"
+                    value={eventForm.audienceType || ''}
                     onChange={handleFormChange}
+                    required
                     className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                  />
+                  >
+                    <option value="">Select audience</option>
+                    <option value="institution">My Institution Only</option>
+                    <option value="public">Public (Anyone can join)</option>
+                  </select>
                 </div>
 
                 {/* Co-hosts */}

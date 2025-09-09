@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
  * Includes support for logo/banner images, co-hosts, and co-host requests
  */
 const eventSchema = new mongoose.Schema({
+  audienceType: { type: String, enum: ['institution', 'public'], default: 'public' },
   requirements: [String],
   socialLinks: {
     website: { type: String },
