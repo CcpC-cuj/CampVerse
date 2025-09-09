@@ -627,7 +627,7 @@ const HostEvents = () => {
                       key={event._id}
                       event={{
                         ...event,
-                        tags: safeTags,
+                        tags: Array.isArray(safeTags) ? safeTags.join(', ') : safeTags,
                         participants: safeParticipants,
                         organizer: safeOrganizer
                       }}
@@ -1106,6 +1106,55 @@ const HostEvents = () => {
             </div>
             <div className="p-4 max-h-[80vh] overflow-y-auto">
               <form onSubmit={handleUpdateEvent} className="space-y-4">
+                {/* Organizer Type Dropdown */}
+                <div>
+                  <label htmlFor="organizer-type-edit" className="block text-sm font-medium mb-2">Organizer Type</label>
+                  <select
+                    id="organizer-type-edit"
+                    name="organizer"
+                    value={eventForm.organizer}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  >
+                    <option value="club">Club</option>
+                    <option value="institution">Institution</option>
+                    <option value="person">Person</option>
+                  </select>
+                </div>
+                {/* Event Images */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Banner Image</label>
+                    <input
+                      type="file"
+                      name="bannerImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {(bannerUrl || eventForm.banner) && (
+                      <div className="mt-2 w-full h-24 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden border border-gray-700">
+                        <img src={bannerUrl || eventForm.banner} alt="Banner Preview" className="object-cover w-full h-full" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Logo Image</label>
+                    <input
+                      type="file"
+                      name="logoImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {(logoUrl || eventForm.logo) && (
+                      <div className="mt-2 flex items-center justify-center">
+                        <img src={logoUrl || eventForm.logo} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
+                      </div>
+                    )}
+                  </div>
+                </div>
                 {/* Same form fields as create modal */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Event Title *</label>

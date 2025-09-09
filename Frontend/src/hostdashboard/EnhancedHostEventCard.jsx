@@ -32,6 +32,10 @@ const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) 
   };
 
   const getEventStatus = () => {
+    // If event is not verified, always show 'draft'
+    if (event.verified === false || event.verified === 'false' || event.status === 'draft' || event.status === 'Draft') {
+      return 'draft';
+    }
     const now = new Date();
     const eventDate = new Date(event.date || event.schedule?.start);
     const endDate = event.endDate ? new Date(event.endDate) : (event.schedule?.end ? new Date(event.schedule.end) : eventDate);
@@ -68,11 +72,12 @@ const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) 
         {/* Event Status Badge */}
         <div className="absolute top-2 right-2">
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+            eventStatus === 'draft' ? 'bg-gray-500/20 text-gray-300' :
             eventStatus === 'upcoming' ? 'bg-blue-500/20 text-blue-300' :
             eventStatus === 'ongoing' ? 'bg-green-500/20 text-green-300' :
             'bg-gray-500/20 text-gray-300'
           }`}>
-            {eventStatus.charAt(0).toUpperCase() + eventStatus.slice(1)}
+            {eventStatus === 'draft' ? 'Draft' : eventStatus.charAt(0).toUpperCase() + eventStatus.slice(1)}
           </span>
         </div>
 
@@ -235,20 +240,10 @@ const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) 
 
         {/* Tags */}
         {event.tags && event.tags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1">
-            {event.tags.slice(0, 3).map((tag, idx) => (
-              <span
-                key={idx}
-                className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs"
-              >
-                {tag}
-              </span>
-            ))}
-            {event.tags.length > 3 && (
-              <span className="text-gray-400 text-xs px-2 py-1">
-                +{event.tags.length - 3}
-              </span>
-            )}
+          <div className="mt-3 text-[#d9c4ff] text-xs">
+            {Array.isArray(event.tags)
+              ? event.tags.join(', ')
+              : event.tags}
           </div>
         )}
 
