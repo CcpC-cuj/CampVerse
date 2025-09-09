@@ -1,5 +1,6 @@
-export { default as HostDashboard } from "./HostDashboard";
-export { default as HostEvents } from "./HostEvents";
+// Main consolidated component
+export { default as ManageEvents } from "./ManageEvents";
+// Other host dashboard components
 export { default as HostEventsNew } from "./HostEventsNew";
 export { default as HostApplications } from "./HostApplications";
 export { default as HostAnalytics } from "./HostAnalytics";

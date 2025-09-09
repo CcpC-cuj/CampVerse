@@ -18,10 +18,9 @@ import { EventProvider } from "./userdashboard/EventContext";
 
 
 
-// ✅ Host dashboard module imports (added)
+// ✅ Host dashboard module imports (updated)
 import {
-  HostDashboard,
-  HostEvents,
+  ManageEvents,
   HostEventsNew,
   HostApplications,
   HostAnalytics,
@@ -124,11 +123,21 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Consolidated ManageEvents route */}
+            <Route
+              path="/host/manage-events"
+              element={
+                <ProtectedRoute>
+                  <ManageEvents />
+                </ProtectedRoute>
+              }
+            />
+            {/* Legacy route redirects */}
             <Route
               path="/host/dashboard"
               element={
                 <ProtectedRoute>
-                  <HostDashboard />
+                  <ManageEvents />
                 </ProtectedRoute>
               }
             />
@@ -136,7 +145,7 @@ function App() {
               path="/host/events"
               element={
                 <ProtectedRoute>
-                  <HostEventsNew />
+                  <ManageEvents />
                 </ProtectedRoute>
               }
             />
