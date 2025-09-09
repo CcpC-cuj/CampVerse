@@ -511,46 +511,49 @@ const ManageEvents = () => {
 
       {/* Create Event Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Create New Event</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-3xl p-8 bg-[rgba(21,23,41,0.85)] border border-purple-600 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-white">Create New Event</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-purple-300 hover:text-white text-2xl transition-colors"
               >
-                ✕
+                ×
               </button>
             </div>
-            <div className="p-4 max-h-[80vh] overflow-y-auto">
+            <div className="max-h-[75vh] overflow-y-auto pr-2" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9b5de5 rgba(255,255,255,0.1)'
+            }}>
               <form onSubmit={handleCreateEvent} className="space-y-4">
                 {/* Basic Information */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Event Title *</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">Event Title *</label>
                   <input
                     type="text"
                     name="title"
                     value={eventForm.title}
                     onChange={handleFormChange}
                     required
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Description *</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">Description *</label>
                   <textarea
                     name="description"
                     value={eventForm.description}
                     onChange={handleFormChange}
                     required
                     rows={4}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Organization Name *</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">Organization Name *</label>
                   <input
                     type="text"
                     name="organizationName"
@@ -558,13 +561,13 @@ const ManageEvents = () => {
                     onChange={handleFormChange}
                     required
                     placeholder="e.g., Central University of Jharkhand, Tech Corp"
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   />
                 </div>
 
                 {/* Date and Time */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Date *</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">Date *</label>
                   <input
                     type="datetime-local"
                     name="date"
@@ -572,30 +575,30 @@ const ManageEvents = () => {
                     onChange={handleFormChange}
                     min={getMinDate()}
                     required
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   />
                 </div>
 
                 {/* Location */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Location Type *</label>
+                    <label className="block text-sm font-medium text-purple-300 mb-2">Location Type *</label>
                     <select
                       name="location"
                       value={eventForm.location}
                       onChange={handleFormChange}
                       required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                     >
-                      <option value="">Select type</option>
-                      <option value="online">Online</option>
-                      <option value="offline">Offline</option>
-                      <option value="hybrid">Hybrid</option>
+                      <option value="" className="bg-gray-800">Select type</option>
+                      <option value="online" className="bg-gray-800">Online</option>
+                      <option value="offline" className="bg-gray-800">Offline</option>
+                      <option value="hybrid" className="bg-gray-800">Hybrid</option>
                     </select>
                   </div>
                   {eventForm.location === 'offline' && (
                     <div>
-                      <label className="block text-sm font-medium mb-2">Venue *</label>
+                      <label className="block text-sm font-medium text-purple-300 mb-2">Venue *</label>
                       <input
                         type="text"
                         name="venue"
@@ -603,13 +606,13 @@ const ManageEvents = () => {
                         onChange={handleFormChange}
                         required
                         placeholder="Venue name"
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                        className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                       />
                     </div>
                   )}
                   {eventForm.location === 'online' && (
                     <div>
-                      <label className="block text-sm font-medium mb-2">Event Link *</label>
+                      <label className="block text-sm font-medium text-purple-300 mb-2">Event Link *</label>
                       <input
                         type="url"
                         name="eventLink"
@@ -617,14 +620,14 @@ const ManageEvents = () => {
                         onChange={handleFormChange}
                         required
                         placeholder="https://..."
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                        className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                       />
                     </div>
                   )}
                   {eventForm.location === 'hybrid' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Venue *</label>
+                        <label className="block text-sm font-medium text-purple-300 mb-2">Venue *</label>
                         <input
                           type="text"
                           name="venue"
@@ -632,11 +635,11 @@ const ManageEvents = () => {
                           onChange={handleFormChange}
                           required
                           placeholder="Venue name"
-                          className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                          className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Event Link *</label>
+                        <label className="block text-sm font-medium text-purple-300 mb-2">Event Link *</label>
                         <input
                           type="url"
                           name="eventLink"
@@ -644,7 +647,7 @@ const ManageEvents = () => {
                           onChange={handleFormChange}
                           required
                           placeholder="https://..."
-                          className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                          className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                         />
                       </div>
                     </>
@@ -654,40 +657,40 @@ const ManageEvents = () => {
                 {/* Category and Participants */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Category</label>
+                    <label className="block text-sm font-medium text-purple-300 mb-2">Category</label>
                     <select
                       name="category"
                       value={eventForm.category}
                       onChange={handleFormChange}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                     >
-                      <option value="">Select category</option>
-                      <option value="Technology">Technology</option>
-                      <option value="Programming">Programming</option>
-                      <option value="Cultural">Cultural</option>
-                      <option value="Academic">Academic</option>
-                      <option value="Sports">Sports</option>
-                      <option value="Workshop">Workshop</option>
-                      <option value="Seminar">Seminar</option>
-                      <option value="Conference">Conference</option>
+                      <option value="" className="bg-gray-800">Select category</option>
+                      <option value="Technology" className="bg-gray-800">Technology</option>
+                      <option value="Programming" className="bg-gray-800">Programming</option>
+                      <option value="Cultural" className="bg-gray-800">Cultural</option>
+                      <option value="Academic" className="bg-gray-800">Academic</option>
+                      <option value="Sports" className="bg-gray-800">Sports</option>
+                      <option value="Workshop" className="bg-gray-800">Workshop</option>
+                      <option value="Seminar" className="bg-gray-800">Seminar</option>
+                      <option value="Conference" className="bg-gray-800">Conference</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Max Participants</label>
+                    <label className="block text-sm font-medium text-purple-300 mb-2">Max Participants</label>
                     <input
                       type="number"
                       name="maxParticipants"
                       value={eventForm.maxParticipants}
                       onChange={handleFormChange}
                       min="1"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                     />
                   </div>
                 </div>
 
                 {/* Event Type and Fee */}
                 <div>
-                  <label className="block text-sm font-medium mb-3">Event Type</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-3">Event Type</label>
                   <div className="flex items-center gap-6 mb-4">
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -696,7 +699,7 @@ const ManageEvents = () => {
                         value="false"
                         checked={!eventForm.isPaid}
                         onChange={() => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
-                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                        className="mr-2 text-purple-500 focus:ring-purple-400"
                       />
                       <span className="text-white">Free Event</span>
                     </label>
@@ -707,14 +710,14 @@ const ManageEvents = () => {
                         value="true"
                         checked={eventForm.isPaid}
                         onChange={() => setEventForm(prev => ({ ...prev, isPaid: true }))}
-                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                        className="mr-2 text-purple-500 focus:ring-purple-400"
                       />
                       <span className="text-white">Paid Event</span>
                     </label>
                   </div>
                   {eventForm.isPaid && (
                     <div className="mb-4">
-                      <label className="block text-sm font-medium mb-2">Registration Fee (₹) *</label>
+                      <label className="block text-sm font-medium text-purple-300 mb-2">Registration Fee (₹) *</label>
                       <input
                         type="number"
                         name="fee"
@@ -724,7 +727,7 @@ const ManageEvents = () => {
                         step="0.01"
                         required={eventForm.isPaid}
                         placeholder="Enter amount"
-                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                        className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                       />
                     </div>
                   )}
@@ -732,64 +735,64 @@ const ManageEvents = () => {
 
                 {/* Tags */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+                  <label className="block text-sm font-medium text-purple-300 mb-2">Tags (comma-separated)</label>
                   <input
                     type="text"
                     name="tags"
                     value={eventForm.tags}
                     onChange={handleFormChange}
                     placeholder="e.g., Technology, AI, Innovation"
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
                   />
                 </div>
 
                 {/* Event Images */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Event Banner Image</label>
+                    <label className="block text-sm font-medium text-purple-300 mb-2">Event Banner Image</label>
                     <input
                       type="file"
                       name="bannerImage"
                       onChange={handleFormChange}
                       accept="image/*"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-700 file:text-white hover:file:bg-purple-600"
                     />
                     {bannerUrl && (
-                      <div className="mt-2 w-full h-24 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden border border-gray-700">
+                      <div className="mt-2 w-full h-24 bg-black/40 rounded-lg flex items-center justify-center overflow-hidden border border-purple-500/30">
                         <img src={bannerUrl} alt="Banner Preview" className="object-cover w-full h-full" />
                       </div>
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Event Logo Image</label>
+                    <label className="block text-sm font-medium text-purple-300 mb-2">Event Logo Image</label>
                     <input
                       type="file"
                       name="logoImage"
                       onChange={handleFormChange}
                       accept="image/*"
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-700 file:text-white hover:file:bg-purple-600"
                     />
                     {logoUrl && (
                       <div className="mt-2 flex items-center justify-center">
-                        <img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
+                        <img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-purple-500/50" />
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-6">
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-[#9b5de5] hover:bg-[#8c4be1] px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                    className="flex-1 bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Creating...' : 'Create Event'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}
-                    className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors"
+                    className="px-6 py-3 border border-purple-500/50 text-purple-300 rounded-full font-medium transition-colors hover:bg-purple-900/30"
                   >
                     Cancel
                   </button>
