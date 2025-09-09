@@ -1,22 +1,56 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { getHostDashboard, getMyEvents } from "../api/host";
+import { getMyEvents } from "../api/host";
+import { createEventWithFiles } from "../api/events";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
-import HostEventCard from "./HostEventCard";
+import EnhancedHostEventCard from "./EnhancedHostEventCard";
 
 const ManageEvents = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
   const [events, setEvents] = useState([]);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
-  const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" or "manage"
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Form state for event creation
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    description: '',
+    date: '',
+    endDate: '',
+    location: '',
+    venue: '',
+    organizer: 'institution',
+    organizationName: '',
+    category: '',
+    maxParticipants: '',
+    isPaid: false,
+    fee: '',
+    tags: '',
+    requirements: '',
+    contactEmail: user?.email || '',
+    contactPhone: user?.phone || '',
+    bannerImage: null,
+    logoImage: null,
+    socialLinks: {
+      website: '',
+      linkedin: ''
+    },
+    audienceType: '',
+    cohosts: '',
+    sessions: '',
+    eventLink: ''
+  });
+  
+  // Image preview URLs
+  const [bannerUrl, setBannerUrl] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -27,16 +61,7 @@ const ManageEvents = () => {
         setError(null);
         console.log("Loading host events data...");
 
-        // Try to load dashboard stats
-        let dashboardData = null;
-        try {
-          dashboardData = await getHostDashboard();
-          console.log("Dashboard data:", dashboardData);
-        } catch (dashboardError) {
-          console.error("Dashboard API failed:", dashboardError);
-        }
-
-        // Load events separately
+        // Load events
         let eventsData = [];
         try {
           eventsData = await getMyEvents();
@@ -81,31 +106,6 @@ const ManageEvents = () => {
         }));
 
         setEvents(transformedEvents);
-
-        // Set stats from dashboard API or calculate from events
-        if (dashboardData && !dashboardData.error) {
-          setStats({
-            activeEvents: dashboardData.totalEvents || transformedEvents.length,
-            totalRegistrations: dashboardData.totalParticipants || 0,
-            pendingApprovals: dashboardData.pendingApprovals || 0,
-            revenue: `₹${(dashboardData.totalRevenue || 0).toLocaleString()}`,
-          });
-        } else {
-          // Calculate stats from events data
-          const activeEvents = transformedEvents.filter(e => 
-            e.verificationStatus === 'approved' || e.verificationStatus === 'pending'
-          ).length;
-          const totalRegistrations = transformedEvents.reduce((sum, e) => 
-            sum + (e.participants?.length || 0), 0
-          );
-          
-          setStats({
-            activeEvents,
-            totalRegistrations,
-            pendingApprovals: transformedEvents.filter(e => e.verificationStatus === 'pending').length,
-            revenue: "₹0",
-          });
-        }
         
       } catch (error) {
         console.error("Error loading events:", error);
@@ -113,12 +113,6 @@ const ManageEvents = () => {
         
         // Set empty state
         if (mounted) {
-          setStats({
-            activeEvents: 0,
-            totalRegistrations: 0,
-            pendingApprovals: 0,
-            revenue: "₹0",
-          });
           setEvents([]);
         }
       } finally {
@@ -133,6 +127,160 @@ const ManageEvents = () => {
     };
   }, []);
 
+  // Helper function to get minimum date for form (current date + 1 day)
+  const getMinDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().slice(0, 16);
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value, type, files } = e.target;
+    
+    if (type === 'file') {
+      const file = files[0];
+      setEventForm(prev => ({ ...prev, [name]: file }));
+      // Instant preview only
+      if (name === 'bannerImage' && file) {
+        setBannerUrl(URL.createObjectURL(file));
+      }
+      if (name === 'logoImage' && file) {
+        setLogoUrl(URL.createObjectURL(file));
+      }
+    } else if (name.includes('.')) {
+      // Handle nested objects like socialLinks.website
+      const [parent, child] = name.split('.');
+      setEventForm(prev => ({
+        ...prev,
+        [parent]: { ...prev[parent], [child]: value }
+      }));
+    } else {
+      setEventForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const resetForm = () => {
+    setEventForm({
+      title: '',
+      description: '',
+      date: '',
+      endDate: '',
+      location: '',
+      venue: '',
+      organizer: 'institution',
+      organizationName: '',
+      category: '',
+      maxParticipants: '',
+      isPaid: false,
+      fee: '',
+      tags: '',
+      requirements: '',
+      contactEmail: user?.email || '',
+      contactPhone: user?.phone || '',
+      bannerImage: null,
+      logoImage: null,
+      socialLinks: {
+        website: '',
+        linkedin: ''
+      },
+      audienceType: '',
+      cohosts: '',
+      sessions: '',
+      eventLink: ''
+    });
+    setBannerUrl(null);
+    setLogoUrl(null);
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      
+      // Build organizer object from form state
+      const organizer = {
+        name: eventForm.organizationName || '',
+        type: eventForm.organizer || 'institution',
+        contactEmail: eventForm.contactEmail || '',
+        contactPhone: eventForm.contactPhone || ''
+      };
+
+      // Validate required organizer fields
+      if (!organizer.name || !organizer.type) {
+        alert('Organizer name and type are required');
+        setLoading(false);
+        return;
+      }
+
+      const eventData = {
+        title: eventForm.title,
+        description: eventForm.description,
+        type: eventForm.category,
+        organizer,
+        location: {
+          type: eventForm.location,
+          venue: eventForm.venue,
+          eventLink: eventForm.eventLink || ''
+        },
+        capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
+        date: eventForm.date,
+        endDate: eventForm.endDate || eventForm.date,
+        isPaid: eventForm.isPaid,
+        price: eventForm.isPaid ? parseFloat(eventForm.fee) : 0,
+        tags: Array.isArray(eventForm.tags)
+          ? eventForm.tags
+          : typeof eventForm.tags === 'string'
+            ? eventForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
+            : [],
+        requirements: eventForm.requirements
+          ? eventForm.requirements.split('\n').map(r => r.trim()).filter(Boolean)
+          : [],
+        socialLinks: {
+          website: eventForm.socialLinks?.website || '',
+          linkedin: eventForm.socialLinks?.linkedin || ''
+        },
+        participants: 0,
+        bannerURL: bannerUrl || '',
+        logoURL: logoUrl || '',
+      };
+
+      console.log('Sending event data:', eventData);
+
+      // Always use FormData for legacy backend
+      const formData = new FormData();
+      Object.keys(eventData).forEach(key => {
+        const value = eventData[key];
+        if (typeof value === 'object' && value !== null) {
+          formData.append(key, JSON.stringify(value));
+        } else if (value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+      if (eventForm.bannerImage instanceof File) {
+        formData.append('banner', eventForm.bannerImage);
+      }
+      if (eventForm.logoImage instanceof File) {
+        formData.append('logo', eventForm.logoImage);
+      }
+      const response = await createEventWithFiles(formData);
+
+      if (response.success && response.event) {
+        setShowCreateModal(false);
+        resetForm();
+        // Reload the page to refresh events
+        window.location.reload();
+        alert('Event created successfully!');
+      } else {
+        console.error('Create event response:', response);
+        alert(response.error || response.message || 'Failed to create event');
+      }
+    } catch (err) {
+      console.error('Error creating event:', err);
+      alert('Failed to create event: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Helper function to determine event status
   const getEventStatus = (event) => {
     if (event.verificationStatus === 'pending') return 'draft';
@@ -160,23 +308,6 @@ const ManageEvents = () => {
     
     return matchesSearch;
   });
-
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      active: { bg: "bg-green-500/20", text: "text-green-400", label: "Active" },
-      upcoming: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Upcoming" },
-      draft: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Draft" },
-      past: { bg: "bg-gray-500/20", text: "text-gray-400", label: "Past" },
-      rejected: { bg: "bg-red-500/20", text: "text-red-400", label: "Rejected" }
-    };
-    
-    const config = statusConfig[status] || statusConfig.draft;
-    return (
-      <span className={`${config.bg} ${config.text} text-xs px-2 py-1 rounded-full font-medium`}>
-        {config.label}
-      </span>
-    );
-  };
 
   const statsCalculated = {
     total: events.length,
@@ -280,173 +411,44 @@ const ManageEvents = () => {
         />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* Header with view toggle */}
+          {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold" style={{ textShadow: "0 0 8px rgba(155, 93, 229, 0.35)" }}>
                 Manage Events
               </h1>
               <p className="text-gray-300 mt-1">
-                {viewMode === "dashboard" 
-                  ? `Manage events, approvals, and analytics in one place.${user?.name ? ` Hi, ${user.name}!` : ""}`
-                  : "Create, manage, and track all your events"
-                }
+                Create, manage, and track all your events
               </p>
             </div>
             
-            <div className="flex gap-3">
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-800/60 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("dashboard")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "dashboard"
-                      ? "bg-[#9b5de5] text-white"
-                      : "text-gray-300 hover:text-white"
-                  }`}
-                >
-                  <i className="ri-dashboard-line mr-2"></i>
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => setViewMode("manage")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    viewMode === "manage"
-                      ? "bg-[#9b5de5] text-white"
-                      : "text-gray-300 hover:text-white"
-                  }`}
-                >
-                  <i className="ri-list-check-2 mr-2"></i>
-                  Manage
-                </button>
-              </div>
-
-              <button 
-                onClick={() => navigate('/host/events-new')}
-                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all hover:shadow-[0_0_15px_rgba(155,93,229,0.35)]"
-              >
-                <i className="ri-add-line text-lg"></i>
-                Create New Event
-              </button>
-            </div>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-all hover:shadow-[0_0_15px_rgba(155,93,229,0.35)]"
+            >
+              <i className="ri-add-line text-lg"></i>
+              Create New Event
+            </button>
           </div>
 
-          {viewMode === "dashboard" && (
-            <>
-              {/* Welcome Banner */}
-              <div className="bg-gradient-to-r from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="text-center sm:text-left">
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    Event Dashboard{user?.name ? ` — Hi, ${user.name}!` : ""}
-                  </h2>
-                  <p className="text-gray-300 mt-1">
-                    Manage events, approvals, and analytics in one place.
-                  </p>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+            {[
+              { label: "Total Events", count: statsCalculated.total, icon: "ri-calendar-line", color: "bg-[#9b5de5]/20 text-[#d9c4ff]" },
+              { label: "Active", count: statsCalculated.active, icon: "ri-play-circle-line", color: "bg-green-500/20 text-green-400" },
+              { label: "Upcoming", count: statsCalculated.upcoming, icon: "ri-time-line", color: "bg-blue-500/20 text-blue-400" },
+              { label: "Drafts", count: statsCalculated.draft, icon: "ri-draft-line", color: "bg-yellow-500/20 text-yellow-400" },
+              { label: "Past", count: statsCalculated.past, icon: "ri-history-line", color: "bg-gray-500/20 text-gray-400" }
+            ].map((stat, index) => (
+              <div key={index} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
+                <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-3`}>
+                  <i className={`${stat.icon} text-lg`}></i>
                 </div>
-                <img
-                  src="https://readdy.ai/api/search-image?query=3D%20dashboard%20host%20galaxy%20purple&width=220&height=180&seq=3&orientation=squarish"
-                  alt="Host"
-                  className="w-40 h-36 object-contain"
-                />
+                <div className="text-sm text-gray-400">{stat.label}</div>
+                <div className="text-xl font-bold">{stat.count}</div>
               </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                {[
-                  {
-                    icon: "ri-broadcast-fill",
-                    label: "Active Events",
-                    value: stats?.activeEvents ?? 0,
-                    bg: "bg-[#9b5de5]/20",
-                    text: "text-[#d9c4ff]",
-                  },
-                  {
-                    icon: "ri-team-fill",
-                    label: "Total Registrations",
-                    value: stats?.totalRegistrations ?? 0,
-                    bg: "bg-green-500/20",
-                    text: "text-green-400",
-                  },
-                  {
-                    icon: "ri-time-fill",
-                    label: "Pending Approvals",
-                    value: stats?.pendingApprovals ?? 0,
-                    bg: "bg-amber-500/20",
-                    text: "text-amber-400",
-                  },
-                  {
-                    icon: "ri-bank-card-2-fill",
-                    label: "Revenue",
-                    value: stats?.revenue ?? "₹0",
-                    bg: "bg-blue-500/20",
-                    text: "text-blue-400",
-                  },
-                ].map((s, i) => (
-                  <div
-                    key={i}
-                    className="bg-gray-800/60 rounded-lg p-4 flex items-center border border-gray-700/40 hover:border-[#9b5de5]/30"
-                  >
-                    <div
-                      className={`w-12 h-12 rounded-lg ${s.bg} flex items-center justify-center ${s.text} mr-4`}
-                    >
-                      <i className={`${s.icon} ri-lg`} />
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-400">{s.label}</div>
-                      <div className="text-xl font-bold">{s.value}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Recent Events */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-xl font-semibold">Recent Events</h2>
-                  <button
-                    className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                    onClick={() => setViewMode("manage")}
-                  >
-                    <i className="ri-list-check-2" />
-                    View All Events
-                  </button>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  {events.slice(0, 4).map((event) => (
-                    <HostEventCard 
-                      key={event.id} 
-                      event={event}
-                      onEdit={handleEditEvent}
-                      onDelete={handleDeleteEvent}
-                      onViewParticipants={handleViewParticipants}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {viewMode === "manage" && (
-            <>
-              {/* Stats Overview */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-                {[
-                  { label: "Total Events", count: statsCalculated.total, icon: "ri-calendar-line", color: "bg-[#9b5de5]/20 text-[#d9c4ff]" },
-                  { label: "Active", count: statsCalculated.active, icon: "ri-play-circle-line", color: "bg-green-500/20 text-green-400" },
-                  { label: "Upcoming", count: statsCalculated.upcoming, icon: "ri-time-line", color: "bg-blue-500/20 text-blue-400" },
-                  { label: "Drafts", count: statsCalculated.draft, icon: "ri-draft-line", color: "bg-yellow-500/20 text-yellow-400" },
-                  { label: "Past", count: statsCalculated.past, icon: "ri-history-line", color: "bg-gray-500/20 text-gray-400" }
-                ].map((stat, index) => (
-                  <div key={index} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
-                    <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center mb-3`}>
-                      <i className={`${stat.icon} text-lg`}></i>
-                    </div>
-                    <div className="text-sm text-gray-400">{stat.label}</div>
-                    <div className="text-xl font-bold">{stat.count}</div>
-                  </div>
-                ))}
-              </div>
+            ))}
+          </div>
 
               {/* Filter Tabs */}
               <div className="flex flex-wrap gap-2 mb-6">
@@ -485,7 +487,7 @@ const ManageEvents = () => {
                     {searchQuery ? "Try adjusting your search terms" : "Start by creating your first event"}
                   </p>
                   <button 
-                    onClick={() => navigate('/host/events-new')}
+                    onClick={() => setShowCreateModal(true)}
                     className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-3 rounded-lg font-medium transition-all"
                   >
                     Create Your First Event
@@ -494,105 +496,309 @@ const ManageEvents = () => {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {filteredEvents.map((event) => (
-                    <div key={event.id} className="bg-gray-800/60 border border-gray-700 rounded-xl overflow-hidden hover:border-[#9b5de5]/30 transition-all group">
-                      {/* Event Image */}
-                      <div className="h-48 bg-gray-700 relative overflow-hidden">
-                        <img 
-                          src={event.cover} 
-                          alt={event.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-3 right-3">
-                          {getStatusBadge(event.status)}
-                        </div>
-                        <div className="absolute top-3 left-3">
-                          <div className="bg-gray-900/70 text-white text-xs px-2 py-1 rounded-full">
-                            {event.category}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Event Content */}
-                      <div className="p-5">
-                        <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[#9b5de5] transition-colors">
-                          {event.title}
-                        </h3>
-                        <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                          {event.description}
-                        </p>
-
-                        {/* Event Details */}
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center text-gray-400 text-sm">
-                            <i className="ri-calendar-line mr-2"></i>
-                            {new Date(event.date).toLocaleDateString('en-US', { 
-                              month: 'long', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
-                          <div className="flex items-center text-gray-400 text-sm">
-                            <i className="ri-map-pin-line mr-2"></i>
-                            {event.venue}
-                          </div>
-                          <div className="flex items-center text-gray-400 text-sm">
-                            <i className="ri-user-line mr-2"></i>
-                            {event.registrations} / {event.maxRegistrations} registered
-                          </div>
-                        </div>
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {event.tags.slice(0, 3).map((tag, index) => (
-                            <span key={index} className="bg-[#9b5de5]/20 text-[#d9c4ff] text-xs px-2 py-1 rounded-full">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleEditEvent(event)}
-                              className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-700/50"
-                            >
-                              <i className="ri-edit-line"></i>
-                            </button>
-                            <button 
-                              onClick={() => window.open(`/events/${event._id}`, '_blank')}
-                              className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-700/50"
-                            >
-                              <i className="ri-eye-line"></i>
-                            </button>
-                            <button 
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/events/${event._id}`);
-                                alert('Event link copied to clipboard!');
-                              }}
-                              className="text-gray-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-700/50"
-                            >
-                              <i className="ri-share-line"></i>
-                            </button>
-                          </div>
-                          <button 
-                            onClick={() => handleDeleteEvent(event._id)}
-                            className="text-gray-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-gray-700/50"
-                          >
-                            <i className="ri-delete-bin-line"></i>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <EnhancedHostEventCard
+                      key={event.id}
+                      event={event}
+                      onEdit={handleEditEvent}
+                      onDelete={handleDeleteEvent}
+                      onViewParticipants={handleViewParticipants}
+                    />
                   ))}
                 </div>
               )}
-            </>
-          )}
         </div>
       </div>
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Create New Event</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 max-h-[80vh] overflow-y-auto">
+              <form onSubmit={handleCreateEvent} className="space-y-4">
+                {/* Basic Information */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Event Title *</label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={eventForm.title}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Description *</label>
+                  <textarea
+                    name="description"
+                    value={eventForm.description}
+                    onChange={handleFormChange}
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Organization Name *</label>
+                  <input
+                    type="text"
+                    name="organizationName"
+                    value={eventForm.organizationName}
+                    onChange={handleFormChange}
+                    required
+                    placeholder="e.g., Central University of Jharkhand, Tech Corp"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Date and Time */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Date *</label>
+                  <input
+                    type="datetime-local"
+                    name="date"
+                    value={eventForm.date}
+                    onChange={handleFormChange}
+                    min={getMinDate()}
+                    required
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Location */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Location Type *</label>
+                    <select
+                      name="location"
+                      value={eventForm.location}
+                      onChange={handleFormChange}
+                      required
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    >
+                      <option value="">Select type</option>
+                      <option value="online">Online</option>
+                      <option value="offline">Offline</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
+                  </div>
+                  {eventForm.location === 'offline' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Venue *</label>
+                      <input
+                        type="text"
+                        name="venue"
+                        value={eventForm.venue}
+                        onChange={handleFormChange}
+                        required
+                        placeholder="Venue name"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
+                  {eventForm.location === 'online' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Event Link *</label>
+                      <input
+                        type="url"
+                        name="eventLink"
+                        value={eventForm.eventLink || ''}
+                        onChange={handleFormChange}
+                        required
+                        placeholder="https://..."
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
+                  {eventForm.location === 'hybrid' && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Venue *</label>
+                        <input
+                          type="text"
+                          name="venue"
+                          value={eventForm.venue}
+                          onChange={handleFormChange}
+                          required
+                          placeholder="Venue name"
+                          className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Event Link *</label>
+                        <input
+                          type="url"
+                          name="eventLink"
+                          value={eventForm.eventLink || ''}
+                          onChange={handleFormChange}
+                          required
+                          placeholder="https://..."
+                          className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Category and Participants */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Category</label>
+                    <select
+                      name="category"
+                      value={eventForm.category}
+                      onChange={handleFormChange}
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    >
+                      <option value="">Select category</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Programming">Programming</option>
+                      <option value="Cultural">Cultural</option>
+                      <option value="Academic">Academic</option>
+                      <option value="Sports">Sports</option>
+                      <option value="Workshop">Workshop</option>
+                      <option value="Seminar">Seminar</option>
+                      <option value="Conference">Conference</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Max Participants</label>
+                    <input
+                      type="number"
+                      name="maxParticipants"
+                      value={eventForm.maxParticipants}
+                      onChange={handleFormChange}
+                      min="1"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Event Type and Fee */}
+                <div>
+                  <label className="block text-sm font-medium mb-3">Event Type</label>
+                  <div className="flex items-center gap-6 mb-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isPaid"
+                        value="false"
+                        checked={!eventForm.isPaid}
+                        onChange={() => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
+                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                      />
+                      <span className="text-white">Free Event</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isPaid"
+                        value="true"
+                        checked={eventForm.isPaid}
+                        onChange={() => setEventForm(prev => ({ ...prev, isPaid: true }))}
+                        className="mr-2 text-[#9b5de5] focus:ring-[#9b5de5]"
+                      />
+                      <span className="text-white">Paid Event</span>
+                    </label>
+                  </div>
+                  {eventForm.isPaid && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Registration Fee (₹) *</label>
+                      <input
+                        type="number"
+                        name="fee"
+                        value={eventForm.fee}
+                        onChange={handleFormChange}
+                        min="1"
+                        step="0.01"
+                        required={eventForm.isPaid}
+                        placeholder="Enter amount"
+                        className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    name="tags"
+                    value={eventForm.tags}
+                    onChange={handleFormChange}
+                    placeholder="e.g., Technology, AI, Innovation"
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                  />
+                </div>
+
+                {/* Event Images */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Banner Image</label>
+                    <input
+                      type="file"
+                      name="bannerImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {bannerUrl && (
+                      <div className="mt-2 w-full h-24 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden border border-gray-700">
+                        <img src={bannerUrl} alt="Banner Preview" className="object-cover w-full h-full" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Event Logo Image</label>
+                    <input
+                      type="file"
+                      name="logoImage"
+                      onChange={handleFormChange}
+                      accept="image/*"
+                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                    />
+                    {logoUrl && (
+                      <div className="mt-2 flex items-center justify-center">
+                        <img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-gray-700" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-[#9b5de5] hover:bg-[#8c4be1] px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Creating...' : 'Create Event'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
