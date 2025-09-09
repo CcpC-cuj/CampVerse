@@ -797,6 +797,34 @@ const HostEvents = () => {
                       />
                     </div>
                   )}
+                    {eventForm.location === 'hybrid' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Venue *</label>
+                          <input
+                            type="text"
+                            name="venue"
+                            value={eventForm.venue}
+                            onChange={handleFormChange}
+                            required
+                            placeholder="Venue name"
+                            className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-2">Event Link *</label>
+                          <input
+                            type="url"
+                            name="eventLink"
+                            value={eventForm.eventLink || ''}
+                            onChange={handleFormChange}
+                            required
+                            placeholder="https://..."
+                            className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
                 </div>
 
                 {/* Category and Participants */}
@@ -986,41 +1014,7 @@ const HostEvents = () => {
                   />
                 </div>
 
-                {/* Verification & Featured */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Verified Event</label>
-                    <input
-                      type="checkbox"
-                      name="verified"
-                      checked={!!eventForm.verified}
-                      onChange={e => handleFormChange({ target: { name: 'verified', value: e.target.checked } })}
-                      className="mr-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Featured Event</label>
-                    <input
-                      type="checkbox"
-                      name="featured"
-                      checked={!!eventForm.featured}
-                      onChange={e => handleFormChange({ target: { name: 'featured', value: e.target.checked } })}
-                      className="mr-2"
-                    />
-                  </div>
-                </div>
 
-                {/* Waitlist */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Enable Waitlist</label>
-                  <input
-                    type="checkbox"
-                    name="waitlistEnabled"
-                    checked={!!eventForm.waitlistEnabled}
-                    onChange={e => handleFormChange({ target: { name: 'waitlistEnabled', value: e.target.checked } })}
-                    className="mr-2"
-                  />
-                </div>
 
                 {/* Event Images */}
                 <div className="grid grid-cols-2 gap-4">
@@ -1174,48 +1168,7 @@ const HostEvents = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">End Date</label>
-                    <input
-                      type="datetime-local"
-                      name="endDate"
-                      value={eventForm.endDate}
-                      onChange={handleFormChange}
-                      min={eventForm.date || getMinDate()}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Location Type *</label>
-                    <select
-                      name="location"
-                      value={eventForm.location}
-                      onChange={handleFormChange}
-                      required
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    >
-                      <option value="">Select type</option>
-                      <option value="online">Online</option>
-                      <option value="offline">Offline</option>
-                      <option value="hybrid">Hybrid</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Venue</label>
-                    <input
-                      type="text"
-                      name="venue"
-                      value={eventForm.venue}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-[#9b5de5] focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                    {/* End Date field removed, and misplaced eventData object removed from JSX. Continue with category field. */}
                     <label className="block text-sm font-medium mb-2">Category</label>
                     <select
                       name="category"
