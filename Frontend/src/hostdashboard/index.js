@@ -7,3 +7,5 @@ export { default as HostAnalytics } from "./HostAnalytics";
 export { default as HostSettings } from "./HostSettings";
 // Component exports
 export { default as CreateEventModal } from "./components/CreateEventModal";
+export { default as EditEventModal } from "./components/EditEventModal";
+export { default as DeleteEventModal } from "./components/DeleteEventModal";

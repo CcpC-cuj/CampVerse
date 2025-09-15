@@ -5,7 +5,9 @@ import { getMyEvents } from "../api/host";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
 import EnhancedHostEventCard from "./EnhancedHostEventCard";
-import CreateEventModal from "./components/CreateEventModal"; // Import the new component
+import CreateEventModal from "./components/CreateEventModal";
+import EditEventModal from "./components/EditEventModal";
+import DeleteEventModal from "./components/DeleteEventModal";
 
 const ManageEvents = () => {
   const { user } = useAuth();
@@ -17,6 +19,9 @@ const ManageEvents = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -132,20 +137,22 @@ const ManageEvents = () => {
   // Event handlers for HostEventCard
   const handleEditEvent = (event) => {
     console.log("Edit event:", event);
-    // Navigate to edit event page or open edit modal
-    navigate(`/host/events-new?edit=${event._id}`);
+    setSelectedEvent(event);
+    setShowEditModal(true);
   };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-      try {
-        // Add delete API call here
-        console.log("Delete event:", eventId);
-        // Refresh events after deletion
-        window.location.reload();
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("Failed to delete event. Please try again.");
+  const handleDeleteEvent = (eventId) => {
+    // Find the event by ID - check both id and _id fields
+    const event = events.find(e => e.id === eventId || e._id === eventId);
+    if (event) {
+      setSelectedEvent(event);
+      setShowDeleteModal(true);
+    } else {
+      // If we can't find by ID, try to find by the full event object
+      // This handles cases where the onDelete handler passes the full event
+      if (eventId && typeof eventId === 'object' && (eventId.id || eventId._id)) {
+        setSelectedEvent(eventId);
+        setShowDeleteModal(true);
       }
     }
   };
@@ -156,6 +163,16 @@ const ManageEvents = () => {
   };
 
   const handleEventCreated = () => {
+    // Reload the page to refresh events
+    window.location.reload();
+  };
+
+  const handleEventUpdated = () => {
+    // Reload the page to refresh events
+    window.location.reload();
+  };
+
+  const handleEventDeleted = () => {
     // Reload the page to refresh events
     window.location.reload();
   };
@@ -326,11 +343,25 @@ const ManageEvents = () => {
         </div>
       </div>
 
-      {/* Create Event Modal */}
+      {/* Modals */}
       <CreateEventModal 
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onEventCreated={handleEventCreated}
+      />
+      
+      <EditEventModal 
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onEventUpdated={handleEventUpdated}
+        event={selectedEvent}
+      />
+      
+      <DeleteEventModal 
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onEventDeleted={handleEventDeleted}
+        event={selectedEvent}
       />
     </div>
   );
