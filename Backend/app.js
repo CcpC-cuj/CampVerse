@@ -163,26 +163,35 @@ app.use(smartTimeout);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
-  message: 'Too many authentication attempts, please try again later.',
+  message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many authentication attempts, please try again later.' });
+  }
 });
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many API requests, please try again later.',
+  message: { error: 'Too many API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many API requests, please try again later.' });
+  }
 });
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 requests per windowMs
-  message: 'Too many requests to this endpoint, please try again later.',
+  message: { error: 'Too many requests to this endpoint, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many requests to this endpoint, please try again later.' });
+  }
 });
 
 // Apply rate limiters to different route types
