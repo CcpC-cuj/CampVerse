@@ -2,7 +2,7 @@ const Event = require('../Models/Event');
 
 async function requireHostOrCoHost(req, res, next) {
   const userId = req.user.id;
-  const eventId = req.body.eventId || req.params.id;
+  const eventId = (req.body && req.body.eventId) || req.params.id || req.params.eventId;
   try {
     const event = await Event.findById(eventId);
     if (!event) {

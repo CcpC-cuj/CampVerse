@@ -4,11 +4,11 @@ import { getMyEvents, createHostEvent, updateHostEvent, deleteHostEvent } from "
 import { createEvent, updateEvent, deleteEvent, createEventWithFiles, updateEventWithFiles } from "../api/events";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
-import HostEventCard from "./HostEventCard";
-import EnhancedHostEventCard from "./EnhancedHostEventCard";
+import SimpleEventCard from "./SimpleEventCard";
+import DetailedEventCard from "./DetailedEventCard";
 import ParticipantsModal from "./ParticipantsModal";
 
-const HostEvents = () => {
+const HostEventsDashboard = () => {
   // Add URLs for instant preview
   const [bannerUrl, setBannerUrl] = useState(null);
   const [logoUrl, setLogoUrl] = useState(null);
@@ -623,7 +623,7 @@ const HostEvents = () => {
                   }
                   // Pass safe props to card
                   return (
-                    <EnhancedHostEventCard
+                    <DetailedEventCard
                       key={event._id}
                       event={{
                         ...event,
@@ -1266,4 +1266,4 @@ const HostEvents = () => {
   );
 };
 
-export default HostEvents;
+export default HostEventsDashboard;

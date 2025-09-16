@@ -300,7 +300,7 @@ router.post('/scan', authenticateToken, requireHostOrCoHost, scanQr);
 router.get(
   '/:id/analytics',
   authenticateToken,
-  requireRole('host'),
+  requireHostOrCoHost,
   getEventAnalytics,
 );
 

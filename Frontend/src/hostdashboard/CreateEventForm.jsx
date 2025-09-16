@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { createEventWithFiles } from "../api/events";
 
-const CreateEvent = ({ onSuccess }) => {
+const CreateEventForm = ({ onSuccess, onClose }) => {
 	const { user } = useAuth();
 	const [eventForm, setEventForm] = useState({
 		title: '',
@@ -122,7 +122,9 @@ const CreateEvent = ({ onSuccess }) => {
 				},
 				audienceType: eventForm.audienceType,
 				cohosts: eventForm.cohosts,
-				sessions: eventForm.sessions,
+				sessions: eventForm.sessions
+					? eventForm.sessions.split('\n').map(s => s.trim()).filter(Boolean)
+					: [],
 				participants: 0,
 				bannerURL: bannerUrl || '',
 				logoURL: logoUrl || '',
@@ -158,7 +160,9 @@ const CreateEvent = ({ onSuccess }) => {
 			<div className="relative w-full max-w-3xl p-8 bg-[rgba(21,23,41,0.85)] border border-purple-600 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
 				<div className="flex justify-between items-center mb-6">
 					<h3 className="text-2xl font-bold text-white">Create New Event</h3>
-					{/* If you want a close button, add a prop for modal control */}
+					{onClose && (
+					<button onClick={onClose} className="text-purple-300 hover:text-white text-2xl transition-colors">×</button>
+				)}
 				</div>
 				<div className="max-h-[75vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#9b5de5 rgba(255,255,255,0.1)' }}>
 					<form onSubmit={handleSubmit} className="space-y-4">
@@ -276,7 +280,7 @@ const CreateEvent = ({ onSuccess }) => {
 							</div>
 							<div>
 								<label className="block text-sm font-medium text-purple-300 mb-2">Contact Phone</label>
-								<input type="text" name="contactPhone" value={eventForm.contactPhone} onChange={handleFormChange} className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+								<input type="text" name="contactPhone" value={eventForm.contactPhone} readOnly className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed" />
 							</div>
 						</div>
 						{/* Event Audience */}
@@ -378,4 +382,4 @@ const CreateEvent = ({ onSuccess }) => {
 	      );
       }
 
-export default CreateEvent;
+export default CreateEventForm;

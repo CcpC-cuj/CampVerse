@@ -88,7 +88,13 @@ export async function deleteEvent(id) {
     method: 'DELETE',
     headers: { ...getAuthHeaders() },
   });
-  return res.json();
+  
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error || 'Failed to delete event');
+  }
+  
+  return { success: true, message: 'Event deleted successfully' };
 }
 
 export async function rsvpEvent(eventId) {

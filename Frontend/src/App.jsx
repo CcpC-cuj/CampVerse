@@ -1,4 +1,4 @@
-import CreateEvent from "./Events/CreateEvent";
+import { CreateEventForm } from "./hostdashboard";
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -72,7 +72,7 @@ function App() {
           <OAuthDetector />
           <Routes>
             {/* Test route for event creation */}
-            <Route path="/test-create-event" element={<CreateEvent />} />
+            <Route path="/test-create-event" element={<CreateEventForm />} />
             <Route path="/" element={<Landing />} />
             <Route
               path="/dashboard/*"

@@ -4,12 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { getMyEvents } from "../api/host";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
-import EnhancedHostEventCard from "./EnhancedHostEventCard";
-import CreateEventModal from "./components/CreateEventModal";
-import EditEventModal from "./components/EditEventModal";
-import DeleteEventModal from "./components/DeleteEventModal";
+import DetailedEventCard from "./DetailedEventCard";
+import CreateEventForm from "./CreateEventForm";
+import EditEventForm from "./EditEventForm";
 
-const ManageEvents = () => {
+const EventsManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,79 +22,67 @@ const ManageEvents = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  useEffect(() => {
-    let mounted = true;
-    
-    const loadEventsData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("Loading host events data...");
+  const loadEventsData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("Loading host events data...");
 
-        // Load events
-        let eventsData = [];
-        try {
-          eventsData = await getMyEvents();
-          console.log("Events data:", eventsData);
-          
-          if (Array.isArray(eventsData)) {
-            eventsData = eventsData;
-          } else if (eventsData && eventsData.events) {
-            eventsData = eventsData.events;
-          } else {
-            eventsData = [];
-          }
-        } catch (eventsError) {
-          console.error("Events API failed:", eventsError);
-          // Check if it's a 403 or role-related error
-          if (eventsError.message?.includes('403') || eventsError.message?.includes('Forbidden')) {
-            setError("You don't have host permissions. Please complete your host registration first.");
-          } else {
-            setError("Failed to load events. Please try again.");
-          }
+      // Load events
+      let eventsData = [];
+      try {
+        eventsData = await getMyEvents();
+        console.log("Events data:", eventsData);
+        
+        if (Array.isArray(eventsData)) {
+          eventsData = eventsData;
+        } else if (eventsData && eventsData.events) {
+          eventsData = eventsData.events;
+        } else {
           eventsData = [];
         }
-
-        if (!mounted) return;
-
-        // Transform events data for display
-        const transformedEvents = eventsData.map(event => ({
-          ...event,
-          id: event._id,
-          title: event.title,
-          date: event.schedule?.start || event.createdAt,
-          status: getEventStatus(event),
-          registrations: event.participants?.length || 0,
-          cover: event.logoURL || event.bannerURL || "/placeholder-event.jpg",
-          verificationStatus: event.verificationStatus,
-          category: event.type || 'Uncategorized',
-          participants: event.participants || [],
-          venue: event.venue || "Location TBD",
-          maxRegistrations: event.maxParticipants || 100,
-          tags: Array.isArray(event.tags) ? event.tags : (event.tags ? [event.tags] : []),
-          description: event.description || "No description available"
-        }));
-
-        setEvents(transformedEvents);
-        
-      } catch (error) {
-        console.error("Error loading events:", error);
-        setError("Failed to load events data");
-        
-        // Set empty state
-        if (mounted) {
-          setEvents([]);
+      } catch (eventsError) {
+        console.error("Events API failed:", eventsError);
+        // Check if it's a 403 or role-related error
+        if (eventsError.message?.includes('403') || eventsError.message?.includes('Forbidden')) {
+          setError("You don't have host permissions. Please complete your host registration first.");
+        } else {
+          setError("Failed to load events. Please try again.");
         }
-      } finally {
-        if (mounted) setLoading(false);
+        eventsData = [];
       }
-    };
 
+      // Transform events data for display
+      const transformedEvents = eventsData.map(event => ({
+        ...event,
+        id: event._id,
+        title: event.title,
+        date: event.date || event.schedule?.start || event.createdAt,
+        status: getEventStatus(event),
+        registrations: event.participants?.length || 0,
+        cover: event.logoURL || event.bannerURL || "/placeholder-event.jpg",
+        verificationStatus: event.verificationStatus,
+        category: event.type || 'Uncategorized',
+        participants: event.participants || [],
+        venue: event.venue || "Location TBD",
+        maxRegistrations: event.maxParticipants || 100,
+        tags: Array.isArray(event.tags) ? event.tags : (event.tags ? [event.tags] : []),
+        description: event.description || "No description available"
+      }));
+
+      setEvents(transformedEvents);
+      
+    } catch (error) {
+      console.error("Error loading events:", error);
+      setError("Failed to load events data");
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadEventsData();
-    
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   // Helper function to determine event status
@@ -104,7 +91,7 @@ const ManageEvents = () => {
     if (event.verificationStatus === 'rejected') return 'rejected';
     
     const now = new Date();
-    const eventDate = new Date(event.schedule?.start || event.createdAt);
+    const eventDate = new Date(event.date || event.schedule?.start || event.createdAt);
     
     if (eventDate > now) return 'upcoming';
     if (eventDate < now) return 'past';
@@ -167,14 +154,94 @@ const ManageEvents = () => {
     window.location.reload();
   };
 
-  const handleEventUpdated = () => {
-    // Reload the page to refresh events
-    window.location.reload();
+  const handleEventUpdated = async (eventData, bannerUrl, logoUrl) => {
+    try {
+      setLoading(true);
+      
+      // Prepare form data for API call
+      const formData = new FormData();
+      
+      // Add text fields
+      Object.keys(eventData).forEach(key => {
+        if (eventData[key] !== null && eventData[key] !== undefined) {
+          if (key === 'organizer' || key === 'location' || key === 'socialLinks') {
+            formData.append(key, JSON.stringify(eventData[key]));
+          } else {
+            formData.append(key, eventData[key]);
+          }
+        }
+      });
+      
+      // Add files if they exist
+      if (eventData.bannerImage) {
+        formData.append('banner', eventData.bannerImage);
+      }
+      if (eventData.logoImage) {
+        formData.append('logo', eventData.logoImage);
+      }
+      
+      // Call update API
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/events/${selectedEvent._id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+      
+      if (response.ok) {
+        setShowEditModal(false);
+        setSelectedEvent(null);
+        // Refresh events list
+        loadEventsData();
+      } else {
+        const errorData = await response.json();
+        console.error('Update failed:', errorData);
+        alert('Failed to update event: ' + (errorData.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+      alert('Failed to update event: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEventDeleted = () => {
-    // Reload the page to refresh events
-    window.location.reload();
+  const handleEventDeleted = async () => {
+    if (!selectedEvent) return;
+    
+    setLoading(true);
+    try {
+      const eventId = selectedEvent.id || selectedEvent._id;
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/hosts/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete event');
+      }
+
+      // Remove the deleted event from the state
+      setEvents(prevEvents => prevEvents.filter(event => 
+        event.id !== eventId && event._id !== eventId
+      ));
+      
+      setShowDeleteModal(false);
+      setSelectedEvent(null);
+      
+      // Show success message
+      alert('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      alert(`Failed to delete event: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -330,7 +397,7 @@ const ManageEvents = () => {
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {filteredEvents.map((event) => (
-                    <EnhancedHostEventCard
+                    <DetailedEventCard
                       key={event.id}
                       event={event}
                       onEdit={handleEditEvent}
@@ -344,27 +411,73 @@ const ManageEvents = () => {
       </div>
 
       {/* Modals */}
-      <CreateEventModal 
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onEventCreated={handleEventCreated}
-      />
+      {showCreateModal && (
+        <CreateEventForm 
+          onSuccess={handleEventCreated}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
       
-      <EditEventModal 
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onEventUpdated={handleEventUpdated}
-        event={selectedEvent}
-      />
+      {showEditModal && selectedEvent && (
+        <EditEventForm 
+          event={selectedEvent}
+          onSave={handleEventUpdated}
+          onCancel={() => setShowEditModal(false)}
+          loading={loading}
+        />
+      )}
       
-      <DeleteEventModal 
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onEventDeleted={handleEventDeleted}
-        event={selectedEvent}
-      />
+      {showDeleteModal && selectedEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-md p-8 bg-[rgba(21,23,41,0.85)] border border-purple-600 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-white">Delete Event</h3>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="text-purple-300 hover:text-white text-2xl transition-colors"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-300 mb-4">
+                Are you sure you want to delete the event <strong className="text-white">"{selectedEvent.title}"</strong>? 
+                This action cannot be undone.
+              </p>
+              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <p className="text-red-300 text-sm">
+                    <strong>Warning:</strong> All event data, including participant information and registrations, will be permanently deleted.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleEventDeleted}
+                disabled={loading}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Deleting...' : 'Delete Event'}
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={loading}
+                className="px-6 py-3 border border-purple-500/50 text-purple-300 rounded-full font-medium transition-colors hover:bg-purple-900/30 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default ManageEvents;
+export default EventsManagement;

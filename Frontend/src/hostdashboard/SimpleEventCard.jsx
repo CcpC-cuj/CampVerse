@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
+const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const formatDate = (dateString) => {
@@ -279,4 +279,4 @@ const HostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   );
 };
 
-export default HostEventCard;
+export default SimpleEventCard;

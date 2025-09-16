@@ -74,6 +74,52 @@ async function createEvent(req, res) {
         return res.status(400).json({ error: 'Invalid location format.' });
       }
     }
+    
+    // Parse tags - handle string, array with stringified JSON, or proper array
+    if (typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (e) {
+        // If not valid JSON, treat as comma-separated string
+        tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      }
+    } else if (Array.isArray(tags)) {
+      // Handle array containing stringified JSON
+      tags = tags.map(tag => {
+        if (typeof tag === 'string') {
+          try {
+            const parsed = JSON.parse(tag);
+            return Array.isArray(parsed) ? parsed : [tag];
+          } catch (e) {
+            return tag;
+          }
+        }
+        return tag;
+      }).flat().filter(tag => tag && tag.length > 0);
+    }
+    
+    // Parse requirements - handle string, array with stringified JSON, or proper array
+    if (typeof requirements === 'string') {
+      try {
+        requirements = JSON.parse(requirements);
+      } catch (e) {
+        // If not valid JSON, treat as newline-separated string
+        requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+      }
+    } else if (Array.isArray(requirements)) {
+      // Handle array containing stringified JSON
+      requirements = requirements.map(req => {
+        if (typeof req === 'string') {
+          try {
+            const parsed = JSON.parse(req);
+            return Array.isArray(parsed) ? parsed : [req];
+          } catch (e) {
+            return req;
+          }
+        }
+        return req;
+      }).flat().filter(req => req && req.length > 0);
+    }
     let logoURL, bannerURL;
     // File upload using storage service
     if (req.files['logo']) {
@@ -137,6 +183,7 @@ async function getEventById(req, res) {
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
+    console.log('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
     // Validate required fields for update (if present)
     const updatableFields = ['title', 'description', 'type', 'organizer', 'location', 'capacity', 'date'];
@@ -145,8 +192,72 @@ async function updateEvent(req, res) {
         return res.status(400).json({ error: `Field cannot be empty: ${field}` });
       }
     }
-    // Only allow requirements and socialLinks to be updated if present
-    if ('requirements' in req.body) update.requirements = req.body.requirements;
+    // Parse and update tags if present
+    if ('tags' in req.body) {
+      let tags = req.body.tags;
+      if (typeof tags === 'string') {
+        try {
+          tags = JSON.parse(tags);
+        } catch (e) {
+          tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        }
+      } else if (Array.isArray(tags)) {
+        // Handle array containing stringified JSON
+        tags = tags.map(tag => {
+          if (typeof tag === 'string') {
+            try {
+              const parsed = JSON.parse(tag);
+              return Array.isArray(parsed) ? parsed : [tag];
+            } catch (e) {
+              return tag;
+            }
+          }
+          return tag;
+        }).flat().filter(tag => tag && tag.length > 0);
+      }
+      update.tags = tags;
+    }
+    
+    // Parse and update requirements if present
+    if ('requirements' in req.body) {
+      let requirements = req.body.requirements;
+      if (typeof requirements === 'string') {
+        try {
+          requirements = JSON.parse(requirements);
+        } catch (e) {
+          requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+        }
+      } else if (Array.isArray(requirements)) {
+        // Handle array containing stringified JSON
+        requirements = requirements.map(req => {
+          if (typeof req === 'string') {
+            try {
+              const parsed = JSON.parse(req);
+              return Array.isArray(parsed) ? parsed : [req];
+            } catch (e) {
+              return req;
+            }
+          }
+          return req;
+        }).flat().filter(req => req && req.length > 0);
+      }
+      update.requirements = requirements;
+    }
+    
+    // Parse and update sessions if present - preserve line breaks and formatting
+    if ('sessions' in req.body) {
+      let sessions = req.body.sessions;
+      if (typeof sessions === 'string') {
+        // Split by lines and preserve each line as separate array element
+        sessions = sessions.split('\n').filter(s => s.trim().length > 0);
+      } else if (Array.isArray(sessions)) {
+        // If already array, keep as is but filter empty entries
+        sessions = sessions.filter(s => s && s.trim().length > 0);
+      }
+      update.sessions = sessions;
+    }
+    
+    // Only allow socialLinks to be updated if present
     if ('socialLinks' in req.body) update.socialLinks = req.body.socialLinks;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
@@ -488,7 +599,7 @@ async function getEventAnalytics(req, res) {
   try {
     const eventId = req.params.id;
     const pipeline = [
-      { $match: { eventId: mongoose.Types.ObjectId(eventId) } },
+      { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
       {
         $group: {
           _id: null,

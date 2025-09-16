@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useEventParticipants } from "../hooks/useEventParticipants";
 
-const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
+const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const { participantStats, loading: participantsLoading, error: participantsError, refetch } = useEventParticipants(event._id);
 
@@ -249,6 +249,16 @@ const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) 
           </div>
         )}
 
+        {/* Sessions */}
+        {event.sessions && event.sessions.length > 0 && (
+          <div className="mt-3">
+            <h4 className="text-sm font-medium text-purple-300 mb-1">Sessions/Agenda:</h4>
+            <div className="text-gray-400 text-sm" style={{ whiteSpace: 'pre-wrap' }}>
+              {Array.isArray(event.sessions) ? event.sessions.join('\n') : event.sessions}
+            </div>
+          </div>
+        )}
+
         {/* Description */}
         {event.description && (
           <p className="mt-3 text-gray-400 text-sm line-clamp-2">
@@ -319,4 +329,4 @@ const EnhancedHostEventCard = ({ event, onEdit, onDelete, onViewParticipants }) 
   );
 };
 
-export default EnhancedHostEventCard;
+export default DetailedEventCard;
