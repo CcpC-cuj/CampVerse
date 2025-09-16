@@ -188,14 +188,6 @@ export async function getEventAnalytics(eventId) {
   return res.json();
 }
 
-export async function nominateCoHost(eventId, userId) {
-  const res = await fetch(`${API_URL}/api/events/nominate-cohost`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ eventId, userId }),
-  });
-  return res.json();
-}
 
 export async function approveCoHost(eventId, userId) {
   const res = await fetch(`${API_URL}/api/events/approve-cohost`, {
