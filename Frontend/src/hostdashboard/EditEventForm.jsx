@@ -1,111 +1,33 @@
 import React, { useState, useEffect } from "react";
+import { nominateCoHost } from "../api/events";
+import { findUserByEmail } from "../api/users";
 
 const EditEventForm = ({ event, onSave, onCancel, loading }) => {
   console.log('EditEventForm received event:', event);
   const [eventForm, setEventForm] = useState({
-    title: event?.title || '',
-    description: event?.description || '',
-    date: event?.date ? (() => {
-      const eventDate = new Date(event.date);
-      // Add 5.5 hours to convert UTC to IST for display
-      eventDate.setHours(eventDate.getHours() + 5);
-      eventDate.setMinutes(eventDate.getMinutes() + 30);
-      return eventDate.toISOString().slice(0, 16);
-    })() : '',
-    location: (() => {
-      if (typeof event?.location === 'string') {
-        try {
-          const parsed = JSON.parse(event.location);
-          return parsed.type || parsed || '';
-        } catch {
-          // For simple strings like '"offline"', clean and return
-          return event.location.replace(/"/g, '') || '';
-        }
-      }
-      return event?.location?.type || '';
-    })(),
-    venue: (() => {
-      if (typeof event?.location === 'string') {
-        try {
-          const parsed = JSON.parse(event.location);
-          return parsed.venue || '';
-        } catch {
-          // If location is just a type string, venue should be empty
-          return '';
-        }
-      }
-      return event?.location?.venue || '';
-    })(),
-    eventLink: (() => {
-      if (typeof event?.location === 'string') {
-        try {
-          const parsed = JSON.parse(event.location);
-          return parsed.eventLink || '';
-        } catch {
-          return '';
-        }
-      }
-      return event?.location?.eventLink || '';
-    })(),
-    organizer: (() => {
-      if (typeof event?.organizer === 'string') {
-        try {
-          const parsed = JSON.parse(event.organizer);
-          return parsed.name || parsed || '';
-        } catch {
-          return event.organizer.replace(/"/g, '') || '';
-        }
-      }
-      return event?.organizer?.name || '';
-    })(),
-    organizerType: (() => {
-      if (typeof event?.organizer === 'string') {
-        try {
-          const parsed = JSON.parse(event.organizer);
-          return parsed.type || '';
-        } catch {
-          // For simple strings like '"CCPC-CUJ"', default to 'club' if it looks like an organization
-          const cleanName = event.organizer.replace(/"/g, '');
-          if (cleanName && cleanName.length > 0) {
-            return 'club'; // Default assumption for organization names
-          }
-          return '';
-        }
-      }
-      return event?.organizer?.type || '';
-    })(),
-    organizationName: event?.organizationName || '',
-    category: event?.type || '',
-    maxParticipants: event?.capacity?.toString() || '',
-    isPaid: event?.isPaid || false,
-    fee: event?.price?.toString() || '',
-    tags: Array.isArray(event?.tags) ? event.tags.join(', ') : event?.tags || '',
-    requirements: Array.isArray(event?.requirements) ? event.requirements.join('\n') : event?.requirements || '',
-    contactEmail: event?.contactEmail || '',
-    contactPhone: event?.contactPhone || '',
+    title: '',
+    description: '',
+    date: '',
+    location: '',
+    venue: '',
+    eventLink: '',
+    organizationName: '',
+    category: '',
+    maxParticipants: '',
+    isPaid: false,
+    fee: '',
+    tags: '',
+    requirements: '',
+    contactEmail: '',
+    contactPhone: '',
     bannerImage: null,
     logoImage: null,
-    socialLinks: (() => {
-      try {
-        if (typeof event?.socialLinks === 'string') {
-          return JSON.parse(event.socialLinks);
-        }
-        if (event?.socialLinks && typeof event.socialLinks === 'object') {
-          return {
-            website: event.socialLinks.website || '',
-            linkedin: event.socialLinks.linkedin || ''
-          };
-        }
-      } catch (e) {
-        console.warn('Error parsing socialLinks:', e);
-      }
-      return { website: '', linkedin: '' };
-    })(),
-    audienceType: event?.audienceType || '',
-    cohosts: Array.isArray(event?.coHosts) ? event.coHosts : [],
-    sessions: Array.isArray(event?.sessions) ? event.sessions.join('\n') : (event?.sessions || ''),
-    certificateEnabled: event?.features?.certificateEnabled || false,
-    chatEnabled: event?.features?.chatEnabled || false,
+    socialLinks: { website: '', linkedin: '' },
+    audienceType: '',
+    cohosts: [],
+    sessions: '',
+    certificateEnabled: false,
+    chatEnabled: false,
   });
   const [bannerUrl, setBannerUrl] = useState(event?.bannerURL || null);
   const [logoUrl, setLogoUrl] = useState(event?.logoURL || null);
@@ -116,81 +38,34 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
       console.log('Event data in useEffect:', event);
       
 
-      // Update form with fresh event data
-      setEventForm(prev => ({
-        ...prev,
-        title: event?.title || '',
-        description: event?.description || '',
-        date: event?.date ? (() => {
-          const eventDate = new Date(event.date);
-          eventDate.setHours(eventDate.getHours() + 5);
-          eventDate.setMinutes(eventDate.getMinutes() + 30);
-          return eventDate.toISOString().slice(0, 16);
-        })() : '',
-        location: (() => {
-          if (typeof event?.location === 'string') {
-            return event.location.replace(/"/g, '') || '';
-          }
-          return event?.location?.type || '';
-        })(),
-        venue: (() => {
-          if (typeof event?.location === 'string') {
-            try {
-              const parsed = JSON.parse(event.location);
-              return parsed.venue || '';
-            } catch {
-              return '';
-            }
-          }
-          return event?.location?.venue || '';
-        })(),
-        organizer: (() => {
-          if (typeof event?.organizer === 'string') {
-            return event.organizer.replace(/"/g, '') || '';
-          }
-          return event?.organizer?.name || '';
-        })(),
-        organizerType: (() => {
-          if (typeof event?.organizer === 'string') {
-            try {
-              const parsed = JSON.parse(event.organizer);
-              return parsed.type || '';
-            } catch {
-              const cleanName = event.organizer.replace(/"/g, '');
-              return cleanName && cleanName.length > 0 ? 'club' : '';
-            }
-          }
-          return event?.organizer?.type || '';
-        })(),
-        organizationName: event?.organizationName || '',
-        category: event?.type || '',
-        maxParticipants: event?.capacity?.toString() || '',
-        isPaid: event?.isPaid || false,
-        fee: event?.price?.toString() || '',
-        tags: Array.isArray(event?.tags) ? event.tags.join(', ') : event?.tags || '',
-        requirements: Array.isArray(event?.requirements) ? event.requirements.join('\n') : event?.requirements || '',
-        audienceType: event?.audienceType || '',
-        cohosts: Array.isArray(event?.coHosts) ? event.coHosts : [],
-        sessions: Array.isArray(event?.sessions) ? event.sessions.join('\n') : (event?.sessions || ''),
-        certificateEnabled: event?.features?.certificateEnabled || false,
-        chatEnabled: event?.features?.chatEnabled || false,
-        socialLinks: (() => {
-          try {
-            if (typeof event?.socialLinks === 'string') {
-              return JSON.parse(event.socialLinks);
-            }
-            if (event?.socialLinks && typeof event.socialLinks === 'object') {
-              return {
-                website: event.socialLinks.website || '',
-                linkedin: event.socialLinks.linkedin || ''
-              };
-            }
-          } catch (e) {
-            console.warn('Error parsing socialLinks:', e);
-          }
-          return { website: '', linkedin: '' };
-        })(),
-      }));
+      setEventForm({
+        title: event.title || '',
+        description: event.description || '',
+        date: event.date ? new Date(new Date(event.date).getTime() + 330 * 60000).toISOString().slice(0, 16) : '',
+        location: event.location?.type || '',
+        venue: event.location?.venue || '',
+        eventLink: event.location?.link || '',
+        organizationName: event.organizationName || '',
+        category: event.type || '',
+        maxParticipants: event.capacity?.toString() || '',
+        isPaid: event.isPaid || false,
+        fee: event.price?.toString() || '',
+        tags: Array.isArray(event.tags) ? event.tags.join(', ') : '',
+        requirements: Array.isArray(event.requirements) ? event.requirements.join('\n') : '',
+        contactEmail: event.contactEmail || '',
+        contactPhone: event.contactPhone || '',
+        socialLinks: {
+          website: event.socialLinks?.website || '',
+          linkedin: event.socialLinks?.linkedin || '',
+        },
+        audienceType: event.audienceType || '',
+        cohosts: event.coHosts || [],
+        sessions: Array.isArray(event.sessions) ? event.sessions.map(s => `${s.title} - ${s.time} - ${s.speaker}`).join('\n') : '',
+        certificateEnabled: event.features?.certificateEnabled || false,
+        chatEnabled: event.features?.chatEnabled || false,
+        bannerImage: null,
+        logoImage: null,
+      });
       
       if (event?.bannerURL) setBannerUrl(event.bannerURL);
       if (event?.logoURL) setLogoUrl(event.logoURL);
@@ -239,24 +114,29 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Convert IST time back to UTC for storage
-    const formDataWithUTC = { 
+    const transformedData = {
       ...eventForm,
-      features: {
-        certificateEnabled: eventForm.certificateEnabled || false,
-        chatEnabled: eventForm.chatEnabled || false
-      }
+      date: new Date(eventForm.date).toISOString(),
+      tags: eventForm.tags.split(',').map(tag => tag.trim()),
+      requirements: eventForm.requirements.split('\n').map(req => req.trim()),
+      sessions: eventForm.sessions.split('\n').map(sessionLine => {
+        const parts = sessionLine.trim().split(' - ');
+        return { title: parts[0] || '', time: parts[1] || '', speaker: parts[2] || '' };
+      }),
     };
-    if (formDataWithUTC.date) {
-      const istDate = new Date(formDataWithUTC.date);
-      // Subtract 5.5 hours to convert IST to UTC
-      istDate.setHours(istDate.getHours() - 5);
-      istDate.setMinutes(istDate.getMinutes() - 30);
-      formDataWithUTC.date = istDate.toISOString();
+    if (onSave) {
+      onSave(transformedData, bannerUrl, logoUrl);
+      if (eventForm.cohosts.length > 0) {
+        eventForm.cohosts.forEach(async (email) => {
+          const userResult = await findUserByEmail(email);
+          if (userResult.userId) {
+            await nominateCoHost({ eventId: event._id, userId: userResult.userId });
+          } else {
+            console.warn(`Could not find user with email: ${email}`);
+          }
+        });
+      }
     }
-    
-    if (onSave) onSave(formDataWithUTC, bannerUrl, logoUrl);
   };
 
   return (
@@ -278,21 +158,6 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Description *</label>
               <textarea name="description" value={eventForm.description} onChange={handleFormChange} required rows={4} className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-            </div>
-            {/* Organizer Type Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-purple-300 mb-2">Organizer Type *</label>
-              <select name="organizerType" value={eventForm.organizerType || ''} onChange={handleFormChange} required className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400">
-                <option value="" className="bg-gray-800">Select type</option>
-                <option value="institution" className="bg-gray-800">Institution</option>
-                <option value="club" className="bg-gray-800">Club</option>
-                <option value="company" className="bg-gray-800">Company</option>
-                <option value="individual" className="bg-gray-800">Individual</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-purple-300 mb-2">Organizer Name *</label>
-              <input type="text" name="organizer" value={eventForm.organizer} onChange={handleFormChange} required placeholder="e.g., Computer Science Club, Tech Society" className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
             </div>
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Organization Name (Optional)</label>

@@ -83,6 +83,18 @@ export async function updateEventWithFiles(id, formData) {
   return res.json();
 }
 
+export async function nominateCoHost(data) {
+  const res = await fetch(`${API_URL}/api/events/nominate-cohost`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
 export async function deleteEvent(id) {
   const res = await fetch(`${API_URL}/api/events/${id}`, {
     method: 'DELETE',

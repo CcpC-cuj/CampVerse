@@ -35,7 +35,7 @@ const { unifiedStorageService } = require('../Services/driveService');
 async function createEvent(req, res) {
   try {
     // Validate required fields
-    const requiredFields = ['title', 'description', 'type', 'organizer', 'location', 'capacity', 'date'];
+    const requiredFields = ['title', 'description', 'type', 'location', 'capacity', 'date'];
     for (const field of requiredFields) {
       if (!req.body[field]) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
@@ -50,7 +50,7 @@ async function createEvent(req, res) {
       description,
       tags,
       type,
-      organizer,
+      organizationName,
       location,
       capacity,
       date,
@@ -58,20 +58,42 @@ async function createEvent(req, res) {
       price,
       requirements,
       socialLinks,
+      audienceType,
+      features,
+      sessions,
     } = req.body;
-    // Parse organizer/location if sent as JSON strings (FormData)
-    if (typeof organizer === 'string') {
-      try {
-        organizer = JSON.parse(organizer);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid organizer format.' });
-      }
-    }
     if (typeof location === 'string') {
       try {
         location = JSON.parse(location);
       } catch (e) {
         return res.status(400).json({ error: 'Invalid location format.' });
+      }
+    }
+    
+    // Parse socialLinks if sent as JSON string
+    if (typeof socialLinks === 'string') {
+      try {
+        socialLinks = JSON.parse(socialLinks);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid socialLinks format.' });
+      }
+    }
+    
+    // Parse features if sent as JSON string
+    if (typeof features === 'string') {
+      try {
+        features = JSON.parse(features);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid features format.' });
+      }
+    }
+    
+    // Parse sessions if sent as JSON string
+    if (typeof sessions === 'string') {
+      try {
+        sessions = JSON.parse(sessions);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid sessions format.' });
       }
     }
     
@@ -141,7 +163,7 @@ async function createEvent(req, res) {
       description,
       tags,
       type,
-      organizer,
+      organizationName,
       location,
       capacity,
       date,
@@ -149,6 +171,9 @@ async function createEvent(req, res) {
       price: eventPrice,
       requirements,
       socialLinks,
+      audienceType: audienceType || 'public',
+      features: features || { certificateEnabled: false, chatEnabled: false },
+      sessions: sessions || [],
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
@@ -186,7 +211,7 @@ async function updateEvent(req, res) {
     console.log('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
     // Validate required fields for update (if present)
-    const updatableFields = ['title', 'description', 'type', 'organizer', 'location', 'capacity', 'date'];
+    const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
     for (const field of updatableFields) {
       if (field in update && !update[field]) {
         return res.status(400).json({ error: `Field cannot be empty: ${field}` });

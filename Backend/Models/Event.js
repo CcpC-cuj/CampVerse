@@ -45,13 +45,7 @@ const eventSchema = new mongoose.Schema({
   status: { type: String, enum: ['upcoming', 'ongoing', 'completed'], default: 'upcoming' },
   type: { type: String },
   date: { type: Date, required: true },
-  organizer: {
-    name: { type: String, required: true },
-    type: { type: String, enum: ['club', 'institution', 'person'], required: true },
-    logoURL: { type: String },
-    contactEmail: { type: String },
-    contactPhone: { type: String },
-  },
+  organizationName: { type: String },
   logoURL: { type: String },
   bannerURL: { type: String, required: true },
   location: {
@@ -86,10 +80,10 @@ eventSchema.index({ date: 1 });
 eventSchema.index({ 
   title: 'text', 
   about: 'text',
-  'organizer.name': 'text',
+  organizationName: 'text',
   tags: 'text'
 }, {
-  weights: { title: 10, 'organizer.name': 5, about: 3, tags: 2 },
+  weights: { title: 10, organizationName: 5, about: 3, tags: 2 },
   name: 'event_text_search'
 });
 
