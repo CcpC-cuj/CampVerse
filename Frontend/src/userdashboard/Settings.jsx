@@ -62,6 +62,61 @@ const Settings = () => {
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
 
+  // Reset scroll position when component mounts and disable scroll restoration
+  useEffect(() => {
+    // Disable browser scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    
+    // Aggressive scroll reset function
+    const resetScroll = () => {
+      // Reset all possible scroll containers immediately
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+      }
+      
+      // Reset window and document scroll
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+      document.body.scrollTop = 0;
+      document.body.scrollLeft = 0;
+      
+      // Force scroll to top using requestAnimationFrame for immediate effect
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+      });
+    };
+    
+    // Reset immediately
+    resetScroll();
+    
+    // Multiple resets to handle different render phases
+    const timeouts = [
+      setTimeout(resetScroll, 0),
+      setTimeout(resetScroll, 10),
+      setTimeout(resetScroll, 50),
+      setTimeout(() => {
+        resetScroll();
+        setIsInitialLoad(false); // Allow intersection observer to work after reset
+      }, 100)
+    ];
+    
+    return () => {
+      timeouts.forEach(clearTimeout);
+      // Restore normal scroll behavior when leaving
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
+
 const [gender, setGender] = useState(user?.gender || '');
 const [dob, setDob] = useState(user?.dateOfBirth || '');
 const [collegeIdNumber, setCollegeIdNumber] = useState(user?.collegeIdNumber || '');
