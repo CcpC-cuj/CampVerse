@@ -34,15 +34,19 @@ const SignupModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    // Password validation (must match backend)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError("Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.");
+      return;
+    }
     try {
       setIsLoading(true);
       const response = await register(formData);
-
       if (response.message) {
-        // OTP has been sent successfully
-        alert(`OTP sent to your email.`); 
-        onClose(); // close signup modal
-        onSignupSuccess(formData.email); // open OTP modal with email
+        alert(`OTP sent to your email.`);
+        onClose();
+        onSignupSuccess(formData.email);
       } else {
         setError(response.error || "Registration failed");
       }

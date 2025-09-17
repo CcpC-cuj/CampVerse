@@ -669,6 +669,7 @@ async function register(req, res) {
 
     const otp = otpgenrater();
 
+    let emailSent = false;
     try {
       await emailService.sendMail({
         from: process.env.EMAIL_USER,
@@ -688,38 +689,32 @@ async function register(req, res) {
         `,
       });
       logger.info(`Email sent successfully to ${email}`);
+      emailSent = true;
     } catch (emailError) {
       logger.error("Email sending failed:", emailError.message);
       logger.error("Email error details:", emailError);
-      
-      // In development, continue without email for testing
       if (process.env.NODE_ENV !== 'production') {
         logger.warn('Development mode: Proceeding without email verification');
+        emailSent = true;
       } else {
-        // In production, return specific error message
-        return res
-          .status(500)
-          .json({
-            error: "Failed to send verification email. Please check your email configuration.",
-            details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
-          });
+        return res.status(500).json({ error: "Failed to send verification email. Please check your email configuration." });
       }
     }
 
-    const domain = extractDomain(email);
-    const institution = await findOrCreateInstitution(domain);
-
-    const tempData = {
-      name,
-      phone,
-      password,
-      otp,
-      institutionId: institution ? institution._id : null,
-      institutionIsVerified: institution ? institution.isVerified : "none",
-    };
-    await redisClient.setEx(email, 600, JSON.stringify(tempData));
-
-    return res.status(200).json({ message: "OTP sent to email." }); // Do NOT include OTP in response
+    if (emailSent) {
+      const domain = extractDomain(email);
+      const institution = await findOrCreateInstitution(domain);
+      const tempData = {
+        name,
+        phone,
+        password,
+        otp,
+        institutionId: institution ? institution._id : null,
+        institutionIsVerified: institution ? institution.isVerified : "none",
+      };
+      await redisClient.setEx(email, 600, JSON.stringify(tempData));
+      return res.status(200).json({ message: "OTP sent to email." });
+    }
   } catch (err) {
     logger.error("Register error:", err);
     return res
