@@ -687,6 +687,164 @@ const handleSaveProfile = async () => {
                       </div>
 
 
+                      {/* Institution (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Institution</label>
+                          {editingField !== 'institution' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('institution')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit institution"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                       <input
+                          type="text"
+                          value={institution?.name || ''}
+                          readOnly={editingField !== 'institution'}
+                          onChange={(e) =>
+                            setInstitution((prev) => ({ ...(prev || {}), name: e.target.value }))
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'institution'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      {/* Learning Goals (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
+                          {editingField !== 'learningGoals' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('learningGoals')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit learning goals"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                          <textarea
+                            rows={3}
+                            value={learningGoals.join(', ')}   // ✅ show as comma-separated string
+                            readOnly={editingField !== 'learningGoals'}
+                            onChange={(e) => setLearningGoals(e.target.value.split(',').map(v => v.trim()))}
+                            onKeyPress={handleKeyPress}
+                            className={`w-full p-2 rounded bg-gray-900 border ${
+                              editingField !== 'learningGoals'
+                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                            }`}
+                            placeholder="What do you want to learn?"
+                          />
+                      </div>
+
+                      {/* Skills (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Skills</label>
+                          {editingField !== 'skills' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('skills')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit skills"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                            rows={3}
+                            value={skills.join(', ')}   
+                            readOnly={editingField !== 'skills'}
+                            onChange={(e) => setSkills(e.target.value.split(',').map(v => v.trim()))}
+                            onKeyPress={handleKeyPress}
+                            className={`w-full p-2 rounded bg-gray-900 border ${
+                              editingField !== 'skills'
+                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                            }`}
+                            placeholder="List your skills"
+                          />
+
+                      </div>
+
+                      {/* Interests (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Interests</label>
+                          {editingField !== 'interests' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('interests')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit interests"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                       <textarea
+                          rows={3}
+                          value={interests.join(', ')}   // ✅ show as comma-separated string
+                          readOnly={editingField !== 'interests'}
+                          onChange={(e) => setInterests(e.target.value.split(',').map(v => v.trim()))}
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'interests'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                          placeholder="What are your interests?"
+                        />
+                      </div>
+
 
                     <div className="flex justify-end">
                       <button
