@@ -106,6 +106,16 @@ const SuggestionPills = ({ items, onPick }) => (
     [preferences.interests]
   );
 
+    const filteredSkillSuggestions = useMemo(
+      () => SUGGESTED_SKILLS.filter(s => !(preferences.skills || []).includes(s)),
+      [preferences.skills]
+    );
+    const filteredGoalSuggestions = useMemo(
+      () => SUGGESTED_GOALS.filter(s => !(preferences.learningGoals || []).includes(s)),
+      [preferences.learningGoals]
+    );
+  
+
 
 
   const DEFAULT_AVATARS = {
@@ -765,7 +775,8 @@ const handleSaveProfile = async () => {
                         />
                       </div>
                     </div>
-                      {/* Learning Goals */}
+
+                                             {/* Learning Goals */}
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
