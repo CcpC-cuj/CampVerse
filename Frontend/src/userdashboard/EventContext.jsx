@@ -17,8 +17,7 @@ export const EventProvider = ({ children }) => {
         ...prev,
         {
           id: Date.now(),
-         message: `You successfully RSVPed for "${event.name}" 🎉`,
-
+          message: `You successfully RSVPed for "${event.name}" 🎉`, // ← backticks
           timestamp: new Date(),
         },
       ]);

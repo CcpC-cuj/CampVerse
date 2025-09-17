@@ -100,7 +100,12 @@ const HostDashboard = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        <HostNavBar onOpenSidebar={() => setSidebarOpen(true)} />
+        <HostNavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={events}
+          searchQuery={""}
+          setSearchQuery={() => {}}
+        />
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {/* Welcome */}

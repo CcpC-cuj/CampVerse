@@ -90,8 +90,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
           setProfile({
             name: data.user.name || '',
             phone: data.user.phone || '',
-            Gender: data.user.Gender || '',
-            DOB: data.user.DOB ? String(data.user.DOB).slice(0, 10) : '',
+            Gender: data.user.gender || '',
+            DOB: data.user.dateOfBirth ? String(data.user.dateOfBirth).slice(0, 10) : '',
             collegeIdNumber: data.user.collegeIdNumber || ''
           });
           setExistingPhotoUrl(data.user.profilePhoto || '');
@@ -142,7 +142,13 @@ const OnboardingModal = ({ visible, onComplete }) => {
           setError('Name and phone are required');
           return;
         }
-        const res = await updateMe(profile);
+        const res = await updateMe({
+          name: profile.name,
+          phone: profile.phone,
+          gender: profile.Gender,
+          dateOfBirth: profile.DOB,
+          collegeIdNumber: profile.collegeIdNumber,
+        });
         if (res?.user) {
           const token = localStorage.getItem('token');
           if (token) login(token, res.user);

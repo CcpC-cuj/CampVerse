@@ -1,30 +1,89 @@
 require('dotenv').config();
 
 const jwt = require('jsonwebtoken');
+const { createClient } = require('redis');
+
+// Redis client for token blacklisting
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+});
+
+redisClient.on('error', (err) => console.error('Redis Client Error', err));
+
+(async () => {
+  try {
+    if (!redisClient.isOpen) await redisClient.connect();
+  } catch (err) {
+    console.error('Redis connection failed for auth:', err);
+  }
+})();
 
 /**
  * Middleware to authenticate JWT token from Authorization header.
  * Attaches user info to req.user if valid.
  */
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided.' });
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err)
-      return res.status(403).json({ error: 'Invalid or expired token.' });
-    req.user = user;
-    next();
-  });
+async function authenticateToken(req, res, next) {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided.' });
+    }
+
+    // Check if token is blacklisted
+    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+    if (isBlacklisted) {
+      return res.status(401).json({ error: 'Token has been revoked.' });
+    }
+
+    // Verify token with enhanced options
+    jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'], // Only allow HS256 algorithm
+      issuer: 'campverse',
+      audience: 'campverse-users',
+      clockTolerance: 30, // Allow 30 seconds clock skew
+    }, (err, user) => {
+      if (err) {
+        if (err.name === 'TokenExpiredError') {
+          return res.status(401).json({ error: 'Token expired.' });
+        } else if (err.name === 'JsonWebTokenError') {
+          return res.status(401).json({ error: 'Invalid token.' });
+        } else {
+          return res.status(401).json({ error: 'Token verification failed.' });
+        }
+      }
+
+      // Check if user still exists and is active
+      if (!user || !user.id) {
+        return res.status(401).json({ error: 'Invalid token payload.' });
+      }
+
+      req.user = user;
+      req.token = token; // Store token for potential blacklisting
+      next();
+    });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return res.status(500).json({ error: 'Authentication failed.' });
+  }
 }
 
 /**
- * Middleware to require a specific user role.
- * Usage: requireRole('platformAdmin')
+ * Middleware to require a specific user role or one of multiple roles.
+ * Usage: requireRole('platformAdmin') or requireRole(['verifier', 'platformAdmin'])
  */
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.user || !req.user.roles || !req.user.roles.includes(role)) {
+    if (!req.user || !req.user.roles) {
+      return res.status(403).json({ error: 'Forbidden: insufficient role.' });
+    }
+
+    // Handle both single role and array of roles
+    const requiredRoles = Array.isArray(role) ? role : [role];
+    const hasRequiredRole = requiredRoles.some(r => req.user.roles.includes(r));
+
+    if (!hasRequiredRole) {
       return res.status(403).json({ error: 'Forbidden: insufficient role.' });
     }
     next();
@@ -48,8 +107,83 @@ function requireSelfOrRole(roles = []) {
   };
 }
 
+/**
+ * Middleware to check if user has permission for specific action
+ * Usage: requirePermission('event', 'create')
+ */
+function requirePermission(resource, action) {
+  return (req, res, next) => {
+    if (!req.user || !req.user.roles) {
+      return res.status(403).json({ error: 'Forbidden: insufficient permissions.' });
+    }
+
+    // Define permission matrix
+    const permissions = {
+      platformAdmin: ['*'], // Platform admin can do everything
+      verifier: ['event:verify', 'user:verify', 'institution:verify'],
+      host: ['event:create', 'event:update', 'event:delete', 'event:manage'],
+      student: ['event:view', 'event:join', 'profile:update']
+    };
+
+    const userPermissions = req.user.roles.flatMap(role => permissions[role] || []);
+    
+    if (userPermissions.includes('*') || userPermissions.includes(`${resource}:${action}`)) {
+      return next();
+    }
+
+    return res.status(403).json({ error: `Forbidden: insufficient permissions for ${resource}:${action}` });
+  };
+}
+
+/**
+ * Logout function to blacklist token
+ */
+async function logout(req, res) {
+  try {
+    const token = req.token;
+    if (token) {
+      // Add token to blacklist with expiration
+      const decoded = jwt.decode(token);
+      const exp = decoded.exp || Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
+      const ttl = exp - Math.floor(Date.now() / 1000);
+      
+      if (ttl > 0) {
+        await redisClient.setEx(`blacklist:${token}`, ttl, 'revoked');
+      }
+    }
+    
+    res.json({ message: 'Logged out successfully.' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Logout failed.' });
+  }
+}
+
+/**
+ * Middleware to check if user is active and not suspended
+ */
+function requireActiveUser(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+
+  // Check if user account is active
+  if (req.user.accountStatus === 'suspended') {
+    return res.status(403).json({ error: 'Account suspended.' });
+  }
+
+  if (req.user.accountStatus === 'deleted') {
+    return res.status(403).json({ error: 'Account deleted.' });
+  }
+
+  next();
+}
+
 module.exports = {
   authenticateToken,
   requireRole,
   requireSelfOrRole,
+  requirePermission,
+  requireActiveUser,
+  logout,
 };

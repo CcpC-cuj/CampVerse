@@ -145,6 +145,9 @@ export async function getDashboard() {
   const res = await fetch(`${API_URL}/api/users`, {
     headers: { ...getAuthHeaders() }
   });
+  if (res.status === 401) {
+    return { error: 'unauthorized', message: 'Please log in again.' };
+  }
   return res.json();
 }
 
@@ -186,5 +189,82 @@ export async function resetPassword({ token, password }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, password })
   });
+  return res.json();
+}
+
+// Missing user APIs that are implemented in backend
+export async function updatePreferences(payload) {
+  const res = await fetch(`${API_URL}/api/users/updatePreferences`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  updateLocalUserIfPresent(data);
+  return data;
+}
+
+export async function trackReferral(payload) {
+  const res = await fetch(`${API_URL}/api/users/track-referral`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+export async function getUserBadges() {
+  const res = await fetch(`${API_URL}/api/users/badges`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function requestHostAccess(formData) {
+  const res = await fetch(`${API_URL}/api/users/me/request-host`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+    body: formData // FormData for multipart with idCardPhoto and eventPermission
+  });
+  const data = await res.json();
+  updateLocalUserIfPresent(data);
+  return data;
+}
+
+export async function listPendingHostRequests() {
+  const res = await fetch(`${API_URL}/api/users/host-requests/pending`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return res.json();
+}
+
+export async function approveHostRequest(id, payload) {
+  const res = await fetch(`${API_URL}/api/users/host-requests/${id}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+export async function rejectHostRequest(id, payload) {
+  const res = await fetch(`${API_URL}/api/users/host-requests/${id}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+export async function logout() {
+  const res = await fetch(`${API_URL}/api/users/logout`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() }
+  });
+  if (res.ok) {
+    // Clear local storage on successful logout
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
   return res.json();
 }

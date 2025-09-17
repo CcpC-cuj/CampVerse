@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
 import { getInstitutionById } from "../api";
-import logo from "../assets/logo.png";
+
 const Sidebar = ({ onDiscoverClick }) => {
   const { user, logout } = useAuth();
   const [institutionName, setInstitutionName] = useState('');
@@ -30,11 +30,13 @@ const Sidebar = ({ onDiscoverClick }) => {
   return (
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
       {/* Top Logo */}
-      <div className="p-4 border-b border-gray-700 flex items-center">
-
-        <div className="text-xl font-['Pacifico'] text-white">
-          <img src={logo} alt="logo" className="h-8 w-8" />
-          CampVerse</div>
+      <div className="px-4 py-4.5 border-b border-gray-700 flex items-center">
+        <img 
+          src="/logo.png" 
+          alt="CampVerse Logo" 
+          className="h-7 w-7 mr-2" 
+        />
+        <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
       </div>
 
       {/* Scrollable Section */}
@@ -43,12 +45,15 @@ const Sidebar = ({ onDiscoverClick }) => {
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="relative">
+              <div className="w-12 h-12 rounded-full object-cover">
               <img
                 src={profileUrl}
                 alt="Profile"
                 className="w-12 h-12 rounded-full object-cover"
                 onError={(e)=>{ e.currentTarget.onerror=null; e.currentTarget.src='/default-avatar.png'; }}
               />
+              </div>
+              
               <div className="absolute -bottom-1 -right-1 bg-green-500 w-4 h-4 rounded-full border-2 border-gray-800"></div>
             </div>
             <div>
@@ -87,16 +92,17 @@ const Sidebar = ({ onDiscoverClick }) => {
             label="Discover Events"
             end
           />
-          <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+         
 
 
 
 
           <SidebarSection title="Events" />
-          <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
+           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+          {/* <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
           <SidebarLink icon="ri-time-line" to="/events/waitlisted" label="Waitlisted" />
           <SidebarLink icon="ri-bookmark-line" to="/events/saved" label="Saved" />
-          <SidebarLink icon="ri-history-line" to="/events/past" label="Past Events" />
+          <SidebarLink icon="ri-history-line" to="/events/past" label="Past Events" /> */}
 
           <SidebarSection title="Community" />
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />

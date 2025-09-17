@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
+import { submitFeedback } from "../api/feedback";
+import NavBar from "./NavBar";
 
 /**
  * Feedback (frontend only)
@@ -56,25 +58,35 @@ const Feedback = () => {
     setSubmitting(true);
 
     try {
-      // TODO: BACKEND — create Feedback API endpoint
-      // POST /api/feedback  (multipart/form-data if attachment present)
-      // Body: { rating, category, subject, message, email }
-      // File: attachment
-      // Example integration after you add it to ../api:
-      // const res = await submitFeedback({ rating, category, subject, message, email, attachment })
-      // setFeedback(res.message || "Thanks for your feedback!")
+      // Create FormData for multipart/form-data submission
+      const formData = new FormData();
+      formData.append('rating', rating.toString());
+      formData.append('category', category);
+      formData.append('subject', subject);
+      formData.append('message', message);
+      formData.append('email', email);
+      
+      if (attachment) {
+        formData.append('attachment', attachment);
+      }
 
-      await new Promise((r) => setTimeout(r, 900)); // simulate
-      setFeedback("Thanks! Your feedback has been received.");
-      setSubject("");
-      setMessage("");
-      setAttachment(null);
-      setRating(0);
+      const res = await submitFeedback(formData);
+      
+      if (res.error) {
+        setFeedback(res.error);
+      } else {
+        setFeedback(res.message || "Thanks! Your feedback has been received.");
+        setSubject("");
+        setMessage("");
+        setAttachment(null);
+        setRating(0);
+      }
     } catch (err) {
+      console.error('Feedback submission error:', err);
       setFeedback("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
-      setTimeout(() => setFeedback(""), 3000);
+      setTimeout(() => setFeedback(""), 5000);
     }
   };
 
@@ -106,48 +118,13 @@ const Feedback = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        {/* Sticky top bar */}
-        <div className="sticky top-0 z-30 bg-transparent">
-          <div className="px-4 sm:px-6 py-3">
-            <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap bg-gray-800/60 backdrop-blur-md border border-gray-700 rounded-xl px-4 sm:px-6 py-3">
-              {/* Hamburger */}
-              <button
-                className="sm:hidden p-2 rounded-lg bg-gray-800/70 text-white transition-transform hover:scale-105"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Open sidebar"
-              >
-                <i className="ri-menu-line text-lg"></i>
-              </button>
-
-              {/* Title */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#9b5de5]/20 flex items-center justify-center">
-                  <i className="ri-feedback-line text-[#9b5de5] text-xl"></i>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold leading-5">Feedback</div>
-                  <div className="text-xs text-gray-300">Help us make CampVerse better</div>
-                </div>
-              </div>
-
-              {/* CTAs */}
-              <div className="flex items-center gap-2 sm:gap-3">
-                <a
-                  href={mailHref}
-                  className="px-3 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all"
-                >
-                  <i className="ri-mail-send-line mr-1"></i> Mail Instead
-                </a>
-                <a
-                  href="#feedback-form"
-                  className="px-3 py-2 rounded-button bg-[#9b5de5] hover:bg-[#8c4be1] text-white transition-colors"
-                >
-                  <i className="ri-edit-2-line mr-1"></i> Write Feedback
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Top Navigation */}
+        <NavBar
+          onOpenSidebar={() => setSidebarOpen(true)}
+          eventsData={[]}
+          searchQuery={""}
+          setSearchQuery={() => {}}
+        />
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]">
@@ -252,7 +229,10 @@ const Feedback = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <i className="ri-attachment-2 text-gray-300"></i>
-                    <span className="text-sm text-gray-300">Attach screenshot (optional)</span>
+                    <span className="text-sm text-gray-300">
+                      Attach screenshot (optional)
+                      {attachment && ` - ${attachment.name}`}
+                    </span>
                     <input
                       type="file"
                       className="hidden"
@@ -285,7 +265,7 @@ const Feedback = () => {
                 )}
               </form>
 
-              {/* TODO: BACKEND — optionally show recent feedback or status list for the user here */}
+              {/* Recent feedback could be added here using getMyFeedback() API */}
             </div>
 
             {/* Side info */}
@@ -306,7 +286,7 @@ const Feedback = () => {
                   <li>Tell us your goal (why you need the change)</li>
                 </ul>
               </div>
-              {/* TODO: BACKEND — link to public changelog once available */}
+              {/* Public changelog link - coming soon */}
               <button
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
                 onClick={() => alert("Coming soon: Public changelog")}

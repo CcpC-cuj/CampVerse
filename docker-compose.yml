@@ -17,6 +17,8 @@ services:
     build: ./Backend
     ports:
       - "5001:5001"
+    volumes:
+      - ./Backend/credentials:/usr/src/app/credentials:ro
     environment:
       - MONGO_URI=mongodb://mongo:27017/campverse
       - REDIS_URL=redis://redis:6379
@@ -30,14 +32,16 @@ services:
       # Alternative email service (uncomment if Gmail doesn't work)
       - EMAIL_USER=krish.hansdiha@gmail.com
       - EMAIL_PASSWORD=zeyf wiyznnuhpacu
-      # Google Drive config
-      - GOOGLE_DRIVE_KEY_FILE=/usr/src/app/credentials/service-account.json
-      # - GOOGLE_DRIVE_FOLDER_ID=1JiL9bB2pt2DG1mc0LUsQdshFEDtjxRQ2 # Profile images folder ID
-      # - DRIVE_LOGO_FOLDER_ID=1RLKXcxFwBx3k0SIA11cWGDkb8NMGmabc   # Event logos folder ID
-      # - DRIVE_BANNER_FOLDER_ID=1cFmh70UHTafPmuoL8-rVBwhVHsPDgKOm # Event banners folder ID
+      - JWT_SECRET=your_jwt_secret_key_here_make_it_very_secure_and_long
+      
+      # Storage Configuration
+      # Development: Firebase (for GitHub)
+      # Production: Supabase (set via Render environment variables)
+      - STORAGE_PROVIDER=firebase
+      
+      # Firebase Storage (Development only - hardcoded values)
+      - FIREBASE_STORAGE_BUCKET=ccpccuj.appspot.com
       - FIREBASE_KEY_FILE=/usr/src/app/credentials/service-account.json
-    volumes:
-      - ./Backend/credentials:/usr/src/app/credentials:ro
     depends_on:
       - mongo
       - redis
