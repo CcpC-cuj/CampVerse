@@ -832,11 +832,11 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => setLearningGoals([...learningGoals, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400">{learningGoals.join(', ') || 'No goals added'}</div>
+                        <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
                       )}
                     </div>
 
-                    {/* Skills */}
+                              {/* Skills */}
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="block text-sm text-gray-300 mb-1">Skills</label>
@@ -892,7 +892,7 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => setSkills([...skills, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400">{skills.join(', ') || 'No skills added'}</div>
+                        <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
                       )}
                     </div>
 
@@ -952,7 +952,7 @@ const handleSaveProfile = async () => {
                             <SuggestionPills items={filteredInterestSuggestions} onPick={(v) => setInterests([...interests, v])} />
                           </>
                         ) : (
-                          <div className="text-gray-400">{interests.join(', ') || 'No interests added'}</div>
+                          <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40">{interests.join(', ') || 'No interests added'}</div>
                         )}
                       </div>
 
