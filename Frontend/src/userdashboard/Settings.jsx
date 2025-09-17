@@ -62,70 +62,63 @@ const Settings = () => {
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
 
-  // Reset scroll position when component mounts and disable scroll restoration
-  useEffect(() => {
-    // Disable browser scroll restoration
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
-    }
-    
-    // Aggressive scroll reset function
-    const resetScroll = () => {
-      // Reset all possible scroll containers immediately
-      const container = containerRef.current;
-      if (container) {
-        container.scrollTop = 0;
-        container.scrollLeft = 0;
-      }
-      
-      // Reset window and document scroll
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.documentElement.scrollLeft = 0;
-      document.body.scrollTop = 0;
-      document.body.scrollLeft = 0;
-      
-      // Force scroll to top using requestAnimationFrame for immediate effect
-      requestAnimationFrame(() => {
-        if (container) {
-          container.scrollTop = 0;
-        }
-        window.scrollTo(0, 0);
-      });
-    };
-    
-    // Reset immediately
-    resetScroll();
-    
-    // Multiple resets to handle different render phases
-    const timeouts = [
-      setTimeout(resetScroll, 0),
-      setTimeout(resetScroll, 10),
-      setTimeout(resetScroll, 50),
-      setTimeout(() => {
-        resetScroll();
-        setIsInitialLoad(false); // Allow intersection observer to work after reset
-      }, 100)
-    ];
-    
-    return () => {
-      timeouts.forEach(clearTimeout);
-      // Restore normal scroll behavior when leaving
-      if ('scrollRestoration' in history) {
-        history.scrollRestoration = 'auto';
-      }
-    };
-  }, []);
+const [gender, setGender] = useState(user?.gender || '');
+const [dob, setDob] = useState(user?.dateOfBirth || '');
+const [collegeIdNumber, setCollegeIdNumber] = useState(user?.collegeIdNumber || '');
+const [interests, setInterests] = useState(user?.interests || []);
+const [skills, setSkills] = useState(user?.skills || []);
+const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
+const [institution, setInstitution] = useState(user?.institution || null);
+
+  const DEFAULT_AVATARS = {
+  male: "/male-avatar.png",
+  female: "/female-avatar.png",
+  other: "/other-avatar.png",
+};
+
+
+useEffect(() => {
+  if (editingField) return;
+
+  setName(user?.name || '');
+  setPhone(user?.phone || '');
+  setLocation(user?.location || '');
+  setBio(user?.bio || '');
+  setGender(user?.gender || '');
+  setDob(user?.dateOfBirth ? String(user.dateOfBirth).slice(0, 10) : '');
+  setCollegeIdNumber(user?.collegeIdNumber || '');
+  setInterests(user?.interests || []);
+  setSkills(user?.skills || []);
+  setLearningGoals(user?.learningGoals || []);
+  setInstitution(user?.institution || null);
+
+  if (user?.profilePhoto) {
+    setProfilePhoto(user.profilePhoto);
+  } else if (user?.avatar) {
+    setProfilePhoto(user.avatar);
+  } else if (user?.gender && DEFAULT_AVATARS[user.gender.toLowerCase()]) {
+    setProfilePhoto(DEFAULT_AVATARS[user.gender.toLowerCase()]);
+  } else {
+    setProfilePhoto("/default-avatar.png");
+  }
+}, [user?._id, editingField]);
+
 
   // keep inputs synced with user unless editing
-  useEffect(() => {
-    if (editingField) return;
-    setName(user?.name || '');
-    setPhone(user?.phone || '');
-    setLocation(user?.location || '');
-    setBio(user?.bio || '');
-    setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
-  }, [user?._id, editingField]);
+  // useEffect(() => {
+  //   if (editingField) return;
+  //   setName(user?.name || '');
+  //   setPhone(user?.phone || '');
+  //   setLocation(user?.location || '');
+  //   setBio(user?.bio || '');
+  //   setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
+  // }, [user?._id, editingField]);
+
+
+
+
+
+
 
   // focus lock for editing fields
   useEffect(() => {
@@ -206,25 +199,59 @@ const Settings = () => {
   };
 
   // save profile fields
-  const handleSaveProfile = async () => {
-    setProfileSaving(true);
-    setProfileMessage('Saving...');
-    try {
-      const res = await updateMe({ name, phone, location, bio });
-      if (res.user) {
-        setProfileMessage('Profile updated!');
-        setUser(res.user);
-        stopEditing(); // Auto-close editing mode after save
-      } else {
-        setProfileMessage(res.error || 'Failed to update profile');
-      }
-    } catch {
-      setProfileMessage('Failed to update profile');
-    } finally {
-      setTimeout(() => setProfileMessage(''), 2000);
-      setProfileSaving(false);
+  // const handleSaveProfile = async () => {
+  //   setProfileSaving(true);
+  //   setProfileMessage('Saving...');
+  //   try {
+  //     const res = await updateMe({ name, phone, location, bio });
+  //     if (res.user) {
+  //       setProfileMessage('Profile updated!');
+  //       setUser(res.user);
+  //       stopEditing(); // Auto-close editing mode after save
+  //     } else {
+  //       setProfileMessage(res.error || 'Failed to update profile');
+  //     }
+  //   } catch {
+  //     setProfileMessage('Failed to update profile');
+  //   } finally {
+  //     setTimeout(() => setProfileMessage(''), 2000);
+  //     setProfileSaving(false);
+  //   }
+  // };
+
+const handleSaveProfile = async () => {
+  setProfileSaving(true);
+  setProfileMessage('Saving...');
+  try {
+    const res = await updateMe({
+      name,
+      phone,
+      location,
+      bio,
+      gender,
+      dateOfBirth: dob,
+      collegeIdNumber,
+      interests,
+      skills,
+      learningGoals,
+      institution: institution?._id || null
+    });
+    if (res.user) {
+      setProfileMessage('Profile updated!');
+      setUser(res.user);
+      stopEditing();
+    } else {
+      setProfileMessage(res.error || 'Failed to update profile');
     }
-  };
+  } catch {
+    setProfileMessage('Failed to update profile');
+  } finally {
+    setTimeout(() => setProfileMessage(''), 2000);
+    setProfileSaving(false);
+  }
+};
+
+
 
   // Handle Enter key press for profile fields
   const handleKeyPress = (e) => {
@@ -424,7 +451,7 @@ const Settings = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-300 mb-1">Email</label>
+                        <label className="block text-sm text-gray-300 mb-1 p-1">Email</label>
                         <input
                           type="email"
                           value={user?.email || ''}
@@ -548,6 +575,283 @@ const Settings = () => {
                         placeholder="Tell us about yourself..."
                       />
                     </div>
+
+                                      {/* Gender (editable with select) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Gender</label>
+                          {editingField !== 'gender' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('gender')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit gender"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          disabled={editingField !== 'gender'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'gender'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Date of Birth (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Date of Birth</label>
+                          {editingField !== 'dob' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('dob')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit date of birth"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="date"
+                          value={dob || ''}
+                          onChange={(e) => setDob(e.target.value)}
+                          readOnly={editingField !== 'dob'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'dob'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      {/* College ID (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">College / Enrollment Number</label>
+                          {editingField !== 'collegeIdNumber' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('collegeIdNumber')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit college ID"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={collegeIdNumber}
+                          readOnly={editingField !== 'collegeIdNumber'}
+                          onChange={(e) => setCollegeIdNumber(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'collegeIdNumber'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+
+                      {/* Institution (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Institution</label>
+                          {editingField !== 'institution' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('institution')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit institution"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                       <input
+                          type="text"
+                          value={institution?.name || ''}
+                          readOnly={editingField !== 'institution'}
+                          onChange={(e) =>
+                            setInstitution((prev) => ({ ...(prev || {}), name: e.target.value }))
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'institution'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                      {/* Learning Goals (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
+                          {editingField !== 'learningGoals' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('learningGoals')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit learning goals"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                          <textarea
+                            rows={3}
+                            value={learningGoals.join(', ')}   // ✅ show as comma-separated string
+                            readOnly={editingField !== 'learningGoals'}
+                            onChange={(e) => setLearningGoals(e.target.value.split(',').map(v => v.trim()))}
+                            onKeyPress={handleKeyPress}
+                            className={`w-full p-2 rounded bg-gray-900 border ${
+                              editingField !== 'learningGoals'
+                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                            }`}
+                            placeholder="What do you want to learn?"
+                          />
+                      </div>
+
+                      {/* Skills (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Skills</label>
+                          {editingField !== 'skills' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('skills')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit skills"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <textarea
+                            rows={3}
+                            value={skills.join(', ')}   
+                            readOnly={editingField !== 'skills'}
+                            onChange={(e) => setSkills(e.target.value.split(',').map(v => v.trim()))}
+                            onKeyPress={handleKeyPress}
+                            className={`w-full p-2 rounded bg-gray-900 border ${
+                              editingField !== 'skills'
+                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                            }`}
+                            placeholder="List your skills"
+                          />
+
+                      </div>
+
+                      {/* Interests (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Interests</label>
+                          {editingField !== 'interests' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('interests')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit interests"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                       <textarea
+                          rows={3}
+                          value={interests.join(', ')}   // ✅ show as comma-separated string
+                          readOnly={editingField !== 'interests'}
+                          onChange={(e) => setInterests(e.target.value.split(',').map(v => v.trim()))}
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'interests'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                          placeholder="What are your interests?"
+                        />
+                      </div>
+
 
                     <div className="flex justify-end">
                       <button
@@ -816,6 +1120,7 @@ const Settings = () => {
         defaultEmail={user?.email || ''}
       />
       {/* ✅ /ADDED */}
+
     </div>
   );
 };
