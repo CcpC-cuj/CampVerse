@@ -13,14 +13,26 @@ const SUGGESTED_INTERESTS = ['Hackathons', 'Robotics', 'AI/ML', 'Open Source', '
 const SUGGESTED_SKILLS = ['JavaScript', 'Python', 'C++', 'UI/UX', 'Data Science', 'Public Speaking', 'Leadership'];
 const SUGGESTED_GOALS = ['Get internship', 'Win a hackathon', 'Publish a paper', 'Improve DSA', 'Learn design'];
 
+const DEFAULT_AVATARS = {
+  male: "/male-avatar.jpg",
+  female: "/female-avatar.jpg",
+  other: "/other-avatar.jpg",
+};
+
+
+
 const Chip = ({ label, onRemove }) => (
   <span className="inline-flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-1 rounded text-sm">
     {label}
     {onRemove && (
-      <button aria-label={`Remove ${label}`} onClick={onRemove} className="text-slate-400 hover:text-white">×</button>
+      <button aria-label={`Remove ${label}`}onClick={onRemove}className="text-slate-400 hover:text-white">×</button>
+      // <button aria-label={Remove ${label}} onClick={onRemove} className="text-slate-400 hover:text-white">×</button>
     )}
   </span>
 );
+
+
+
 
 const SuggestionPills = ({ items, onPick }) => (
   <div className="flex flex-wrap gap-2 mt-2">
@@ -154,24 +166,61 @@ const OnboardingModal = ({ visible, onComplete }) => {
           if (token) login(token, res.user);
         }
         setStep(step + 1);
-      } else if (step === 2) {
-        if (photoFile) {
-          const res = await uploadProfilePhoto(photoFile);
-          if (res?.user) {
-            const token = localStorage.getItem('token');
-            if (token) login(token, res.user);
-            setExistingPhotoUrl(res.user.profilePhoto || existingPhotoUrl);
-          }
-        }
-        setStep(step + 1);
-      } else if (step === 3) {
+      }
+      
+      // else if (step === 2) {
+      //   if (photoFile) {
+      //     const res = await uploadProfilePhoto(photoFile);
+      //     if (res?.user) {
+      //       const token = localStorage.getItem('token');
+      //       if (token) login(token, res.user);
+      //       setExistingPhotoUrl(res.user.profilePhoto || existingPhotoUrl);
+      //     }
+      //   }
+      //   setStep(step + 1);
+      // } 
+      
+              else if (step === 2) {
+                if (photoFile) {
+                  // ✅ case 1: user uploaded a photo
+                  const res = await uploadProfilePhoto(photoFile);
+                  if (res?.user) {
+                    const token = localStorage.getItem("token");
+                    if (token) login(token, res.user);
+                    setExistingPhotoUrl(res.user.profilePhoto || existingPhotoUrl);
+                  }
+                } else if (!existingPhotoUrl) {
+                  // ✅ case 2: no photo uploaded & no existing one → use fallback avatar
+                  const genderKey = (profile.Gender || "Other").toLowerCase();
+                  const fallbackUrl =
+                    DEFAULT_AVATARS[genderKey] || DEFAULT_AVATARS["other"];
+
+                  const res = await updateMe({ profilePhoto: fallbackUrl });
+                  if (res?.user) {
+                    const token = localStorage.getItem("token");
+                    if (token) login(token, res.user);
+                    setExistingPhotoUrl(fallbackUrl);
+                  }
+                }
+
+                // ✅ move to next step either way
+                setStep(step + 1);
+              }
+
+
+
+
+      else if (step === 3) {
         const res = await updateMe(preferences);
         if (res?.user) {
           const token = localStorage.getItem('token');
           if (token) login(token, res.user);
         }
         setStep(step + 1);
-      } else if (step === 4) {
+
+
+      } 
+      else if (step === 4) {
         if (selectedInstitution) {
           const res = await setInstitutionForMe(selectedInstitution._id);
           if (res?.user) {
@@ -196,6 +245,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
   const back = () => setStep((s) => Math.max(1, s - 1));
 
   if (!visible) return null;
+const genderKey = (profile.Gender || "Other").toLowerCase();
+const fallbackUrl = DEFAULT_AVATARS[genderKey] || DEFAULT_AVATARS["other"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -232,7 +283,7 @@ const OnboardingModal = ({ visible, onComplete }) => {
           </div>
         )}
 
-        {step === 2 && (
+        {/* {step === 2 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <div>
               <label className="text-sm text-slate-300">Upload Profile Photo</label>
@@ -249,7 +300,39 @@ const OnboardingModal = ({ visible, onComplete }) => {
               <img src={photoPreview || existingPhotoUrl} alt="preview" className="w-32 h-32 rounded-lg object-cover border border-slate-700" />
             )}
           </div>
-        )}
+        )} */}
+
+
+              {step === 2 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                  <div>
+                    <label className="text-sm text-slate-300">Upload Profile Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full mt-1"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        setPhotoFile(f || null);
+                        setPhotoPreview(f ? URL.createObjectURL(f) : '');
+                      }}
+                    />
+                    {existingPhotoUrl && !photoFile && (
+                      <p className="text-xs text-slate-400 mt-2">
+                        A profile photo is already set; you can skip this step.
+                      </p>
+                    )}
+                  </div>
+
+                  <img
+                    src={photoPreview || existingPhotoUrl || fallbackUrl}
+                    alt="preview"
+                    className="w-32 h-32 rounded-lg object-cover border border-slate-700"
+                  />
+                </div>
+              )}
+
+
 
         {step === 3 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -261,7 +344,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.interests.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('interests',i)} />
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('interests', i)} />
+                  // <Chip key={${v}-${i}} label={v} onRemove={()=>removeChip('interests',i)} />
                 ))}
               </div>
               <SuggestionPills items={filteredInterestSuggestions} onPick={(v)=>addChip('interests', v)} />
@@ -274,7 +358,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.skills.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('skills',i)} />
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('skills', i)} />
+                  // <Chip key={${v}-${i}} label={v} onRemove={()=>removeChip('skills',i)} />
                 ))}
               </div>
               <SuggestionPills items={filteredSkillSuggestions} onPick={(v)=>addChip('skills', v)} />
@@ -287,7 +372,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
                 {preferences.learningGoals.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('learningGoals',i)} />
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('learningGoals', i)} />
+                  // <Chip key={${v}-${i}} label={v} onRemove={()=>removeChip('learningGoals',i)} />
                 ))}
               </div>
               <SuggestionPills items={filteredGoalSuggestions} onPick={(v)=>addChip('learningGoals', v)} />
