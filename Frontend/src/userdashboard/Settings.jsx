@@ -140,15 +140,20 @@ useEffect(() => {
   setLearningGoals(user?.learningGoals || []);
   setInstitution(user?.institution || null);
 
-  if (user?.profilePhoto) {
-    setProfilePhoto(user.profilePhoto);
-  } else if (user?.avatar) {
-    setProfilePhoto(user.avatar);
-  } else if (user?.gender && DEFAULT_AVATARS[user.gender.toLowerCase()]) {
-    setProfilePhoto(DEFAULT_AVATARS[user.gender.toLowerCase()]);
-  } else {
-    setProfilePhoto("/default-avatar.png");
+// Determine the profile photo
+  let photo = '/default-avatar.png'; // default fallback
+
+  if (user?.profilePhoto && user.profilePhoto.trim() !== '') {
+    photo = user.profilePhoto;
+  } else if (user?.avatar && user.avatar.trim() !== '') {
+    photo = user.avatar;
+  } else if (user?.gender) {
+    const genderKey = String(user.gender).trim().toLowerCase(); // ensure string and lowercase
+    if (DEFAULT_AVATARS[genderKey]) {
+      photo = DEFAULT_AVATARS[genderKey];
+    }
   }
+  setProfilePhoto(photo);
 }, [user?._id, editingField]);
 
 
@@ -832,7 +837,7 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => setLearningGoals([...learningGoals, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
                       )}
                     </div>
 
@@ -892,7 +897,7 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => setSkills([...skills, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
                       )}
                     </div>
 
@@ -952,7 +957,7 @@ const handleSaveProfile = async () => {
                             <SuggestionPills items={filteredInterestSuggestions} onPick={(v) => setInterests([...interests, v])} />
                           </>
                         ) : (
-                          <div className="text-gray-400 border border-gray-700 rounded-sm bg-gray-900/40">{interests.join(', ') || 'No interests added'}</div>
+                          <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{interests.join(', ') || 'No interests added'}</div>
                         )}
                       </div>
 
