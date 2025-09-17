@@ -59,15 +59,67 @@ const Settings = () => {
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
 
+const [gender, setGender] = useState(user?.gender || '');
+const [dob, setDob] = useState(user?.dateOfBirth || '');
+const [collegeIdNumber, setCollegeIdNumber] = useState(user?.collegeIdNumber || '');
+const [interests, setInterests] = useState(user?.interests || []);
+const [skills, setSkills] = useState(user?.skills || []);
+const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
+const [institution, setInstitution] = useState(user?.institution || null);
+
+
+
+  const DEFAULT_AVATARS = {
+  male: "/male-avatar.png",
+  female: "/female-avatar.png",
+  other: "/other-avatar.png",
+};
+
+
+
+
+useEffect(() => {
+  if (editingField) return;
+
+  setName(user?.name || '');
+  setPhone(user?.phone || '');
+  setLocation(user?.location || '');
+  setBio(user?.bio || '');
+  setGender(user?.gender || '');
+  setDob(user?.dateOfBirth ? String(user.dateOfBirth).slice(0, 10) : '');
+  setCollegeIdNumber(user?.collegeIdNumber || '');
+  setInterests(user?.interests || []);
+  setSkills(user?.skills || []);
+  setLearningGoals(user?.learningGoals || []);
+  setInstitution(user?.institution || null);
+
+  if (user?.profilePhoto) {
+    setProfilePhoto(user.profilePhoto);
+  } else if (user?.avatar) {
+    setProfilePhoto(user.avatar);
+  } else if (user?.gender && DEFAULT_AVATARS[user.gender.toLowerCase()]) {
+    setProfilePhoto(DEFAULT_AVATARS[user.gender.toLowerCase()]);
+  } else {
+    setProfilePhoto("/default-avatar.png");
+  }
+}, [user?._id, editingField]);
+
+
   // keep inputs synced with user unless editing
-  useEffect(() => {
-    if (editingField) return;
-    setName(user?.name || '');
-    setPhone(user?.phone || '');
-    setLocation(user?.location || '');
-    setBio(user?.bio || '');
-    setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
-  }, [user?._id, editingField]);
+  // useEffect(() => {
+  //   if (editingField) return;
+  //   setName(user?.name || '');
+  //   setPhone(user?.phone || '');
+  //   setLocation(user?.location || '');
+  //   setBio(user?.bio || '');
+  //   setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
+  // }, [user?._id, editingField]);
+
+
+
+
+
+
 
   // focus lock for editing fields
   useEffect(() => {
@@ -148,25 +200,59 @@ const Settings = () => {
   };
 
   // save profile fields
-  const handleSaveProfile = async () => {
-    setProfileSaving(true);
-    setProfileMessage('Saving...');
-    try {
-      const res = await updateMe({ name, phone, location, bio });
-      if (res.user) {
-        setProfileMessage('Profile updated!');
-        setUser(res.user);
-        stopEditing(); // Auto-close editing mode after save
-      } else {
-        setProfileMessage(res.error || 'Failed to update profile');
-      }
-    } catch {
-      setProfileMessage('Failed to update profile');
-    } finally {
-      setTimeout(() => setProfileMessage(''), 2000);
-      setProfileSaving(false);
+  // const handleSaveProfile = async () => {
+  //   setProfileSaving(true);
+  //   setProfileMessage('Saving...');
+  //   try {
+  //     const res = await updateMe({ name, phone, location, bio });
+  //     if (res.user) {
+  //       setProfileMessage('Profile updated!');
+  //       setUser(res.user);
+  //       stopEditing(); // Auto-close editing mode after save
+  //     } else {
+  //       setProfileMessage(res.error || 'Failed to update profile');
+  //     }
+  //   } catch {
+  //     setProfileMessage('Failed to update profile');
+  //   } finally {
+  //     setTimeout(() => setProfileMessage(''), 2000);
+  //     setProfileSaving(false);
+  //   }
+  // };
+
+const handleSaveProfile = async () => {
+  setProfileSaving(true);
+  setProfileMessage('Saving...');
+  try {
+    const res = await updateMe({
+      name,
+      phone,
+      location,
+      bio,
+      gender,
+      dateOfBirth: dob,
+      collegeIdNumber,
+      interests,
+      skills,
+      learningGoals,
+      institution: institution?._id || null
+    });
+    if (res.user) {
+      setProfileMessage('Profile updated!');
+      setUser(res.user);
+      stopEditing();
+    } else {
+      setProfileMessage(res.error || 'Failed to update profile');
     }
-  };
+  } catch {
+    setProfileMessage('Failed to update profile');
+  } finally {
+    setTimeout(() => setProfileMessage(''), 2000);
+    setProfileSaving(false);
+  }
+};
+
+
 
   // Handle Enter key press for profile fields
   const handleKeyPress = (e) => {
@@ -484,6 +570,8 @@ const Settings = () => {
                       />
                     </div>
 
+                    
+
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -751,6 +839,14 @@ const Settings = () => {
         defaultEmail={user?.email || ''}
       />
       {/* ✅ /ADDED */}
+
+      {/* ✅ Render Host Registration Modal */}
+        {showHostModal && (
+          <HostRegistrationModal
+            isOpen={showHostModal}
+            onClose={() => setShowHostModal(false)}
+          />
+        )}
     </div>
   );
 };
