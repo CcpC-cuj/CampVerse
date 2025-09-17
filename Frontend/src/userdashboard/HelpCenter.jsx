@@ -5,58 +5,100 @@ import NavBar from "./NavBar";
 
 /**
  * Help Center (frontend only)
- * - Matches dashboard/landing look (purple accent #9b5de5).
+ * - Matches dashboard/landing look (purple accent  #9b5de5).
  * - Sticky top bar with search (like dashboard).
  * - Knowledge Base (filter by search/category)
  * - Quick Actions
  * - Contact Support form (email/ticket) — placeholders added for backend.
  */
 
+// const CATEGORIES = [
+//   { id: "getting-started", label: "Getting Started", icon: "ri-rocket-line" },
+//   { id: "account", label: "Account & Security", icon: "ri-shield-keyhole-line" },
+//   { id: "events", label: "Events & Registration", icon: "ri-calendar-event-line" },
+//   { id: "notifications", label: "Notifications", icon: "ri-notification-3-line" },
+//   { id: "other", label: "Other", icon: "ri-more-2-line" },
+// ];
+
+// const KB = [
+//   {
+//     id: "kb-otp",
+//     category: "account",
+//     title: "Didn’t receive verification code (OTP)?",
+//     body:
+//       "Check your spam folder and make sure your college email is correct. You can resend the OTP from the signup or OTP screen. If it still doesn’t arrive, contact support with your email and college domain.",
+//   },
+//   {
+//     id: "kb-register",
+//     category: "events",
+//     title: "How to register for an event",
+//     body:
+//       "Open the event page and click “Register”. If the event requires college verification, ensure your institution is set in your profile and the email domain matches.",
+//   },
+//   {
+//     id: "kb-notifs",
+//     category: "notifications",
+//     title: "Manage email & in-app notifications",
+//     body:
+//       "Go to Settings → Notifications to toggle categories like RSVP updates, certificates, co-host requests, and event verification notices.",
+//   },
+//   {
+//     id: "kb-start",
+//     category: "getting-started",
+//     title: "First steps after creating an account",
+//     body:
+//       "Complete your profile, upload a photo, pick interests/skills, and set your institution. This improves event recommendations and unlocks registrations.",
+//   },
+//   {
+//     id: "kb-other",
+//     category: "other",
+//     title: "Report a bug or request a feature",
+//     body:
+//       "Use the Contact Support form below. Choose “Bug Report” or “Feature Request” and describe what you see or what you’d like added.",
+//   },
+// ];
 const CATEGORIES = [
-  { id: "getting-started", label: "Getting Started", icon: "ri-rocket-line" },
-  { id: "account", label: "Account & Security", icon: "ri-shield-keyhole-line" },
-  { id: "events", label: "Events & Registration", icon: "ri-calendar-event-line" },
-  { id: "notifications", label: "Notifications", icon: "ri-notification-3-line" },
-  { id: "other", label: "Other", icon: "ri-more-2-line" },
+
 ];
 
-const KB = [
-  {
-    id: "kb-otp",
-    category: "account",
-    title: "Didn’t receive verification code (OTP)?",
-    body:
-      "Check your spam folder and make sure your college email is correct. You can resend the OTP from the signup or OTP screen. If it still doesn’t arrive, contact support with your email and college domain.",
-  },
-  {
-    id: "kb-register",
-    category: "events",
-    title: "How to register for an event",
-    body:
-      "Open the event page and click “Register”. If the event requires college verification, ensure your institution is set in your profile and the email domain matches.",
-  },
-  {
-    id: "kb-notifs",
-    category: "notifications",
-    title: "Manage email & in-app notifications",
-    body:
-      "Go to Settings → Notifications to toggle categories like RSVP updates, certificates, co-host requests, and event verification notices.",
-  },
-  {
-    id: "kb-start",
-    category: "getting-started",
-    title: "First steps after creating an account",
-    body:
-      "Complete your profile, upload a photo, pick interests/skills, and set your institution. This improves event recommendations and unlocks registrations.",
-  },
-  {
-    id: "kb-other",
-    category: "other",
-    title: "Report a bug or request a feature",
-    body:
-      "Use the Contact Support form below. Choose “Bug Report” or “Feature Request” and describe what you see or what you’d like added.",
-  },
-];
+
+    const KB = [
+      {
+       
+        id: "kb-start",
+        category: "getting-started",
+        abhi:"Abhi",
+        title: "First steps after creating an account",
+        body: "Complete your profile, upload a photo, pick interests/skills, and set your institution. This improves event recommendations and unlocks registrations.",
+      },
+      {
+        id: "kb-otp",
+        category: "getting-started",
+        title: "Didn’t receive verification code (OTP)?",
+        body: "Check your spam folder and make sure your college email is correct. You can resend the OTP from the signup or OTP screen. If it still doesn’t arrive, contact support with your email and college domain.",
+      },
+      {
+        id: "kb-register",
+        category: "getting-started",
+        title: "How to register for an event",
+        body: "Open the event page and click “Register”. If the event requires college verification, ensure your institution is set in your profile and the email domain matches.",
+      },
+      {
+        id: "kb-notifs",
+        category: "getting-started",
+        title: "Manage email & in-app notifications",
+        body: "Go to Settings → Notifications to toggle categories like RSVP updates, certificates, co-host requests, and event verification notices.",
+      },
+
+      {
+        id: "kb-other",
+        category: "getting-started",
+        title: "Report a bug or request a feature",
+        body: "Use the Contact Support form below. Choose “Bug Report” or “Feature Request” and describe what you see or what you’d like added.",
+      },
+    ];
+
+
 
 const HelpCenter = () => {
   const { user } = useAuth();
@@ -177,29 +219,32 @@ const HelpCenter = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Knowledge Base */}
-            <div className="lg:col-span-2 space-y-4">
-              {results.length === 0 ? (
-                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-gray-300">
-                  No results. Try a different keyword or category.
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Knowledge Base */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                {results.length === 0 ? (
+                  <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-gray-300">
+                    No results. Try a different keyword or category.
+                  </div>
+                ) : (
+                  results.map((a) => (
+                    <article
+                      key={a.id}
+                      className="bg-gray-800/60 border border-gray-700 rounded-xl p-5 hover:border-[#9b5de5]/30 transition-colors"
+                    >
+                      <div className="mb-2 text-xs text-gray-400 uppercase tracking-wide">
+                        {CATEGORIES.find((c) => c.id === a.category)?.label || "Article"}
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">{a.title}</h3>
+                      <p className="text-gray-300">{a.body}</p>
+                      {/* TODO: BACKEND—link to a full article route or CMS if needed */}
+                    </article>
+                  ))
+                )}
                 </div>
-              ) : (
-                results.map((a) => (
-                  <article
-                    key={a.id}
-                    className="bg-gray-800/60 border border-gray-700 rounded-xl p-5 hover:border-[#9b5de5]/30 transition-colors"
-                  >
-                    <div className="mb-2 text-xs text-gray-400 uppercase tracking-wide">
-                      {CATEGORIES.find((c) => c.id === a.category)?.label || "Article"}
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{a.title}</h3>
-                    <p className="text-gray-300">{a.body}</p>
-                    {/* TODO: BACKEND—link to a full article route or CMS if needed */}
-                  </article>
-                ))
-              )}
-            </div>
+              </div>
+
 
             {/* Quick Help / Contact */}
             <aside className="space-y-4">
@@ -340,3 +385,4 @@ const HelpCenter = () => {
 };
 
 export default HelpCenter;
+
