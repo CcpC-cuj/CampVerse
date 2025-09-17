@@ -441,7 +441,7 @@ const handleSaveProfile = async () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-300 mb-1">Email</label>
+                        <label className="block text-sm text-gray-300 mb-1 p-1">Email</label>
                         <input
                           type="email"
                           value={user?.email || ''}
@@ -566,9 +566,8 @@ const handleSaveProfile = async () => {
                       />
                     </div>
 
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       {/* Gender (editable with select) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <div className="flex items-center justify-between">
                           <label className="block text-sm text-gray-300 mb-1">Gender</label>
