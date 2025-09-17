@@ -67,15 +67,11 @@ const [skills, setSkills] = useState(user?.skills || []);
 const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
 const [institution, setInstitution] = useState(user?.institution || null);
 
-
-
   const DEFAULT_AVATARS = {
   male: "/male-avatar.png",
   female: "/female-avatar.png",
   other: "/other-avatar.png",
 };
-
-
 
 
 useEffect(() => {
@@ -570,6 +566,8 @@ const handleSaveProfile = async () => {
                       />
                     </div>
 
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       {/* Gender (editable with select) */}
                       <div>
                         <div className="flex items-center justify-between">
@@ -726,7 +724,7 @@ const handleSaveProfile = async () => {
                           }`}
                         />
                       </div>
-
+                    </div>
                       {/* Learning Goals (editable textarea) */}
                       <div>
                         <div className="flex items-center justify-between">
@@ -1114,13 +1112,6 @@ const handleSaveProfile = async () => {
       />
       {/* ✅ /ADDED */}
 
-      {/* ✅ Render Host Registration Modal */}
-        {showHostModal && (
-          <HostRegistrationModal
-            isOpen={showHostModal}
-            onClose={() => setShowHostModal(false)}
-          />
-        )}
     </div>
   );
 };
