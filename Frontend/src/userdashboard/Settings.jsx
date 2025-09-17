@@ -570,7 +570,123 @@ const handleSaveProfile = async () => {
                       />
                     </div>
 
-                    
+                                      {/* Gender (editable with select) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Gender</label>
+                          {editingField !== 'gender' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('gender')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit gender"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          disabled={editingField !== 'gender'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'gender'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Date of Birth (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Date of Birth</label>
+                          {editingField !== 'dob' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('dob')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit date of birth"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="date"
+                          value={dob || ''}
+                          onChange={(e) => setDob(e.target.value)}
+                          readOnly={editingField !== 'dob'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'dob'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      {/* College ID (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">College / Enrollment Number</label>
+                          {editingField !== 'collegeIdNumber' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('collegeIdNumber')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit college ID"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={collegeIdNumber}
+                          readOnly={editingField !== 'collegeIdNumber'}
+                          onChange={(e) => setCollegeIdNumber(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'collegeIdNumber'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+
 
                     <div className="flex justify-end">
                       <button
