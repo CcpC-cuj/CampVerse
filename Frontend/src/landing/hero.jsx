@@ -26,7 +26,7 @@ const Hero = ({ onSignupClick }) => {
               <button
                 aria-label="Join with College Email"
                 onClick={onSignupClick}
-                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
+                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]"
               >
                 Join with College Email
               </button>
@@ -35,7 +35,7 @@ const Hero = ({ onSignupClick }) => {
               <button
                 aria-label="Explore events"
                 onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
+                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]"
               >
                 Explore Events
               </button>
