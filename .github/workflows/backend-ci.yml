@@ -58,13 +58,21 @@ jobs:
     - name: Run tests
       run: |
         cd Backend
-        npm test -- --testPathPattern=basic.test.js
+        npm test -- --testPathPattern=basic.test.js --maxWorkers=1
       env:
         NODE_ENV: test
         MONGODB_URI: mongodb://localhost:27017/test
         REDIS_URL: redis://localhost:6379
-        JWT_SECRET: test-secret-key
-        PORT: 5001
+        JWT_SECRET: test-secret-key-for-ci-cd-testing-only
+        PORT: 5002
+        FRONTEND_URL: http://localhost:3000
+        EMAIL_USER: test@example.com
+        EMAIL_PASSWORD: test-password
+        GOOGLE_CLIENT_ID: test-google-client-id
+        ML_API_KEY: test-ml-api-key
+        ML_CERTIFICATE_API_URL: https://test-ml-api.example.com
+        STORAGE_PROVIDER: firebase
+        FIREBASE_STORAGE_BUCKET: test-bucket.appspot.com
 
   build:
     needs: test

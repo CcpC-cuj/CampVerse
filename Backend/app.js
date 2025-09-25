@@ -75,37 +75,15 @@ app.use((req, res, next) => {
 // Trust Render/Proxy to get correct client IPs for rate limiting and security
 app.set('trust proxy', 1);
 
-// CRITICAL: Move allowedOrigins definition to the very top
-const allowedOrigins = (() => {
-  const environment = process.env.NODE_ENV || 'development';
-  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL;
-  const port = process.env.PORT || 5001;
-  const isRenderPort = port == 10000;
-  const isProduction = environment === 'production' || isRender || isRenderPort;
-  
-  logger.info(`Environment: ${environment}, Render: ${!!isRender}, Port: ${port}, Production: ${isProduction}`);
-  
-  if (isProduction || isRenderPort) {
-    const origins = [
-      'https://campverse-alqa.onrender.com',
-      'https://campverse-26hm.onrender.com'
-    ];
-    if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
-    if (process.env.BACKEND_URL) origins.push(process.env.BACKEND_URL);
-    logger.info(`Production CORS origins: ${origins.join(', ')}`);
-    return origins;
-  }
-  
-  const devOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
-  ];
-  logger.info(`Development CORS origins: ${devOrigins.join(', ')}`);
-  return devOrigins;
-})();
+// Import security configuration
+const { securityConfig, validateEnvironment } = require('./config/security');
+
+// Validate environment variables
+validateEnvironment();
+
+// Use security configuration for CORS
+const allowedOrigins = securityConfig.cors.origin;
+logger.info(`CORS origins: ${allowedOrigins.join(', ')}`);
 
 // ABSOLUTE FIRST: Priority CORS handler - MUST handle ALL requests with origins
 app.use((req, res, next) => {
@@ -117,18 +95,18 @@ app.use((req, res, next) => {
   // Always set CORS headers for allowed origins OR no-origin requests
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', securityConfig.cors.methods.join(', '));
+    res.setHeader('Access-Control-Allow-Headers', securityConfig.cors.allowedHeaders.join(', '));
+    res.setHeader('Access-Control-Allow-Credentials', securityConfig.cors.credentials.toString());
     res.setHeader('Access-Control-Max-Age', '86400');
     logger.info(`✅ CORS headers set for: ${origin || 'no-origin'}`);
   } else {
     logger.warn(`❌ CORS BLOCKED: ${origin} not in allowed origins`);
     // Still set basic headers to help with debugging
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', securityConfig.cors.methods.join(', '));
+    res.setHeader('Access-Control-Allow-Headers', securityConfig.cors.allowedHeaders.join(', '));
+    res.setHeader('Access-Control-Allow-Credentials', securityConfig.cors.credentials.toString());
   }
   
   // Handle preflight requests immediately
@@ -160,22 +138,22 @@ app.use(smartTimeout);
 
 // Security middleware will be set up after Redis client is initialized
 
-// Rate limiting for different endpoint types
+// Rate limiting for different endpoint types using security config
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
+  windowMs: securityConfig.rateLimit.windowMs,
+  max: securityConfig.rateLimit.authMax,
   message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true,
+  skipSuccessfulRequests: securityConfig.rateLimit.skipSuccessfulRequests,
   handler: (req, res) => {
     res.status(429).json({ error: 'Too many authentication attempts, please try again later.' });
   }
 });
 
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: securityConfig.rateLimit.windowMs,
+  max: securityConfig.rateLimit.max,
   message: { error: 'Too many API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -185,8 +163,8 @@ const apiLimiter = rateLimit({
 });
 
 const strictLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: securityConfig.rateLimit.windowMs,
+  max: securityConfig.rateLimit.strictMax,
   message: { error: 'Too many requests to this endpoint, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -234,41 +212,21 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-// Enhanced security headers with comprehensive protection
+// Enhanced security headers with comprehensive protection using security config
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ['\'self\''],
-      styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
-      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net'],
-      imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
-      fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
-      connectSrc: ['\'self\'', 'https://api.campverse.com'],
-      frameSrc: ['\'none'],
-      objectSrc: ['\'none'],
-      mediaSrc: ['\'self\''],
-      workerSrc: ['\'self\'', 'blob:'],
-      manifestSrc: ['\'self\''],
-      upgradeInsecureRequests: [],
-    },
-    reportOnly: false,
-  },
+  contentSecurityPolicy: securityConfig.headers.contentSecurityPolicy,
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: { policy: 'same-origin' },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   dnsPrefetchControl: { allow: false },
   frameguard: { action: 'deny' },
   hidePoweredBy: true,
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  },
+  hsts: securityConfig.headers.hsts,
   ieNoOpen: true,
   noSniff: true,
   permittedCrossDomainPolicies: { permittedPolicies: 'none' },
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  // xssFilter removed (deprecated)
+  referrerPolicy: { policy: securityConfig.headers.referrerPolicy },
+  permissionsPolicy: securityConfig.headers.permissionsPolicy
 }));
 
 // Additional security middleware
@@ -461,13 +419,6 @@ app.get('/health', async (req, res) => {
 // Healthcheck endpoint for Docker and monitoring
 app.get('/healthz', (req, res) => res.status(200).send('OK'));
 
-// Validate required environment variables (soft-fail locally to avoid exit on dev)
-const requiredEnv = ['JWT_SECRET'];
-for (const key of requiredEnv) {
-  if (!process.env[key]) {
-    logger.warn(`Missing environment variable: ${key}. Using dev fallback.`);
-  }
-}
 
 // CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
