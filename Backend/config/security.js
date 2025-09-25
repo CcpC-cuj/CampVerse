@@ -208,6 +208,15 @@ const validateEnvironment = () => {
   
   if (missing.length > 0) {
     console.warn(`⚠️  Missing required environment variables: ${missing.join(', ')}`);
+    
+    // In test environment, provide fallbacks
+    if (process.env.NODE_ENV === 'test') {
+      console.log('🔧 Using test environment fallbacks...');
+      process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-ci-cd-testing-only-32-chars-minimum';
+      process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/test';
+      process.env.EMAIL_USER = process.env.EMAIL_USER || 'test@example.com';
+      process.env.EMAIL_PASSWORD = process.env.EMAIL_PASSWORD || 'test-password';
+    }
   }
 
   // Validate JWT secret if set
