@@ -7,6 +7,7 @@ import HostNavBar from "./HostNavBar";
 import SimpleEventCard from "./SimpleEventCard";
 import DetailedEventCard from "./DetailedEventCard";
 import ParticipantsModal from "./ParticipantsModal";
+import EventDetailsModal from "./EventDetailsModal";
 
 const HostEventsDashboard = () => {
   // Add URLs for instant preview
@@ -30,13 +31,14 @@ const HostEventsDashboard = () => {
   const [error, setError] = useState(null);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [selectedEventForParticipants, setSelectedEventForParticipants] = useState(null);
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+  const [selectedEventForDetails, setSelectedEventForDetails] = useState(null);
 
   // Form state for event creation/editing
   const [eventForm, setEventForm] = useState({
     title: '',
     description: '',
     date: '',
-    endDate: '',
     location: '',
     venue: '',
     organizer: '',
@@ -114,66 +116,7 @@ const HostEventsDashboard = () => {
         setError(`Failed to load events: ${response.error}`);
         setEvents([]);
       } else {
-        // Mock data for demonstration when API is not working
-        setEvents([
-          {
-            _id: "mock_1",
-            title: "Annual Tech Symposium 2025",
-            description: "A comprehensive technology symposium featuring the latest innovations in AI, blockchain, and cloud computing. Join industry leaders for keynotes, workshops, and networking opportunities.",
-            date: "2025-09-15T09:00:00Z",
-            endDate: "2025-09-15T17:00:00Z",
-            status: "published",
-            participants: 312,
-            maxParticipants: 500,
-            location: "offline",
-            venue: "Memorial Auditorium, CUJ Campus",
-            category: "Technology",
-            fee: 1500,
-            tags: ["Technology", "Innovation", "Networking", "AI"],
-            coverImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-09-10T23:59:00Z"
-          },
-          {
-            _id: "mock_2", 
-            title: "Summer Hackathon 2025",
-            description: "48-hour coding marathon for innovative solutions. Build, innovate, and compete for amazing prizes. Open to all skill levels.",
-            date: "2025-09-22T10:00:00Z",
-            endDate: "2025-09-24T10:00:00Z",
-            status: "draft",
-            participants: 156,
-            maxParticipants: 200,
-            location: "offline",
-            venue: "Engineering Block, CUJ",
-            category: "Programming",
-            fee: 0,
-            tags: ["Programming", "Innovation", "Competition", "Hackathon"],
-            coverImage: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-09-20T23:59:00Z"
-          },
-          {
-            _id: "mock_3",
-            title: "International Cultural Festival",
-            description: "Celebrating diversity and cultural exchange through music, dance, art, and food from around the world.",
-            date: "2025-10-05T11:00:00Z", 
-            endDate: "2025-10-07T20:00:00Z",
-            status: "published",
-            participants: 789,
-            maxParticipants: 1000,
-            location: "offline",
-            venue: "Central Lawn, CUJ Campus",
-            category: "Cultural",
-            fee: 500,
-            tags: ["Cultural", "International", "Festival", "Music", "Dance"],
-            coverImage: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800",
-            host: { name: user?.name || "You", organization: "CUJ" },
-            contactEmail: user?.email,
-            registrationDeadline: "2025-10-01T23:59:00Z"
-          }
-        ]);
+        setEvents([]);
       }
     } catch (err) {
       console.error('Error loading events:', err);
@@ -213,10 +156,9 @@ const HostEventsDashboard = () => {
       title: '',
       description: '',
       date: '',
-      endDate: '',
       location: '',
       venue: '',
-  organizer: 'institution',
+      organizer: 'institution',
       organizationName: '',
       category: '',
       maxParticipants: '',
@@ -269,7 +211,6 @@ const HostEventsDashboard = () => {
         },
         capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
         date: eventForm.date,
-        endDate: eventForm.endDate || eventForm.date,
         isPaid: eventForm.isPaid,
         price: eventForm.isPaid ? parseFloat(eventForm.fee) : 0,
         tags: Array.isArray(eventForm.tags)
@@ -338,7 +279,6 @@ const HostEventsDashboard = () => {
       title: event.title || '',
       description: event.description || '',
       date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
-      endDate: event.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
       location: event.location || '',
       venue: event.venue || '',
       category: event.category || '',
@@ -501,6 +441,19 @@ const HostEventsDashboard = () => {
     setSelectedEventForParticipants(event);
     setShowParticipantsModal(true);
   };
+
+  const handleViewEventDetails = (event) => {
+    setSelectedEventForDetails(event);
+    setShowEventDetailsModal(true);
+  };
+
+  // Set global handler for event details (used by DetailedEventCard)
+  useEffect(() => {
+    window.__viewEventDetails = handleViewEventDetails;
+    return () => {
+      delete window.__viewEventDetails;
+    };
+  }, []);
 
   return (
     <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
@@ -1259,6 +1212,17 @@ const HostEventsDashboard = () => {
           onClose={() => {
             setShowParticipantsModal(false);
             setSelectedEventForParticipants(null);
+          }}
+        />
+      )}
+
+      {/* Event Details Modal */}
+      {showEventDetailsModal && selectedEventForDetails && (
+        <EventDetailsModal
+          event={selectedEventForDetails}
+          onClose={() => {
+            setShowEventDetailsModal(false);
+            setSelectedEventForDetails(null);
           }}
         />
       )}

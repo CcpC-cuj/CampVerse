@@ -3,7 +3,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { getUserEvents, getUpcomingEvents, getPastEvents, rsvpEvent as rsvpEventAPI, cancelRsvp } from "../api/events";
 import Sidebar from "../userdashboard/sidebar";
 import NavBar from "./NavBar";
-import ShareButton from './ShareButton'; 
+import ShareButton from './ShareButton';
+import { formatDateLong, formatDateShort } from "../utils/dateUtils";
 
 const Events = () => {
   const { user } = useAuth();
@@ -20,6 +21,21 @@ const Events = () => {
     loadUserEvents();
   }, []);
 
+  // Function to reload RSVP status from backend
+  const loadUserRsvpStatus = async () => {
+    try {
+      const response = await getUserEvents();
+      if (response.success && response.data && response.data.registeredEvents) {
+        const rsvpedEventIds = new Set(
+          response.data.registeredEvents.map(event => event._id || event.id)
+        );
+        setUserRsvps(rsvpedEventIds);
+      }
+    } catch (err) {
+      console.error('Error loading user RSVP status:', err);
+    }
+  };
+
   const loadUserEvents = async () => {
     try {
       setLoading(true);
@@ -34,6 +50,7 @@ const Events = () => {
       const newEvents = { registered: [], upcoming: [], past: [], saved: [] };
       const rsvpSet = new Set();
 
+      // Load registered events and build RSVP set
       if (userEventsRes.success && userEventsRes.data) {
         const registeredEvents = userEventsRes.data.registeredEvents || userEventsRes.data.events || [];
         newEvents.registered = registeredEvents;
@@ -41,10 +58,16 @@ const Events = () => {
         if (userEventsRes.data.savedEvents) newEvents.saved = userEventsRes.data.savedEvents;
       }
 
-      if (upcomingRes.success && upcomingRes.data) newEvents.upcoming = upcomingRes.data.events || upcomingRes.data || [];
-      if (pastRes.success && pastRes.data) newEvents.past = pastRes.data.events || pastRes.data || [];
-
-      // No mock data: keep lists empty if APIs fail
+      // Load upcoming events (filter out already registered ones)
+      if (upcomingRes.success && upcomingRes.data) {
+        const allUpcoming = upcomingRes.data.events || upcomingRes.data || [];
+        newEvents.upcoming = allUpcoming.filter(event => !rsvpSet.has(event._id));
+      }
+      
+      // Load past events
+      if (pastRes.success && pastRes.data) {
+        newEvents.past = pastRes.data.events || pastRes.data || [];
+      }
 
       setEvents(newEvents);
       setUserRsvps(rsvpSet);
@@ -64,9 +87,22 @@ const Events = () => {
       if (response.success) {
         const newRsvps = new Set(userRsvps);
         if (isRsvped) {
+          // Cancelled RSVP
           newRsvps.delete(eventId);
-          setEvents((prev) => ({ ...prev, registered: prev.registered.filter((e) => e._id !== eventId) }));
+          setEvents((prev) => {
+            const cancelledEvent = prev.registered.find((e) => e._id === eventId);
+            return {
+              ...prev,
+              registered: prev.registered.filter((e) => e._id !== eventId),
+              // Add back to upcoming if it's a future event
+              upcoming: cancelledEvent && new Date(cancelledEvent.date) > new Date() 
+                ? [...prev.upcoming, cancelledEvent] 
+                : prev.upcoming
+            };
+          });
+          alert(response.message || "RSVP cancelled successfully!");
         } else {
+          // New RSVP
           newRsvps.add(eventId);
           const event = events.upcoming.find((e) => e._id === eventId);
           if (event) {
@@ -76,14 +112,25 @@ const Events = () => {
               upcoming: prev.upcoming.filter((e) => e._id !== eventId),
             }));
           }
+          alert(response.message || "RSVP successful! Check your email for the QR code.");
         }
         setUserRsvps(newRsvps);
+        
+        // Reload RSVP status from backend to ensure consistency
+        setTimeout(() => {
+          loadUserRsvpStatus();
+        }, 1000);
+        
+        // Close modal if open
+        if (selectedEvent && selectedEvent._id === eventId) {
+          setSelectedEvent(null);
+        }
       } else {
-        alert(response.message || "RSVP failed");
+        alert(response.message || response.error || "RSVP failed. Please try again.");
       }
     } catch (err) {
       console.error("Error with RSVP:", err);
-      alert("RSVP failed");
+      alert("RSVP failed. Please try again.");
     }
   };
 
@@ -98,17 +145,6 @@ const Events = () => {
     );
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const EventCard = ({ event, showRSVPButton = false, showRegisteredBadge = false }) => (
     <div className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition duration-300 border border-gray-800 hover:border-[#9b5de5]/30">
       {event.coverImage && <img src={event.coverImage} alt={event.title} className="w-full h-48 object-cover" />}
@@ -119,8 +155,8 @@ const Events = () => {
             <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">Registered</span>
           )}
         </div>
-        <p className="text-gray-400 text-sm mb-2">📅 {formatDate(event.date)}</p>
-        <p className="text-gray-400 text-sm mb-3">📍 {event.location || "Location TBD"}</p>
+        <p className="text-gray-400 text-sm mb-2">📅 {formatDateShort(event.date)}</p>
+        <p className="text-gray-400 text-sm mb-3">📍 {event.location?.venue || event.location?.type || "Location TBD"}</p>
         {event.description && <p className="text-gray-300 text-sm mb-3 line-clamp-2">{event.description}</p>}
         {event.tags && event.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -290,7 +326,7 @@ const Events = () => {
       </div>
 
       {/* Event Image - make it rounded */}
-  {selectedEvent.coverImage && (
+      {selectedEvent.coverImage && (
         <div className="flex justify-center mb-4">
           <img
             src={selectedEvent.coverImage}
@@ -299,6 +335,7 @@ const Events = () => {
           />
         </div>
       )}
+      
       {/* Rest of modal content remains same */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h2 className="text-2xl font-bold text-white">{selectedEvent.title}</h2>
@@ -307,10 +344,8 @@ const Events = () => {
         </span>
       </div>
 
-      <p className="text-gray-400 text-sm mb-2">📅 {formatDate(selectedEvent.date)}</p>
-      <p className="text-gray-400 text-sm mb-4">📍 {selectedEvent.location || "Location TBD"}</p>
-
-      {selectedEvent.description && <p className="text-gray-300 text-sm mb-4">{selectedEvent.description}</p>}
+      <p className="text-gray-400 text-sm mb-2">📅 {formatDateLong(selectedEvent.date)}</p>
+      <p className="text-gray-400 text-sm mb-4">📍 {selectedEvent.location?.venue || selectedEvent.location?.type || "Location TBD"}</p>      {selectedEvent.description && <p className="text-gray-300 text-sm mb-4">{selectedEvent.description}</p>}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <p className="text-gray-400 text-sm">👥 {selectedEvent.participants || 0} participants</p>

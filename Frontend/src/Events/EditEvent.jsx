@@ -4,11 +4,11 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
   const [eventForm, setEventForm] = useState({
     title: event?.title || '',
     description: event?.description || '',
+    about: event?.about || '',
     date: event?.date ? new Date(event.date).toISOString().slice(0, 16) : '',
-    endDate: event?.endDate ? new Date(event.endDate).toISOString().slice(0, 16) : '',
     location: event?.location?.type || '',
     venue: event?.location?.venue || '',
-    eventLink: event?.location?.eventLink || '',
+    eventLink: event?.location?.link || '',
     organizer: event?.organizer?.name || '',
     organizerType: event?.organizer?.type || '',
     organizationName: event?.organizationName || '',
@@ -28,11 +28,14 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
     },
     audienceType: event?.audienceType || '',
     cohosts: Array.isArray(event?.coHosts) ? event.coHosts : [],
-    sessions: event?.sessions || '',
+    sessions: Array.isArray(event?.sessions) ? event.sessions : [],
+    certificateEnabled: event?.features?.certificateEnabled || false,
+    chatEnabled: event?.features?.chatEnabled || false,
   });
   const [bannerUrl, setBannerUrl] = useState(event?.bannerURL || null);
   const [logoUrl, setLogoUrl] = useState(event?.logoURL || null);
   const [cohostInput, setCohostInput] = useState('');
+  const [sessionInput, setSessionInput] = useState({ title: '', time: '', speaker: '' });
 
   useEffect(() => {
     if (event?.bannerURL) setBannerUrl(event.bannerURL);
@@ -79,6 +82,23 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
     }));
   };
 
+  const handleAddSession = () => {
+    if (sessionInput.title.trim() && sessionInput.time.trim() && sessionInput.speaker.trim()) {
+      setEventForm(prev => ({
+        ...prev,
+        sessions: [...prev.sessions, { ...sessionInput }]
+      }));
+      setSessionInput({ title: '', time: '', speaker: '' });
+    }
+  };
+
+  const handleRemoveSession = (idx) => {
+    setEventForm(prev => ({
+      ...prev,
+      sessions: prev.sessions.filter((_, i) => i !== idx)
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSave) onSave(eventForm, bannerUrl, logoUrl);
@@ -104,6 +124,10 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
               <label className="block text-sm font-medium text-purple-300 mb-2">Description *</label>
               <textarea name="description" value={eventForm.description} onChange={handleFormChange} required rows={4} className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
+              <textarea name="about" value={eventForm.about} onChange={handleFormChange} rows={3} placeholder="Additional details about your event..." className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+            </div>
             {/* Organizer Type Dropdown */}
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Organizer Type *</label>
@@ -126,12 +150,8 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
             </div>
             {/* Date and Time */}
             <div>
-              <label className="block text-sm font-medium text-purple-300 mb-2">Date *</label>
+              <label className="block text-sm font-medium text-purple-300 mb-2">Event Date & Time *</label>
               <input type="datetime-local" name="date" value={eventForm.date} onChange={handleFormChange} required className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-purple-300 mb-2">End Date *</label>
-              <input type="datetime-local" name="endDate" value={eventForm.endDate} onChange={handleFormChange} required className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
             </div>
             {/* Location */}
             <div className="grid grid-cols-2 gap-4">
@@ -255,7 +275,56 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
             {/* Sessions/Agenda */}
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Sessions/Agenda</label>
-              <textarea name="sessions" value={eventForm.sessions || ''} onChange={handleFormChange} rows={3} placeholder="Session 1: Title, Speaker, Time\nSession 2: ..." className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <input 
+                    type="text" 
+                    value={sessionInput.title}
+                    onChange={(e) => setSessionInput(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Session Title" 
+                    className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+                  />
+                  <input 
+                    type="text" 
+                    value={sessionInput.time}
+                    onChange={(e) => setSessionInput(prev => ({ ...prev, time: e.target.value }))}
+                    placeholder="Time (e.g. 10:00 AM)" 
+                    className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+                  />
+                  <input 
+                    type="text" 
+                    value={sessionInput.speaker}
+                    onChange={(e) => setSessionInput(prev => ({ ...prev, speaker: e.target.value }))}
+                    placeholder="Speaker Name" 
+                    className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleAddSession} 
+                  className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
+                >
+                  + Add Session
+                </button>
+                {eventForm.sessions.length > 0 && (
+                  <div className="space-y-2 mt-3">
+                    {eventForm.sessions.map((session, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-purple-900/30 px-3 py-2 rounded-lg">
+                        <div className="text-purple-200 text-sm">
+                          <span className="font-medium">{session.title}</span> • {session.time} • {session.speaker}
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => handleRemoveSession(idx)} 
+                          className="text-red-400 hover:text-red-300 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {/* Event Images */}
             <div className="grid grid-cols-2 gap-4">
@@ -284,6 +353,29 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Requirements (one per line)</label>
               <textarea name="requirements" value={eventForm.requirements} onChange={handleFormChange} rows={3} placeholder="List any requirements or prerequisites" className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
+            </div>
+            {/* Features */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <input 
+                  type="checkbox" 
+                  name="certificateEnabled" 
+                  checked={eventForm.certificateEnabled} 
+                  onChange={(e) => setEventForm(prev => ({ ...prev, certificateEnabled: e.target.checked }))}
+                  className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
+                />
+                <label className="text-sm font-medium text-purple-300">🏆 Enable Certificates</label>
+              </div>
+              <div className="flex items-center gap-3">
+                <input 
+                  type="checkbox" 
+                  name="chatEnabled" 
+                  checked={eventForm.chatEnabled} 
+                  onChange={(e) => setEventForm(prev => ({ ...prev, chatEnabled: e.target.checked }))}
+                  className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
+                />
+                <label className="text-sm font-medium text-purple-300">💬 Enable Chat System</label>
+              </div>
             </div>
             {/* Social Links */}
             <div className="grid grid-cols-2 gap-4">

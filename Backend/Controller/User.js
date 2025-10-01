@@ -1037,7 +1037,7 @@ async function getDashboard(req, res) {
     if (registeredEventIds.length > 0) {
       upcomingEventsCount = await Event.countDocuments({
         _id: { $in: registeredEventIds },
-        "schedule.start": { $gt: now },
+        date: { $gt: now },
       });
     }
 

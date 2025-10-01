@@ -14,12 +14,24 @@ export async function listEvents(filters = {}) {
   return res.json();
 }
 
-// Get events for current user (student dashboard)
+// Get events for current user (student dashboard) - Returns events user has RSVPed for
 export async function getUserEvents() {
   const res = await fetch(`${API_URL}/api/events/user`, {
     headers: { ...getAuthHeaders() },
   });
-  return res.json();
+  const data = await res.json();
+  // Return in consistent format: { success, data: { registeredEvents: [...] } }
+  if (data.success && data.data && data.data.events) {
+    return {
+      success: true,
+      data: {
+        registeredEvents: data.data.events,
+        events: data.data.events, // backward compatibility
+        total: data.data.total
+      }
+    };
+  }
+  return data;
 }
 
 // Search events
@@ -58,7 +70,19 @@ export async function getEventById(id) {
   const res = await fetch(`${API_URL}/api/events/${id}`, {
     headers: { ...getAuthHeaders() },
   });
-  return res.json();
+  const data = await res.json();
+  
+  // Handle both old and new response formats
+  if (data.success && data.data) {
+    return data; // New format with success/data structure
+  } else {
+    // Old format - wrap in success structure for consistency
+    return {
+      success: res.ok,
+      data: data,
+      error: res.ok ? null : data.error || 'Failed to fetch event'
+    };
+  }
 }
 
 export async function updateEvent(id, eventData) {
@@ -115,7 +139,14 @@ export async function rsvpEvent(eventId) {
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ eventId }),
   });
-  return res.json();
+  const data = await res.json();
+  // Normalize response
+  if (res.status === 201 || (res.ok && data.message)) {
+    return { success: true, message: data.message, data };
+  } else if (res.status === 409) {
+    return { success: false, message: data.error || 'Already registered for this event', error: data.error };
+  }
+  return { success: false, message: data.error || 'RSVP failed', error: data.error };
 }
 
 // Cancel RSVP - removed duplicate, using POST /cancel-rsvp version below
@@ -135,12 +166,13 @@ export async function getUpcomingEvents() {
   const now = new Date();
   const data = await listEvents();
   const events = (data.data && data.data.events) || data.events || [];
-  return events.filter(ev => {
-    if (ev.schedule && ev.schedule.start) {
-      return new Date(ev.schedule.start) > now;
+  const upcomingEvents = events.filter(ev => {
+    if (ev.date) {
+      return new Date(ev.date) > now;
     }
     return false;
   });
+  return { success: true, data: { events: upcomingEvents, total: upcomingEvents.length } };
 }
 
 // Utility: Filter past events from listEvents
@@ -148,12 +180,13 @@ export async function getPastEvents() {
   const now = new Date();
   const data = await listEvents();
   const events = (data.data && data.data.events) || data.events || [];
-  return events.filter(ev => {
-    if (ev.schedule && ev.schedule.end) {
-      return new Date(ev.schedule.end) < now;
+  const pastEvents = events.filter(ev => {
+    if (ev.date) {
+      return new Date(ev.date) < now;
     }
     return false;
   });
+  return { success: true, data: { events: pastEvents, total: pastEvents.length } };
 }
 
 export async function cancelRsvp(eventId) {
@@ -162,7 +195,12 @@ export async function cancelRsvp(eventId) {
     headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify({ eventId }),
   });
-  return res.json();
+  const data = await res.json();
+  // Normalize response
+  if (res.ok && data.message) {
+    return { success: true, message: data.message, data };
+  }
+  return { success: false, message: data.error || 'Cancel RSVP failed', error: data.error };
 }
 
 export async function getParticipants(eventId) {

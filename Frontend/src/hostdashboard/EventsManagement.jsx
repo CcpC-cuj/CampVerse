@@ -57,7 +57,7 @@ const EventsManagement = () => {
         ...event,
         id: event._id,
         title: event.title,
-        date: event.date || event.schedule?.start || event.createdAt,
+        date: event.date || event.createdAt,
         status: getEventStatus(event),
         registrations: event.participants?.length || 0,
         cover: event.logoURL || event.bannerURL || "/placeholder-event.jpg",

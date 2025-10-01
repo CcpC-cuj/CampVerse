@@ -13,6 +13,7 @@ import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import ResetPassword from "./pages/ResetPassword";
+import EventDetailsPage from "./pages/EventDetailsPage";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 import { EventProvider } from "./userdashboard/EventContext";
@@ -116,6 +117,9 @@ function App() {
             />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/oauth-callback" element={<OAuthCallback />} />
+            
+            {/* Event details route */}
+            <Route path="/events/:id" element={<EventDetailsPage />} />
 
             {/* Host routes */}
             <Route

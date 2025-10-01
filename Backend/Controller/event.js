@@ -158,6 +158,14 @@ async function createEvent(req, res) {
     if (eventIsPaid && eventPrice <= 0) {
       return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
+    
+    // Ensure date is stored as UTC (MongoDB will store as Date object in UTC)
+    // The frontend should send datetime-local which browser converts to ISO string
+    let eventDate = new Date(date);
+    if (isNaN(eventDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid event date format.' });
+    }
+    
     const event = await Event.create({
       title,
       description,
@@ -166,7 +174,7 @@ async function createEvent(req, res) {
       organizationName,
       location,
       capacity,
-      date,
+      date: eventDate, // Store as Date object in UTC
       isPaid: eventIsPaid,
       price: eventPrice,
       requirements,
@@ -197,11 +205,41 @@ async function createEvent(req, res) {
 // Get event by ID
 async function getEventById(req, res) {
   try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    res.json(event);
+    const eventId = req.params.id;
+    const userId = req.user?.id; // Get user ID if authenticated
+    
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Event not found.' 
+      });
+    }
+
+    let userRegistration = null;
+    if (userId) {
+      // Check if user is registered for this event
+      userRegistration = await EventParticipationLog.findOne({
+        eventId: eventId,
+        userId: userId
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...event.toObject(),
+        userRegistration: userRegistration ? {
+          status: userRegistration.status,
+          registeredAt: userRegistration.registeredAt
+        } : null
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching event.' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching event.' 
+    });
   }
 }
 
@@ -340,12 +378,20 @@ async function rsvpEvent(req, res) {
     });
     
     if (existingLog) {
-      return res.status(409).json({ error: 'User already registered for this event' });
+      return res.status(409).json({ 
+        success: false,
+        error: 'User already registered for this event',
+        message: 'You have already registered for this event'
+      });
     }
     
     const event = await Event.findById(eventId);
     if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Event not found',
+        message: 'The event you are trying to register for does not exist'
+      });
     }
     
     // Check capacity and determine status
@@ -395,9 +441,11 @@ async function rsvpEvent(req, res) {
     
     // Send response
     res.status(201).json({
+      success: true,
       message: `RSVP successful. Status: ${status}. QR code sent to email.`,
       qrImage,
-      status
+      status,
+      eventId
     });
     
     // Email QR code to user (non-blocking)
@@ -447,7 +495,11 @@ async function rsvpEvent(req, res) {
     
   } catch (err) {
   logger && logger.error ? logger.error('RSVP error:', err) : null;
-    res.status(500).json({ error: 'Error registering for event.' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Error registering for event.',
+      message: 'Failed to register for the event. Please try again.'
+    });
   }
 }
 
@@ -505,9 +557,9 @@ async function cancelRsvp(req, res) {
       }
     }
   // Audit: Cancel RSVP: user ${userId} for event ${eventId}
-    res.json({ message: 'RSVP cancelled.' });
+    res.json({ success: true, message: 'RSVP cancelled.' });
   } catch (err) {
-    res.status(500).json({ error: 'Error cancelling RSVP.' });
+    res.status(500).json({ success: false, error: 'Error cancelling RSVP.' });
   }
 }
 
