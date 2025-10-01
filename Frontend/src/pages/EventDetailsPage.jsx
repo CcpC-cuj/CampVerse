@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEventById, rsvpEvent, cancelRsvp } from '../api/events';
+import { getPublicEventById, rsvpEvent, cancelRsvp } from '../api/events';
 import { useAuth } from '../contexts/AuthContext';
 import ShareButton from '../userdashboard/ShareButton';
+import LoginModal from './LoginModal';
+import SignupModal from './SignupModal';
 
 const EventDetailsPage = () => {
   const { id } = useParams();
@@ -12,6 +14,8 @@ const EventDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isRsvped, setIsRsvped] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -20,7 +24,7 @@ const EventDetailsPage = () => {
   const loadEvent = async () => {
     try {
       setLoading(true);
-      const response = await getEventById(id);
+      const response = await getPublicEventById(id);
       if (response.success && response.data) {
         setEvent(response.data);
         // Check if user is already registered
@@ -38,7 +42,7 @@ const EventDetailsPage = () => {
 
   const handleRSVP = async () => {
     if (!user) {
-      // Please log in to register for events (alert removed)
+      setShowLoginModal(true);
       return;
     }
 
@@ -125,7 +129,17 @@ const EventDetailsPage = () => {
               >
                 Back
               </button>
-              
+              {/* Show login button if user is not logged in */}
+              {!user && (
+                <>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                  >
+                    Login to Register
+                  </button>
+                </>
+              )}
               {user && event.verificationStatus === 'approved' && (
                 <button
                   onClick={handleRSVP}
@@ -142,6 +156,20 @@ const EventDetailsPage = () => {
           </div>
         </div>
       </div>
+      {/* Show login modal if not logged in and RSVP attempted */}
+      {showLoginModal && (
+        <LoginModal 
+          onClose={() => setShowLoginModal(false)}
+          onSwitchToSignup={() => {
+            setShowLoginModal(false);
+            setShowSignupModal(true);
+          }}
+        />
+      )}
+      {/* Show signup modal if requested */}
+      {showSignupModal && (
+        <SignupModal onClose={() => setShowSignupModal(false)} />
+      )}
     </div>
   );
 };

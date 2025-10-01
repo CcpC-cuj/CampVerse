@@ -973,6 +973,30 @@ async function getGoogleCalendarLink(req, res) {
     res.status(500).json({ error: 'Error generating calendar link.' });
   }
 }
+// **
+//  * Get public event by ID (for sharing, only approved events, no auth required)
+//  */
+async function getPublicEventById(req, res) {
+  try {
+    const eventId = req.params.id;
+    const event = await Event.findOne({ _id: eventId, verificationStatus: 'approved' });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found or not approved.'
+      });
+    }
+    res.json({
+      success: true,
+      data: event
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching public event.'
+    });
+  }
+}
 
 
 module.exports = {
@@ -990,4 +1014,5 @@ module.exports = {
   rejectCoHost,
   verifyEvent,
   getGoogleCalendarLink,
+  getPublicEventById,
 };

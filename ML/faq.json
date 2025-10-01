@@ -1,0 +1,202 @@
+[
+  {
+    "question": "How do I register for an event?",
+    "answer": "Visit the Events section, select your event, and click 'Register.' Complete the required details to finish registration."
+  },
+  {
+    "question": "What are the rules for the upcoming hackathon?",
+    "answer": "Rules are available on the event details page or in the official rulebook linked there."
+  },
+  {
+    "question": "When is the deadline for the coding competition?",
+    "answer": "Deadlines are listed on each event page under 'Important Dates.'"
+  },
+  {
+    "question": "Where can I find the results of the last event?",
+    "answer": "Results are posted on the Results page and sent to registered participants via email."
+  },
+  {
+    "question": "Who is eligible to participate?",
+    "answer": "Eligibility criteria are shown on each event’s details page."
+  },
+  {
+    "question": "How do I form a team?",
+    "answer": "You can invite users to join your team during registration or from your dashboard."
+  },
+  {
+    "question": "What are the prizes?",
+    "answer": "Prize details are available on the event page under 'Prizes.'"
+  },
+  {
+    "question": "How do I reset my password?",
+    "answer": "Go to the login page and click 'Forgot Password' to receive reset instructions."
+  },
+  {
+    "question": "How do I contact support?",
+    "answer": "Use the Support page or submit a ticket from your dashboard."
+  },
+  {
+    "question": "Can I edit my registration details?",
+    "answer": "Yes, you can update your registration from your dashboard before the event deadline."
+  },
+  {
+    "question": "How do I upload required documents?",
+    "answer": "Upload documents via the event registration form or your dashboard."
+  },
+  {
+    "question": "Where can I find event schedules?",
+    "answer": "Schedules are listed on each event’s details page."
+  },
+  {
+    "question": "How do I verify my participation?",
+    "answer": "Verification details are sent via email and shown on your dashboard after the event."
+  },
+  {
+    "question": "What is the process for certificate generation?",
+    "answer": "Certificates are generated after event completion and can be downloaded from your dashboard."
+  },
+  {
+    "question": "How do I report a problem or bug?",
+    "answer": "Use the Feedback or Support section to report issues."
+  },
+  {
+    "question": "How do I access the leaderboard?",
+    "answer": "The leaderboard is available on the Results or event details page."
+  },
+  {
+    "question": "Can I participate in multiple events?",
+    "answer": "Yes, you can register for multiple events if eligible."
+  },
+  {
+    "question": "How do I check my eligibility status?",
+    "answer": "Your eligibility status is displayed on your dashboard and event registration page."
+  },
+  {
+    "question": "How do I get notifications about upcoming events?",
+    "answer": "Enable notifications in your profile settings or check the Notifications section."
+  },
+  {
+    "question": "How do I use the platform’s storage service?",
+    "answer": "Refer to the Storage Service Guide in the documentation section."
+  },
+  {
+    "question": "How do I view my achievements?",
+    "answer": "Achievements are listed in your user profile and dashboard."
+  },
+  {
+    "question": "How do I update my profile information?",
+    "answer": "Go to your dashboard and select 'Edit Profile' to update your information."
+  },
+  {
+    "question": "How do I join as a host or institution?",
+    "answer": "Apply through the Host/Institution registration page and follow the instructions."
+  },
+  {
+    "question": "How do I access event analytics?",
+    "answer": "Event analytics are available to hosts and institutions on their dashboard."
+  },
+  {
+    "question": "How do I request a certificate re-issue?",
+    "answer": "Submit a request via the Support or Certificate section in your dashboard."
+  },
+  {
+    "question": "How do I view feedback for events?",
+    "answer": "Feedback is available on the event details page and your dashboard."
+  },
+  {
+    "question": "How do I manage notifications?",
+    "answer": "Notification settings can be managed from your profile page."
+  },
+  {
+    "question": "How do I access secure files?",
+    "answer": "Secure files are available to eligible users via the Secure Files section in your dashboard."
+  },
+  {
+    "question": "How do I check event participation logs?",
+    "answer": "Participation logs are available in your dashboard under 'Event Participation.'"
+  },
+  {
+    "question": "How do I get help with ML features?",
+    "answer": "Refer to the ML Integration documentation or contact support for assistance."
+  },
+  {
+    "question": "How do I use the API?",
+    "answer": "API documentation is available in the docs section."
+  },
+  {
+    "question": "How do I view or download certificates?",
+    "answer": "Certificates can be viewed and downloaded from your dashboard after event completion."
+  },
+  {
+    "question": "How do I check host eligibility status?",
+    "answer": "Host eligibility status is shown on the host dashboard and event registration page."
+  },
+  {
+    "question": "How do I migrate my account or data?",
+    "answer": "Migration instructions are available in the documentation or contact support for help."
+  },
+  {
+    "question": "How do I access business analytics?",
+    "answer": "Business analytics are available to authorized users in the analytics dashboard."
+  },
+  {
+    "question": "How do I validate event modules?",
+    "answer": "Use the validation scripts provided in the scripts folder or contact support."
+  },
+  {
+    "question": "How do I get started as a new user?",
+    "answer": "Check the Getting Started guide in the documentation and follow onboarding steps."
+  },
+  {
+    "question": "How do I access the development approach?",
+    "answer": "Development approach details are available in the DEVELOPMENT_APPROACH.md file."
+  },
+  {
+    "question": "How do I check API endpoints?",
+    "answer": "API endpoints are documented in the swagger documentation and docs section."
+  },
+  {
+    "question": "How do I use socket features?",
+    "answer": "Refer to the socketClient.js example in the examples folder."
+  },
+  {
+    "question": "How do I check system status or downtime?",
+    "answer": "System status updates are posted in the Notifications section and via email."
+  },
+  {
+    "question": "How do I access the platform from mobile?",
+    "answer": "The platform is mobile-friendly and can be accessed via any browser."
+  },
+  {
+    "question": "How do I get help with frontend issues?",
+    "answer": "Refer to the Frontend TODO and error documentation or contact support."
+  },
+  {
+    "question": "How do I check my event certificates?",
+    "answer": "Event certificates are listed in your dashboard under 'Certificates.'"
+  },
+  {
+    "question": "How do I get updates about new features?",
+    "answer": "Updates are announced in the Notifications section and via email."
+  },
+  {
+    "question": "How do I access storage usage details?",
+    "answer": "Storage usage details are available in your dashboard under 'Storage.'"
+  },
+  {
+    "question": "How do I request event verification?",
+    "answer": "Submit a verification request from the event details page or your dashboard."
+  },
+  {
+    "question": "How do I access institution features?",
+    "answer": "Institution features are available to registered institutions via their dashboard."
+  },
+  {
+    "question": "How do I check notification history?",
+    "answer": "Notification history is available in your dashboard under 'Notifications.'"
+  },
+  {
+    "question": "How do I access support tickets?",
+    "answer": "Support tickets can be viewed and managed from your dashboard under 'Support.'"
+  }
+]

@@ -85,6 +85,26 @@ export async function getEventById(id) {
   }
 }
 
+// Public event fetching without authentication (for shared links)
+export async function getPublicEventById(id) {
+  const res = await fetch(`${API_URL}/api/events/public/${id}`, {
+    // No authentication headers for public access
+  });
+  const data = await res.json();
+  
+  // Handle both old and new response formats
+  if (data.success && data.data) {
+    return data; // New format with success/data structure
+  } else {
+    // Old format - wrap in success structure for consistency
+    return {
+      success: res.ok,
+      data: data,
+      error: res.ok ? null : data.error || 'Failed to fetch event'
+    };
+  }
+}
+
 export async function updateEvent(id, eventData) {
   const res = await fetch(`${API_URL}/api/events/${id}`, {
     method: 'PATCH',

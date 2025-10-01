@@ -35,6 +35,23 @@ const {
 const router = express.Router();
 
 // Public list events endpoint for browsing (used by tests and landing pages)
+/**
+ * @swagger
+ * /api/events/public/{id}:
+ *   get:
+ *     summary: Get public event by ID (for sharing, only approved events, no auth required)
+ *     tags: [Event]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: Public event details }
+ *       404: { description: Not found or not approved }
+ */
+router.get('/public/:id', require('../Controller/event').getPublicEventById);
 router.get('/', async (req, res) => {
   try {
     // Check if user is authenticated
