@@ -60,26 +60,14 @@ const SignupModal = ({
 
   const handleGoogleSignIn = async () => {
     setError("");
+    setIsLoading(true);
+    // Start Google OAuth flow; only initiation errors are handled here.
+    // The actual OAuth response will be processed by /oauth-callback.
     try {
-      setIsLoading(true);
-      const token = await getGoogleToken();
-      const response = await googleSignIn({ token });
-
-      if (response.token) {
-        authLogin(response.token, response.user);
-        onClose();
-        window.location.href = "/dashboard";
-      } else if (response.error) {
-        if (response.error.includes("academic emails")) {
-          setError("Please use your institute email (ending with .ac.in or .edu.in).");
-        } else {
-          setError(response.error);
-        }
-      } else {
-        setError("Google sign-in failed. Please try again.");
-      }
+      await getGoogleToken();
     } catch (err) {
-      setError("Google sign-in failed: " + err.message);
+      console.error("Google OAuth initiation error:", err);
+      setError("Failed to initiate Google sign-in. Please try again.");
     } finally {
       setIsLoading(false);
     }

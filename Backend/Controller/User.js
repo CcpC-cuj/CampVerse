@@ -89,11 +89,7 @@ function validatePhone(phone) {
   return phoneRegex.test(phone);
 }
 
-function validatePassword(password) {
-  // Strong password policy: min 8 chars, uppercase, lowercase, number, special char
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  return password && passwordRegex.test(password);
-}
+const { validatePassword, PASSWORD_REGEX } = require('../Utils/passwordUtils');
 
 function validateName(name) {
   return name && name.trim().length >= 2;

@@ -117,13 +117,7 @@ describe('Business Logic Tests', () => {
     });
 
     it('should enforce password complexity requirements', async () => {
-      const validatePassword = (password) => {
-        const minLength = password.length >= 8;
-        const hasLetter = /[a-zA-Z]/.test(password);
-        const hasNumber = /\d/.test(password);
-        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-        return minLength && hasLetter && hasNumber && hasSpecialChar;
-      };
+      const { validatePassword } = require('../../Utils/passwordUtils');
 
       const strongPasswords = ['SecurePass123!', 'MyP@ssw0rd', 'Complex#123'];
 

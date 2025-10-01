@@ -1,8 +1,9 @@
 // src/landing/hero.jsx
-import React from "react";
+import React, { useState } from "react";
 
 // Accept onSignupClick prop
 const Hero = ({ onSignupClick }) => {
+  const [hovered, setHovered] = useState(null);
   return (
     <section id="home" className="hero-bg relative z-0 py-20 md:py-32">
       <div className="container mx-auto px-6 w-full">
@@ -26,7 +27,9 @@ const Hero = ({ onSignupClick }) => {
               <button
                 aria-label="Join with College Email"
                 onClick={onSignupClick}
-                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
+                className={`px-6 py-3 border border-[#9b5de5] rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap
+                  ${hovered === "explore" ? "bg-transparent text-white" : "bg-[#9b5de5] text-white"}
+                `}
               >
                 Join with College Email
               </button>
@@ -35,7 +38,11 @@ const Hero = ({ onSignupClick }) => {
               <button
                 aria-label="Explore events"
                 onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-6 py-3 border border-[#9b5de5] text-white rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap hover:bg-[#9b5de5]/20"
+                onMouseEnter={() => setHovered("explore")}
+                onMouseLeave={() => setHovered(null)}
+                className={`px-6 py-3 border border-[#9b5de5] rounded-full text-lg font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-[#9b5de5] transition-colors whitespace-nowrap
+                  ${hovered === "explore" ? "bg-[#9b5de5] text-white" : "bg-transparent text-white"}
+                `}
               >
                 Explore Events
               </button>
