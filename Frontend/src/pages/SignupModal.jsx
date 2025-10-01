@@ -61,10 +61,16 @@ const SignupModal = ({
   const handleGoogleSignIn = async () => {
     setError("");
     setIsLoading(true);
-    // Start Google OAuth flow; token will be handled by /oauth-callback
-    getGoogleToken();
-    // No need to handle response here; /oauth-callback will process and log in
-    setIsLoading(false);
+    // Start Google OAuth flow; only initiation errors are handled here.
+    // The actual OAuth response will be processed by /oauth-callback.
+    try {
+      await getGoogleToken();
+    } catch (err) {
+      console.error("Google OAuth initiation error:", err);
+      setError("Failed to initiate Google sign-in. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
