@@ -18,7 +18,13 @@ import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   // Control which popup is visible
   const [showLogin, setShowLogin] = useState(false);

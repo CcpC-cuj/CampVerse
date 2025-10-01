@@ -16,6 +16,7 @@ const EventDetailsPage = () => {
   const [isRsvped, setIsRsvped] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [rsvpError, setRsvpError] = useState("");
 
   useEffect(() => {
     loadEvent();
@@ -46,17 +47,23 @@ const EventDetailsPage = () => {
       return;
     }
 
+    setRsvpError("");
     try {
       const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
+      // Always reload event data after RSVP attempt
+      await loadEvent();
       if (response.success) {
-        setIsRsvped(!isRsvped);
-          // RSVP ${isRsvped ? 'cancelled' : 'successful'}! (alert removed)
+        setRsvpError("");
       } else {
-          // RSVP failed (alert removed)
+        if (response.status === 409 || response.error?.includes("already registered")) {
+          setRsvpError("You are already registered for this event.");
+        } else {
+          setRsvpError(response.message || response.error || "RSVP failed. Please try again.");
+        }
       }
     } catch (err) {
       console.error('RSVP error:', err);
-        // Error processing RSVP (alert removed)
+      setRsvpError("RSVP failed. Please try again.");
     }
   };
 
@@ -144,12 +151,12 @@ const EventDetailsPage = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 mb-8 pb-8 border-b border-purple-600/30">
-            <button
-              onClick={() => navigate(-1)}
-              className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
-            >
-              ⬅️ Back
-            </button>
+            {/* Show RSVP error if any */}
+            {rsvpError && rsvpError !== "You are already registered for this event." && (
+              <div className="w-full mb-2 text-center">
+                <span className="text-red-400 bg-red-900/30 px-4 py-2 rounded-lg font-medium">{rsvpError}</span>
+              </div>
+            )}
             {/* Show login button if user is not logged in */}
             {!user && (
               <button
@@ -161,14 +168,15 @@ const EventDetailsPage = () => {
             )}
             {user && event.verificationStatus === "approved" && (
               <button
-                onClick={handleRSVP}
+                onClick={isRsvped ? undefined : handleRSVP}
+                disabled={isRsvped}
                 className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors shadow-md ${
                   isRsvped
-                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    ? "bg-green-700 text-white cursor-not-allowed opacity-70"
                     : "bg-blue-600 hover:bg-blue-700 text-white"
                 }`}
               >
-                {isRsvped ? "Cancel Registration" : "Register for Event"}
+                {isRsvped ? "Already Registered" : "Register for Event"}
               </button>
             )}
           </div>

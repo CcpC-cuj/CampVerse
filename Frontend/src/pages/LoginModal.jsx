@@ -32,7 +32,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = '/dashboard';
+        // No redirect: stay on current page so event view updates with authentication
       } else {
         alert(response.error || 'Login failed');
       }
@@ -47,6 +47,8 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
   const handleGoogleSignIn = async () => {
     setError("");
     setForceLogout(false);
+    // Store current route for post-auth redirect
+    sessionStorage.setItem('postAuthRedirect', window.location.pathname + window.location.search + window.location.hash);
     try {
       setIsLoading(true);
       const token = await getGoogleToken();
@@ -55,7 +57,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = "/dashboard";
+        // No redirect: stay on current page so event view updates with authentication
       } else if (response.error) {
         if (response.forceLogout) {
           authLogout();

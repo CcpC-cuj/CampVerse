@@ -20,8 +20,23 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = getToken();
     const userData = getUser();
-    if (token && userData) {
+    let expired = false;
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        expired = payload.exp <= currentTime;
+      } catch (error) {
+        expired = true;
+      }
+    }
+    if (token && userData && !expired) {
       setUserState(userData);
+    } else if (expired) {
+      removeToken();
+      removeUser();
+      setUserState(null);
+      window.location.href = '/';
     }
     setLoading(false);
   }, []);
