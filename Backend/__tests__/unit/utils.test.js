@@ -37,23 +37,19 @@ describe('Utility Functions Unit Tests', () => {
 
   describe('Password Security', () => {
     it('should validate password strength', () => {
-      const validatePassword = (password) => {
-        // At least 6 characters, contains letter and number
-        const minLength = password.length >= 6;
-        const hasLetter = /[a-zA-Z]/.test(password);
-        const hasNumber = /\d/.test(password);
-        return minLength && hasLetter && hasNumber;
-      };
+      const { validatePassword } = require('../../Utils/passwordUtils');
 
-      // Strong passwords
-      expect(validatePassword('password123')).toBe(true);
-      expect(validatePassword('MyPass1')).toBe(true);
-      expect(validatePassword('Secure123')).toBe(true);
+      // Strong passwords - must have uppercase, lowercase, number, and special char
+      expect(validatePassword('Password123!')).toBe(true);
+      expect(validatePassword('MyPass1@')).toBe(true);
+      expect(validatePassword('Secure123$')).toBe(true);
 
       // Weak passwords
       expect(validatePassword('pass')).toBe(false); // too short
-      expect(validatePassword('password')).toBe(false); // no number
-      expect(validatePassword('123456')).toBe(false); // no letter
+      expect(validatePassword('password')).toBe(false); // no uppercase, number, or special char
+      expect(validatePassword('Password')).toBe(false); // no number or special char
+      expect(validatePassword('Password123')).toBe(false); // no special char
+      expect(validatePassword('123456')).toBe(false); // no letters
       expect(validatePassword('')).toBe(false); // empty
     });
 
