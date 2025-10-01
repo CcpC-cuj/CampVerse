@@ -962,7 +962,7 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => setSkills([...skills, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
                       )}
                     </div>
 
