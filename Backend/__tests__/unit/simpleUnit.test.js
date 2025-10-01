@@ -89,10 +89,8 @@ describe('Simple Unit Tests', () => {
       expect(validatePhone('123456789a')).toBe(false);
     });
 
-    it('should validate password strength', () => {
-      const validatePassword = (password) => {
-        return Boolean(password && password.length >= 6);
-      };
+      it('should validate password strength', () => {
+        const { validatePassword } = require('../../Utils/passwordUtils');
 
       expect(validatePassword('password123')).toBe(true);
       expect(validatePassword('pass')).toBe(false);

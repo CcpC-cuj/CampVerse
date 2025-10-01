@@ -37,6 +37,7 @@ describe('Utility Functions Unit Tests', () => {
 
   describe('Password Security', () => {
     it('should validate password strength', () => {
+      const { validatePassword } = require('../../Utils/passwordUtils');
       const validatePassword = (password) => {
         // At least 6 characters, contains letter and number
         const minLength = password.length >= 6;
@@ -45,7 +46,7 @@ describe('Utility Functions Unit Tests', () => {
         return minLength && hasLetter && hasNumber;
       };
 
-      // Strong passwords
+      // Strong passwords using shared validatePassword function
       expect(validatePassword('password123')).toBe(true);
       expect(validatePassword('MyPass1')).toBe(true);
       expect(validatePassword('Secure123')).toBe(true);
