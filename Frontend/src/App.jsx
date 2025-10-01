@@ -1,3 +1,4 @@
+import { CreateEventForm } from "./hostdashboard";
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -18,10 +19,10 @@ import { EventProvider } from "./userdashboard/EventContext";
 
 
 
-// ✅ Host dashboard module imports (added)
+// ✅ Host dashboard module imports (updated)
 import {
-  HostDashboard,
-  HostEvents,
+  ManageEvents,
+  HostEventsNew,
   HostApplications,
   HostAnalytics,
   HostSettings,
@@ -70,6 +71,8 @@ function App() {
         <Router>
           <OAuthDetector />
           <Routes>
+            {/* Test route for event creation */}
+            <Route path="/test-create-event" element={<CreateEventForm />} />
             <Route path="/" element={<Landing />} />
             <Route
               path="/dashboard/*"
@@ -123,11 +126,21 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            {/* Consolidated ManageEvents route */}
+            <Route
+              path="/host/manage-events"
+              element={
+                <ProtectedRoute>
+                  <ManageEvents />
+                </ProtectedRoute>
+              }
+            />
+            {/* Legacy route redirects */}
             <Route
               path="/host/dashboard"
               element={
                 <ProtectedRoute>
-                  <HostDashboard />
+                  <ManageEvents />
                 </ProtectedRoute>
               }
             />
@@ -135,7 +148,15 @@ function App() {
               path="/host/events"
               element={
                 <ProtectedRoute>
-                  <HostEvents />
+                  <ManageEvents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/host/events-new"
+              element={
+                <ProtectedRoute>
+                  <HostEventsNew />
                 </ProtectedRoute>
               }
             />

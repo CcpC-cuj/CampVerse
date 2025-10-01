@@ -21,7 +21,7 @@ const Event = require('../Models/Event');
 const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const {
-  uploadEventImage,
+  uploadEventImage: uploadEventImageLegacy,
   deleteEventImage,
 } = require('../Services/driveService');
 const qrcode = require('qrcode');
@@ -29,60 +29,168 @@ const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
+const { unifiedStorageService } = require('../Services/driveService');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
   try {
-    const {
+    // Validate required fields
+    const requiredFields = ['title', 'description', 'type', 'location', 'capacity', 'date'];
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({ error: `Missing required field: ${field}` });
+      }
+    }
+    if (!req.files || !req.files['banner']) {
+      return res.status(400).json({ error: 'Banner image is required.' });
+    }
+    // Extract and parse fields
+    let {
       title,
       description,
       tags,
       type,
-      organizer,
-      schedule,
+      organizationName,
+      location,
+      capacity,
+      date,
       isPaid,
       price,
-      capacity,
+      requirements,
+      socialLinks,
+      audienceType,
+      features,
+      sessions,
     } = req.body;
-    let logoURL, bannerURL;
-    
-    // File upload using storage service
-    if (req.files && req.files['logo']) {
-      const f = req.files['logo'][0];
-      logoURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'logo',
-        f.mimetype,
-      );
+    if (typeof location === 'string') {
+      try {
+        location = JSON.parse(location);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid location format.' });
+      }
     }
-    if (req.files && req.files['banner']) {
+    
+    // Parse socialLinks if sent as JSON string
+    if (typeof socialLinks === 'string') {
+      try {
+        socialLinks = JSON.parse(socialLinks);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid socialLinks format.' });
+      }
+    }
+    
+    // Parse features if sent as JSON string
+    if (typeof features === 'string') {
+      try {
+        features = JSON.parse(features);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid features format.' });
+      }
+    }
+    
+    // Parse sessions if sent as JSON string
+    if (typeof sessions === 'string') {
+      try {
+        sessions = JSON.parse(sessions);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid sessions format.' });
+      }
+    }
+    
+    // Parse tags - handle string, array with stringified JSON, or proper array
+    if (typeof tags === 'string') {
+      try {
+        tags = JSON.parse(tags);
+      } catch (e) {
+        // If not valid JSON, treat as comma-separated string
+        tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      }
+    } else if (Array.isArray(tags)) {
+      // Handle array containing stringified JSON
+      tags = tags.map(tag => {
+        if (typeof tag === 'string') {
+          try {
+            const parsed = JSON.parse(tag);
+            return Array.isArray(parsed) ? parsed : [tag];
+          } catch (e) {
+            return tag;
+          }
+        }
+        return tag;
+      }).flat().filter(tag => tag && tag.length > 0);
+    }
+    
+    // Parse requirements - handle string, array with stringified JSON, or proper array
+    if (typeof requirements === 'string') {
+      try {
+        requirements = JSON.parse(requirements);
+      } catch (e) {
+        // If not valid JSON, treat as newline-separated string
+        requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+      }
+    } else if (Array.isArray(requirements)) {
+      // Handle array containing stringified JSON
+      requirements = requirements.map(req => {
+        if (typeof req === 'string') {
+          try {
+            const parsed = JSON.parse(req);
+            return Array.isArray(parsed) ? parsed : [req];
+          } catch (e) {
+            return req;
+          }
+        }
+        return req;
+      }).flat().filter(req => req && req.length > 0);
+    }
+    let logoURL, bannerURL;
+    // File upload using storage service
+    if (req.files['logo']) {
+      const f = req.files['logo'][0];
+      logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
+    }
+    if (req.files['banner']) {
       const f = req.files['banner'][0];
-      bannerURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'banner',
-        f.mimetype,
-      );
+      bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
+    }
+    // Validate isPaid and price
+    let eventIsPaid = isPaid === true || isPaid === 'true';
+    let eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
+    if (eventIsPaid && eventPrice <= 0) {
+      return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
     const event = await Event.create({
       title,
       description,
       tags,
       type,
-      organizer,
-      schedule,
-      isPaid,
-      price,
+      organizationName,
+      location,
       capacity,
+      date,
+      isPaid: eventIsPaid,
+      price: eventPrice,
+      requirements,
+      socialLinks,
+      audienceType: audienceType || 'public',
+      features: features || { certificateEnabled: false, chatEnabled: false },
+      sessions: sessions || [],
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
-    res.status(201).json(event);
+    res.status(201).json({
+      success: true,
+      message: 'Event created successfully',
+      event
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Error creating event.' });
+    if (process.env.NODE_ENV !== 'production') {
+      res.status(500).json({ error: 'Error creating event.', details: err?.message || err });
+    } else {
+      logger && logger.error ? logger.error('Error creating event:', err) : null;
+      res.status(500).json({ error: 'Error creating event.' });
+    }
   }
 }
 
@@ -100,34 +208,107 @@ async function getEventById(req, res) {
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
+    console.log('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
+    // Validate required fields for update (if present)
+    const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
+    for (const field of updatableFields) {
+      if (field in update && !update[field]) {
+        return res.status(400).json({ error: `Field cannot be empty: ${field}` });
+      }
+    }
+    // Parse and update tags if present
+    if ('tags' in req.body) {
+      let tags = req.body.tags;
+      if (typeof tags === 'string') {
+        try {
+          tags = JSON.parse(tags);
+        } catch (e) {
+          tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        }
+      } else if (Array.isArray(tags)) {
+        // Handle array containing stringified JSON
+        tags = tags.map(tag => {
+          if (typeof tag === 'string') {
+            try {
+              const parsed = JSON.parse(tag);
+              return Array.isArray(parsed) ? parsed : [tag];
+            } catch (e) {
+              return tag;
+            }
+          }
+          return tag;
+        }).flat().filter(tag => tag && tag.length > 0);
+      }
+      update.tags = tags;
+    }
+    
+    // Parse and update requirements if present
+    if ('requirements' in req.body) {
+      let requirements = req.body.requirements;
+      if (typeof requirements === 'string') {
+        try {
+          requirements = JSON.parse(requirements);
+        } catch (e) {
+          requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+        }
+      } else if (Array.isArray(requirements)) {
+        // Handle array containing stringified JSON
+        requirements = requirements.map(req => {
+          if (typeof req === 'string') {
+            try {
+              const parsed = JSON.parse(req);
+              return Array.isArray(parsed) ? parsed : [req];
+            } catch (e) {
+              return req;
+            }
+          }
+          return req;
+        }).flat().filter(req => req && req.length > 0);
+      }
+      update.requirements = requirements;
+    }
+    
+    // Parse and update sessions if present - preserve line breaks and formatting
+    if ('sessions' in req.body) {
+      let sessions = req.body.sessions;
+      if (typeof sessions === 'string') {
+        // Split by lines and preserve each line as separate array element
+        sessions = sessions.split('\n').filter(s => s.trim().length > 0);
+      } else if (Array.isArray(sessions)) {
+        // If already array, keep as is but filter empty entries
+        sessions = sessions.filter(s => s && s.trim().length > 0);
+      }
+      update.sessions = sessions;
+    }
+    
+    // Only allow socialLinks to be updated if present
+    if ('socialLinks' in req.body) update.socialLinks = req.body.socialLinks;
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
     if (req.files && req.files['logo']) {
       if (event.logoURL) await deleteEventImage(event.logoURL);
       const f = req.files['logo'][0];
-      update.logoURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'logo',
-        f.mimetype,
-      );
+      update.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
     }
     if (req.files && req.files['banner']) {
       if (event.bannerURL) await deleteEventImage(event.bannerURL);
       const f = req.files['banner'][0];
-      update.bannerURL = await uploadEventImage(
-        f.buffer,
-        f.originalname,
-        'banner',
-        f.mimetype,
-      );
+      update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
-    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-    });
+    update.updatedAt = new Date();
+    // Validate isPaid and price
+    if ('isPaid' in update) {
+      update.isPaid = update.isPaid === true || update.isPaid === 'true';
+      update.price = update.isPaid ? (typeof update.price === 'number' ? update.price : parseFloat(update.price) || 0) : 0;
+      if (update.isPaid && update.price <= 0) {
+        return res.status(400).json({ error: 'Paid events must have a valid price.' });
+      }
+    }
+    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
   } catch (err) {
+  logger && logger.error ? logger.error('Error updating event:', err) : null;
     res.status(500).json({ error: 'Error updating event.' });
   }
 }
@@ -148,99 +329,85 @@ async function deleteEvent(req, res) {
 
 // RSVP/register for event (user) - Fixed race condition with atomic operations
 async function rsvpEvent(req, res) {
-  const session = await mongoose.startSession();
-  
   try {
-    await session.withTransaction(async () => {
-      const { eventId } = req.body;
-      const userId = req.user.id;
-      
-      // Check if user already registered
-      const existingLog = await EventParticipationLog.findOne({
-        eventId,
-        userId
-      }).session(session);
-      
-      if (existingLog) {
-        throw new Error('User already registered for this event');
-      }
-      
-      const event = await Event.findById(eventId).session(session);
-      if (!event) {
-        throw new Error('Event not found');
-      }
-      
-      // Use atomic operation to check capacity and register
-      let status = 'registered';
-      let qrToken = null;
-      
-      if (event.capacity) {
-        // Atomic increment and check capacity
-        const registeredCount = await EventParticipationLog.countDocuments({
-          eventId,
-          status: 'registered'
-        }).session(session);
-        
-        if (registeredCount >= event.capacity) {
-          status = 'waitlisted';
-        }
-      }
-      
-      // Generate secure QR token
-      const crypto = require('crypto');
-      qrToken = crypto.randomBytes(32).toString('hex');
-      
-      // Create participation log atomically
-      const log = await EventParticipationLog.create([{
-        userId,
-        eventId,
-        status,
-        qrToken,
-        registeredAt: new Date()
-      }], { session });
-      
-      // Update event waitlist atomically
-      if (status === 'waitlisted') {
-        await Event.findByIdAndUpdate(
-          eventId,
-          { $addToSet: { waitlist: userId } },
-          { session }
-        );
-      } else {
-        // Remove from waitlist if previously waitlisted
-        await Event.findByIdAndUpdate(
-          eventId,
-          { $pull: { waitlist: userId } },
-          { session }
-        );
-      }
-      
-      // Generate QR code image
-      const qrImage = await qrcode.toDataURL(qrToken);
-      
-      // Store data for response (outside transaction)
-      req.rsvpData = {
-        status,
-        qrImage,
-        qrToken,
-        event,
-        log: log[0]
-      };
+    const { eventId } = req.body;
+    const userId = req.user.id;
+    
+    // Check if user already registered
+    const existingLog = await EventParticipationLog.findOne({
+      eventId,
+      userId
     });
     
-    // Send response and notifications outside transaction
-    const { status, qrImage, event } = req.rsvpData;
+    if (existingLog) {
+      return res.status(409).json({ error: 'User already registered for this event' });
+    }
     
-    // Email QR code to user (non-blocking)
-    sendQrEmail(req.user.email, qrImage, event.title).catch(err => {
-      console.error('Failed to send QR email:', err);
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+    
+    // Check capacity and determine status
+    let status = 'registered';
+    let qrToken = null;
+    
+    if (event.capacity) {
+      const registeredCount = await EventParticipationLog.countDocuments({
+        eventId,
+        status: 'registered'
+      });
+      
+      if (registeredCount >= event.capacity) {
+        status = 'waitlisted';
+      }
+    }
+    
+    // Generate secure QR token
+    const crypto = require('crypto');
+    qrToken = crypto.randomBytes(32).toString('hex');
+    
+    // Create participation log
+    await EventParticipationLog.create({
+      userId,
+      eventId,
+      status,
+      qrToken,
+      registeredAt: new Date()
     });
     
+    // Update event waitlist
+    if (status === 'waitlisted') {
+      await Event.findByIdAndUpdate(
+        eventId,
+        { $addToSet: { waitlist: userId } }
+      );
+    } else {
+      // Remove from waitlist if previously waitlisted
+      await Event.findByIdAndUpdate(
+        eventId,
+        { $pull: { waitlist: userId } }
+      );
+    }
+    
+    // Generate QR code image
+    const qrImage = await qrcode.toDataURL(qrToken);
+    
+    // Send response
     res.status(201).json({
       message: `RSVP successful. Status: ${status}. QR code sent to email.`,
       qrImage,
       status
     });
+    
+    // Email QR code to user (non-blocking)
+    try {
+      await sendQrEmail(req.user.email, qrImage, event.title);
+  // Audit: QR code email sent successfully
+    } catch (emailErr) {
+  logger && logger.error ? logger.error('Failed to send QR email:', emailErr) : null;
+      // Don't fail the RSVP, just log the email error
+    }
     
     // Async notifications (non-blocking)
     setImmediate(async () => {
@@ -274,21 +441,13 @@ async function rsvpEvent(req, res) {
           });
         }
       } catch (notificationError) {
-        console.error('Notification error:', notificationError);
+  logger && logger.error ? logger.error('Notification error:', notificationError) : null;
       }
     });
     
   } catch (err) {
-    if (err.message === 'User already registered for this event') {
-      return res.status(409).json({ error: err.message });
-    }
-    if (err.message === 'Event not found') {
-      return res.status(404).json({ error: err.message });
-    }
-    console.error('RSVP error:', err);
+  logger && logger.error ? logger.error('RSVP error:', err) : null;
     res.status(500).json({ error: 'Error registering for event.' });
-  } finally {
-    await session.endSession();
   }
 }
 
@@ -345,7 +504,7 @@ async function cancelRsvp(req, res) {
         await event.save();
       }
     }
-    console.log(`[AUDIT] Cancel RSVP: user ${userId} for event ${eventId}`);
+  // Audit: Cancel RSVP: user ${userId} for event ${eventId}
     res.json({ message: 'RSVP cancelled.' });
   } catch (err) {
     res.status(500).json({ error: 'Error cancelling RSVP.' });
@@ -452,12 +611,10 @@ async function scanQr(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}`,
-    );
+  // Audit: Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}
     res.json({ message: 'Attendance marked.' });
   } catch (err) {
-    console.error('Error in scanQr:', err);
+  logger && logger.error ? logger.error('Error in scanQr:', err) : null;
     res.status(500).json({ error: 'Error marking attendance.' });
   }
 }
@@ -466,32 +623,58 @@ async function scanQr(req, res) {
 async function getEventAnalytics(req, res) {
   try {
     const eventId = req.params.id;
-    const logs = await EventParticipationLog.find({ eventId });
-    const totalRegistered = logs.length;
-    const totalAttended = logs.filter((l) => l.status === 'attended').length;
-    const totalWaitlisted = logs.filter(
-      (l) => l.status === 'waitlisted',
-    ).length;
-    const totalPaid = logs.filter((l) => l.paymentType === 'paid').length;
-    const totalFree = logs.filter((l) => l.paymentType === 'free').length;
-    const paymentSuccess = logs.filter(
-      (l) => l.paymentStatus === 'success',
-    ).length;
-    const paymentPending = logs.filter(
-      (l) => l.paymentStatus === 'pending',
-    ).length;
-
+    const pipeline = [
+      { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
+      {
+        $group: {
+          _id: null,
+          totalRegistered: { $sum: 1 },
+          totalAttended: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'attended'] }, 1, 0]
+            }
+          },
+          totalWaitlisted: {
+            $sum: {
+              $cond: [{ $eq: ['$status', 'waitlisted'] }, 1, 0]
+            }
+          },
+          totalPaid: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentType', 'paid'] }, 1, 0]
+            }
+          },
+          totalFree: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentType', 'free'] }, 1, 0]
+            }
+          },
+          paymentSuccess: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'success'] }, 1, 0]
+            }
+          },
+          paymentPending: {
+            $sum: {
+              $cond: [{ $eq: ['$paymentStatus', 'pending'] }, 1, 0]
+            }
+          }
+        }
+      }
+    ];
+    const result = await EventParticipationLog.aggregate(pipeline);
+    const stats = result[0] || {};
     res.json({
-      totalRegistered,
-      totalAttended,
-      totalWaitlisted,
-      totalPaid,
-      totalFree,
-      paymentSuccess,
-      paymentPending,
+      totalRegistered: stats.totalRegistered || 0,
+      totalAttended: stats.totalAttended || 0,
+      totalWaitlisted: stats.totalWaitlisted || 0,
+      totalPaid: stats.totalPaid || 0,
+      totalFree: stats.totalFree || 0,
+      paymentSuccess: stats.paymentSuccess || 0,
+      paymentPending: stats.paymentPending || 0,
       attendanceRate:
-        totalRegistered > 0
-          ? ((totalAttended / totalRegistered) * 100).toFixed(2)
+        (stats.totalRegistered || 0) > 0
+          ? ((stats.totalAttended || 0) / (stats.totalRegistered || 1) * 100).toFixed(2)
           : 0,
     });
   } catch (err) {
@@ -569,12 +752,10 @@ async function nominateCoHost(req, res) {
       },
     });
     // Audit log
-    console.log(
-      `[AUDIT] Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}`,
-    );
+  // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
-    console.error('Error in nominateCoHost:', err);
+  logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -630,12 +811,10 @@ async function approveCoHost(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}`,
-    );
+  // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
-    console.error('Error in approveCoHost:', err);
+  logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -687,12 +866,10 @@ async function rejectCoHost(req, res) {
       });
     }
     // Audit log
-    console.log(
-      `[AUDIT] Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}`,
-    );
+  // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
-    console.error('Error in rejectCoHost:', err);
+  logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -730,18 +907,21 @@ async function getGoogleCalendarLink(req, res) {
   try {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
-    const start = new Date(event.schedule.start)
-      .toISOString()
-      .replace(/-|:|\.\d\d\d/g, '');
-    const end = new Date(event.schedule.end)
-      .toISOString()
-      .replace(/-|:|\.\d\d\d/g, '');
-    const link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.organizer)}`;
+    // Treat as an all-day event on the given date
+    const startDate = new Date(event.date);
+    const startAllDay = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+    const endAllDay = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate() + 1));
+    const formatYmd = (d) => d.toISOString().slice(0,10).replace(/-/g, '');
+    const start = formatYmd(startAllDay);
+    const end = formatYmd(endAllDay);
+    const locationText = event.organizer?.name || '';
+    const link = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(locationText)}`;
     res.json({ calendarLink: link });
   } catch (err) {
     res.status(500).json({ error: 'Error generating calendar link.' });
   }
 }
+
 
 module.exports = {
   createEvent,

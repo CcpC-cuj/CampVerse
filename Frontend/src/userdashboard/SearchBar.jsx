@@ -1,18 +1,86 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Search } from "lucide-react"; // search icon
 
-const SearchBar = ({ placeholder = "Search...", onChange, value }) => {
+const SearchBar = ({ placeholder, value, onChange, onResults }) => {
+  const [localValue, setLocalValue] = useState(value || "");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (!localValue.trim()) {
+        setMessage("");
+        onResults?.([]);
+        return;
+      }
+
+      setLoading(true);
+      setMessage("");
+
+      try {
+        const res = await fetch(`/api/events?search=${localValue}`);
+        const data = await res.json();
+        const events = data.events || [];
+
+        if (events.length === 0) {
+          setMessage(`No results found for "${localValue}"`);
+        }
+
+        onResults?.(events);
+      } catch (err) {
+        console.error("Search failed:", err);
+        setMessage("Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [localValue]);
+
   return (
-    <div className="relative flex-1 min-w-[220px] max-w-xl">
-      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-        <i className="ri-search-line text-gray-400 w-5 h-5" />
+    <div className="w-full flex flex-col">
+      {/* Input box with responsive sizing */}
+      <div className="relative w-full">
+        <input
+          type="text"
+          className="
+            w-full 
+            px-3 sm:px-4 py-2 
+            rounded-lg 
+            bg-gray-700 text-white placeholder-gray-400 
+            focus:outline-none 
+            text-sm sm:text-base
+          "
+          placeholder={placeholder}
+          value={localValue}
+          onChange={(e) => {
+            setLocalValue(e.target.value);
+            onChange?.(e);
+          }}
+        />
+        <Search
+          className="
+            absolute right-2 sm:right-3 
+            top-1/2 transform -translate-y-1/2 
+            w-4 h-4 sm:w-5 sm:h-5 
+            text-gray-400
+          "
+        />
       </div>
-      <input
-        type="text"
-        className="h-7 bg-gray-800/60 border-none text-sm rounded-xl block w-full pl-11 pr-3 text-white placeholder-gray-400  outline-none"
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-      />
+
+      {/* Messages (below input) */}
+      {loading && (
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-400">
+          Searching...
+        </p>
+      )}
+      {message && (
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-400">
+          {message}
+        </p>
+      )}
     </div>
   );
 };

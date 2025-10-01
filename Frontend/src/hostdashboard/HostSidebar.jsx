@@ -80,8 +80,7 @@ const HostSidebar = () => {
         {/* Navigation Sections */}
         <div className="py-2">
           <SidebarSection title="Main" />
-          <SidebarLink icon="ri-dashboard-line" to="/host/dashboard" label="Dashboard" end />
-          <SidebarLink icon="ri-calendar-event-line" to="/host/events" label="My Events" />
+          <SidebarLink icon="ri-dashboard-line" to="/host/manage-events" label="Manage Events" end />
           <SidebarLink icon="ri-file-user-line" to="/host/applications" label="Applications" badge="12" />
           <SidebarLink icon="ri-line-chart-line" to="/host/analytics" label="Analytics" />
 

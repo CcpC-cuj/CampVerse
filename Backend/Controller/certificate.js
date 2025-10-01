@@ -51,7 +51,7 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       userEmail: user.email,
       eventTitle: event.title,
       eventDescription: event.description,
-      eventDate: event.schedule.start,
+      eventDate: event.date,
       eventLocation: event.location || 'Online',
       organizerName: event.hostUserId ? event.hostUserId.name : event.organizer,
       institutionName: user.institutionId
@@ -63,7 +63,8 @@ async function prepareCertificateData(userId, eventId, certificateType) {
       attendanceDate: participationLog.attendanceTimestamp,
       qrCode,
       // Additional metadata for ML processing
-      eventDuration: event.schedule.end - event.schedule.start,
+      // No duration for single-date events
+      eventDuration: 0,
       userInterests: user.interests || [],
       eventType: event.type,
       isPaid: event.isPaid,
@@ -392,7 +393,7 @@ async function getUserCertificates(req, res) {
   try {
     const userId = req.params.userId || req.user.id;
     const certificates = await Certificate.find({ userId })
-      .populate('eventId', 'title description schedule')
+      .populate('eventId', 'title description date')
       .sort({ issuedAt: -1 });
 
     return res.json({ certificates });
@@ -410,7 +411,7 @@ async function getCertificateById(req, res) {
     const certificateId = req.params.id;
     const certificate = await Certificate.findById(certificateId)
       .populate('userId', 'name email')
-      .populate('eventId', 'title description schedule organizer');
+      .populate('eventId', 'title description date organizer');
 
     if (!certificate) {
       return res.status(404).json({ error: 'Certificate not found' });
@@ -464,7 +465,7 @@ async function verifyCertificate(req, res) {
         userName: certificate.userId.name,
         userEmail: certificate.userId.email,
         eventTitle: certificate.eventId.title,
-        eventDate: certificate.eventId.schedule.start,
+        eventDate: certificate.eventId.date,
         certificateType: certificate.type,
         issuedAt: certificate.issuedAt,
         certificateURL: certificate.certificateURL,
@@ -509,14 +510,14 @@ async function exportAttendedUsers(req, res) {
       status: 'attended',
     })
       .populate('userId', 'name email skills interests')
-      .populate('eventId', 'title description schedule tags type');
+      .populate('eventId', 'title description date tags type');
 
     // Prepare data for ML API
     const exportData = {
       eventId,
       eventTitle: event.title,
       eventDescription: event.description,
-      eventDate: event.schedule.start,
+      eventDate: event.date,
       eventLocation: event.location || 'Online',
       organizerName: event.organizer,
       totalAttended: attendedUsers.length,
@@ -800,7 +801,7 @@ async function getCertificateDashboard(req, res) {
       eventQuery._id = eventId;
     }
 
-    const events = await Event.find(eventQuery, '_id title schedule');
+    const events = await Event.find(eventQuery, '_id title date');
     const eventIds = events.map((event) => event._id);
 
     if (eventIds.length === 0) {
@@ -838,7 +839,7 @@ async function getCertificateDashboard(req, res) {
     // Get certificates with pagination
     const certificates = await Certificate.find(certificateQuery)
       .populate('userId', 'name email')
-      .populate('eventId', 'title schedule')
+      .populate('eventId', 'title date')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -873,7 +874,7 @@ async function getCertificateDashboard(req, res) {
         userEmail: cert.userId.email,
         eventId: cert.eventId._id,
         eventTitle: cert.eventId.title,
-        eventDate: cert.eventId.schedule?.start,
+        eventDate: cert.eventId.date,
         certificateType: cert.type,
         status: cert.status,
         certificateURL: cert.certificateURL,
@@ -890,7 +891,7 @@ async function getCertificateDashboard(req, res) {
       events: events.map((event) => ({
         id: event._id,
         title: event.title,
-        date: event.schedule?.start,
+        date: event.date,
       })),
     });
   } catch (error) {

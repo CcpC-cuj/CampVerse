@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthenticationSettings from '../components/AuthenticationSettings';
 import Sidebar from './sidebar';
@@ -22,6 +22,9 @@ const Settings = () => {
 
   // active section highlight for top navbar (purely visual; content is stacked)
   const [activeTab, setActiveTab] = useState('profile');
+  
+  // Flag to prevent initial scroll interference
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // notifications state (unchanged functionality)
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -59,15 +62,174 @@ const Settings = () => {
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
 
-  // keep inputs synced with user unless editing
+  // Reset scroll position when component mounts and disable scroll restoration
   useEffect(() => {
-    if (editingField) return;
-    setName(user?.name || '');
-    setPhone(user?.phone || '');
-    setLocation(user?.location || '');
-    setBio(user?.bio || '');
-    setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
-  }, [user?._id, editingField]);
+    // Disable browser scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    
+    // Aggressive scroll reset function
+    const resetScroll = () => {
+      // Reset all possible scroll containers immediately
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTop = 0;
+        container.scrollLeft = 0;
+      }
+      
+      // Reset window and document scroll
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+      document.body.scrollTop = 0;
+      document.body.scrollLeft = 0;
+      
+      // Force scroll to top using requestAnimationFrame for immediate effect
+      requestAnimationFrame(() => {
+        if (container) {
+          container.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+      });
+    };
+    
+    // Reset immediately
+    resetScroll();
+    
+    // Multiple resets to handle different render phases
+    const timeouts = [
+      setTimeout(resetScroll, 0),
+      setTimeout(resetScroll, 10),
+      setTimeout(resetScroll, 50),
+      setTimeout(() => {
+        resetScroll();
+        setIsInitialLoad(false); // Allow intersection observer to work after reset
+      }, 100)
+    ];
+    
+    return () => {
+      timeouts.forEach(clearTimeout);
+      // Restore normal scroll behavior when leaving
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
+
+const [gender, setGender] = useState(user?.gender || '');
+const [dob, setDob] = useState(user?.dateOfBirth || '');
+const [collegeIdNumber, setCollegeIdNumber] = useState(user?.collegeIdNumber || '');
+const [interests, setInterests] = useState(user?.interests || []);
+const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
+const [skills, setSkills] = useState(user?.skills || []);
+const [institution, setInstitution] = useState(user?.institution || null);
+
+
+//: preferences
+  const [preferences, setPreferences] = useState({ interests: [], skills: [], learningGoals: [] });
+  const [interestInput, setInterestInput] = useState('');
+  const [skillInput, setSkillInput] = useState('');
+  const [goalInput, setGoalInput] = useState('');
+
+
+
+const SUGGESTED_INTERESTS = ['Hackathons', 'Robotics', 'AI/ML', 'Open Source', 'Sports', 'Cultural', 'Debate', 'Entrepreneurship'];
+const SUGGESTED_SKILLS = ['JavaScript', 'Python', 'C++', 'UI/UX', 'Data Science', 'Public Speaking', 'Leadership'];
+const SUGGESTED_GOALS = ['Get internship', 'Win a hackathon', 'Publish a paper', 'Improve DSA', 'Learn design'];
+
+
+const Chip = ({ label, onRemove }) => (
+  <span className="inline-flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-1 rounded text-sm">
+    {label}
+    {onRemove && (
+      <button aria-label={`Remove ${label}`} onClick={onRemove} className="text-slate-400 hover:text-white">×</button>
+    )}
+  </span>
+);
+
+const SuggestionPills = ({ items, onPick }) => (
+  <div className="flex flex-wrap gap-2 mt-2">
+    {items.map((s) => (
+      <button key={s} onClick={() => onPick(s)} className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">
+        + {s}
+      </button>
+    ))}
+  </div>
+);
+
+  // Filter suggestions to hide already selected items
+  const filteredInterestSuggestions = useMemo(
+    () => SUGGESTED_INTERESTS.filter(s => !(preferences.interests || []).includes(s)),
+    [preferences.interests]
+  );
+
+    const filteredSkillSuggestions = useMemo(
+      () => SUGGESTED_SKILLS.filter(s => !(preferences.skills || []).includes(s)),
+      [preferences.skills]
+    );
+    const filteredGoalSuggestions = useMemo(
+      () => SUGGESTED_GOALS.filter(s => !(preferences.learningGoals || []).includes(s)),
+      [preferences.learningGoals]
+    );
+  
+
+
+
+  const DEFAULT_AVATARS = {
+  male: "/male-avatar.png",
+  female: "/female-avatar.png",
+  other: "/other-avatar.png",
+};
+
+
+useEffect(() => {
+  if (editingField) return;
+
+  setName(user?.name || '');
+  setPhone(user?.phone || '');
+  setLocation(user?.location || '');
+  setBio(user?.bio || '');
+  setGender(user?.gender || '');
+  setDob(user?.dateOfBirth ? String(user.dateOfBirth).slice(0, 10) : '');
+  setCollegeIdNumber(user?.collegeIdNumber || '');
+  setInterests(user?.interests || []);
+  setSkills(user?.skills || []);
+  setLearningGoals(user?.learningGoals || []);
+  setInstitution(user?.institution || null);
+
+// Determine the profile photo
+  let photo = '/default-avatar.png'; // default fallback
+
+  if (user?.profilePhoto && user.profilePhoto.trim() !== '') {
+    photo = user.profilePhoto;
+  } else if (user?.avatar && user.avatar.trim() !== '') {
+    photo = user.avatar;
+  } else if (user?.gender) {
+    const genderKey = String(user.gender).trim().toLowerCase(); // ensure string and lowercase
+    if (DEFAULT_AVATARS[genderKey]) {
+      photo = DEFAULT_AVATARS[genderKey];
+    }
+  }
+  setProfilePhoto(photo);
+}, [user?._id, editingField]);
+
+
+  // keep inputs synced with user unless editing
+  // useEffect(() => {
+  //   if (editingField) return;
+  //   setName(user?.name || '');
+  //   setPhone(user?.phone || '');
+  //   setLocation(user?.location || '');
+  //   setBio(user?.bio || '');
+  //   setProfilePhoto(user?.profilePhoto || user?.avatar || '/default-avatar.png');
+  // }, [user?._id, editingField]);
+
+
+
+
+
+
 
   // focus lock for editing fields
   useEffect(() => {
@@ -148,25 +310,59 @@ const Settings = () => {
   };
 
   // save profile fields
-  const handleSaveProfile = async () => {
-    setProfileSaving(true);
-    setProfileMessage('Saving...');
-    try {
-      const res = await updateMe({ name, phone, location, bio });
-      if (res.user) {
-        setProfileMessage('Profile updated!');
-        setUser(res.user);
-        stopEditing(); // Auto-close editing mode after save
-      } else {
-        setProfileMessage(res.error || 'Failed to update profile');
-      }
-    } catch {
-      setProfileMessage('Failed to update profile');
-    } finally {
-      setTimeout(() => setProfileMessage(''), 2000);
-      setProfileSaving(false);
+  // const handleSaveProfile = async () => {
+  //   setProfileSaving(true);
+  //   setProfileMessage('Saving...');
+  //   try {
+  //     const res = await updateMe({ name, phone, location, bio });
+  //     if (res.user) {
+  //       setProfileMessage('Profile updated!');
+  //       setUser(res.user);
+  //       stopEditing(); // Auto-close editing mode after save
+  //     } else {
+  //       setProfileMessage(res.error || 'Failed to update profile');
+  //     }
+  //   } catch {
+  //     setProfileMessage('Failed to update profile');
+  //   } finally {
+  //     setTimeout(() => setProfileMessage(''), 2000);
+  //     setProfileSaving(false);
+  //   }
+  // };
+
+const handleSaveProfile = async () => {
+  setProfileSaving(true);
+  setProfileMessage('Saving...');
+  try {
+    const res = await updateMe({
+      name,
+      phone,
+      location,
+      bio,
+      gender,
+      dateOfBirth: dob,
+      collegeIdNumber,
+      interests,
+      skills,
+      learningGoals,
+      institution: institution?._id || null
+    });
+    if (res.user) {
+      setProfileMessage('Profile updated!');
+      setUser(res.user);
+      stopEditing();
+    } else {
+      setProfileMessage(res.error || 'Failed to update profile');
     }
-  };
+  } catch {
+    setProfileMessage('Failed to update profile');
+  } finally {
+    setTimeout(() => setProfileMessage(''), 2000);
+    setProfileSaving(false);
+  }
+};
+
+
 
   // Handle Enter key press for profile fields
   const handleKeyPress = (e) => {
@@ -200,35 +396,41 @@ const Settings = () => {
   // Highlight active tab while scrolling (design only)
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || isInitialLoad) return;
 
-    const options = {
-      root: container,
-      rootMargin: '0px 0px -55% 0px',
-      threshold: 0.2
-    };
+    // Delay the intersection observer to avoid interfering with initial scroll reset
+    const timeoutId = setTimeout(() => {
+      const options = {
+        root: container,
+        rootMargin: '0px 0px -55% 0px',
+        threshold: 0.2
+      };
 
-    const sections = [
-      { id: 'profile', el: profileRef.current },
-      { id: 'authentication', el: authRef.current },
-      { id: 'notifications', el: notificationsRef.current },
-      { id: 'privacy', el: privacyRef.current },
-      { id: 'security', el: securityRef.current }
-    ].filter(s => s.el);
+      const sections = [
+        { id: 'profile', el: profileRef.current },
+        { id: 'authentication', el: authRef.current },
+        { id: 'notifications', el: notificationsRef.current },
+        { id: 'privacy', el: privacyRef.current },
+        { id: 'security', el: securityRef.current }
+      ].filter(s => s.el);
 
-    const observer = new IntersectionObserver((entries) => {
-      const visible = entries
-        .filter(e => e.isIntersecting)
-        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-      if (visible) {
-        const hit = sections.find(s => s.el === visible.target);
-        if (hit?.id) setActiveTab(hit.id);
-      }
-    }, options);
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) {
+          const hit = sections.find(s => s.el === visible.target);
+          if (hit?.id) setActiveTab(hit.id);
+        }
+      }, options);
 
-    sections.forEach(s => observer.observe(s.el));
-    return () => observer.disconnect();
-  }, []);
+      sections.forEach(s => observer.observe(s.el));
+      
+      return () => observer.disconnect();
+    }, 200); // Delay to let scroll reset complete
+
+    return () => clearTimeout(timeoutId);
+  }, [isInitialLoad]);
 
   return (
     // MATCHED to Dashboard outer gradient + typography
@@ -263,7 +465,8 @@ const Settings = () => {
         {/* scrollable content — MATCHED surface color; stacked sections for scroll-through */}
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45] scroll-smooth snap-y snap-proximity"
+          className="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 bg-[#141a45]"
+          style={{ scrollBehavior: 'auto' }}
         >
           <div className="max-w-6xl mx-auto">
             <h1
@@ -280,7 +483,7 @@ const Settings = () => {
             <section
               id="profile"
               ref={profileRef}
-              className="scroll-mt-24 snap-start"
+              className="scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -359,7 +562,7 @@ const Settings = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm text-gray-300 mb-1">Email</label>
+                        <label className="block text-sm text-gray-300 mb-1 p-1">Email</label>
                         <input
                           type="email"
                           value={user?.email || ''}
@@ -484,6 +687,347 @@ const Settings = () => {
                       />
                     </div>
 
+                                      {/* Gender (editable with select) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Gender</label>
+                          {editingField !== 'gender' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('gender')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit gender"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <select
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                          disabled={editingField !== 'gender'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'gender'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      {/* Date of Birth (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Date of Birth</label>
+                          {editingField !== 'dob' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('dob')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit date of birth"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="date"
+                          value={dob || ''}
+                          onChange={(e) => setDob(e.target.value)}
+                          readOnly={editingField !== 'dob'}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'dob'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+                      {/* College ID (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">College / Enrollment Number</label>
+                          {editingField !== 'collegeIdNumber' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('collegeIdNumber')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit college ID"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={collegeIdNumber}
+                          readOnly={editingField !== 'collegeIdNumber'}
+                          onChange={(e) => setCollegeIdNumber(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'collegeIdNumber'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+
+
+                      {/* Institution (editable) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Institution</label>
+                          {editingField !== 'institution' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('institution')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit institution"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+                       <input 
+                          type="text"
+                          value={institution?.name || ''}
+                          readOnly={editingField !== 'institution'}
+                          onChange={(e) =>
+                            setInstitution((prev) => ({ ...(prev || {}), name: e.target.value }))
+                          }
+                          onKeyPress={handleKeyPress}
+                          className={`w-full p-2 rounded bg-gray-900 border ${
+                            editingField !== 'institution'
+                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
+                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+
+                                             {/* Learning Goals */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
+                        {editingField !== 'learningGoals' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditing('learningGoals')}
+                            className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                            title="Edit learning goals"
+                          >
+                            <i className="ri-pencil-line text-sm"></i>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopEditing}
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                            title="Cancel editing"
+                          >
+                            <i className="ri-close-line text-sm"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {editingField === 'learningGoals' ? (
+                        <>
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                              value={goalInput}
+                              onChange={(e) => setGoalInput(e.target.value)}
+                              placeholder="Add goal and press +"
+                            />
+                            <button
+                              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                              onClick={() => {
+                                if (goalInput.trim()) {
+                                  setLearningGoals([...learningGoals, goalInput.trim()]);
+                                  setGoalInput('');
+                                }
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {learningGoals.map((v, i) => (
+                              <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                setLearningGoals(learningGoals.filter((_, idx) => idx !== i));
+                              }} />
+                            ))}
+                          </div>
+                          <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => setLearningGoals([...learningGoals, v])} />
+                        </>
+                      ) : (
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
+                      )}
+                    </div>
+
+                              {/* Skills */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm text-gray-300 mb-1">Skills</label>
+                        {editingField !== 'skills' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditing('skills')}
+                            className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                            title="Edit skills"
+                          >
+                            <i className="ri-pencil-line text-sm"></i>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopEditing}
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                            title="Cancel editing"
+                          >
+                            <i className="ri-close-line text-sm"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {editingField === 'skills' ? (
+                        <>
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                              value={skillInput}
+                              onChange={(e) => setSkillInput(e.target.value)}
+                              placeholder="Add skill and press +"
+                            />
+                            <button
+                              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                              onClick={() => {
+                                if (skillInput.trim()) {
+                                  setSkills([...skills, skillInput.trim()]);
+                                  setSkillInput('');
+                                }
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {skills.map((v, i) => (
+                              <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                setSkills(skills.filter((_, idx) => idx !== i));
+                              }} />
+                            ))}
+                          </div>
+                          <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => setSkills([...skills, v])} />
+                        </>
+                      ) : (
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
+                      )}
+                    </div>
+
+                      {/* Interests (editable textarea) */}
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-sm text-gray-300 mb-1">Interests</label>
+                          {editingField !== 'interests' ? (
+                            <button
+                              type="button"
+                              onClick={() => startEditing('interests')}
+                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                              title="Edit interests"
+                            >
+                              <i className="ri-pencil-line text-sm"></i>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={stopEditing}
+                              className="text-gray-400 hover:text-white transition-colors p-1"
+                              title="Cancel editing"
+                            >
+                              <i className="ri-close-line text-sm"></i>
+                            </button>
+                          )}
+                        </div>
+
+                        {editingField === 'interests' ? (
+                          <>
+                            <div className="flex gap-2 mt-1">
+                              <input
+                                className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                                value={interestInput}
+                                onChange={(e) => setInterestInput(e.target.value)}
+                                placeholder="Add interest and press +"
+                              />
+                              <button
+                                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                                onClick={() => {
+                                  if (interestInput.trim()) {
+                                    setInterests([...interests, interestInput.trim()]);
+                                    setInterestInput('');
+                                  }
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {interests.map((v, i) => (
+                                <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                  setInterests(interests.filter((_, idx) => idx !== i));
+                                }} />
+                              ))}
+                            </div>
+                            <SuggestionPills items={filteredInterestSuggestions} onPick={(v) => setInterests([...interests, v])} />
+                          </>
+                        ) : (
+                          <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{interests.join(', ') || 'No interests added'}</div>
+                        )}
+                      </div>
+
+
+
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -521,7 +1065,7 @@ const Settings = () => {
             <section
               id="authentication"
               ref={authRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-0 sm:p-6 text-white">
                 {/* No functionality change; just wrapped for full-width and visual parity */}
@@ -533,7 +1077,7 @@ const Settings = () => {
             <section
               id="notifications"
               ref={notificationsRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -648,7 +1192,7 @@ const Settings = () => {
             <section
               id="privacy"
               ref={privacyRef}
-              className="mt-8 scroll-mt-24 snap-start"
+              className="mt-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -680,7 +1224,7 @@ const Settings = () => {
             <section
               id="security"
               ref={securityRef}
-              className="mt-8 mb-8 scroll-mt-24 snap-start"
+              className="mt-8 mb-8 scroll-mt-0"
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
@@ -751,6 +1295,7 @@ const Settings = () => {
         defaultEmail={user?.email || ''}
       />
       {/* ✅ /ADDED */}
+
     </div>
   );
 };

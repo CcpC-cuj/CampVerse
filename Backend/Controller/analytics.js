@@ -33,18 +33,16 @@ const advancedEventSearch = async (req, res) => {
     }
     if (type && typeof type === 'string') filter.type = type;
     if (startDate || endDate) {
-      filter['schedule.start'] = {};
-      if (startDate && !isNaN(Date.parse(startDate)))
-        filter['schedule.start'].$gte = new Date(startDate);
-      if (endDate && !isNaN(Date.parse(endDate)))
-        filter['schedule.start'].$lte = new Date(endDate);
+      filter.date = {};
+      if (startDate && !isNaN(Date.parse(startDate))) filter.date.$gte = new Date(startDate);
+      if (endDate && !isNaN(Date.parse(endDate))) filter.date.$lte = new Date(endDate);
     }
 
     const sortField = validSortFields.includes(sort)
       ? sort === 'date'
-        ? 'schedule.start'
+        ? 'date'
         : sort
-      : 'schedule.start';
+      : 'date';
     const sortOrder = validOrderValues.includes(order)
       ? order === 'asc'
         ? 1

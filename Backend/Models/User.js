@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
     default: 'pending',
   },
   collegeIdNumber: { type: String },
-  roles: { type: [String], default: ['student'] },
+  roles: { type: [String], default: ['student,host'] },
   isVerified: { type: Boolean, default: false },
   canHost: { type: Boolean, default: false },
   hostEligibilityStatus: hostEligibilityStatusSchema,

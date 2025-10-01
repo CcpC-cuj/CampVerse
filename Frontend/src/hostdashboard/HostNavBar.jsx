@@ -28,12 +28,6 @@ const HostNavBar = ({ onOpenSidebar, eventsData = [], searchQuery, setSearchQuer
 
           {/* Right Nav Buttons */}
           <div className="flex items-center gap-2 sm:gap-3 order-1 sm:order-2">
-            {/* Create Event Button */}
-            <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
-              <i className="ri-add-line"></i>
-              <span className="hidden sm:inline">Create Event</span>
-            </button>
-            
             <NotificationBell notifications={[]} />
             <CalendarDropdown events={eventsData} />
           </div>

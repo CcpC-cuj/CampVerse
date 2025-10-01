@@ -66,51 +66,46 @@ class InstitutionService {
    * Request institution verification
    */
   async requestVerification(institutionId, requestData, requestedBy) {
-    const session = await mongoose.startSession();
-    
     try {
-      return await session.withTransaction(async () => {
-        const institution = await Institution.findById(institutionId).session(session);
-        if (!institution) {
-          throw new NotFoundError('Institution');
-        }
+      const institution = await Institution.findById(institutionId);
+      if (!institution) {
+        throw new NotFoundError('Institution');
+      }
 
-        // Check if verification already requested
-        if (institution.verificationRequested) {
-          throw new ConflictError('Verification already requested for this institution');
-        }
+      // Check if verification already requested
+      if (institution.verificationRequested) {
+        throw new ConflictError('Verification already requested for this institution');
+      }
 
-        // Update institution
-        institution.verificationRequested = true;
-        institution.verificationRequests.push({
-          requestedBy,
-          ...requestData,
-          status: 'pending',
-          createdAt: new Date()
-        });
-
-        // Add to history
-        institution.verificationHistory.push({
-          action: 'requested',
-          performedBy: requestedBy,
-          performedAt: new Date(),
-          remarks: 'Institution verification requested',
-          newData: requestData
-        });
-
-        await institution.save({ session });
-
-        // Update user status
-        await User.findByIdAndUpdate(
-          requestedBy,
-          { institutionVerificationStatus: 'pending' },
-          { session }
-        );
-
-        return institution;
+      // Update institution
+      institution.verificationRequested = true;
+      institution.verificationRequests.push({
+        requestedBy,
+        ...requestData,
+        status: 'pending',
+        createdAt: new Date()
       });
-    } finally {
-      await session.endSession();
+
+      // Add to history
+      institution.verificationHistory.push({
+        action: 'requested',
+        performedBy: requestedBy,
+        performedAt: new Date(),
+        remarks: 'Institution verification requested',
+        newData: requestData
+      });
+
+      await institution.save();
+
+      // Update user status
+      await User.findByIdAndUpdate(
+        requestedBy,
+        { institutionVerificationStatus: 'pending' }
+      );
+
+      return institution;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -118,90 +113,85 @@ class InstitutionService {
    * Approve institution verification
    */
   async approveVerification(institutionId, approvalData, approvedBy) {
-    const session = await mongoose.startSession();
-    
     try {
-      return await session.withTransaction(async () => {
-        const institution = await Institution.findById(institutionId).session(session);
-        if (!institution) {
-          throw new NotFoundError('Institution');
-        }
+      const institution = await Institution.findById(institutionId);
+      if (!institution) {
+        throw new NotFoundError('Institution');
+      }
 
-        // Validate website if provided
-        if (approvalData.website) {
-          const urlPattern = /^https?:\/\/.+/i;
-          if (!urlPattern.test(approvalData.website)) {
-            throw new ValidationError('Website must be a valid URL starting with http:// or https://');
-          }
+      // Validate website if provided
+      if (approvalData.website) {
+        const urlPattern = /^https?:\/\/.+/i;
+        if (!urlPattern.test(approvalData.website)) {
+          throw new ValidationError('Website must be a valid URL starting with http:// or https://');
         }
+      }
 
-        // Store previous data for history
-        const previousData = {
-          isVerified: institution.isVerified,
+      // Store previous data for history
+      const previousData = {
+        isVerified: institution.isVerified,
+        website: institution.website,
+        phone: institution.phone,
+        info: institution.info,
+        location: institution.location,
+      };
+
+      // Update institution
+      institution.isVerified = true;
+      institution.verificationRequested = false;
+
+      // Update fields
+      if (approvalData.location) {
+        institution.location = {
+          city: approvalData.location.city || institution.location?.city || '',
+          state: approvalData.location.state || institution.location?.state || '',
+          country: approvalData.location.country || institution.location?.country || '',
+        };
+      }
+
+      if (approvalData.website?.trim()) institution.website = approvalData.website.trim();
+      if (approvalData.phone?.trim()) institution.phone = approvalData.phone.trim();
+      if (approvalData.info?.trim()) institution.info = approvalData.info.trim();
+
+      // Update latest verification request
+      if (institution.verificationRequests.length > 0) {
+        const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];
+        latestRequest.status = 'approved';
+        latestRequest.verifiedBy = approvedBy;
+        latestRequest.verifiedAt = new Date();
+        latestRequest.verifierRemarks = approvalData.remarks || 'Approved by verifier';
+      }
+
+      // Add to history
+      institution.verificationHistory.push({
+        action: 'approved',
+        performedBy: approvedBy,
+        performedAt: new Date(),
+        remarks: approvalData.remarks || 'Institution approved after verification',
+        previousData,
+        newData: {
+          isVerified: true,
           website: institution.website,
           phone: institution.phone,
           info: institution.info,
           location: institution.location,
-        };
-
-        // Update institution
-        institution.isVerified = true;
-        institution.verificationRequested = false;
-
-        // Update fields
-        if (approvalData.location) {
-          institution.location = {
-            city: approvalData.location.city || institution.location?.city || '',
-            state: approvalData.location.state || institution.location?.state || '',
-            country: approvalData.location.country || institution.location?.country || '',
-          };
-        }
-
-        if (approvalData.website?.trim()) institution.website = approvalData.website.trim();
-        if (approvalData.phone?.trim()) institution.phone = approvalData.phone.trim();
-        if (approvalData.info?.trim()) institution.info = approvalData.info.trim();
-
-        // Update latest verification request
-        if (institution.verificationRequests.length > 0) {
-          const latestRequest = institution.verificationRequests[institution.verificationRequests.length - 1];
-          latestRequest.status = 'approved';
-          latestRequest.verifiedBy = approvedBy;
-          latestRequest.verifiedAt = new Date();
-          latestRequest.verifierRemarks = approvalData.remarks || 'Approved by verifier';
-        }
-
-        // Add to history
-        institution.verificationHistory.push({
-          action: 'approved',
-          performedBy: approvedBy,
-          performedAt: new Date(),
-          remarks: approvalData.remarks || 'Institution approved after verification',
-          previousData,
-          newData: {
-            isVerified: true,
-            website: institution.website,
-            phone: institution.phone,
-            info: institution.info,
-            location: institution.location,
-          },
-        });
-
-        await institution.save({ session });
-
-        // Update all users with this institution
-        await User.updateMany(
-          { institutionId: institution._id },
-          { institutionVerificationStatus: 'verified' },
-          { session }
-        );
-
-        // Auto-merge users with same domain
-        await this._autoMergeUsers(institution, session);
-
-        return institution;
+        },
       });
-    } finally {
-      await session.endSession();
+
+      await institution.save();
+
+      // Update all users with this institution
+      await User.updateMany(
+        { institutionId: institution._id },
+        { institutionVerificationStatus: 'verified' }
+      );
+
+      // Auto-merge users with same domain (without transaction)
+      await this._autoMergeUsers(institution);
+
+      return institution;
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -399,11 +389,11 @@ class InstitutionService {
   /**
    * Auto-merge users with same email domain to verified institution
    */
-  async _autoMergeUsers(institution, session) {
+  async _autoMergeUsers(institution) {
     const usersWithSameDomain = await User.find({
       email: { $regex: `@${institution.emailDomain}$`, $options: 'i' },
       institutionId: { $ne: institution._id },
-    }).session(session);
+    });
 
     if (usersWithSameDomain.length > 0) {
       // Update all users with same domain
@@ -412,8 +402,7 @@ class InstitutionService {
         {
           institutionId: institution._id,
           institutionVerificationStatus: 'verified',
-        },
-        { session }
+        }
       );
 
       // Delete duplicate unverified institutions
@@ -421,7 +410,7 @@ class InstitutionService {
         emailDomain: institution.emailDomain,
         _id: { $ne: institution._id },
         isVerified: false,
-      }, { session });
+      });
     }
   }
 

@@ -8,9 +8,7 @@ async function getHostDashboard(req, res) {
     const userId = req.user.id;
     const events = await Event.find({ hostUserId: userId });
     const totalEvents = events.length;
-    const upcomingEvents = events.filter(
-      (e) => e.schedule && e.schedule.start > new Date(),
-    );
+    const upcomingEvents = events.filter((e) => e.date && e.date > new Date());
 
     // Get detailed analytics for each event
     const eventsWithAnalytics = await Promise.all(
@@ -128,8 +126,35 @@ async function deleteEvent(req, res) {
 async function getMyEvents(req, res) {
   try {
     const userId = req.user.id;
-    const events = await Event.find({ hostUserId: userId });
-    return res.json(events);
+    const events = await Event.find({ hostUserId: userId }).lean();
+    const eventIds = events.map(e => e._id);
+    const logs = await EventParticipationLog.find({ eventId: { $in: eventIds } }).lean();
+    const users = await User.find({ _id: { $in: logs.map(l => l.userId) } }).lean();
+
+    const userMap = {};
+    users.forEach(u => { userMap[u._id.toString()] = u; });
+
+    const eventParticipantsMap = {};
+    logs.forEach(log => {
+      if (!eventParticipantsMap[log.eventId]) eventParticipantsMap[log.eventId] = [];
+      eventParticipantsMap[log.eventId].push({
+        userId: log.userId,
+        name: userMap[log.userId.toString()]?.name,
+        email: userMap[log.userId.toString()]?.email,
+        phone: userMap[log.userId.toString()]?.phone,
+        status: log.status,
+        paymentType: log.paymentType,
+        paymentStatus: log.paymentStatus,
+        attendanceTimestamp: log.attendanceTimestamp,
+        timestamp: log.timestamp,
+      });
+    });
+
+    const eventsWithParticipants = events.map(event => ({
+      ...event,
+      participants: eventParticipantsMap[event._id] || []
+    }));
+    return res.json(eventsWithParticipants);
   } catch (err) {
     return res.status(500).json({ error: 'Server error fetching events.' });
   }

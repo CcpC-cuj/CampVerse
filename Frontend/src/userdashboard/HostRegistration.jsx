@@ -43,16 +43,15 @@ const HostRegistration = () => {
 
             <div className="flex justify-end mt-6">
               <button
-                onClick={() => navigate("/host/dashboard")}
+                onClick={() => navigate("/host/manage-events")}
                 className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-button"
               >
-                Go to Host Dashboard
+                Go to Manage Events
               </button>
             </div>
 
             <p className="text-xs text-gray-400 mt-3">
-              (Note) Implement <code>/host/dashboard</code> when you share it; this
-              page is already wired to navigate there.
+              (Note) Navigate to Manage Events dashboard to create and manage your events.
             </p>
           </div>
         </div>

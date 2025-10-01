@@ -17,6 +17,7 @@ const eventParticipationLogSchema = new mongoose.Schema({
     required: true,
   },
   timestamp: { type: Date, default: Date.now },
+  registeredAt: { type: Date, default: Date.now },
   paymentType: { type: String, enum: ['free', 'paid'], default: 'free' },
   paymentStatus: {
     type: String,
