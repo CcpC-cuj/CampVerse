@@ -79,14 +79,14 @@ const HostEventsDashboard = () => {
       let response;
       try {
         response = await getMyEvents();
-        console.log('getMyEvents response:', response);
+  // getMyEvents response: (console.log removed)
       } catch (hostError) {
         console.error('Host API failed:', hostError);
         // Fallback: try the general events API and filter by host
         try {
           const { listEvents } = await import('../api/events');
           const generalResponse = await listEvents();
-          console.log('General events response:', generalResponse);
+          // General events response: (console.log removed)
           
           if (Array.isArray(generalResponse)) {
             // Filter events for current user
@@ -94,7 +94,7 @@ const HostEventsDashboard = () => {
               event.hostUserId === user?.id || event.hostUserId === user?._id
             );
             response = userEvents;
-            console.log('Filtered user events:', userEvents);
+            // Filtered user events: (console.log removed)
           } else {
             response = { success: false, error: hostError.message };
           }
@@ -107,7 +107,7 @@ const HostEventsDashboard = () => {
       if (response && Array.isArray(response)) {
         // Backend returns events array directly
         setEvents(response);
-        console.log('Loaded events from API:', response);
+  // Loaded events from API: (console.log removed)
       } else if (response.success && response.data) {
         // Handle wrapped response format
         setEvents(response.data.events || response.data || []);
@@ -236,7 +236,7 @@ const HostEventsDashboard = () => {
         logoURL: logoUrl || '',
       };
 
-      console.log('Sending event data:', eventData);
+  // Sending event data: (console.log removed)
 
       // Always use FormData for legacy backend
       const formData = new FormData();

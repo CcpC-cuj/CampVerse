@@ -14,26 +14,23 @@ export const initializeGoogleAuth = () => {
   
   script.onload = () => {
     googleInitialized = true;
-    console.log('Google Identity Services loaded');
+  // Google Identity Services loaded (console.log removed)
   };
 };
 
 // Start Google OAuth and obtain an ID token via implicit flow (redirect)
 export const getGoogleToken = () => {
-  console.log("🔵 [GOOGLE AUTH] getGoogleToken() called");
-  console.log("🔵 [GOOGLE AUTH] Timestamp:", new Date().toISOString());
-  console.log("🔵 [GOOGLE AUTH] Call stack:", new Error().stack?.split('\n').slice(1, 4));
   
   return new Promise((resolve, reject) => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
     if (!clientId) {
-      console.log("🔴 [GOOGLE AUTH] ERROR: Google Client ID not configured");
+  // ERROR: Google Client ID not configured (console.log removed)
       reject(new Error('Google Client ID not configured'));
       return;
     }
 
-    console.log("🔵 [GOOGLE AUTH] Starting OAuth flow with client ID:", clientId);
+  // Starting OAuth flow with client ID: (console.log removed)
     const redirectUri = `${window.location.origin}/oauth-callback`;
     // Request OpenID Connect ID token to match backend verification path
     const scope = 'openid email profile';

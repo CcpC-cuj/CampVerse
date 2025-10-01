@@ -44,7 +44,7 @@ const SignupModal = ({
       setIsLoading(true);
       const response = await register(formData);
       if (response.message) {
-        alert(`OTP sent to your email.`);
+        // OTP sent to your email. (alert removed)
         onClose();
         onSignupSuccess(formData.email);
       } else {

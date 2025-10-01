@@ -54,7 +54,7 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   const status = getEventStatus();
 
   return (
-    <div className="text-white">
+  <div className="text-white">
       {/* Banner Image at Top */}
       {eventDetails.coverImage && (
         <div className="relative">
@@ -109,18 +109,34 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
 
         {!loading && !error && (
           <>
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
-              {eventDetails.title}
-            </h2>
-            <span
-              className={`mt-1 inline-block px-2 py-1 text-xs sm:text-sm font-medium rounded-full ${
-                status === "upcoming"
-                  ? "bg-green-900 text-green-300"
-                  : "bg-gray-600 text-gray-300"
-              }`}
-            >
-              {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
-            </span>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1 gap-2">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white">
+                  {eventDetails.title}
+                </h2>
+                <span
+                  className={`mt-1 inline-block px-2 py-1 text-xs sm:text-sm font-medium rounded-full ${
+                    status === "upcoming"
+                      ? "bg-green-900 text-green-300"
+                      : "bg-gray-600 text-gray-300"
+                  }`}
+                >
+                  {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
+                </span>
+              </div>
+              {/* Share/Copy Event Link Button */}
+              <button
+                onClick={() => {
+                  const baseUrl = window.location.origin;
+                  const url = `${baseUrl}/events/${eventDetails._id || eventDetails.id}`;
+                  navigator.clipboard.writeText(url);
+                }}
+                className="px-3 py-1 rounded-full bg-gray-700 text-white text-xs hover:bg-[#9b5de5] transition-colors mt-2 sm:mt-0"
+                title="Copy event link"
+              >
+                📋 Copy Event Link
+              </button>
+            </div>
 
             <div className="mt-3 sm:mt-4 space-y-3 text-gray-300 text-sm sm:text-base">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

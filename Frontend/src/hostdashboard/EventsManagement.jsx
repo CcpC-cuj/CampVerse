@@ -26,13 +26,13 @@ const EventsManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Loading host events data...");
+  // Loading host events data... (console.log removed)
 
       // Load events
       let eventsData = [];
       try {
         eventsData = await getMyEvents();
-        console.log("Events data:", eventsData);
+  // Events data: (console.log removed)
         
         if (Array.isArray(eventsData)) {
           eventsData = eventsData;
@@ -123,7 +123,7 @@ const EventsManagement = () => {
 
   // Event handlers for HostEventCard
   const handleEditEvent = (event) => {
-    console.log("Edit event:", event);
+  // Edit event: (console.log removed)
     setSelectedEvent(event);
     setShowEditModal(true);
   };
@@ -145,7 +145,7 @@ const EventsManagement = () => {
   };
 
   const handleViewParticipants = (event) => {
-    console.log("View participants for event:", event);
+  // View participants for event: (console.log removed)
     // Open participants modal or navigate to participants view
   };
 

@@ -37,9 +37,6 @@ const Landing = () => {
       const isOAuthToken = hash.includes('id_token=') || hash.includes('access_token=');
       
       if (isOAuthToken) {
-        console.log("🔵 [LANDING] OAuth token detected on landing page");
-        console.log("🔵 [LANDING] Processing token directly...");
-        console.log("🔵 [LANDING] Hash:", hash);
         
         try {
           // Extract token from hash
@@ -49,11 +46,9 @@ const Landing = () => {
           const oauthToken = idToken || accessToken;
           
           if (oauthToken) {
-            console.log("🔵 [LANDING] Calling googleSignIn API with token...");
             const response = await googleSignIn({ token: oauthToken });
             
             if (response.token) {
-              console.log("🔵 [LANDING] Login successful, redirecting to dashboard");
               login(response.token, response.user);
               // Clear the hash and redirect
               window.location.hash = '';

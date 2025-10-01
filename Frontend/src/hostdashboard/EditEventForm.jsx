@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 const EditEventForm = ({ event, onSave, onCancel, loading }) => {
   const { user } = useAuth();
-  console.log('EditEventForm received event:', event);
+  // EditEventForm received event: (console.log removed)
   const [eventForm, setEventForm] = useState({
     title: '',
     description: '',

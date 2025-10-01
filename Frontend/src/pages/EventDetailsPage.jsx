@@ -38,7 +38,7 @@ const EventDetailsPage = () => {
 
   const handleRSVP = async () => {
     if (!user) {
-      alert('Please log in to register for events');
+      // Please log in to register for events (alert removed)
       return;
     }
 
@@ -46,13 +46,13 @@ const EventDetailsPage = () => {
       const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
       if (response.success) {
         setIsRsvped(!isRsvped);
-        alert(response.message || `RSVP ${isRsvped ? 'cancelled' : 'successful'}!`);
+          // RSVP ${isRsvped ? 'cancelled' : 'successful'}! (alert removed)
       } else {
-        alert(response.message || 'RSVP failed');
+          // RSVP failed (alert removed)
       }
     } catch (err) {
       console.error('RSVP error:', err);
-      alert('Error processing RSVP');
+        // Error processing RSVP (alert removed)
     }
   };
 

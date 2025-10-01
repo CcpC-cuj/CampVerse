@@ -150,33 +150,31 @@ function scanDirectory(dir) {
 }
 
 // Main execution
-console.log('🔍 Event Module Validation Script\n');
-console.log('Scanning for legacy field references and validating implementation...\n');
 
 const projectRoot = process.cwd();
 const backendDir = path.join(projectRoot, 'Backend');
 const frontendDir = path.join(projectRoot, 'Frontend');
 
 if (fs.existsSync(backendDir)) {
-  console.log('📁 Scanning Backend...');
+  // Scanning Backend... (console.log removed)
   scanDirectory(backendDir);
 }
 
 if (fs.existsSync(frontendDir)) {
-  console.log('📁 Scanning Frontend...');
+  // Scanning Frontend... (console.log removed)
   scanDirectory(frontendDir);
 }
 
-console.log(`\n✅ Scanned ${totalFiles} files\n`);
+// ✅ Scanned ${totalFiles} files (console.log removed)
 
 if (issuesFound === 0) {
-  console.log('🎉 No issues found! Event module is clean.\n');
-  console.log('✅ All legacy field references removed');
-  console.log('✅ All required fields present');
-  console.log('✅ Event module ready for deployment\n');
+  // No issues found! Event module is clean. (console.log removed)
+  // All legacy field references removed (console.log removed)
+  // All required fields present (console.log removed)
+  // Event module ready for deployment (console.log removed)
   process.exit(0);
 } else {
-  console.log(`⚠️  Found ${issuesFound} issue(s):\n`);
+  // Found ${issuesFound} issue(s): (console.log removed)
   
   // Group issues by file
   const issuesByFile = {};
@@ -188,18 +186,18 @@ if (issuesFound === 0) {
   });
 
   Object.keys(issuesByFile).forEach(file => {
-    console.log(`📄 ${file}`);
+  // ${file} (console.log removed)
     issuesByFile[file].forEach(issue => {
       if (issue.line > 0) {
-        console.log(`   Line ${issue.line}: ${issue.issue}`);
-        console.log(`   ${issue.code}\n`);
+  // Line ${issue.line}: ${issue.issue} (console.log removed)
+  // ${issue.code} (console.log removed)
       } else {
-        console.log(`   ${issue.issue}`);
-        console.log(`   ${issue.code}\n`);
+  // ${issue.issue} (console.log removed)
+  // ${issue.code} (console.log removed)
       }
     });
   });
 
-  console.log('\n⚠️  Please fix the issues above before deployment.\n');
+  // Please fix the issues above before deployment (console.log removed)
   process.exit(1);
 }

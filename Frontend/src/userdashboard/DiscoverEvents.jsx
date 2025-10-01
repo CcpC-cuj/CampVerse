@@ -25,7 +25,7 @@ const DiscoverEvents = () => {
       setError(null);
       
       const response = await listEvents();
-      console.log('Fetched events:', response);
+  // Fetched events: (console.log removed)
       
       const eventsArr = response?.data?.events || [];
       if (Array.isArray(eventsArr)) {
