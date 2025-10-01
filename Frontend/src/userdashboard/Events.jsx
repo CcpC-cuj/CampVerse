@@ -85,51 +85,24 @@ const Events = () => {
       const response = isRsvped ? await cancelRsvp(eventId) : await rsvpEventAPI(eventId);
 
       if (response.success) {
-        const newRsvps = new Set(userRsvps);
-        if (isRsvped) {
-          // Cancelled RSVP
-          newRsvps.delete(eventId);
-          setEvents((prev) => {
-            const cancelledEvent = prev.registered.find((e) => e._id === eventId);
-            return {
-              ...prev,
-              registered: prev.registered.filter((e) => e._id !== eventId),
-              // Add back to upcoming if it's a future event
-              upcoming: cancelledEvent && new Date(cancelledEvent.date) > new Date() 
-                ? [...prev.upcoming, cancelledEvent] 
-                : prev.upcoming
-            };
-          });
-          alert(response.message || "RSVP cancelled successfully!");
-        } else {
-          // New RSVP
-          newRsvps.add(eventId);
-          const event = events.upcoming.find((e) => e._id === eventId);
-          if (event) {
-            setEvents((prev) => ({
-              ...prev,
-              registered: [...prev.registered, { ...event, registeredAt: new Date().toISOString() }],
-              upcoming: prev.upcoming.filter((e) => e._id !== eventId),
-            }));
-          }
-          alert(response.message || "RSVP successful! Check your email for the QR code.");
-        }
-        setUserRsvps(newRsvps);
+        alert(response.message || (isRsvped ? "RSVP cancelled successfully!" : "RSVP successful! Check your email for the QR code."));
         
-        // Reload RSVP status from backend to ensure consistency
-        setTimeout(() => {
-          loadUserRsvpStatus();
-        }, 1000);
+        // Reload all events from backend to ensure consistency
+        await loadUserEvents();
         
         // Close modal if open
         if (selectedEvent && selectedEvent._id === eventId) {
           setSelectedEvent(null);
         }
       } else {
+        // Even on error, reload to sync state
+        await loadUserEvents();
         alert(response.message || response.error || "RSVP failed. Please try again.");
       }
     } catch (err) {
       console.error("Error with RSVP:", err);
+      // Reload events to ensure consistency
+      await loadUserEvents();
       alert("RSVP failed. Please try again.");
     }
   };

@@ -26,15 +26,21 @@ const EventDetailsPage = () => {
     try {
       setLoading(true);
       const response = await getPublicEventById(id);
+      console.log('📊 Public Event Response:', response);
       if (response.success && response.data) {
         setEvent(response.data);
         // Check if user is already registered
-        setIsRsvped(response.data.userRegistration ? true : false);
+        const isRegistered = response.data.userRegistration ? true : false;
+        console.log('✅ User Registration Status:', {
+          isRegistered,
+          userRegistration: response.data.userRegistration
+        });
+        setIsRsvped(isRegistered);
       } else {
         setError('Event not found');
       }
     } catch (err) {
-      console.error('Error loading event:', err);
+      console.error('❌ Error loading event:', err);
       setError('Failed to load event');
     } finally {
       setLoading(false);
@@ -47,22 +53,39 @@ const EventDetailsPage = () => {
       return;
     }
 
+    console.log('🎯 RSVP Action:', { eventId: id, isCurrentlyRsvped: isRsvped });
     setRsvpError("");
     try {
       const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
-      // Always reload event data after RSVP attempt
-      await loadEvent();
+      console.log('📬 RSVP Response:', response);
+      
       if (response.success) {
+        // Success - reload event data to get updated registration status
+        await loadEvent();
         setRsvpError("");
+        
+        // Show success message
+        const successMessage = isRsvped 
+          ? "RSVP cancelled successfully!" 
+          : response.message || "RSVP successful! Check your email for the QR code.";
+        alert(successMessage);
       } else {
+        // Error - still reload to sync state
+        await loadEvent();
+        
+        // Handle specific error cases
         if (response.status === 409 || response.error?.includes("already registered")) {
+          console.log('⚠️ Already registered error');
           setRsvpError("You are already registered for this event.");
         } else {
+          console.log('❌ RSVP failed:', response);
           setRsvpError(response.message || response.error || "RSVP failed. Please try again.");
         }
       }
     } catch (err) {
-      console.error('RSVP error:', err);
+      console.error('❌ RSVP error:', err);
+      // Reload event even on error to ensure sync
+      await loadEvent();
       setRsvpError("RSVP failed. Please try again.");
     }
   };

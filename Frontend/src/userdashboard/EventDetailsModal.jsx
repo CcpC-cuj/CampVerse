@@ -6,6 +6,7 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   const [eventDetails, setEventDetails] = useState(event);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rsvped, setRsvped] = useState(event.userRegistration ? true : false);
 
   useEffect(() => {
     if (event._id) {
@@ -19,6 +20,7 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
       const response = await getEventById(event._id);
       if (response.success && response.data) {
         setEventDetails(response.data);
+        setRsvped(response.data.userRegistration ? true : false);
       }
     } catch (err) {
       console.error('Error loading event details:', err);
@@ -30,6 +32,10 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
 
   const handleRSVP = () => {
     onRSVP(eventDetails._id || eventDetails.id);
+    // After RSVP, reload event details to update RSVP state
+    setTimeout(() => {
+      loadEventDetails();
+    }, 500);
   };
 
   const formatDate = (dateString) => {
@@ -302,12 +308,13 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                 <button
                   onClick={handleRSVP}
                   className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg shadow-lg transition-all duration-200 ${
-                    isRsvped
+                    rsvped
                       ? 'bg-red-600 hover:bg-red-700 text-white hover:shadow-red-500/25'
                       : 'bg-gradient-to-r from-[#9b5de5] to-[#7c3aed] hover:from-[#8a4fd3] hover:to-[#6b21a8] text-white hover:shadow-purple-500/25'
                   }`}
+                  disabled={loading}
                 >
-                  {isRsvped ? 'Cancel RSVP' : 'Register for Event'}
+                  {rsvped ? 'Cancel RSVP' : 'Register for Event'}
                 </button>
               </div>
 

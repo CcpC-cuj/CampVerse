@@ -371,6 +371,8 @@ async function rsvpEvent(req, res) {
     const { eventId } = req.body;
     const userId = req.user.id;
     
+    console.log('🎯 RSVP Request:', { eventId, userId });
+    
     // Check if user already registered
     const existingLog = await EventParticipationLog.findOne({
       eventId,
@@ -378,6 +380,7 @@ async function rsvpEvent(req, res) {
     });
     
     if (existingLog) {
+      console.log('⚠️ User already registered:', { eventId, userId, status: existingLog.status });
       return res.status(409).json({ 
         success: false,
         error: 'User already registered for this event',
@@ -387,6 +390,7 @@ async function rsvpEvent(req, res) {
     
     const event = await Event.findById(eventId);
     if (!event) {
+      console.log('❌ Event not found:', eventId);
       return res.status(404).json({ 
         success: false,
         error: 'Event not found',
@@ -414,12 +418,19 @@ async function rsvpEvent(req, res) {
     qrToken = crypto.randomBytes(32).toString('hex');
     
     // Create participation log
-    await EventParticipationLog.create({
+    const participationLog = await EventParticipationLog.create({
       userId,
       eventId,
       status,
       qrToken,
       registeredAt: new Date()
+    });
+    
+    console.log('✅ RSVP Created:', { 
+      eventId, 
+      userId, 
+      status, 
+      participationLogId: participationLog._id 
     });
     
     // Update event waitlist
@@ -986,11 +997,48 @@ async function getPublicEventById(req, res) {
         error: 'Event not found or not approved.'
       });
     }
+
+    // Check if user is authenticated and registered for this event
+    let userRegistration = null;
+    let userId = null;
+    if (req.headers.authorization) {
+      try {
+        // Try to extract user from token (optional authentication)
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
+        
+        // Check if user is registered for this event
+        userRegistration = await EventParticipationLog.findOne({
+          eventId: eventId,
+          userId: userId
+        });
+        
+        console.log('📊 Public Event Check:', {
+          eventId,
+          userId,
+          hasRegistration: !!userRegistration,
+          registrationStatus: userRegistration?.status
+        });
+      } catch (authErr) {
+        // Authentication failed - user not logged in, continue without userRegistration
+        console.log('⚠️ Optional auth failed for public event (user not logged in)');
+      }
+    }
+
     res.json({
       success: true,
-      data: event
+      data: {
+        ...event.toObject(),
+        userRegistration: userRegistration ? {
+          status: userRegistration.status,
+          registeredAt: userRegistration.registeredAt
+        } : null
+      }
     });
   } catch (err) {
+    console.error('❌ Error fetching public event:', err);
     res.status(500).json({
       success: false,
       error: 'Error fetching public event.'
