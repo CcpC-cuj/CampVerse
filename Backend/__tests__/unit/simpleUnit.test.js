@@ -89,10 +89,14 @@ describe('Simple Unit Tests', () => {
       expect(validatePhone('123456789a')).toBe(false);
     });
 
-      it('should validate password strength', () => {
-        const { validatePassword } = require('../../Utils/passwordUtils');
+    it('should validate password strength', () => {
+      const { validatePassword } = require('../../Utils/passwordUtils');
 
-      expect(validatePassword('password123')).toBe(true);
+      // Valid passwords with uppercase, lowercase, number, and special char
+      expect(validatePassword('Password123!')).toBe(true);
+      expect(validatePassword('Valid@Pass1')).toBe(true);
+      
+      // Invalid passwords
       expect(validatePassword('pass')).toBe(false);
       expect(validatePassword('')).toBe(false);
       expect(validatePassword(null)).toBe(false);
