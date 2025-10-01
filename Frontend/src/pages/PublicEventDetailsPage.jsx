@@ -1,40 +1,67 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { getEventById } from "../api/events";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getPublicEventById, rsvpEvent, cancelRsvp } from '../api/events';
+import { useAuth } from '../contexts/AuthContext';
+import ShareButton from '../userdashboard/ShareButton';
+import LoginModal from './LoginModal';
+import SignupModal from './SignupModal';
 
-const PublicEventPage = () => {
-  const { eventId } = useParams();
+const EventDetailsPage = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isRsvped, setIsRsvped] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
 
   useEffect(() => {
-    const fetchEvent = async () => {
-      try {
-        setLoading(true);
-        const response = await getEventById(eventId);
-        if (response.success) {
-          setEvent(response.event);
-        } else {
-          setError(response.message || 'Event not found');
-        }
-      } catch (err) {
-        setError('Failed to load event details');
-      } finally {
-        setLoading(false);
+    loadEvent();
+  }, [id]);
+
+  const loadEvent = async () => {
+    try {
+      setLoading(true);
+      const response = await getPublicEventById(id);
+      if (response.success && response.data) {
+        setEvent(response.data);
+        // Check if user is already registered
+        setIsRsvped(response.data.userRegistration ? true : false);
+      } else {
+        setError('Event not found');
       }
-    };
-
-    if (eventId) {
-      fetchEvent();
+    } catch (err) {
+      console.error('Error loading event:', err);
+      setError('Failed to load event');
+    } finally {
+      setLoading(false);
     }
-  }, [eventId]);
+  };
 
-  const formatDate = (date) => {
-    if (!date) return 'N/A';
-    return new Date(date).toLocaleString('en-US', {
-      weekday: 'long',
+  const handleRSVP = async () => {
+    if (!user) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    try {
+      const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
+      if (response.success) {
+        setIsRsvped(!isRsvped);
+          // RSVP ${isRsvped ? 'cancelled' : 'successful'}! (alert removed)
+      } else {
+          // RSVP failed (alert removed)
+      }
+    } catch (err) {
+      console.error('RSVP error:', err);
+        // Error processing RSVP (alert removed)
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -43,47 +70,38 @@ const PublicEventPage = () => {
     });
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: event.title,
-        text: event.description,
-        url: window.location.href
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
-    }
-  };
 
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] flex items-center justify-center">
-        <div className="text-white text-xl">Loading event...</div>
+        <div className="text-white text-xl animate-pulse">Loading event...</div>
       </div>
     );
-  }
-
-  if (error || !event) {
+  if (error)
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-white text-2xl mb-4">{error || 'Event not found'}</h2>
-          <button 
-            onClick={() => navigate('/')} 
-            className="px-6 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg"
+          <h2 className="text-white text-2xl mb-4">{error}</h2>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg shadow-lg transition-all"
           >
             Go Home
           </button>
         </div>
       </div>
     );
-  }
+  if (!event)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] flex items-center justify-center">
+        <div className="text-white text-xl">Event not found</div>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e]">
       {/* Banner */}
-      <div className="relative h-96 bg-gradient-to-r from-purple-900 to-blue-900">
+      <div className="relative h-80 md:h-96 bg-gradient-to-r from-purple-900 to-blue-900">
         {event.bannerURL && (
           <img src={event.bannerURL} alt="Event Banner" className="w-full h-full object-cover" />
         )}
@@ -96,10 +114,10 @@ const PublicEventPage = () => {
           {/* Event Header */}
           <div className="flex items-start gap-6 mb-8">
             {event.logoURL && (
-              <img src={event.logoURL} alt="Event Logo" className="w-32 h-32 rounded-full border-4 border-purple-500 object-cover" />
+              <img src={event.logoURL} alt="Event Logo" className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-purple-500 object-cover" />
             )}
             <div className="flex-1">
-              <h1 className="text-5xl font-bold text-white mb-4">{event.title}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
               <div className="flex flex-wrap gap-2 mb-4">
                 {event.isPaid ? (
                   <span className="px-4 py-2 bg-yellow-500/20 text-yellow-300 rounded-full text-sm font-medium">
@@ -111,7 +129,7 @@ const PublicEventPage = () => {
                   </span>
                 )}
                 <span className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full text-sm font-medium capitalize">
-                  {event.location?.type || 'Online'}
+                  {event.location?.type || "Online"}
                 </span>
                 {event.features?.certificateEnabled && (
                   <span className="px-4 py-2 bg-blue-500/20 text-blue-300 rounded-full text-sm font-medium">
@@ -119,24 +137,40 @@ const PublicEventPage = () => {
                   </span>
                 )}
               </div>
-              <p className="text-purple-300 text-xl leading-relaxed">{event.description}</p>
+              <p className="text-purple-300 text-lg md:text-xl leading-relaxed">{event.description}</p>
             </div>
+            <ShareButton event={event} />
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 mb-8 pb-8 border-b border-purple-600/30">
-            <button 
-              onClick={() => navigate('/login')} 
-              className="px-8 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-semibold text-lg transition-colors"
+            <button
+              onClick={() => navigate(-1)}
+              className="px-8 py-3 bg-gray-700 hover:bg-gray-800 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
             >
-              📝 Register for Event
+              ⬅️ Back
             </button>
-            <button 
-              onClick={handleShare} 
-              className="px-8 py-3 bg-purple-700/30 hover:bg-purple-700/50 text-purple-300 rounded-lg font-semibold text-lg transition-colors"
-            >
-              🔗 Share Event
-            </button>
+            {/* Show login button if user is not logged in */}
+            {!user && (
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
+              >
+                📝 Login to Register
+              </button>
+            )}
+            {user && event.verificationStatus === "approved" && (
+              <button
+                onClick={handleRSVP}
+                className={`px-8 py-3 rounded-lg font-semibold text-lg transition-colors shadow-md ${
+                  isRsvped
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+              >
+                {isRsvped ? "Cancel Registration" : "Register for Event"}
+              </button>
+            )}
           </div>
 
           {/* Event Details Grid */}
@@ -149,15 +183,12 @@ const PublicEventPage = () => {
 
               <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
                 <h3 className="text-purple-300 font-semibold text-lg mb-3">📍 Location</h3>
-                <p className="text-white text-lg capitalize">{event.location?.type || 'N/A'}</p>
-                {event.location?.venue && (
-                  <p className="text-purple-300 mt-2">Venue: {event.location.venue}</p>
-                )}
+                <p className="text-white text-lg capitalize">{event.location?.venue || "N/A"}</p>
                 {event.location?.link && (
-                  <a 
-                    href={event.location.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={event.location.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-blue-400 hover:text-blue-300 mt-2 block"
                   >
                     🔗 Join Online
@@ -168,7 +199,7 @@ const PublicEventPage = () => {
               <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
                 <h3 className="text-purple-300 font-semibold text-lg mb-3">👥 Capacity</h3>
                 <p className="text-white text-lg">
-                  {event.capacity ? `${event.capacity} participants` : 'Unlimited'}
+                  {event.capacity ? `${event.capacity} participants` : "Unlimited"}
                 </p>
               </div>
             </div>
@@ -181,10 +212,10 @@ const PublicEventPage = () => {
                 </div>
               )}
 
-              {event.type && (
+              {event.category && (
                 <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
                   <h3 className="text-purple-300 font-semibold text-lg mb-3">📂 Category</h3>
-                  <p className="text-white text-lg">{event.type}</p>
+                  <p className="text-white text-lg">{event.category}</p>
                 </div>
               )}
 
@@ -202,6 +233,20 @@ const PublicEventPage = () => {
               )}
             </div>
           </div>
+
+          {/* Requirements */}
+          {event.requirements && event.requirements.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-4">📝 Requirements</h2>
+              <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
+                <ul className="space-y-2">
+                  {event.requirements.map((req, idx) => (
+                    <li key={idx} className="text-white text-lg">• {req}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
 
           {/* About Section */}
           {event.about && (
@@ -229,40 +274,26 @@ const PublicEventPage = () => {
             </div>
           )}
 
-          {/* Requirements */}
-          {event.requirements && event.requirements.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4">📝 Requirements</h2>
-              <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
-                <ul className="space-y-2">
-                  {event.requirements.map((req, idx) => (
-                    <li key={idx} className="text-white text-lg">• {req}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
           {/* Social Links */}
           {event.socialLinks && (event.socialLinks.website || event.socialLinks.linkedin) && (
             <div>
               <h2 className="text-2xl font-bold text-white mb-4">🔗 Connect With Us</h2>
               <div className="flex gap-4">
                 {event.socialLinks.website && (
-                  <a 
-                    href={event.socialLinks.website} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={event.socialLinks.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="px-6 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-medium transition-colors"
                   >
                     🌐 Website
                   </a>
                 )}
                 {event.socialLinks.linkedin && (
-                  <a 
-                    href={event.socialLinks.linkedin} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={event.socialLinks.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-colors"
                   >
                     💼 LinkedIn
@@ -273,8 +304,22 @@ const PublicEventPage = () => {
           )}
         </div>
       </div>
+
+      {/* Modals */}
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onSwitchToSignup={() => {
+            setShowLoginModal(false);
+            setShowSignupModal(true);
+          }}
+        />
+      )}
+      {showSignupModal && (
+        <SignupModal onClose={() => setShowSignupModal(false)} />
+      )}
     </div>
   );
 };
 
-export default PublicEventPage;
+export default EventDetailsPage;
