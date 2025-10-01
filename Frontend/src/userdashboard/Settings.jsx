@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthenticationSettings from '../components/AuthenticationSettings';
 import Sidebar from './sidebar';
@@ -121,9 +121,60 @@ const [gender, setGender] = useState(user?.gender || '');
 const [dob, setDob] = useState(user?.dateOfBirth || '');
 const [collegeIdNumber, setCollegeIdNumber] = useState(user?.collegeIdNumber || '');
 const [interests, setInterests] = useState(user?.interests || []);
-const [skills, setSkills] = useState(user?.skills || []);
 const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
+const [skills, setSkills] = useState(user?.skills || []);
 const [institution, setInstitution] = useState(user?.institution || null);
+
+
+//: preferences
+  const [preferences, setPreferences] = useState({ interests: [], skills: [], learningGoals: [] });
+  const [interestInput, setInterestInput] = useState('');
+  const [skillInput, setSkillInput] = useState('');
+  const [goalInput, setGoalInput] = useState('');
+
+
+
+const SUGGESTED_INTERESTS = ['Hackathons', 'Robotics', 'AI/ML', 'Open Source', 'Sports', 'Cultural', 'Debate', 'Entrepreneurship'];
+const SUGGESTED_SKILLS = ['JavaScript', 'Python', 'C++', 'UI/UX', 'Data Science', 'Public Speaking', 'Leadership'];
+const SUGGESTED_GOALS = ['Get internship', 'Win a hackathon', 'Publish a paper', 'Improve DSA', 'Learn design'];
+
+
+const Chip = ({ label, onRemove }) => (
+  <span className="inline-flex items-center gap-1 bg-slate-800 border border-slate-700 px-2 py-1 rounded text-sm">
+    {label}
+    {onRemove && (
+      <button aria-label={`Remove ${label}`} onClick={onRemove} className="text-slate-400 hover:text-white">×</button>
+    )}
+  </span>
+);
+
+const SuggestionPills = ({ items, onPick }) => (
+  <div className="flex flex-wrap gap-2 mt-2">
+    {items.map((s) => (
+      <button key={s} onClick={() => onPick(s)} className="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-xs hover:bg-slate-700">
+        + {s}
+      </button>
+    ))}
+  </div>
+);
+
+  // Filter suggestions to hide already selected items
+  const filteredInterestSuggestions = useMemo(
+    () => SUGGESTED_INTERESTS.filter(s => !(preferences.interests || []).includes(s)),
+    [preferences.interests]
+  );
+
+    const filteredSkillSuggestions = useMemo(
+      () => SUGGESTED_SKILLS.filter(s => !(preferences.skills || []).includes(s)),
+      [preferences.skills]
+    );
+    const filteredGoalSuggestions = useMemo(
+      () => SUGGESTED_GOALS.filter(s => !(preferences.learningGoals || []).includes(s)),
+      [preferences.learningGoals]
+    );
+  
+
+
 
   const DEFAULT_AVATARS = {
   male: "/male-avatar.png",
@@ -147,15 +198,20 @@ useEffect(() => {
   setLearningGoals(user?.learningGoals || []);
   setInstitution(user?.institution || null);
 
-  if (user?.profilePhoto) {
-    setProfilePhoto(user.profilePhoto);
-  } else if (user?.avatar) {
-    setProfilePhoto(user.avatar);
-  } else if (user?.gender && DEFAULT_AVATARS[user.gender.toLowerCase()]) {
-    setProfilePhoto(DEFAULT_AVATARS[user.gender.toLowerCase()]);
-  } else {
-    setProfilePhoto("/default-avatar.png");
+// Determine the profile photo
+  let photo = '/default-avatar.png'; // default fallback
+
+  if (user?.profilePhoto && user.profilePhoto.trim() !== '') {
+    photo = user.profilePhoto;
+  } else if (user?.avatar && user.avatar.trim() !== '') {
+    photo = user.avatar;
+  } else if (user?.gender) {
+    const genderKey = String(user.gender).trim().toLowerCase(); // ensure string and lowercase
+    if (DEFAULT_AVATARS[genderKey]) {
+      photo = DEFAULT_AVATARS[genderKey];
+    }
   }
+  setProfilePhoto(photo);
 }, [user?._id, editingField]);
 
 
@@ -773,7 +829,7 @@ const handleSaveProfile = async () => {
                             </button>
                           )}
                         </div>
-                       <input
+                       <input 
                           type="text"
                           value={institution?.name || ''}
                           readOnly={editingField !== 'institution'}
@@ -789,84 +845,126 @@ const handleSaveProfile = async () => {
                         />
                       </div>
                     </div>
-                      {/* Learning Goals (editable textarea) */}
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
-                          {editingField !== 'learningGoals' ? (
-                            <button
-                              type="button"
-                              onClick={() => startEditing('learningGoals')}
-                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
-                              title="Edit learning goals"
-                            >
-                              <i className="ri-pencil-line text-sm"></i>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={stopEditing}
-                              className="text-gray-400 hover:text-white transition-colors p-1"
-                              title="Cancel editing"
-                            >
-                              <i className="ri-close-line text-sm"></i>
-                            </button>
-                          )}
-                        </div>
-                          <textarea
-                            rows={3}
-                            value={learningGoals.join(', ')}   // ✅ show as comma-separated string
-                            readOnly={editingField !== 'learningGoals'}
-                            onChange={(e) => setLearningGoals(e.target.value.split(',').map(v => v.trim()))}
-                            onKeyPress={handleKeyPress}
-                            className={`w-full p-2 rounded bg-gray-900 border ${
-                              editingField !== 'learningGoals'
-                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                            }`}
-                            placeholder="What do you want to learn?"
-                          />
+
+                                             {/* Learning Goals */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
+                        {editingField !== 'learningGoals' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditing('learningGoals')}
+                            className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                            title="Edit learning goals"
+                          >
+                            <i className="ri-pencil-line text-sm"></i>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopEditing}
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                            title="Cancel editing"
+                          >
+                            <i className="ri-close-line text-sm"></i>
+                          </button>
+                        )}
                       </div>
 
-                      {/* Skills (editable textarea) */}
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <label className="block text-sm text-gray-300 mb-1">Skills</label>
-                          {editingField !== 'skills' ? (
+                      {editingField === 'learningGoals' ? (
+                        <>
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                              value={goalInput}
+                              onChange={(e) => setGoalInput(e.target.value)}
+                              placeholder="Add goal and press +"
+                            />
                             <button
-                              type="button"
-                              onClick={() => startEditing('skills')}
-                              className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
-                              title="Edit skills"
+                              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                              onClick={() => {
+                                if (goalInput.trim()) {
+                                  setLearningGoals([...learningGoals, goalInput.trim()]);
+                                  setGoalInput('');
+                                }
+                              }}
                             >
-                              <i className="ri-pencil-line text-sm"></i>
+                              +
                             </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={stopEditing}
-                              className="text-gray-400 hover:text-white transition-colors p-1"
-                              title="Cancel editing"
-                            >
-                              <i className="ri-close-line text-sm"></i>
-                            </button>
-                          )}
-                        </div>
-                        <textarea
-                            rows={3}
-                            value={skills.join(', ')}   
-                            readOnly={editingField !== 'skills'}
-                            onChange={(e) => setSkills(e.target.value.split(',').map(v => v.trim()))}
-                            onKeyPress={handleKeyPress}
-                            className={`w-full p-2 rounded bg-gray-900 border ${
-                              editingField !== 'skills'
-                                ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                                : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                            }`}
-                            placeholder="List your skills"
-                          />
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {learningGoals.map((v, i) => (
+                              <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                setLearningGoals(learningGoals.filter((_, idx) => idx !== i));
+                              }} />
+                            ))}
+                          </div>
+                          <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => setLearningGoals([...learningGoals, v])} />
+                        </>
+                      ) : (
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
+                      )}
+                    </div>
 
+                              {/* Skills */}
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm text-gray-300 mb-1">Skills</label>
+                        {editingField !== 'skills' ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditing('skills')}
+                            className="text-gray-400 hover:text-[#9b5de5] transition-colors p-1"
+                            title="Edit skills"
+                          >
+                            <i className="ri-pencil-line text-sm"></i>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={stopEditing}
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                            title="Cancel editing"
+                          >
+                            <i className="ri-close-line text-sm"></i>
+                          </button>
+                        )}
                       </div>
+
+                      {editingField === 'skills' ? (
+                        <>
+                          <div className="flex gap-2 mt-1">
+                            <input
+                              className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                              value={skillInput}
+                              onChange={(e) => setSkillInput(e.target.value)}
+                              placeholder="Add skill and press +"
+                            />
+                            <button
+                              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                              onClick={() => {
+                                if (skillInput.trim()) {
+                                  setSkills([...skills, skillInput.trim()]);
+                                  setSkillInput('');
+                                }
+                              }}
+                            >
+                              +
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {skills.map((v, i) => (
+                              <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                setSkills(skills.filter((_, idx) => idx !== i));
+                              }} />
+                            ))}
+                          </div>
+                          <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => setSkills([...skills, v])} />
+                        </>
+                      ) : (
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{skills.join(', ') || 'No skills added'}</div>
+                      )}
+                    </div>
 
                       {/* Interests (editable textarea) */}
                       <div>
@@ -892,20 +990,42 @@ const handleSaveProfile = async () => {
                             </button>
                           )}
                         </div>
-                       <textarea
-                          rows={3}
-                          value={interests.join(', ')}   // ✅ show as comma-separated string
-                          readOnly={editingField !== 'interests'}
-                          onChange={(e) => setInterests(e.target.value.split(',').map(v => v.trim()))}
-                          onKeyPress={handleKeyPress}
-                          className={`w-full p-2 rounded bg-gray-900 border ${
-                            editingField !== 'interests'
-                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                          }`}
-                          placeholder="What are your interests?"
-                        />
+
+                        {editingField === 'interests' ? (
+                          <>
+                            <div className="flex gap-2 mt-1">
+                              <input
+                                className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                                value={interestInput}
+                                onChange={(e) => setInterestInput(e.target.value)}
+                                placeholder="Add interest and press +"
+                              />
+                              <button
+                                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded"
+                                onClick={() => {
+                                  if (interestInput.trim()) {
+                                    setInterests([...interests, interestInput.trim()]);
+                                    setInterestInput('');
+                                  }
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {interests.map((v, i) => (
+                                <Chip key={`${v}-${i}`} label={v} onRemove={() => {
+                                  setInterests(interests.filter((_, idx) => idx !== i));
+                                }} />
+                              ))}
+                            </div>
+                            <SuggestionPills items={filteredInterestSuggestions} onPick={(v) => setInterests([...interests, v])} />
+                          </>
+                        ) : (
+                          <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{interests.join(', ') || 'No interests added'}</div>
+                        )}
                       </div>
+
 
 
                     <div className="flex justify-end">
