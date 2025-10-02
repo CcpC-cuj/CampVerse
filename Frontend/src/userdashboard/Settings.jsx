@@ -15,10 +15,11 @@ import NavBar from './NavBar';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, setUser, logout } = useAuth();
+  const { user, setUser, logout, refreshUser, lastRefresh } = useAuth();
 
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // active section highlight for top navbar (purely visual; content is stacked)
   const [activeTab, setActiveTab] = useState('profile');
@@ -64,6 +65,14 @@ const Settings = () => {
 
   // Reset scroll position when component mounts and disable scroll restoration
   useEffect(() => {
+    // Refresh user data on component mount to ensure latest status
+    const doRefresh = async () => {
+      setIsRefreshing(true);
+      await refreshUser();
+      setIsRefreshing(false);
+    };
+    doRefresh();
+
     // Disable browser scroll restoration
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
@@ -1058,23 +1067,50 @@ const handleSaveProfile = async () => {
                           </>
                         )}
                       </div>
-                      {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                      <div className="flex flex-col gap-2">
+                        {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate('/host/manage-events')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                          >
+                            Go to Host Dashboard
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowHostModal(true)}
+                            className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                          >
+                            Become a Host
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => navigate('/host/manage-events')}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                          onClick={async () => {
+                            setIsRefreshing(true);
+                            await refreshUser();
+                            setIsRefreshing(false);
+                          }}
+                          disabled={isRefreshing}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-button text-sm disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                          Go to Host Dashboard
+                          {isRefreshing ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Refreshing...
+                            </>
+                          ) : (
+                            <>
+                              <i className="ri-refresh-line"></i>
+                              Refresh Data
+                            </>
+                          )}
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setShowHostModal(true)}
-                          className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
-                        >
-                          Become a Host
-                        </button>
-                      )}
+                      </div>
                     </div>
                     {/* ✅ /FIXED */}
                   </div>

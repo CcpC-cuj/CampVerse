@@ -514,15 +514,27 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));
 app.use('/api/support', require('./Routes/supportRoutes'));
 
+// Initialize Socket.IO in notification service for real-time notifications
+const { setSocketIO } = require('./Services/notification');
+setSocketIO(io);
+
 // Socket.IO event handlers
 io.on('connection', (socket) => {
   logger.info(`New socket connection: ${socket.id}`);
   
-  // Authentication event
-  socket.on('authenticate', (_token) => {
-    // TODO: Implement JWT verification for socket authentication
-    logger.info(`Socket ${socket.id} attempting authentication`);
-    socket.emit('authenticated', { success: true, socketId: socket.id });
+  // Authentication event - join user room for notifications
+  socket.on('authenticate', (token) => {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId;
+      socket.join(`user:${userId}`);
+      logger.info(`Socket ${socket.id} authenticated for user ${userId}`);
+      socket.emit('authenticated', { success: true, socketId: socket.id, userId });
+    } catch (error) {
+      logger.error('Socket authentication error:', error);
+      socket.emit('authenticated', { success: false, error: 'Invalid token' });
+    }
   });
   
   // API proxy events - bypass CORS by routing through WebSocket

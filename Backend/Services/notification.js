@@ -2,8 +2,18 @@ const { emailsender } = require('./email');
 const Notification = require('../Models/Notification');
 const User = require('../Models/User');
 
+// Store io instance
+let io = null;
+
 /**
- * Create an in-app notification
+ * Set Socket.IO instance for real-time notifications
+ */
+function setSocketIO(socketIO) {
+  io = socketIO;
+}
+
+/**
+ * Create an in-app notification and emit via Socket.IO
  */
 async function createNotification(userId, type, message, data = {}) {
   try {
@@ -16,6 +26,13 @@ async function createNotification(userId, type, message, data = {}) {
       createdAt: new Date(),
     });
     await notification.save();
+    
+    // Emit real-time notification via Socket.IO
+    if (io) {
+      io.to(`user:${userId}`).emit('notification', notification);
+      console.log(`Real-time notification sent to user:${userId}`);
+    }
+    
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -28,24 +45,30 @@ async function createNotification(userId, type, message, data = {}) {
  */
 async function notifyHostRequest(userId, userName, userEmail) {
   try {
-    // Find platform admin users
+    // Find platform admin users AND verifiers (since verifiers can approve host requests)
     const User = require('../Models/User');
-    const platformAdmins = await User.find({ roles: 'platformAdmin' });
+    const adminsAndVerifiers = await User.find({ 
+      roles: { $in: ['platformAdmin', 'verifier'] } 
+    });
 
-    // Create in-app notifications for all platform admins
-    for (const admin of platformAdmins) {
+    // Create in-app notifications for all platform admins and verifiers
+    for (const user of adminsAndVerifiers) {
       await createNotification(
-        admin._id,
+        user._id,
         'host_request',
         `New host request from ${userName} (${userEmail})`,
         { userId, userName, userEmail },
       );
     }
 
-    // Send email notification to platform admins
-    for (const admin of platformAdmins) {
-      await sendHostRequestEmail(admin.email, admin.name, userName, userEmail);
+    // Send email notification to platform admins and verifiers
+    for (const user of adminsAndVerifiers) {
+      if (user.notificationPreferences?.email?.host_request !== false) {
+        await sendHostRequestEmail(user.email, user.name, userName, userEmail);
+      }
     }
+
+    console.log(`Notified ${adminsAndVerifiers.length} admins/verifiers about host request from ${userName}`);
   } catch (error) {
     console.error('Error notifying host request:', error);
   }
@@ -391,6 +414,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
 }
 
 module.exports = {
+  setSocketIO,
   createNotification,
   notifyHostRequest,
   notifyHostStatusUpdate,

@@ -151,6 +151,21 @@ export async function getDashboard() {
   return res.json();
 }
 
+export async function getMe() {
+  const res = await fetch(`${API_URL}/api/users/me`, {
+    headers: { ...getAuthHeaders() }
+  });
+  if (res.status === 401) {
+    return { error: 'unauthorized', message: 'Please log in again.' };
+  }
+  const data = await res.json();
+  if (data && !data.error) {
+    // Update local storage with fresh user data
+    localStorage.setItem('user', JSON.stringify(data));
+  }
+  return data;
+}
+
 export async function updateMe(payload) {
   const res = await fetch(`${API_URL}/api/users/me`, {
     method: 'PATCH',

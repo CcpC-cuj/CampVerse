@@ -13,7 +13,11 @@ const Sidebar = ({ onDiscoverClick }) => {
     (async () => {
       try {
         if (user?.institutionId) {
-          const inst = await getInstitutionById(user.institutionId);
+          // Ensure institutionId is a string (convert ObjectId if needed)
+          const instId = typeof user.institutionId === 'object' && user.institutionId._id 
+            ? user.institutionId._id 
+            : String(user.institutionId);
+          const inst = await getInstitutionById(instId);
           if (mounted && inst) {
             setInstitutionName(inst.name || '');
             setInstitutionVerified(inst.isVerified || false);

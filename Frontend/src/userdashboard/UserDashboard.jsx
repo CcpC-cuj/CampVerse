@@ -9,7 +9,7 @@ import GradientCircularProgress from "../components/GradientCircularProgress.jsx
 import NavBar from './NavBar.jsx';
 
 const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [loadingGate, setLoadingGate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -49,6 +49,8 @@ const UserDashboard = () => {
           }));
           setEventsData(formattedEvents);
         }
+        
+        // If you want to refresh user data, call refreshUser() only when needed (e.g., after profile update)
       } catch {
         setShowOnboarding(false);
       } finally {
@@ -56,7 +58,8 @@ const UserDashboard = () => {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [refreshUser]);
+
 
   // 🔹 Scroll to Discover Events if route matches
   useEffect(() => {
@@ -126,49 +129,6 @@ const UserDashboard = () => {
               className="w-40 h-40 object-contain relative z-10"
             />
           </div>
-
-          {/* Host Request Status Banner */}
-          {user?.hostEligibilityStatus?.status === 'pending' && (
-            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-4 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                <i className="ri-time-line text-yellow-400 text-xl"></i>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-yellow-300">Host Request Pending</h3>
-                <p className="text-sm text-yellow-200/80">
-                  Your request to become a host is submitted. It will be verified soon.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {user?.hostEligibilityStatus?.status === 'rejected' && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-4 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <i className="ri-close-circle-line text-red-400 text-xl"></i>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-300">Host Request Rejected</h3>
-                <p className="text-sm text-red-200/80">
-                  {user.hostEligibilityStatus.remarks || 'Your host request was not approved. Please contact support for more information.'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {user?.hostEligibilityStatus?.status === 'approved' && !user?.canHost && (
-            <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                <i className="ri-checkbox-circle-line text-green-400 text-xl"></i>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-green-300">Host Request Approved!</h3>
-                <p className="text-sm text-green-200/80">
-                  Congratulations! You are now eligible to host events on CampVerse.
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Stats Overview */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">

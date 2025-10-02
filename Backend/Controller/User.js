@@ -160,7 +160,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -262,7 +262,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -769,7 +769,7 @@ async function verifyOtp(req, res) {
       }
       await redisClient.del(email);
       const token = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -806,7 +806,7 @@ async function verifyOtp(req, res) {
     await redisClient.del(email);
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
@@ -845,7 +845,7 @@ async function login(req, res) {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
@@ -1256,24 +1256,61 @@ async function requestHostAccess(req, res) {
       return res.status(400).json({ error: "User is already a host." });
     }
 
-    // Handle file uploads with validation and Firebase Storage
-    const bucket = require('../firebase');
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    // Handle file uploads with validation and storage based on STORAGE_PROVIDER
+    const storageProvider = process.env.STORAGE_PROVIDER || 'firebase';
+    const { firebaseStorageService } = require('../Services/firebaseStorageService');
+    const { supabaseStorageService } = require('../Services/supabaseStorageService');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     const maxSize = 2 * 1024 * 1024; // 2MB
     let idCardPhotoUrl = "";
     let eventPermissionUrl = "";
+    
     if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
       const file = req.files.idCardPhoto[0];
       if (!allowedTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: "Invalid ID card photo type." });
+        return res.status(400).json({ error: "Invalid ID card photo type. Only JPEG, PNG, and PDF allowed." });
       }
       if (file.size > maxSize) {
         return res.status(400).json({ error: "ID card photo too large (max 2MB)." });
       }
-      const fileName = `campverse/hostRequests/${userId}/idCardPhoto_${Date.now()}`;
-      const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
-      idCardPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      
+      // Upload based on STORAGE_PROVIDER setting
+      try {
+        if (storageProvider === 'firebase') {
+          // Upload to Firebase only
+          idCardPhotoUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Firebase for user ${userId}`);
+        } else if (storageProvider === 'supabase') {
+          // Upload to Supabase only
+          idCardPhotoUrl = await supabaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Supabase for user ${userId}`);
+        } else {
+          // Default to Firebase if provider is unknown
+          idCardPhotoUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Firebase (default) for user ${userId}`);
+        }
+      } catch (uploadError) {
+        logger.error('Failed to upload ID card:', uploadError);
+        return res.status(500).json({ error: "Failed to upload ID card. Please try again." });
+      }
     } else {
       return res.status(400).json({ error: "ID card photo is required." });
     }
@@ -1281,15 +1318,49 @@ async function requestHostAccess(req, res) {
     if (req.files && req.files.eventPermission && req.files.eventPermission[0]) {
       const file = req.files.eventPermission[0];
       if (!allowedTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: "Invalid event permission file type." });
+        return res.status(400).json({ error: "Invalid event permission file type. Only JPEG, PNG, and PDF allowed." });
       }
       if (file.size > maxSize) {
         return res.status(400).json({ error: "Event permission file too large (max 2MB)." });
       }
-      const fileName = `campverse/hostRequests/${userId}/eventPermission_${Date.now()}`;
-      const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
-      eventPermissionUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      
+      // Upload based on STORAGE_PROVIDER setting
+      try {
+        if (storageProvider === 'firebase') {
+          // Upload to Firebase only
+          eventPermissionUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Firebase for user ${userId}`);
+        } else if (storageProvider === 'supabase') {
+          // Upload to Supabase only
+          eventPermissionUrl = await supabaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Supabase for user ${userId}`);
+        } else {
+          // Default to Firebase if provider is unknown
+          eventPermissionUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Firebase (default) for user ${userId}`);
+        }
+      } catch (uploadError) {
+        logger.error('Failed to upload event permission:', uploadError);
+        return res.status(500).json({ error: "Failed to upload event permission. Please try again." });
+      }
     }
 
     user.hostEligibilityStatus = {
@@ -1312,7 +1383,7 @@ async function requestHostAccess(req, res) {
     logger.error("RequestHostAccess error:", err);
     return res
       .status(500)
-      .json({ error: "Server error requesting host access." });
+      .json({ error: err.message || "Server error requesting host access." });
   }
 }
 
