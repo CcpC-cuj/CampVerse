@@ -232,3 +232,9 @@ All tests pass if:
 
 **Testing Complete!** 🎉
 If all tests pass, the RSVP system is fully functional.
+
+
+**Ongoing Errors**
+Failed to load resource: the server responded with a status of 404 (Not Found)Understand this error
+index-B4V6YzM9.js:214 Host request error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+q @ index-B4V6YzM9.js:214Understand this error
