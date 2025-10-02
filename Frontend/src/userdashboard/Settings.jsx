@@ -15,7 +15,7 @@ import NavBar from './NavBar';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, setUser, logout } = useAuth();
+  const { user, setUser, logout, refreshUser } = useAuth();
 
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,6 +64,9 @@ const Settings = () => {
 
   // Reset scroll position when component mounts and disable scroll restoration
   useEffect(() => {
+    // Refresh user data on component mount to ensure latest status
+    refreshUser();
+
     // Disable browser scroll restoration
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
@@ -1058,23 +1061,32 @@ const handleSaveProfile = async () => {
                           </>
                         )}
                       </div>
-                      {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                      <div className="flex flex-col gap-2">
+                        {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate('/host/manage-events')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                          >
+                            Go to Host Dashboard
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowHostModal(true)}
+                            className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                          >
+                            Become a Host
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => navigate('/host/manage-events')}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                          onClick={refreshUser}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-button text-sm"
                         >
-                          Go to Host Dashboard
+                          Refresh Data
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setShowHostModal(true)}
-                          className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
-                        >
-                          Become a Host
-                        </button>
-                      )}
+                      </div>
                     </div>
                     {/* ✅ /FIXED */}
                   </div>

@@ -160,7 +160,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -262,7 +262,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -769,7 +769,7 @@ async function verifyOtp(req, res) {
       }
       await redisClient.del(email);
       const token = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -806,7 +806,7 @@ async function verifyOtp(req, res) {
     await redisClient.del(email);
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
@@ -845,7 +845,7 @@ async function login(req, res) {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
