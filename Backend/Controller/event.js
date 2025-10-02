@@ -984,9 +984,9 @@ async function getGoogleCalendarLink(req, res) {
     res.status(500).json({ error: 'Error generating calendar link.' });
   }
 }
-// **
-//  * Get public event by ID (for sharing, only approved events, no auth required)
-//  */
+/**
+ * Get public event by ID (for sharing, only approved events, no auth required)
+ */
 async function getPublicEventById(req, res) {
   try {
     const eventId = req.params.id;
