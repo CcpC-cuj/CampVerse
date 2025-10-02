@@ -31,8 +31,19 @@ async function authenticateToken(req, res, next) {
       return res.status(401).json({ error: 'No token provided.' });
     }
 
-    // Check if token is blacklisted
-    const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+    // Check if token is blacklisted (with Redis error handling)
+    let isBlacklisted = false;
+    try {
+      if (redisClient && redisClient.isOpen) {
+        const blacklistEntry = await redisClient.get(`blacklist:${token}`);
+        isBlacklisted = !!blacklistEntry;
+      }
+    } catch (redisError) {
+      console.error('Redis blacklist check failed:', redisError);
+      // Fail open: continue if Redis is down (security vs availability trade-off)
+      // Change to 'return res.status(503)...' to fail closed for higher security
+    }
+    
     if (isBlacklisted) {
       return res.status(401).json({ error: 'Token has been revoked.' });
     }
@@ -43,7 +54,7 @@ async function authenticateToken(req, res, next) {
       issuer: 'campverse',
       audience: 'campverse-users',
       clockTolerance: 30, // Allow 30 seconds clock skew
-    }, (err, user) => {
+    }, async (err, user) => {
       if (err) {
         if (err.name === 'TokenExpiredError') {
           return res.status(401).json({ error: 'Token expired.' });
@@ -57,6 +68,23 @@ async function authenticateToken(req, res, next) {
       // Check if user still exists and is active
       if (!user || !user.id) {
         return res.status(401).json({ error: 'Invalid token payload.' });
+      }
+
+      // Validate user still exists in database and is active
+      try {
+        const User = require('../Models/User');
+        const dbUser = await User.findById(user.id).select('_id roles isVerified');
+        
+        if (!dbUser) {
+          return res.status(401).json({ error: 'User no longer exists.' });
+        }
+        
+        // Update user object with latest roles from database
+        user.roles = dbUser.roles;
+        user.isVerified = dbUser.isVerified;
+      } catch (dbError) {
+        console.error('User validation error:', dbError);
+        return res.status(500).json({ error: 'Authentication validation failed.' });
       }
 
       req.user = user;
