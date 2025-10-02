@@ -4,7 +4,6 @@
  */
 
 /**
-/**
  * Format a date string/object to a locale string in a specified timezone
  * @param {string|Date} dateString - Date string or Date object (typically in UTC from backend)
  * @param {Object} options - Intl.DateTimeFormat options
