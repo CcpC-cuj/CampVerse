@@ -4,8 +4,8 @@ const hostEligibilityStatusSchema = new mongoose.Schema(
   {
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ['none', 'pending', 'approved', 'rejected'],
+      default: 'none',
     },
     requestedAt: Date,
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -66,10 +66,13 @@ const userSchema = new mongoose.Schema({
     default: 'pending',
   },
   collegeIdNumber: { type: String },
-  roles: { type: [String], default: ['student,host'] },
+  roles: { type: [String], default: ['student'] },
   isVerified: { type: Boolean, default: false },
   canHost: { type: Boolean, default: false },
-  hostEligibilityStatus: hostEligibilityStatusSchema,
+  hostEligibilityStatus: {
+    type: hostEligibilityStatusSchema,
+    default: () => ({ status: 'none' })
+  },
   hostRequestIdCardPhoto: { type: String }, // URL to uploaded ID card photo
   hostRequestEventPermission: { type: String }, // URL to uploaded event permission document (optional)
   verifierEligibilityStatus: verifierEligibilityStatusSchema,

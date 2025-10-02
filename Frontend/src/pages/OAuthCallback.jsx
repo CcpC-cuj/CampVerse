@@ -50,12 +50,14 @@ const OAuthCallback = () => {
     googleSignIn({ token: oauthToken })
       .then((response) => {
         setIsProcessing(false); // Reset processing flag
-        
         if (response.token) {
           login(response.token, response.user);
           // Clear the hash to prevent re-processing
           window.location.hash = '';
-          navigate('/dashboard');
+          // Redirect to stored route or dashboard
+          const redirectPath = sessionStorage.getItem('postAuthRedirect') || '/dashboard';
+          sessionStorage.removeItem('postAuthRedirect');
+          navigate(redirectPath);
         } else if (response.error) {
           setError(response.error);
           if (response.error.includes('academic emails')) {

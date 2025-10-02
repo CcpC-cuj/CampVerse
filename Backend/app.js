@@ -633,6 +633,23 @@ mongoose
       logger.warn('MongoDB disconnected');
     });
     
+    // Initialize QR Code cleanup cron job
+    const { runCleanup } = require('./Services/qrCleanupService');
+    const cron = require('node-cron');
+    
+    // Run QR cleanup every hour
+    cron.schedule('0 * * * *', async () => {
+      logger.info('[Cron] Starting hourly QR code cleanup...');
+      try {
+        const results = await runCleanup();
+        logger.info('[Cron] QR cleanup completed:', results);
+      } catch (err) {
+        logger.error('[Cron] QR cleanup failed:', err);
+      }
+    });
+    
+    logger.info('QR code cleanup cron job scheduled (runs hourly)');
+    
     // Graceful shutdown
     process.on('SIGINT', async () => {
       logger.info('Received SIGINT, closing MongoDB connection...');

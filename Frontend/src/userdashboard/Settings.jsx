@@ -1039,23 +1039,44 @@ const handleSaveProfile = async () => {
                       </button>
                     </div>
 
-                    {/* ✅ ADDED: Become a Host CTA (non-destructive) */}
+                    {/* ✅ FIXED: Host CTA Logic - Check if user is already a verified host */}
                     <div className="mt-4 flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
                       <div>
-                        <h4 className="font-medium text-[#cbb3ff]">Want to become a host?</h4>
-                        <p className="text-sm text-[#cbb3ff]/80">
-                          Start hosting events and manage attendees from your host dashboard.
-                        </p>
+                        {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                          <>
+                            <h4 className="font-medium text-[#cbb3ff]">You're a verified host!</h4>
+                            <p className="text-sm text-[#cbb3ff]/80">
+                              Access your host dashboard to manage events and attendees.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h4 className="font-medium text-[#cbb3ff]">Want to become a host?</h4>
+                            <p className="text-sm text-[#cbb3ff]/80">
+                              Start hosting events and manage attendees from your host dashboard.
+                            </p>
+                          </>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowHostModal(true)}
-                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
-                      >
-                        Become a Host
-                      </button>
+                      {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate('/host/manage-events')}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                        >
+                          Go to Host Dashboard
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowHostModal(true)}
+                          className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                        >
+                          Become a Host
+                        </button>
+                      )}
                     </div>
-                    {/* ✅ /ADDED */}
+                    {/* ✅ /FIXED */}
                   </div>
                 </div>
               </div>

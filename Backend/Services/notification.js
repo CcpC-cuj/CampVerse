@@ -100,7 +100,7 @@ async function notifyInstitutionRequest({
       );
     }
     
-    console.log(`Notified ${adminAndVerifiers.length} admins/verifiers about institution request for ${institutionName}`);
+  // Notified ${adminAndVerifiers.length} admins/verifiers about institution request for ${institutionName} (console.log removed)
   } catch (error) {
     console.error('Error notifying institution request:', error);
   }
@@ -316,7 +316,7 @@ async function notifyInstitutionStatusUpdate({
       await sendInstitutionStatusEmail(user.email, user.name, institutionName, status, remarks);
     }
     
-    console.log(`Notified ${affectedUsers.length} users about institution ${statusText}: ${institutionName}`);
+  // Notified ${affectedUsers.length} users about institution ${statusText}: ${institutionName} (console.log removed)
   } catch (error) {
     console.error('Error notifying institution status update:', error);
   }

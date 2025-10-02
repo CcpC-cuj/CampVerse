@@ -280,9 +280,10 @@ const querySchemas = {
     type: joi.string().optional(),
   }).strict(),
 
+  // Date range validation (for filtering, not for event creation)
   dateRange: joi.object({
-    startDate: joi.date().iso().optional(),
-    endDate: joi.date().iso().min(joi.ref('startDate')).optional(),
+    startDate: joi.date().iso().optional(), // Used for filtering date ranges
+    endDate: joi.date().iso().min(joi.ref('startDate')).optional(), // Used for filtering date ranges
   }).strict(),
 };
 

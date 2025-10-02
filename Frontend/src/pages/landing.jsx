@@ -18,7 +18,13 @@ import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   // Control which popup is visible
   const [showLogin, setShowLogin] = useState(false);
@@ -37,9 +43,6 @@ const Landing = () => {
       const isOAuthToken = hash.includes('id_token=') || hash.includes('access_token=');
       
       if (isOAuthToken) {
-        console.log("🔵 [LANDING] OAuth token detected on landing page");
-        console.log("🔵 [LANDING] Processing token directly...");
-        console.log("🔵 [LANDING] Hash:", hash);
         
         try {
           // Extract token from hash
@@ -49,11 +52,9 @@ const Landing = () => {
           const oauthToken = idToken || accessToken;
           
           if (oauthToken) {
-            console.log("🔵 [LANDING] Calling googleSignIn API with token...");
             const response = await googleSignIn({ token: oauthToken });
             
             if (response.token) {
-              console.log("🔵 [LANDING] Login successful, redirecting to dashboard");
               login(response.token, response.user);
               // Clear the hash and redirect
               window.location.hash = '';
@@ -154,30 +155,28 @@ const Landing = () => {
             try {
               const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
               if (res.token && res.user) {
-                // Update AuthContext state
-                login(res.token, res.user);
-                alert('Email verified successfully!');
-                setShowOtp(false);
-                // Use navigate instead of window.location.href for better routing
-                navigate('/dashboard');
-              } else {
-                alert(res.error || 'OTP verification failed.');
-              }
+                  // Update AuthContext state
+                  login(res.token, res.user);
+                  setShowOtp(false);
+                  // Use navigate instead of window.location.href for better routing
+                  navigate('/dashboard');
+                } else {
+                  // ...existing code...
+                }
             } catch (err) {
-              alert('Error verifying OTP: ' + err.message);
+              // ...existing code...
             }
           }}
           onResendOtp={async () => {
             try {
               const res = await import('../api').then(m => m.resendOtp({ email: otpEmail }));
               if (res.message) {
-                alert('OTP resent to your email.');
-                // The timer reset is handled inside OtpModal via setTimer(30)
-              } else {
-                alert(res.error || 'Failed to resend OTP.');
-              }
+                  // The timer reset is handled inside OtpModal via setTimer(30)
+                } else {
+                  // ...existing code...
+                }
             } catch (err) {
-              alert('Error resending OTP: ' + err.message);
+              // ...existing code...
             }
           }}
         />

@@ -13,6 +13,8 @@ import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
 import ResetPassword from "./pages/ResetPassword";
+import EventDetailsPage from "./pages/PublicEventDetailsPage";
+import QRViewer from "./components/QRViewer";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 import { EventProvider } from "./userdashboard/EventContext";
@@ -27,6 +29,9 @@ import {
   HostAnalytics,
   HostSettings,
 } from "./hostdashboard";
+import QRScanner from "./hostdashboard/QRScanner";
+import BulkAttendance from "./hostdashboard/BulkAttendance";
+import AttendanceDashboard from "./hostdashboard/AttendanceDashboard";
 
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {
@@ -116,6 +121,19 @@ function App() {
             />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/oauth-callback" element={<OAuthCallback />} />
+            
+            {/* Event details route */}
+            <Route path="/events/:id" element={<EventDetailsPage />} />
+            
+            {/* QR Code viewer route */}
+            <Route 
+              path="/events/:id/qr" 
+              element={
+                <ProtectedRoute>
+                  <QRViewer />
+                </ProtectedRoute>
+              } 
+            />
 
             {/* Host routes */}
             <Route
@@ -160,6 +178,37 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* QR Scanner route */}
+            <Route
+              path="/host/events/:eventId/qr-scanner"
+              element={
+                <ProtectedRoute>
+                  <QRScanner />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Attendance Dashboard route */}
+            <Route
+              path="/host/events/:eventId/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Bulk Attendance route */}
+            <Route
+              path="/host/events/:eventId/bulk-attendance"
+              element={
+                <ProtectedRoute>
+                  <BulkAttendance />
+                </ProtectedRoute>
+              }
+            />
+            
             <Route
               path="/host/applications"
               element={

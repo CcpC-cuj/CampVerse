@@ -129,8 +129,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
@@ -219,8 +220,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split("@")[0],
@@ -1023,10 +1025,29 @@ async function getDashboard(req, res) {
     // Get participation logs for more detailed stats
     const participationLogs = await EventParticipationLog.find({
       userId: user._id,
+    }).populate({
+      path: 'eventId',
+      populate: {
+        path: 'hostUserId',
+        select: 'name email profilePicture'
+      }
     });
+    
     const registeredEvents = participationLogs.filter(
       (log) => log.status === "registered",
     ).length;
+
+    // Get registered events with full details for dashboard
+    const registeredEventsWithDetails = participationLogs
+      .filter(log => log.status === "registered" && log.eventId)
+      .map(log => ({
+        ...log.eventId.toObject(),
+        userRegistration: {
+          status: log.status,
+          registeredAt: log.registeredAt,
+          qrToken: log.qrToken
+        }
+      }));
 
     // Upcoming events count for the user (registered and in the future)
     const now = new Date();
@@ -1037,7 +1058,7 @@ async function getDashboard(req, res) {
     if (registeredEventIds.length > 0) {
       upcomingEventsCount = await Event.countDocuments({
         _id: { $in: registeredEventIds },
-        "schedule.start": { $gt: now },
+        date: { $gt: now },
       });
     }
 
@@ -1089,7 +1110,12 @@ async function getDashboard(req, res) {
         (Date.now() - user.createdAt) / (1000 * 60 * 60 * 24),
       ), // days since account creation
     };
-    return res.json({ user, stats });
+    
+    return res.json({ 
+      user, 
+      stats,
+      events: registeredEventsWithDetails // Include registered events in dashboard response
+    });
   } catch (err) {
     logger.error("GetDashboard error:", err);
     return res.status(500).json({ error: "Server error fetching dashboard." });

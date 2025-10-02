@@ -44,9 +44,10 @@ const SignupModal = ({
       setIsLoading(true);
       const response = await register(formData);
       if (response.message) {
-        alert(`OTP sent to your email.`);
+  // ...existing code...
         onClose();
         onSignupSuccess(formData.email);
+        // No redirect: stay on current page so event view updates with authentication
       } else {
         setError(response.error || "Registration failed");
       }
@@ -61,10 +62,13 @@ const SignupModal = ({
   const handleGoogleSignIn = async () => {
     setError("");
     setIsLoading(true);
+    // Store current route for post-auth redirect
+    sessionStorage.setItem('postAuthRedirect', window.location.pathname + window.location.search + window.location.hash);
     // Start Google OAuth flow; only initiation errors are handled here.
     // The actual OAuth response will be processed by /oauth-callback.
     try {
       await getGoogleToken();
+      // No redirect: stay on current page so event view updates with authentication
     } catch (err) {
       console.error("Google OAuth initiation error:", err);
       setError("Failed to initiate Google sign-in. Please try again.");

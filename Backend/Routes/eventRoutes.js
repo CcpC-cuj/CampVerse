@@ -15,6 +15,9 @@ const {
   rejectCoHost,
   verifyEvent,
   getGoogleCalendarLink,
+  getAttendance,
+  bulkMarkAttendance,
+  regenerateQR,
 } = require('../Controller/event');
 const {
   advancedEventSearch,
@@ -35,6 +38,23 @@ const {
 const router = express.Router();
 
 // Public list events endpoint for browsing (used by tests and landing pages)
+/**
+ * @swagger
+ * /api/events/public/{id}:
+ *   get:
+ *     summary: Get public event by ID (for sharing, only approved events, no auth required)
+ *     tags: [Event]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: Public event details }
+ *       404: { description: Not found or not approved }
+ */
+router.get('/public/:id', require('../Controller/event').getPublicEventById);
 router.get('/', async (req, res) => {
   try {
     // Check if user is authenticated
@@ -229,6 +249,102 @@ router.post('/rsvp', authenticateToken, rsvpEvent);
  *       500: { description: Error cancelling RSVP }
  */
 router.post('/cancel-rsvp', authenticateToken, cancelRsvp);
+
+/**
+ * @swagger
+ * /api/events/my-qr/{eventId}:
+ *   get:
+ *     summary: Get user's QR code for specific event
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: QR code details }
+ *       404: { description: No RSVP found or QR code not available }
+ *       410: { description: QR code expired or already used }
+ *       500: { description: Error fetching QR code }
+ */
+router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const userId = req.user.id;
+    const EventParticipationLog = require('../Models/EventParticipationLog');
+    
+    const log = await EventParticipationLog.findOne({
+      userId,
+      eventId,
+      status: 'registered'
+    }).populate('eventId');
+    
+    if (!log) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'No RSVP found for this event.',
+        message: 'You have not registered for this event or your registration was cancelled'
+      });
+    }
+    
+    // Support both legacy qrToken and new qrCode system
+    const qrToken = log.qrCode?.token || log.qrToken;
+    
+    if (!qrToken) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'QR code not available.',
+        message: 'QR code was not generated for your registration'
+      });
+    }
+    
+    // Check if QR is used
+    if (log.qrCode?.isUsed) {
+      return res.status(410).json({ 
+        success: false,
+        error: 'QR code has already been used.',
+        message: 'Your attendance has already been marked',
+        usedAt: log.qrCode.usedAt
+      });
+    }
+    
+    // Check if QR is expired
+    if (log.qrCode?.expiresAt && new Date() > log.qrCode.expiresAt) {
+      return res.status(410).json({ 
+        success: false,
+        error: 'QR code has expired.',
+        message: 'This QR code has expired',
+        expiresAt: log.qrCode.expiresAt
+      });
+    }
+    
+    // Generate QR image on-the-fly
+    const qrcode = require('qrcode');
+    const qrImage = await qrcode.toDataURL(qrToken);
+    
+    res.json({
+      success: true,
+      qrCode: {
+        image: qrImage,
+        token: qrToken,
+        expiresAt: log.qrCode?.expiresAt || null,
+        eventTitle: log.eventId.title,
+        eventDate: log.eventId.date,
+        eventLocation: log.eventId.location
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching QR code:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error fetching QR code.',
+      message: 'Failed to retrieve QR code. Please try again.'
+    });
+  }
+});
 
 /**
  * @swagger
@@ -534,4 +650,77 @@ router.get('/user', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/events/{id}/attendance:
+ *   get:
+ *     summary: Get attendance list for event (host/co-host only)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: Attendance list }
+ *       403: { description: Forbidden }
+ */
+router.get('/:id/attendance', authenticateToken, getAttendance);
+
+/**
+ * @swagger
+ * /api/events/{id}/bulk-attendance:
+ *   post:
+ *     summary: Bulk mark attendance for multiple users (host/co-host only)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200: { description: Attendance marked }
+ *       403: { description: Forbidden }
+ */
+router.post('/:id/bulk-attendance', authenticateToken, bulkMarkAttendance);
+
+/**
+ * @swagger
+ * /api/events/{id}/regenerate-qr:
+ *   post:
+ *     summary: Regenerate QR code for user's registration
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200: { description: QR code regenerated }
+ *       404: { description: No registration found }
+ *       410: { description: Event has ended }
+ */
+router.post('/:id/regenerate-qr', authenticateToken, regenerateQR);
+
 module.exports = router;
+

@@ -10,6 +10,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 	const [eventForm, setEventForm] = useState({
 		title: '',
 		description: '',
+		about: '',
 		date: '',
 		location: '',
 		venue: '',
@@ -30,12 +31,13 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		},
 		audienceType: '',
 		cohosts: [],
-		sessions: '',
+		sessions: [],
 		eventLink: '',
 		certificateEnabled: false,
 		chatEnabled: false,
 	});
 	const [cohostInput, setCohostInput] = useState(''); // For adding cohost email
+	const [sessionInput, setSessionInput] = useState({ title: '', time: '', speaker: '' }); // For adding sessions
 	const [bannerUrl, setBannerUrl] = useState(null);
 	const [logoUrl, setLogoUrl] = useState(null);
 	const [loading, setLoading] = useState(false);
@@ -126,6 +128,23 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		}));
 	};
 
+	const handleAddSession = () => {
+		if (sessionInput.title.trim() && sessionInput.time.trim() && sessionInput.speaker.trim()) {
+			setEventForm(prev => ({
+				...prev,
+				sessions: [...prev.sessions, { ...sessionInput }]
+			}));
+			setSessionInput({ title: '', time: '', speaker: '' });
+		}
+	};
+
+	const handleRemoveSession = (idx) => {
+		setEventForm(prev => ({
+			...prev,
+			sessions: prev.sessions.filter((_, i) => i !== idx)
+		}));
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!validateStep(4)) return;
@@ -136,6 +155,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			const eventData = {
 				title: eventForm.title,
 				description: eventForm.description,
+				about: eventForm.about || '',
 				type: eventForm.category,
 				organizationName: eventForm.organizationName,
 				location: {
@@ -160,16 +180,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					linkedin: eventForm.socialLinks?.linkedin || ''
 				},
 				audienceType: eventForm.audienceType || 'public',
-				sessions: eventForm.sessions && eventForm.sessions.trim()
-					? eventForm.sessions.split('\n').map(sessionLine => {
-						const parts = sessionLine.trim().split(' - ');
-						return {
-							title: parts[0] || sessionLine.trim(),
-							time: parts[1] || 'TBD',
-							speaker: parts[2] || 'TBD'
-						};
-					}).filter(session => session.title)
-					: [],
+				sessions: eventForm.sessions || [],
 				features: {
 					certificateEnabled: eventForm.certificateEnabled || false,
 					chatEnabled: eventForm.chatEnabled || false
@@ -190,7 +201,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			const response = await createEventWithFiles(formData);
 			if (response.success && response.event) {
 				if (onSuccess) onSuccess(response.event);
-				alert('Event created successfully!');
 				if (eventForm.cohosts.length > 0) {
 					for (const email of eventForm.cohosts) {
 						const userResult = await findUserByEmail(email);
@@ -202,10 +212,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					}
 				}
 			} else {
-				alert(response.error || response.message || 'Failed to create event');
+				// ...existing code...
 			}
 		} catch (err) {
-			alert('Failed to create event: ' + err.message);
+			// ...existing code...
 		} finally {
 			setLoading(false);
 		}
@@ -240,6 +250,17 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								placeholder="Describe your event..."
 							/>
 							{formErrors.description && <p className="text-red-400 text-sm mt-1">{formErrors.description}</p>}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
+							<textarea 
+								name="about" 
+								value={eventForm.about} 
+								onChange={handleFormChange} 
+								rows={3} 
+								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+								placeholder="Additional details about your event..."
+							/>
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Event Date & Time *</label>
@@ -488,14 +509,56 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Sessions/Agenda</label>
-							<textarea 
-								name="sessions" 
-								value={eventForm.sessions} 
-								onChange={handleFormChange} 
-								rows={3} 
-								placeholder="Session 1: Title, Speaker, Time\nSession 2: ..." 
-								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
-							/>
+							<div className="space-y-2">
+								<div className="grid grid-cols-3 gap-2">
+									<input 
+										type="text" 
+										value={sessionInput.title}
+										onChange={(e) => setSessionInput(prev => ({ ...prev, title: e.target.value }))}
+										placeholder="Session Title" 
+										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+									/>
+									<input 
+										type="text" 
+										value={sessionInput.time}
+										onChange={(e) => setSessionInput(prev => ({ ...prev, time: e.target.value }))}
+										placeholder="Time (e.g. 10:00 AM)" 
+										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+									/>
+									<input 
+										type="text" 
+										value={sessionInput.speaker}
+										onChange={(e) => setSessionInput(prev => ({ ...prev, speaker: e.target.value }))}
+										placeholder="Speaker Name" 
+										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+									/>
+								</div>
+								<button 
+									type="button" 
+									onClick={handleAddSession} 
+									className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
+								>
+									+ Add Session
+								</button>
+								{eventForm.sessions.length > 0 && (
+									<div className="space-y-2 mt-3">
+										{eventForm.sessions.map((session, idx) => (
+											<div key={idx} className="flex items-center justify-between bg-purple-900/30 px-3 py-2 rounded-lg">
+												<div className="text-purple-200 text-sm">
+													<span className="font-medium">{session.title}</span> • {session.time} • {session.speaker}
+												</div>
+												<button 
+													type="button" 
+													onClick={() => handleRemoveSession(idx)} 
+													className="text-red-400 hover:text-red-300 text-sm"
+												>
+													Remove
+												</button>
+											</div>
+										))}
+									</div>
+								)}
+							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-4">
 							<div className="flex items-center gap-3">

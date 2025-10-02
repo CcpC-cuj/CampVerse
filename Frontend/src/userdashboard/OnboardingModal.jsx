@@ -252,45 +252,86 @@ const OnboardingModal = ({ visible, onComplete }) => {
         )}
 
         {step === 3 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div>
               <label className="text-sm text-slate-300">Interests</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={interestInput} onChange={(e)=>setInterestInput(e.target.value)} placeholder="Add interest and press +" />
-                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('interests', interestInput.trim()); setInterestInput('');}}>+</button>
+                <input
+                  className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                  value={interestInput}
+                  onChange={(e) => setInterestInput(e.target.value)}
+                  placeholder="Add interest and press +"
+                />
+                <button
+                  className="shrink-0 bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 py-2 rounded"
+                  onClick={() => {
+                    addChip('interests', interestInput.trim());
+                    setInterestInput('');
+                  }}
+                >
+                  +
+                </button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.interests.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('interests',i)} />
+                {preferences.interests.map((v, i) => (
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('interests', i)} />
                 ))}
               </div>
-              <SuggestionPills items={filteredInterestSuggestions} onPick={(v)=>addChip('interests', v)} />
+              <SuggestionPills items={filteredInterestSuggestions} onPick={(v) => addChip('interests', v)} />
             </div>
+
             <div>
               <label className="text-sm text-slate-300">Skills</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={skillInput} onChange={(e)=>setSkillInput(e.target.value)} placeholder="Add skill and press +" />
-                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('skills', skillInput.trim()); setSkillInput('');}}>+</button>
+                <input
+                  className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  placeholder="Add skill and press +"
+                />
+                <button
+                  className="shrink-0 bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 py-2 rounded"
+                  onClick={() => {
+                    addChip('skills', skillInput.trim());
+                    setSkillInput('');
+                  }}
+                >
+                  +
+                </button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.skills.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('skills',i)} />
+                {preferences.skills.map((v, i) => (
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('skills', i)} />
                 ))}
               </div>
-              <SuggestionPills items={filteredSkillSuggestions} onPick={(v)=>addChip('skills', v)} />
+              <SuggestionPills items={filteredSkillSuggestions} onPick={(v) => addChip('skills', v)} />
             </div>
+
             <div>
               <label className="text-sm text-slate-300">Learning Goals</label>
               <div className="flex gap-2 mt-1">
-                <input className="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={goalInput} onChange={(e)=>setGoalInput(e.target.value)} placeholder="Add goal and press +" />
-                <button className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 rounded" onClick={()=>{addChip('learningGoals', goalInput.trim()); setGoalInput('');}}>+</button>
+                <input
+                  className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded px-3 py-2"
+                  value={goalInput}
+                  onChange={(e) => setGoalInput(e.target.value)}
+                  placeholder="Add goal and press +"
+                />
+                <button
+                  className="shrink-0 bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 py-2 rounded"
+                  onClick={() => {
+                    addChip('learningGoals', goalInput.trim());
+                    setGoalInput('');
+                  }}
+                >
+                  +
+                </button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
-                {preferences.learningGoals.map((v,i)=>(
-                  <Chip key={`${v}-${i}`} label={v} onRemove={()=>removeChip('learningGoals',i)} />
+                {preferences.learningGoals.map((v, i) => (
+                  <Chip key={`${v}-${i}`} label={v} onRemove={() => removeChip('learningGoals', i)} />
                 ))}
               </div>
-              <SuggestionPills items={filteredGoalSuggestions} onPick={(v)=>addChip('learningGoals', v)} />
+              <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => addChip('learningGoals', v)} />
             </div>
           </div>
         )}
