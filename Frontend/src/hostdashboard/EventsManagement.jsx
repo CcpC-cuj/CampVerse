@@ -197,11 +197,11 @@ const EventsManagement = () => {
       } else {
         const errorData = await response.json();
         console.error('Update failed:', errorData);
-        alert('Failed to update event: ' + (errorData.error || 'Unknown error'));
+        // ...existing code...
       }
     } catch (error) {
       console.error('Error updating event:', error);
-      alert('Failed to update event: ' + error.message);
+      // ...existing code...
     } finally {
       setLoading(false);
     }
@@ -231,14 +231,11 @@ const EventsManagement = () => {
         event.id !== eventId && event._id !== eventId
       ));
       
-      setShowDeleteModal(false);
-      setSelectedEvent(null);
-      
-      // Show success message
-      alert('Event deleted successfully');
+  setShowDeleteModal(false);
+  setSelectedEvent(null);
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert(`Failed to delete event: ${error.message}`);
+      // ...existing code...
     } finally {
       setLoading(false);
     }

@@ -44,7 +44,7 @@ const SignupModal = ({
       setIsLoading(true);
       const response = await register(formData);
       if (response.message) {
-        // OTP sent to your email. (alert removed)
+  // ...existing code...
         onClose();
         onSignupSuccess(formData.email);
         // No redirect: stay on current page so event view updates with authentication

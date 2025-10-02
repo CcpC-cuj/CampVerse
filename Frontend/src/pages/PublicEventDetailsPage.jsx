@@ -25,16 +25,11 @@ const EventDetailsPage = () => {
   const loadEvent = async () => {
     try {
       setLoading(true);
-      const response = await getPublicEventById(id);
-      console.log('📊 Public Event Response:', response);
+  const response = await getPublicEventById(id);
       if (response.success && response.data) {
         setEvent(response.data);
         // Check if user is already registered
         const isRegistered = response.data.userRegistration ? true : false;
-        console.log('✅ User Registration Status:', {
-          isRegistered,
-          userRegistration: response.data.userRegistration
-        });
         setIsRsvped(isRegistered);
       } else {
         setError('Event not found');
@@ -53,32 +48,25 @@ const EventDetailsPage = () => {
       return;
     }
 
-    console.log('🎯 RSVP Action:', { eventId: id, isCurrentlyRsvped: isRsvped });
+  // ...existing code...
     setRsvpError("");
     try {
-      const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
-      console.log('📬 RSVP Response:', response);
+  const response = isRsvped ? await cancelRsvp(id) : await rsvpEvent(id);
       
       if (response.success) {
         // Success - reload event data to get updated registration status
         await loadEvent();
         setRsvpError("");
         
-        // Show success message
-        const successMessage = isRsvped 
-          ? "RSVP cancelled successfully!" 
-          : response.message || "RSVP successful! Check your email for the QR code.";
-        alert(successMessage);
+        // ...existing code...
       } else {
         // Error - still reload to sync state
         await loadEvent();
         
         // Handle specific error cases
         if (response.status === 409 || response.error?.includes("already registered")) {
-          console.log('⚠️ Already registered error');
           setRsvpError("You are already registered for this event.");
         } else {
-          console.log('❌ RSVP failed:', response);
           setRsvpError(response.message || response.error || "RSVP failed. Please try again.");
         }
       }

@@ -201,7 +201,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			const response = await createEventWithFiles(formData);
 			if (response.success && response.event) {
 				if (onSuccess) onSuccess(response.event);
-				alert('Event created successfully!');
 				if (eventForm.cohosts.length > 0) {
 					for (const email of eventForm.cohosts) {
 						const userResult = await findUserByEmail(email);
@@ -213,10 +212,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					}
 				}
 			} else {
-				alert(response.error || response.message || 'Failed to create event');
+				// ...existing code...
 			}
 		} catch (err) {
-			alert('Failed to create event: ' + err.message);
+			// ...existing code...
 		} finally {
 			setLoading(false);
 		}

@@ -155,30 +155,28 @@ const Landing = () => {
             try {
               const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
               if (res.token && res.user) {
-                // Update AuthContext state
-                login(res.token, res.user);
-                alert('Email verified successfully!');
-                setShowOtp(false);
-                // Use navigate instead of window.location.href for better routing
-                navigate('/dashboard');
-              } else {
-                alert(res.error || 'OTP verification failed.');
-              }
+                  // Update AuthContext state
+                  login(res.token, res.user);
+                  setShowOtp(false);
+                  // Use navigate instead of window.location.href for better routing
+                  navigate('/dashboard');
+                } else {
+                  // ...existing code...
+                }
             } catch (err) {
-              alert('Error verifying OTP: ' + err.message);
+              // ...existing code...
             }
           }}
           onResendOtp={async () => {
             try {
               const res = await import('../api').then(m => m.resendOtp({ email: otpEmail }));
               if (res.message) {
-                alert('OTP resent to your email.');
-                // The timer reset is handled inside OtpModal via setTimer(30)
-              } else {
-                alert(res.error || 'Failed to resend OTP.');
-              }
+                  // The timer reset is handled inside OtpModal via setTimer(30)
+                } else {
+                  // ...existing code...
+                }
             } catch (err) {
-              alert('Error resending OTP: ' + err.message);
+              // ...existing code...
             }
           }}
         />

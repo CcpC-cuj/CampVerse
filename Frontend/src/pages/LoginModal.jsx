@@ -34,11 +34,11 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
         onClose();
         // No redirect: stay on current page so event view updates with authentication
       } else {
-        alert(response.error || 'Login failed');
+  // ...existing code...
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed: ' + error.message);
+  // ...existing code...
     } finally {
       setIsLoading(false);
     }

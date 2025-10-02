@@ -110,7 +110,7 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/events/${event._id}`);
-                    alert('Event link copied to clipboard!');
+                    // ...existing code...
                     setShowDropdown(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800 flex items-center gap-2"
