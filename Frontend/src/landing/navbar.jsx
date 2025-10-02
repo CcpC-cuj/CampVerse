@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 const Navbar = ({ onLoginClick, onSignupClick }) => {
-  const [hovered, setHovered] = useState("login"); // Default: hover on "login"
+  const [hovered, setHovered] = useState(null); // Track hovered button
   const [isOpen, setIsOpen] = useState(false); // Mobile menu toggle
 
   const navLinks = ["features", "events", "testimonials", "faq"];
@@ -35,9 +35,10 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
             onClick={onLoginClick}
             onMouseEnter={() => setHovered("login")}
             onMouseLeave={() => setHovered(null)}
-            className={`px-5 py-2 rounded-full text-white transition duration-300 ${
-              hovered === "signup" ? "bg-transparent" : "bg-white/10"
-            } hover:scale-105`}
+            className={`px-5 py-2 rounded-full text-white transition duration-300
+              ${hovered === "login" ? "bg-[#9b5de5]" : "bg-white/10"}
+              ${hovered === "login" ? "" : ""}
+            `}
           >
             Log In
           </button>
@@ -47,7 +48,9 @@ const Navbar = ({ onLoginClick, onSignupClick }) => {
             onClick={onSignupClick}
             onMouseEnter={() => setHovered("signup")}
             onMouseLeave={() => setHovered(null)}
-            className="px-5 py-2 rounded-full text-white bg-[#9b5de5] hover:bg-white/10 hover:scale-105 transition duration-300"
+            className={`px-5 py-2 rounded-full text-white transition duration-300
+              ${hovered === "login" ? "bg-transparent" : "bg-[#9b5de5]"}
+            `}
           >
             Sign Up
           </button>
