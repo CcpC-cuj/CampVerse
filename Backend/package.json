@@ -20,6 +20,7 @@
     "security:audit": "npm audit --audit-level moderate",
     "security:fix": "npm audit fix",
     "db:migrate": "node scripts/migrateAuthFlags.js",
+    "db:migrate:roles": "node scripts/fixUserRoles.js",
     "db:seed": "cross-env NODE_ENV=development node scripts/seed.js",
     "db:reset": "cross-env NODE_ENV=test node scripts/resetTestDb.js",
     "migrate:institution-domains": "node scripts/migrateInstitutionEmailDomains.js",

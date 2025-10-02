@@ -30,7 +30,14 @@ const eventParticipationLogSchema = new mongoose.Schema({
   attendanceMarkedAt: { type: Date }, // When attendance was marked (scan time)
 });
 
+// Unique index to prevent duplicate registrations
 eventParticipationLogSchema.index({ userId: 1, eventId: 1 }, { unique: true });
+
+// Performance indexes for common queries
+eventParticipationLogSchema.index({ eventId: 1, status: 1 }); // For capacity checks
+eventParticipationLogSchema.index({ userId: 1, status: 1 }); // For user's registrations
+eventParticipationLogSchema.index({ qrToken: 1 }, { sparse: true }); // For QR scanning
+eventParticipationLogSchema.index({ eventId: 1, status: 1, userId: 1 }); // Compound for analytics
 
 module.exports = mongoose.model(
   'EventParticipationLog',

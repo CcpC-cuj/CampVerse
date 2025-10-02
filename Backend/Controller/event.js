@@ -366,31 +366,20 @@ async function deleteEvent(req, res) {
 
 // RSVP/register for event (user) - Fixed race condition with atomic operations
 async function rsvpEvent(req, res) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     const { eventId } = req.body;
     const userId = req.user.id;
     
-  // TODO: Replace with structured logger in production
-  // logger.info('🎯 RSVP Request:', { eventId, userId });
+    logger && logger.info ? logger.info('🎯 RSVP Request:', { eventId, userId }) : null;
     
-    // Check if user already registered
-    const existingLog = await EventParticipationLog.findOne({
-      eventId,
-      userId
-    });
-    
-    if (existingLog) {
-      console.log('⚠️ User already registered:', { eventId, userId, status: existingLog.status });
-      return res.status(409).json({ 
-        success: false,
-        error: 'User already registered for this event',
-        message: 'You have already registered for this event'
-      });
-    }
-    
-    const event = await Event.findById(eventId);
+    // Validate event exists first
+    const event = await Event.findById(eventId).session(session);
     if (!event) {
-      console.log('❌ Event not found:', eventId);
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ 
         success: false,
         error: 'Event not found',
@@ -398,7 +387,7 @@ async function rsvpEvent(req, res) {
       });
     }
     
-    // Check capacity and determine status
+    // Check capacity and determine status atomically
     let status = 'registered';
     let qrToken = null;
     
@@ -406,67 +395,101 @@ async function rsvpEvent(req, res) {
       const registeredCount = await EventParticipationLog.countDocuments({
         eventId,
         status: 'registered'
-      });
+      }).session(session);
       
       if (registeredCount >= event.capacity) {
         status = 'waitlisted';
       }
     }
     
-    // Generate secure QR token
+    // Generate secure QR token using crypto
     const crypto = require('crypto');
     qrToken = crypto.randomBytes(32).toString('hex');
     
-    // Create participation log
-    const participationLog = await EventParticipationLog.create({
-      userId,
-      eventId,
-      status,
-      qrToken,
-      registeredAt: new Date()
-    });
+    // Use findOneAndUpdate with upsert to handle race conditions atomically
+    const participationLog = await EventParticipationLog.findOneAndUpdate(
+      { userId, eventId },
+      {
+        $setOnInsert: {
+          userId,
+          eventId,
+          status,
+          qrToken,
+          registeredAt: new Date()
+        }
+      },
+      {
+        upsert: true,
+        new: true,
+        session,
+        rawResult: true
+      }
+    );
     
-    console.log('✅ RSVP Created:', { 
+    // If document already existed, user is already registered
+    if (!participationLog.lastErrorObject.upserted) {
+      await session.abortTransaction();
+      session.endSession();
+      logger && logger.warn ? logger.warn('⚠️ User already registered:', { eventId, userId }) : null;
+      return res.status(409).json({ 
+        success: false,
+        error: 'User already registered for this event',
+        message: 'You have already registered for this event'
+      });
+    }
+    
+    logger && logger.info ? logger.info('✅ RSVP Created:', { 
       eventId, 
       userId, 
       status, 
-      participationLogId: participationLog._id 
-    });
+      participationLogId: participationLog.value._id 
+    }) : null;
     
-    // Update event waitlist
+    // Update event waitlist atomically
     if (status === 'waitlisted') {
       await Event.findByIdAndUpdate(
         eventId,
-        { $addToSet: { waitlist: userId } }
+        { $addToSet: { waitlist: userId } },
+        { session }
       );
     } else {
       // Remove from waitlist if previously waitlisted
       await Event.findByIdAndUpdate(
         eventId,
-        { $pull: { waitlist: userId } }
+        { $pull: { waitlist: userId } },
+        { session }
       );
     }
+    
+    // Commit the transaction
+    await session.commitTransaction();
+    session.endSession();
     
     // Generate QR code image
     const qrImage = await qrcode.toDataURL(qrToken);
     
-    // Send response
-    res.status(201).json({
-      success: true,
-      message: `RSVP successful. Status: ${status}. QR code sent to email.`,
-      qrImage,
-      status,
-      eventId
-    });
-    
     // Email QR code to user (non-blocking)
+    let emailSent = false;
     try {
       await sendQrEmail(req.user.email, qrImage, event.title);
-  // Audit: QR code email sent successfully
+      emailSent = true;
+      logger && logger.info ? logger.info('✅ QR code email sent successfully') : null;
     } catch (emailErr) {
-  logger && logger.error ? logger.error('Failed to send QR email:', emailErr) : null;
-      // Don't fail the RSVP, just log the email error
+      logger && logger.error ? logger.error('❌ Failed to send QR email:', emailErr) : null;
+      // Don't fail the RSVP, but inform user
     }
+    
+    // Send response with email status
+    res.status(201).json({
+      success: true,
+      message: emailSent 
+        ? `RSVP successful. Status: ${status}. QR code sent to email.`
+        : `RSVP successful. Status: ${status}. Note: Email delivery failed, but QR code is shown below.`,
+      qrImage,
+      status,
+      eventId,
+      emailSent
+    });
     
     // Async notifications (non-blocking)
     setImmediate(async () => {
@@ -500,12 +523,28 @@ async function rsvpEvent(req, res) {
           });
         }
       } catch (notificationError) {
-  logger && logger.error ? logger.error('Notification error:', notificationError) : null;
+        logger && logger.error ? logger.error('Notification error:', notificationError) : null;
       }
     });
     
   } catch (err) {
-  logger && logger.error ? logger.error('RSVP error:', err) : null;
+    // Rollback transaction on error
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
+    session.endSession();
+    
+    logger && logger.error ? logger.error('RSVP error:', err) : null;
+    
+    // Handle duplicate key error specifically
+    if (err.code === 11000) {
+      return res.status(409).json({ 
+        success: false,
+        error: 'User already registered for this event',
+        message: 'You have already registered for this event'
+      });
+    }
+    
     res.status(500).json({ 
       success: false,
       error: 'Error registering for event.',

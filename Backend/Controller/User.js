@@ -129,8 +129,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
@@ -219,8 +220,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split("@")[0],
