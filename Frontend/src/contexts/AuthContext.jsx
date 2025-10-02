@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getToken, setToken, removeToken, getUser, setUser, removeUser } from '../utils/auth';
+import { getMe } from '../api/user';
 
 const AuthContext = createContext();
 
@@ -57,8 +58,34 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/';
   };
 
+  // Function to refresh user data from backend
+  const refreshUser = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return;
+      }
+      
+      const freshUserData = await getMe();
+      if (freshUserData && !freshUserData.error) {
+        setUser(freshUserData);
+        setUserState(freshUserData);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser: setUserState, login, logout, loading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      setUser: setUserState, 
+      login, 
+      logout, 
+      loading, 
+      isAuthenticated: !!user,
+      refreshUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );

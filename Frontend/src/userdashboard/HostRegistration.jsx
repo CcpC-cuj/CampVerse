@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar"; // reuse your dashboard sidebar
 import { useAuth } from "../contexts/AuthContext";
+import { requestHostAccess } from "../api/user";
 
 const HostRegistration = () => {
   const [params] = useSearchParams();
@@ -69,15 +70,11 @@ const HostRegistration = () => {
         formData.append("remarks", remarks);
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/users/request-host-access`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      // Use the centralized API function that handles auth headers
+      const data = await requestHostAccess(formData);
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      // Check for error in response
+      if (data.error) {
         throw new Error(data.error || "Failed to submit host request");
       }
 
@@ -99,8 +96,9 @@ const HostRegistration = () => {
     }
   };
 
-  // If already submitted, show success message
-  if (success || user?.hostEligibilityStatus?.status === 'pending') {
+  // Only show confirmation if status is 'pending', 'approved', or 'rejected'
+  const hostStatus = user?.hostEligibilityStatus?.status;
+  if (success || hostStatus === 'pending' || hostStatus === 'approved' || hostStatus === 'rejected') {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
         <div className="w-64 bg-gray-900 h-full hidden sm:block">

@@ -2,8 +2,18 @@ const { emailsender } = require('./email');
 const Notification = require('../Models/Notification');
 const User = require('../Models/User');
 
+// Store io instance
+let io = null;
+
 /**
- * Create an in-app notification
+ * Set Socket.IO instance for real-time notifications
+ */
+function setSocketIO(socketIO) {
+  io = socketIO;
+}
+
+/**
+ * Create an in-app notification and emit via Socket.IO
  */
 async function createNotification(userId, type, message, data = {}) {
   try {
@@ -16,6 +26,13 @@ async function createNotification(userId, type, message, data = {}) {
       createdAt: new Date(),
     });
     await notification.save();
+    
+    // Emit real-time notification via Socket.IO
+    if (io) {
+      io.to(`user:${userId}`).emit('notification', notification);
+      console.log(`Real-time notification sent to user:${userId}`);
+    }
+    
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -391,6 +408,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
 }
 
 module.exports = {
+  setSocketIO,
   createNotification,
   notifyHostRequest,
   notifyHostStatusUpdate,
