@@ -37,7 +37,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
 
   useEffect(() => {
     if (event) {
-      console.log('Event data in useEffect:', event);
+  // ...existing code...
       
       // Extract contact info from event or organizer
       let contactEmail = '';
@@ -138,7 +138,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
     
     // Validate required fields
     if (!eventForm.title || !eventForm.description || !eventForm.date || !eventForm.location || !eventForm.contactEmail || !eventForm.contactPhone) {
-      alert('Please fill in all required fields');
+  // ...existing code...
       return;
     }
     
@@ -280,7 +280,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-purple-300 mb-2">Registration Fee (₹) *</label>
                   <input type="number" name="fee" value={eventForm.fee} onChange={handleFormChange} min="1" step="0.01" required={eventForm.isPaid} placeholder="Enter amount" className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-                  <button type="button" disabled={!eventForm.fee || !eventForm.title || !eventForm.date} className="mt-2 w-full px-4 py-3 bg-purple-700/30 border border-purple-500/50 text-purple-300 rounded-lg font-medium disabled:opacity-50 hover:bg-purple-600/30 transition-colors" onClick={() => alert('Payment info integration coming soon!')}>Add Payment Info</button>
+                  <button type="button" disabled={!eventForm.fee || !eventForm.title || !eventForm.date} className="mt-2 w-full px-4 py-3 bg-purple-700/30 border border-purple-500/50 text-purple-300 rounded-lg font-medium disabled:opacity-50 hover:bg-purple-600/30 transition-colors">Add Payment Info</button>
                 </div>
               )}
             </div>

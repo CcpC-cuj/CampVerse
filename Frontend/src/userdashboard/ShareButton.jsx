@@ -47,12 +47,11 @@ const ShareButton = ({ event, title, description }) => {
   };
 
   const handleCopyLink = () => {
-    alert(`This is the event link being copied:\n${url}`);
     navigator.clipboard.writeText(url).then(() => {
       setShowCopy(false);
       setOpen(false);
     }).catch(err => {
-      alert("Failed to copy link: " + err);
+      // ...existing code...
     });
   };
 

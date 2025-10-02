@@ -393,7 +393,7 @@ const HostSettings = () => {
                     { key: "pushNotifications", label: "Push Notifications", desc: "Receive push notifications in browser" },
                     { key: "eventUpdates", label: "Event Updates", desc: "Get notified about event changes" },
                     { key: "participantMessages", label: "Participant Messages", desc: "Receive messages from event participants" },
-                    { key: "systemAlerts", label: "System Alerts", desc: "Important system notifications" },
+                    { key: "systemAlerts", label: "System Notifications", desc: "Important system notifications" },
                     { key: "marketingEmails", label: "Marketing Emails", desc: "Promotional content and updates" },
                     { key: "weeklyReports", label: "Weekly Reports", desc: "Weekly analytics and insights" },
                     { key: "reminderNotifications", label: "Event Reminders", desc: "Reminders about upcoming events" }

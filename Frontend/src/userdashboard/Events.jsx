@@ -85,7 +85,7 @@ const Events = () => {
       const response = isRsvped ? await cancelRsvp(eventId) : await rsvpEventAPI(eventId);
 
       if (response.success) {
-        alert(response.message || (isRsvped ? "RSVP cancelled successfully!" : "RSVP successful! Check your email for the QR code."));
+  // ...existing code...
         
         // Reload all events from backend to ensure consistency
         await loadUserEvents();
@@ -97,13 +97,13 @@ const Events = () => {
       } else {
         // Even on error, reload to sync state
         await loadUserEvents();
-        alert(response.message || response.error || "RSVP failed. Please try again.");
+  // ...existing code...
       }
     } catch (err) {
       console.error("Error with RSVP:", err);
       // Reload events to ensure consistency
       await loadUserEvents();
-      alert("RSVP failed. Please try again.");
+  // ...existing code...
     }
   };
 
