@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getNotifications, markNotificationAsRead } from "../api";
+import { useAuth } from "../contexts/AuthContext";
 import io from 'socket.io-client';
 
 const NotificationBell = () => {
+  const { refreshUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +55,12 @@ const NotificationBell = () => {
       socketRef.current.on('notification', (newNotification) => {
         console.log('New notification received:', newNotification);
         setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+        
+        // If host status update notification, refresh user data to update UI
+        if (newNotification.type === 'host_status_update') {
+          console.log('Host status updated, refreshing user data...');
+          refreshUser();
+        }
       });
 
       // Listen for notification read status updates
@@ -165,6 +173,7 @@ const NotificationBell = () => {
                       {notification.type === 'cohost' && <i className="ri-user-add-line text-xl"></i>}
                       {notification.type === 'event_verification' && <i className="ri-shield-check-line text-xl"></i>}
                       {notification.type === 'host_request' && <i className="ri-user-star-line text-xl"></i>}
+                      {notification.type === 'host_status_update' && <i className="ri-user-settings-line text-xl"></i>}
                       {!notification.type && <i className="ri-notification-3-line text-xl"></i>}
                     </div>
                     <div className="flex-1">
