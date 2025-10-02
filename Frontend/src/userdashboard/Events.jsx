@@ -97,7 +97,6 @@ const Events = () => {
       } else {
         // Even on error, reload to sync state
         await loadUserEvents();
-  // ...existing code...
       }
     } catch (err) {
       console.error("Error with RSVP:", err);
