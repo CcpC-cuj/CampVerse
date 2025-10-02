@@ -1,18 +1,44 @@
 import React, { useState, useEffect } from "react";
 import ShareButton from "./ShareButton";
-import { getEventById } from "../api/events";
+import { getEventById, rsvpEvent, cancelRsvp, getMyEventQrCode } from "../api/events";
 
 const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   const [eventDetails, setEventDetails] = useState(event);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [rsvped, setRsvped] = useState(event.userRegistration ? true : false);
+  const [qrCodeImage, setQrCodeImage] = useState(null);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
   useEffect(() => {
     if (event._id) {
       loadEventDetails();
     }
   }, [event._id]);
+
+  // Fetch QR code when event is registered
+  useEffect(() => {
+    if (eventDetails._id && rsvped) {
+      fetchQrCode(eventDetails._id);
+    } else {
+      setQrCodeImage(null);
+    }
+  }, [eventDetails._id, rsvped]);
+
+  const fetchQrCode = async (eventId) => {
+    try {
+      setQrCodeLoading(true);
+      const response = await getMyEventQrCode(eventId);
+      if (response.success && response.qrCode) {
+        setQrCodeImage(response.qrCode.image);
+      }
+    } catch (err) {
+      console.error('❌ Error loading QR code:', err);
+      // Don't show error to user - QR code might be expired or used
+    } finally {
+      setQrCodeLoading(false);
+    }
+  };
 
   const loadEventDetails = async () => {
     try {
@@ -30,12 +56,40 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
     }
   };
 
-  const handleRSVP = () => {
-    onRSVP(eventDetails._id || eventDetails.id);
-    // After RSVP, reload event details to update RSVP state
-    setTimeout(() => {
-      loadEventDetails();
-    }, 500);
+  const handleRSVP = async () => {
+    try {
+      setLoading(true);
+      
+      let response;
+      if (rsvped) {
+        // Cancel RSVP
+        response = await cancelRsvp(eventDetails._id || eventDetails.id);
+        // Clear QR code on cancellation
+        setQrCodeImage(null);
+      } else {
+        // Register for event
+        response = await rsvpEvent(eventDetails._id || eventDetails.id);
+        // Store QR code if provided
+        if (response.success && response.data && response.data.qrImage) {
+          setQrCodeImage(response.data.qrImage);
+        }
+      }
+      
+      if (response.success) {
+        setRsvped(!rsvped);
+        // Reload event details to update registration status
+        setTimeout(() => {
+          loadEventDetails();
+        }, 500);
+      } else {
+        setError(response.message || response.error || 'RSVP action failed');
+      }
+    } catch (err) {
+      console.error('RSVP error:', err);
+      setError('RSVP action failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -299,6 +353,44 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                         <p className="text-gray-400 text-xs sm:text-sm truncate">{eventDetails.hostUserId.phone}</p>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QR Code Section - Show only for registered users */}
+              {rsvped && (
+                <div className="mt-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 flex items-center gap-2">
+                    <span className="text-lg sm:text-xl">🎫</span> Your Event QR Code
+                  </h3>
+                  <div className="bg-gray-800/30 backdrop-blur-sm rounded-lg p-4 border border-gray-700/30 shadow-lg">
+                    {qrCodeLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9b5de5] mx-auto"></div>
+                        <p className="text-gray-400 mt-4 text-sm">Loading QR Code...</p>
+                      </div>
+                    ) : qrCodeImage ? (
+                      <div className="text-center">
+                        <img 
+                          src={qrCodeImage} 
+                          alt="Event QR Code" 
+                          className="mx-auto mb-4 bg-white p-4 rounded-lg"
+                          style={{ maxWidth: '250px', width: '100%' }}
+                        />
+                        <p className="text-gray-300 text-sm mb-2">
+                          ✅ Present this QR code at the event entrance
+                        </p>
+                        <p className="text-gray-400 text-xs">
+                          💡 Save this code or check your email for a copy
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-gray-400 text-sm">
+                          ⚠️ QR code not available. Please check your email or contact support.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -339,6 +339,14 @@ export async function getEventQrCode(eventId) {
   return res.json();
 }
 
+// Get user's QR code for a registered event
+export async function getMyEventQrCode(eventId) {
+  const res = await fetch(`${API_URL}/api/events/my-qr/${eventId}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
 export async function getZeroResultSearches() {
   const res = await fetch(`${API_URL}/api/events/admin/zero-result-searches`, {
     headers: { ...getAuthHeaders() },

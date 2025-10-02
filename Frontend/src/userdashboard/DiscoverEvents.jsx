@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ShareButton from "./ShareButton";
 import EventDetailsModal from "./EventDetailsModal";
-import { listEvents } from "../api/events";
+import { listEvents, rsvpEvent, cancelRsvp } from "../api/events";
 import { useAuth } from "../contexts/AuthContext";
 
 // Placeholder images for mock data
@@ -87,12 +87,25 @@ const DiscoverEvents = () => {
     }
   };
 
-  const handleRSVP = (event) => {
-    if (!userRsvps.has(event.id)) {
-      const newRsvps = new Set(userRsvps);
-      newRsvps.add(event.id);
-      setUserRsvps(newRsvps);
-      setSuccessMsg("You have successfully RSVPed!");
+  const handleRSVP = async (eventId) => {
+    try {
+      const response = await rsvpEvent(eventId);
+      
+      if (response.success) {
+        const newRsvps = new Set(userRsvps);
+        newRsvps.add(eventId);
+        setUserRsvps(newRsvps);
+        setSuccessMsg("You have successfully RSVPed!");
+        setTimeout(() => setSuccessMsg(""), 3000);
+        // Refresh events to get updated data
+        fetchEvents();
+      } else {
+        setSuccessMsg(response.message || response.error || "RSVP failed. Please try again.");
+        setTimeout(() => setSuccessMsg(""), 3000);
+      }
+    } catch (err) {
+      console.error('RSVP error:', err);
+      setSuccessMsg("RSVP failed. Please try again.");
       setTimeout(() => setSuccessMsg(""), 3000);
     }
   };
@@ -177,7 +190,7 @@ const DiscoverEvents = () => {
             <EventDetailsModal
               event={selectedEvent}
               onBack={() => setSelectedEvent(null)}
-              onRSVP={() => handleRSVP(selectedEvent)}
+              onRSVP={() => handleRSVP(selectedEvent._id || selectedEvent.id)}
               isRsvped={userRsvps.has(selectedEvent.id)}
             />
             {successMsg && (

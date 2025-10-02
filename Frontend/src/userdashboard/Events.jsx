@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { getUserEvents, getUpcomingEvents, getPastEvents, rsvpEvent as rsvpEventAPI, cancelRsvp } from "../api/events";
+import { getUserEvents, getUpcomingEvents, getPastEvents, rsvpEvent as rsvpEventAPI, cancelRsvp, getMyEventQrCode } from "../api/events";
 import Sidebar from "../userdashboard/sidebar";
 import NavBar from "./NavBar";
 import ShareButton from './ShareButton';
@@ -16,10 +16,38 @@ const Events = () => {
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [userRsvps, setUserRsvps] = useState(new Set());
+  const [qrCodeImage, setQrCodeImage] = useState(null);
+  const [qrCodeLoading, setQrCodeLoading] = useState(false);
 
   useEffect(() => {
     loadUserEvents();
   }, []);
+
+  // Fetch QR code when a registered event is selected
+  useEffect(() => {
+    if (selectedEvent && userRsvps.has(selectedEvent._id)) {
+      fetchQrCode(selectedEvent._id);
+    } else {
+      setQrCodeImage(null);
+    }
+  }, [selectedEvent, userRsvps]);
+
+  const fetchQrCode = async (eventId) => {
+    if (!user) return;
+    
+    try {
+      setQrCodeLoading(true);
+      const response = await getMyEventQrCode(eventId);
+      if (response.success && response.qrCode) {
+        setQrCodeImage(response.qrCode.image);
+      }
+    } catch (err) {
+      console.error('❌ Error loading QR code:', err);
+      // Don't show error to user - QR code might be expired or used
+    } finally {
+      setQrCodeLoading(false);
+    }
+  };
 
   // Function to reload RSVP status from backend
   const loadUserRsvpStatus = async () => {
@@ -85,7 +113,13 @@ const Events = () => {
       const response = isRsvped ? await cancelRsvp(eventId) : await rsvpEventAPI(eventId);
 
       if (response.success) {
-  // ...existing code...
+        // Store QR code if provided and not canceling
+        if (!isRsvped && response.data && response.data.qrImage) {
+          setQrCodeImage(response.data.qrImage);
+        } else if (isRsvped) {
+          // Clear QR code on cancellation
+          setQrCodeImage(null);
+        }
         
         // Reload all events from backend to ensure consistency
         await loadUserEvents();
@@ -102,7 +136,6 @@ const Events = () => {
       console.error("Error with RSVP:", err);
       // Reload events to ensure consistency
       await loadUserEvents();
-  // ...existing code...
     }
   };
 
@@ -331,6 +364,42 @@ const Events = () => {
           {selectedEvent.tags.map((tag, idx) => (
             <span key={idx} className="bg-[#9b5de5]/20 text-[#d9c4ff] px-2 py-1 rounded-full text-xs">{tag}</span>
           ))}
+        </div>
+      )}
+
+      {/* QR Code Section - Show only for registered users */}
+      {userRsvps.has(selectedEvent._id) && (
+        <div className="mt-6 mb-6">
+          <h3 className="text-lg font-bold text-white mb-3">🎫 Your Event QR Code</h3>
+          <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+            {qrCodeLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9b5de5] mx-auto"></div>
+                <p className="text-gray-400 mt-4">Loading QR Code...</p>
+              </div>
+            ) : qrCodeImage ? (
+              <div className="text-center">
+                <img 
+                  src={qrCodeImage} 
+                  alt="Event QR Code" 
+                  className="mx-auto mb-4 bg-white p-4 rounded-lg"
+                  style={{ maxWidth: '250px', width: '100%' }}
+                />
+                <p className="text-gray-300 text-sm mb-2">
+                  ✅ Present this QR code at the event entrance
+                </p>
+                <p className="text-gray-400 text-xs">
+                  💡 Save this code or check your email for a copy
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-400">
+                  ⚠️ QR code not available. Please check your email or contact support.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
