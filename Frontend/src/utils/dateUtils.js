@@ -4,19 +4,21 @@
  */
 
 /**
- * Format a date string/object to IST locale string
+/**
+ * Format a date string/object to a locale string in a specified timezone
  * @param {string|Date} dateString - Date string or Date object (typically in UTC from backend)
  * @param {Object} options - Intl.DateTimeFormat options
- * @returns {string} Formatted date string in IST
+ * @param {string} timeZone - IANA timezone string (default: 'Asia/Kolkata')
+ * @returns {string} Formatted date string in specified timezone
  */
-export function formatDateIST(dateString, options = {}) {
+export function formatDateWithTZ(dateString, options = {}, timeZone = 'Asia/Kolkata') {
   if (!dateString) return 'Date TBD';
-  
+
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return 'Invalid Date';
-  
+
   const defaultOptions = {
-    timeZone: 'Asia/Kolkata',
+    timeZone,
     year: 'numeric',
     month: 'long',
     day: 'numeric',

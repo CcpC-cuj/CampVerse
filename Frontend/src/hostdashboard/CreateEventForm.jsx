@@ -247,118 +247,120 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								onChange={handleFormChange} 
 								rows={4} 
 								className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.description ? 'border-red-500' : 'border-purple-500'}`}
-									switch (currentStep) {
-										case 1:
-											return (
-												<div className="space-y-4">
-													<h4 className="text-lg font-semibold text-purple-300 mb-4">📝 Basic Information</h4>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">Event Title *</label>
-														<input 
-															type="text" 
-															name="title" 
-															value={eventForm.title} 
-															onChange={handleFormChange} 
-															className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.title ? 'border-red-500' : 'border-purple-500'}`}
-															placeholder="Enter your event title"
-														/>
-														{formErrors.title && <p className="text-red-400 text-sm mt-1">{formErrors.title}</p>}
-													</div>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">Description *</label>
-														<textarea 
-															name="description" 
-															value={eventForm.description} 
-															onChange={handleFormChange} 
-															rows={4} 
-															className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.description ? 'border-red-500' : 'border-purple-500'}`}
-															placeholder="Describe your event..."
-														/>
-														{formErrors.description && <p className="text-red-400 text-sm mt-1">{formErrors.description}</p>}
-													</div>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
-														<textarea 
-															name="about" 
-															value={eventForm.about} 
-															onChange={handleFormChange} 
-															rows={3} 
-															className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
-															placeholder="Additional details about your event..."
-														/>
-													</div>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">Event Date & Time *</label>
-														<input 
-															type="datetime-local" 
-															name="date" 
-															value={eventForm.date} 
-															onChange={handleFormChange} 
-															min={getMinDate()} 
-															className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.date ? 'border-red-500' : 'border-purple-500'}`}
-														/>
-														{formErrors.date && <p className="text-red-400 text-sm mt-1">{formErrors.date}</p>}
-													</div>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">Category</label>
-														<select 
-															name="category" 
-															value={eventForm.category} 
-															onChange={handleFormChange} 
-														>
-															<option value="" className="bg-gray-800">Select category</option>
-															<option value="Technology" className="bg-gray-800">Technology</option>
-															<option value="Programming" className="bg-gray-800">Programming</option>
-															<option value="Cultural" className="bg-gray-800">Cultural</option>
-															<option value="Academic" className="bg-gray-800">Academic</option>
-															<option value="Sports" className="bg-gray-800">Sports</option>
-															<option value="Workshop" className="bg-gray-800">Workshop</option>
-															<option value="Seminar" className="bg-gray-800">Seminar</option>
-															<option value="Conference" className="bg-gray-800">Conference</option>
-														</select>
-													</div>
-												</div>
-											);
-										case 2:
-											return (
-												<div className="space-y-4">
-													<h4 className="text-lg font-semibold text-purple-300 mb-4">👤 Organizer Information</h4>
-													<div>
-														<label className="block text-sm font-medium text-purple-300 mb-2">Organization Name (Optional)</label>
-														<input 
-															type="text" 
-															name="organizationName" 
-															value={eventForm.organizationName} 
-															onChange={handleFormChange} 
-															placeholder="e.g., Central University of Jharkhand, Tech Corp" 
-															className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
-														/>
-														<p className="text-xs text-purple-300/70 mt-1">If organizing on behalf of an organization, enter its name here.</p>
-													</div>
-													<div className="grid grid-cols-2 gap-4">
-														<div>
-															<label className="block text-sm font-medium text-purple-300 mb-2">Contact Email</label>
-															<input 
-																type="email" 
-																name="contactEmail" 
-																value={eventForm.contactEmail} 
-																readOnly 
-																className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed"
-															/>
-														</div>
-														<div>
-															<label className="block text-sm font-medium text-purple-300 mb-2">Contact Phone</label>
-															<input 
-																type="text" 
-																name="contactPhone" 
-																value={eventForm.contactPhone} 
-																readOnly 
-																className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed"
-															/>
-														</div>
-													</div>
-												</div>
-											);
+								placeholder="Describe your event..."
+							/>
+							{formErrors.description && <p className="text-red-400 text-sm mt-1">{formErrors.description}</p>}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
+							<textarea 
+								name="about" 
+								value={eventForm.about} 
+								onChange={handleFormChange} 
+								rows={3} 
+								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+								placeholder="Additional details about your event..."
+							/>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">Event Date & Time *</label>
+							<input 
+								type="datetime-local" 
+								name="date" 
+								value={eventForm.date} 
+								onChange={handleFormChange} 
+								min={getMinDate()} 
+								className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.date ? 'border-red-500' : 'border-purple-500'}`}
+							/>
+							{formErrors.date && <p className="text-red-400 text-sm mt-1">{formErrors.date}</p>}
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">Category</label>
+							<select 
+								name="category" 
+								value={eventForm.category} 
+								onChange={handleFormChange} 
+								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+							>
+								<option value="" className="bg-gray-800">Select category</option>
+								<option value="Technology" className="bg-gray-800">Technology</option>
+								<option value="Programming" className="bg-gray-800">Programming</option>
+								<option value="Cultural" className="bg-gray-800">Cultural</option>
+								<option value="Academic" className="bg-gray-800">Academic</option>
+								<option value="Sports" className="bg-gray-800">Sports</option>
+								<option value="Workshop" className="bg-gray-800">Workshop</option>
+								<option value="Seminar" className="bg-gray-800">Seminar</option>
+								<option value="Conference" className="bg-gray-800">Conference</option>
+							</select>
+						</div>
+					</div>
+				);
+			case 2:
+				return (
+					<div className="space-y-4">
+						<h4 className="text-lg font-semibold text-purple-300 mb-4">👤 Organizer Information</h4>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">Organization Name (Optional)</label>
+							<input 
+								type="text" 
+								name="organizationName" 
+								value={eventForm.organizationName} 
+								onChange={handleFormChange} 
+								placeholder="e.g., Central University of Jharkhand, Tech Corp" 
+								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+							/>
+							<p className="text-xs text-purple-300/70 mt-1">If organizing on behalf of an organization, enter its name here.</p>
+						</div>
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<label className="block text-sm font-medium text-purple-300 mb-2">Contact Email</label>
+								<input 
+									type="email" 
+									name="contactEmail" 
+									value={eventForm.contactEmail} 
+									readOnly 
+									className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed"
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-purple-300 mb-2">Contact Phone</label>
+								<input 
+									type="text" 
+									name="contactPhone" 
+									value={eventForm.contactPhone} 
+									readOnly 
+									className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed"
+								/>
+							</div>
+						</div>
+					</div>
+				);
+			case 3:
+				return (
+					<div className="space-y-4">
+						<h4 className="text-lg font-semibold text-purple-300 mb-4">📍 Location & Audience</h4>
+						<div>
+							<label className="block text-sm font-medium text-purple-300 mb-2">Location Type *</label>
+							<select 
+								name="location" 
+								value={eventForm.location} 
+								onChange={handleFormChange} 
+								className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.location ? 'border-red-500' : 'border-purple-500'}`}
+							>
+								<option value="" className="bg-gray-800">Select location type</option>
+								<option value="online" className="bg-gray-800">🌐 Online</option>
+								<option value="offline" className="bg-gray-800">🏢 Offline</option>
+								<option value="hybrid" className="bg-gray-800">🔄 Hybrid</option>
+							</select>
+							{formErrors.location && <p className="text-red-400 text-sm mt-1">{formErrors.location}</p>}
+						</div>
+						{eventForm.location === 'offline' && (
+							<div>
+								<label className="block text-sm font-medium text-purple-300 mb-2">Venue *</label>
+								<input 
+									type="text" 
+									name="venue" 
+									value={eventForm.venue} 
 									onChange={handleFormChange} 
 									placeholder="Enter venue name" 
 									className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.venue ? 'border-red-500' : 'border-purple-500'}`}

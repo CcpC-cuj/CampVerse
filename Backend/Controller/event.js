@@ -42,7 +42,6 @@ async function createEvent(req, res) {
       }
     }
     if (!req.files || !req.files['banner']) {
-      return res.status(400).json({ error: 'Banner image is required.' });
     }
     // Extract and parse fields
     let {
@@ -371,7 +370,8 @@ async function rsvpEvent(req, res) {
     const { eventId } = req.body;
     const userId = req.user.id;
     
-    console.log('🎯 RSVP Request:', { eventId, userId });
+  // TODO: Replace with structured logger in production
+  // logger.info('🎯 RSVP Request:', { eventId, userId });
     
     // Check if user already registered
     const existingLog = await EventParticipationLog.findOne({

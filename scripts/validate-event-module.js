@@ -13,6 +13,10 @@ const LEGACY_PATTERNS = [
   /schedule\.end/g,
   /event\.startDate/g,
   /event\.endDate/g,
+  /\bschedule\.start\b/g,
+  /\bschedule\.end\b/g,
+  /\bevent\.startDate\b/g,
+  /\bevent\.endDate\b/g,
   /\bstartDate:/g,
   /\bendDate:/g,
 ];

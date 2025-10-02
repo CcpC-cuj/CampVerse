@@ -36,7 +36,10 @@ export const AuthProvider = ({ children }) => {
       removeToken();
       removeUser();
       setUserState(null);
-      window.location.href = '/';
+  // Use React Router navigation for better UX
+  // import { useNavigate } from 'react-router-dom';
+  // const navigate = useNavigate();
+  // navigate('/');
     }
     setLoading(false);
   }, []);

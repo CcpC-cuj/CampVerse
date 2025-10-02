@@ -48,7 +48,7 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const eventStatus = getEventStatus();
 
   // Use real participant count or fallback to event data
-  const participantCount = participantStats.total || event.participants || event.registrations || 0;
+  const participantCount = participantStats.total || (Array.isArray(event.participants) ? event.participants.length : event.participants) || event.registrations || 0;
   const maxParticipants = event.maxParticipants || event.capacity;
 
   return (

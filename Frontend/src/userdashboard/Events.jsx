@@ -292,12 +292,6 @@ const Events = () => {
       >
         &times;
       </button>
-
-      {/* Share Button (Top Right) */}
-      <div className="absolute top-5 right-5 z-50">
-        <ShareButton event={selectedEvent} />
-      </div>
-
       {/* Event Image - make it rounded */}
       {selectedEvent.coverImage && (
         <div className="flex justify-center mb-4">
