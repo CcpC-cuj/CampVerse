@@ -4,7 +4,6 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
   const [eventForm, setEventForm] = useState({
     title: event?.title || '',
     description: event?.description || '',
-    about: event?.about || '',
     date: event?.date ? new Date(event.date).toISOString().slice(0, 16) : '',
     location: event?.location?.type || '',
     venue: event?.location?.venue || '',
@@ -124,10 +123,7 @@ const EditEvent = ({ event, onSave, onCancel, loading }) => {
               <label className="block text-sm font-medium text-purple-300 mb-2">Description *</label>
               <textarea name="description" value={eventForm.description} onChange={handleFormChange} required rows={4} className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
-              <textarea name="about" value={eventForm.about} onChange={handleFormChange} rows={3} placeholder="Additional details about your event..." className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-            </div>
+            {/* About Event field removed for consistency with CreateEventForm */}
             {/* Organizer Type Dropdown */}
             <div>
               <label className="block text-sm font-medium text-purple-300 mb-2">Organizer Type *</label>

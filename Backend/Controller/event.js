@@ -41,8 +41,13 @@ async function createEvent(req, res) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
-    if (!req.files || !req.files['banner']) {
+    
+    // Validate capacity is a valid positive number
+    const validatedCapacity = parseInt(req.body.capacity);
+    if (isNaN(validatedCapacity) || validatedCapacity < 1) {
+      return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
     }
+    
     // Extract and parse fields
     let {
       title,
@@ -51,7 +56,6 @@ async function createEvent(req, res) {
       type,
       organizationName,
       location,
-      capacity,
       date,
       isPaid,
       price,
@@ -60,6 +64,7 @@ async function createEvent(req, res) {
       audienceType,
       features,
       sessions,
+      about,
     } = req.body;
     if (typeof location === 'string') {
       try {
@@ -152,15 +157,23 @@ async function createEvent(req, res) {
       bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     // Validate isPaid and price
-    let eventIsPaid = isPaid === true || isPaid === 'true';
-    let eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
+    const eventIsPaid = isPaid === true || isPaid === 'true';
+    const eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
     if (eventIsPaid && eventPrice <= 0) {
       return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
     
-    // Ensure date is stored as UTC (MongoDB will store as Date object in UTC)
-    // The frontend should send datetime-local which browser converts to ISO string
-    let eventDate = new Date(date);
+    // Parse date from datetime-local input
+    // datetime-local gives us a string like "2025-12-31T12:59" without timezone
+    // We need to treat this as the local time the user intended
+    let eventDate;
+    if (date.includes('T') && !date.includes('Z') && !date.includes('+')) {
+      // datetime-local format (YYYY-MM-DDTHH:MM) - treat as-is without timezone conversion
+      eventDate = new Date(`${date  }:00`); // Add seconds if missing
+    } else {
+      eventDate = new Date(date);
+    }
+    
     if (isNaN(eventDate.getTime())) {
       return res.status(400).json({ error: 'Invalid event date format.' });
     }
@@ -172,7 +185,7 @@ async function createEvent(req, res) {
       type,
       organizationName,
       location,
-      capacity,
+      capacity: validatedCapacity,
       date: eventDate, // Store as Date object in UTC
       isPaid: eventIsPaid,
       price: eventPrice,
@@ -181,11 +194,62 @@ async function createEvent(req, res) {
       audienceType: audienceType || 'public',
       features: features || { certificateEnabled: false, chatEnabled: false },
       sessions: sessions || [],
+      about: about || '',
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
+    
+    // Notify verifiers about new event pending verification
+    try {
+      const User = require('../Models/User');
+      const verifiers = await User.find({ 
+        roles: { $in: ['verifier', 'platformAdmin'] } 
+      }).select('_id email name notificationPreferences');
+      
+      const { notifyUser } = require('../Services/notification');
+      const host = await User.findById(req.user.id).select('name email');
+      
+      for (const verifier of verifiers) {
+        await notifyUser({
+          userId: verifier._id,
+          type: 'event_verification',
+          message: `New event "${event.title}" submitted by ${host?.name || 'Unknown'} requires verification`,
+          data: { 
+            eventId: event._id, 
+            eventTitle: event.title,
+            hostName: host?.name,
+            hostEmail: host?.email,
+            status: 'pending' 
+          },
+          emailOptions: verifier.notificationPreferences?.email?.event_verification !== false ? {
+            to: verifier.email,
+            subject: `New Event Pending Verification: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #9b5de5;">New Event Requires Verification</h2>
+                <p>Hi ${verifier.name},</p>
+                <p>A new event has been submitted and requires your verification:</p>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #9b5de5; margin: 15px 0;">
+                  <p><strong>Event Title:</strong> ${event.title}</p>
+                  <p><strong>Host:</strong> ${host?.name || 'Unknown'} (${host?.email || ''})</p>
+                  <p><strong>Event Type:</strong> ${event.type}</p>
+                  <p><strong>Event Date:</strong> ${new Date(event.date).toLocaleString()}</p>
+                  <p><strong>Status:</strong> Pending Verification</p>
+                </div>
+                <p>Please review this event in the verifier dashboard and approve or reject it.</p>
+                <p>Best regards,<br>CampVerse Team</p>
+              </div>
+            `,
+          } : null,
+        });
+      }
+    } catch (notifErr) {
+      // Don't fail event creation if notification fails
+      logger && logger.error ? logger.error('Error sending event verification notifications:', notifErr) : null;
+    }
+    
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
@@ -219,8 +283,8 @@ async function getEventById(req, res) {
     if (userId) {
       // Check if user is registered for this event
       userRegistration = await EventParticipationLog.findOne({
-        eventId: eventId,
-        userId: userId
+        eventId,
+        userId
       });
     }
 
@@ -345,7 +409,7 @@ async function updateEvent(req, res) {
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
   } catch (err) {
-  logger && logger.error ? logger.error('Error updating event:', err) : null;
+    logger && logger.error ? logger.error('Error updating event:', err) : null;
     res.status(500).json({ error: 'Error updating event.' });
   }
 }
@@ -482,9 +546,9 @@ async function rsvpEvent(req, res) {
     // Send response with appropriate message based on status
     const responseMessage = status === 'registered'
       ? (emailSent 
-          ? `RSVP successful! You are registered. QR code sent to email.`
-          : `RSVP successful! You are registered. Note: Email delivery failed, but QR code is shown below.`)
-      : `RSVP successful! You are on the waitlist for this event.`;
+        ? 'RSVP successful! You are registered. QR code sent to email.'
+        : 'RSVP successful! You are registered. Note: Email delivery failed, but QR code is shown below.')
+      : 'RSVP successful! You are on the waitlist for this event.';
     
     res.status(201).json({
       success: true,
@@ -789,7 +853,7 @@ async function scanQr(req, res) {
     global.scanRateLimit[key] = now;
     
     // Find participation log - check both legacy qrToken and new qrCode.token
-    let log = await EventParticipationLog.findOne({ 
+    const log = await EventParticipationLog.findOne({ 
       eventId, 
       $or: [
         { qrToken },
@@ -1032,10 +1096,10 @@ async function nominateCoHost(req, res) {
       },
     });
     // Audit log
-  // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
+    // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -1091,10 +1155,10 @@ async function approveCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
+    // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -1146,10 +1210,10 @@ async function rejectCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
+    // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -1228,8 +1292,8 @@ async function getPublicEventById(req, res) {
         
         // Check if user is registered for this event
         userRegistration = await EventParticipationLog.findOne({
-          eventId: eventId,
-          userId: userId
+          eventId,
+          userId
         });
         
         console.log('📊 Public Event Check:', {
@@ -1514,11 +1578,11 @@ async function regenerateQR(req, res) {
                     <div class="info-box">
                       <h2 style="margin-top: 0; color: #667eea;">${event.title}</h2>
                       <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</p>
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}</p>
                       <p><strong>Time:</strong> ${event.time || 'TBD'}</p>
                       <p><strong>Location:</strong> ${event.location || 'TBD'}</p>
                     </div>

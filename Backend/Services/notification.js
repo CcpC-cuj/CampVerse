@@ -377,8 +377,8 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
             ${remarks}
           </div>` : ''}
           ${
-            status === 'approved'
-              ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
+  status === 'approved'
+    ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
                    🎉 <strong>Great news!</strong> You can now:
                    <ul>
                      <li>Host events on CampVerse</li>
@@ -387,7 +387,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
                      <li>View institution analytics</li>
                    </ul>
                  </div>`
-              : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+    : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
                    😔 <strong>Unfortunately, we could not verify this institution at this time.</strong>
                    <br><br>
                    <strong>What you can do:</strong>
@@ -399,7 +399,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
                    </ul>
                    <p>You can still discover and join events, but hosting will require institution verification.</p>
                  </div>`
-          }
+}
           <hr style="margin: 25px 0; border: none; height: 1px; background: #dee2e6;">
           <p style="color: #6c757d; font-size: 14px;">
             If you have questions, please contact us at support@campverse.com<br>

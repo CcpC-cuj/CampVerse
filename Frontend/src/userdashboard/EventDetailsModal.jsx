@@ -93,13 +93,20 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // Parse the date and display it in UTC as stored in the database
+    const date = new Date(dateString);
+    
+    // Extract components using UTC methods to avoid timezone conversion
+    const year = date.getUTCFullYear();
+    const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = date.getUTCDate();
+    let hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
   };
 
 

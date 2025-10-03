@@ -9,11 +9,11 @@ async function migrateInstitutionEmailDomains() {
     await mongoose.connect(
       process.env.MONGO_URI || 'mongodb://localhost:27017/campverse',
     );
-  // ...existing code...
+    // ...existing code...
 
     // Find all institutions
     const institutions = await Institution.find({});
-  // ...existing code...
+    // ...existing code...
 
     // Group by email domain to find duplicates
     const domainGroups = {};
@@ -34,7 +34,7 @@ async function migrateInstitutionEmailDomains() {
 
         // Keep the first one, mark others for deletion
         const [keep, ...remove] = insts;
-  // ...existing code...
+        // ...existing code...
 
         // Update users to reference the kept institution
         const User = require('../Models/User');
@@ -55,9 +55,9 @@ async function migrateInstitutionEmailDomains() {
     }
 
     if (duplicatesFound === 0) {
-  // ...existing code...
+      // ...existing code...
     } else {
-  // ...existing code...
+      // ...existing code...
     }
 
     // Verify no duplicates remain
@@ -75,10 +75,10 @@ async function migrateInstitutionEmailDomains() {
 
   // ...existing code...
   } catch (error) {
-  console.error('Migration failed:', error);
-  process.exit(1);
+    console.error('Migration failed:', error);
+    process.exit(1);
   } finally {
-  await mongoose.disconnect();
+    await mongoose.disconnect();
   // ...existing code...
   }
 }

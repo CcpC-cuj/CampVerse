@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
     // Check if user is authenticated
     const isAuthenticated = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
     
-    let query = {};
+    const query = {};
     if (!isAuthenticated) {
       // Only show approved events to anonymous users
       query.verificationStatus = 'approved';
@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
     res.json({
       success: true,
       data: {
-        events: events,
+        events,
         total: events.length
       }
     });
