@@ -10,7 +10,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 	const [eventForm, setEventForm] = useState({
 		title: '',
 		description: '',
-		about: '',
 		date: '',
 		location: '',
 		venue: '',
@@ -229,7 +228,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			case 1:
 				return (
 					<div className="space-y-4">
-						<h4 className="text-lg font-semibold text-purple-300 mb-4">📝 Basic Information</h4>
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Event Title *</label>
 							<input 
