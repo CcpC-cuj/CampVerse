@@ -83,21 +83,21 @@ async function cleanupExpiredQRCodes() {
                       <div class="info-box">
                         <h2 style="margin-top: 0; color: #667eea;">${log.eventId.title}</h2>
                         <p><strong>Date:</strong> ${new Date(log.eventId.date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</p>
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}</p>
                         <p><strong>Time:</strong> ${log.eventId.time || 'TBD'}</p>
                         <p><strong>Location:</strong> ${log.eventId.location || 'TBD'}</p>
                         <p><strong>QR Expired At:</strong> ${new Date(log.qrCode.expiresAt).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}</p>
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })}</p>
                       </div>
                       
                       <p>Your QR code has expired and can no longer be used for attendance marking. This typically happens when QR codes expire 2 hours after the event ends.</p>

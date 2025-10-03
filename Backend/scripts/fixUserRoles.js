@@ -42,7 +42,7 @@ async function fixUserRoles() {
     
     // Process each user
     let fixed = 0;
-    let skipped = 0;
+    const skipped = 0;
     let errors = 0;
     
     for (const user of usersWithBadRole) {
@@ -56,13 +56,13 @@ async function fixUserRoles() {
         // Check if user should be a host
         if (user.canHost || user.hostEligibilityStatus?.status === 'approved') {
           newRoles.push('host');
-          console.log(`  - User is an approved host, adding 'host' role`);
+          console.log('  - User is an approved host, adding \'host\' role');
         }
         
         // Check if user is a verifier
         if (user.verifierEligibilityStatus?.approvedBy) {
           newRoles.push('verifier');
-          console.log(`  - User is a verifier, adding 'verifier' role`);
+          console.log('  - User is a verifier, adding \'verifier\' role');
         }
         
         // Note: platformAdmin needs manual verification
@@ -82,14 +82,14 @@ async function fixUserRoles() {
     }
     
     // Summary
-    console.log('\n' + '='.repeat(60));
+    console.log(`\n${  '='.repeat(60)}`);
     console.log('📊 MIGRATION SUMMARY');
     console.log('='.repeat(60));
     console.log(`Total users processed: ${usersWithBadRole.length}`);
     console.log(`✅ Successfully fixed: ${fixed}`);
     console.log(`⏭️  Skipped: ${skipped}`);
     console.log(`❌ Errors: ${errors}`);
-    console.log('='.repeat(60) + '\n');
+    console.log(`${'='.repeat(60)  }\n`);
     
     // Verify the fix
     console.log('🔍 Verifying fix...');

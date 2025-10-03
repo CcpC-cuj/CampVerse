@@ -57,8 +57,8 @@ class SecureStorageService {
           metadata: {
             originalName: filename,
             uploadedAt: new Date().toISOString(),
-            userId: userId,
-            category: category
+            userId,
+            category
           }
         });
 

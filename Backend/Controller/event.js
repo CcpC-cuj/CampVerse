@@ -157,8 +157,8 @@ async function createEvent(req, res) {
       bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     // Validate isPaid and price
-    let eventIsPaid = isPaid === true || isPaid === 'true';
-    let eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
+    const eventIsPaid = isPaid === true || isPaid === 'true';
+    const eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
     if (eventIsPaid && eventPrice <= 0) {
       return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
@@ -169,7 +169,7 @@ async function createEvent(req, res) {
     let eventDate;
     if (date.includes('T') && !date.includes('Z') && !date.includes('+')) {
       // datetime-local format (YYYY-MM-DDTHH:MM) - treat as-is without timezone conversion
-      eventDate = new Date(date + ':00'); // Add seconds if missing
+      eventDate = new Date(`${date  }:00`); // Add seconds if missing
     } else {
       eventDate = new Date(date);
     }
@@ -283,8 +283,8 @@ async function getEventById(req, res) {
     if (userId) {
       // Check if user is registered for this event
       userRegistration = await EventParticipationLog.findOne({
-        eventId: eventId,
-        userId: userId
+        eventId,
+        userId
       });
     }
 
@@ -409,7 +409,7 @@ async function updateEvent(req, res) {
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
   } catch (err) {
-  logger && logger.error ? logger.error('Error updating event:', err) : null;
+    logger && logger.error ? logger.error('Error updating event:', err) : null;
     res.status(500).json({ error: 'Error updating event.' });
   }
 }
@@ -546,9 +546,9 @@ async function rsvpEvent(req, res) {
     // Send response with appropriate message based on status
     const responseMessage = status === 'registered'
       ? (emailSent 
-          ? `RSVP successful! You are registered. QR code sent to email.`
-          : `RSVP successful! You are registered. Note: Email delivery failed, but QR code is shown below.`)
-      : `RSVP successful! You are on the waitlist for this event.`;
+        ? 'RSVP successful! You are registered. QR code sent to email.'
+        : 'RSVP successful! You are registered. Note: Email delivery failed, but QR code is shown below.')
+      : 'RSVP successful! You are on the waitlist for this event.';
     
     res.status(201).json({
       success: true,
@@ -853,7 +853,7 @@ async function scanQr(req, res) {
     global.scanRateLimit[key] = now;
     
     // Find participation log - check both legacy qrToken and new qrCode.token
-    let log = await EventParticipationLog.findOne({ 
+    const log = await EventParticipationLog.findOne({ 
       eventId, 
       $or: [
         { qrToken },
@@ -1096,10 +1096,10 @@ async function nominateCoHost(req, res) {
       },
     });
     // Audit log
-  // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
+    // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -1155,10 +1155,10 @@ async function approveCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
+    // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -1210,10 +1210,10 @@ async function rejectCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
+    // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -1292,8 +1292,8 @@ async function getPublicEventById(req, res) {
         
         // Check if user is registered for this event
         userRegistration = await EventParticipationLog.findOne({
-          eventId: eventId,
-          userId: userId
+          eventId,
+          userId
         });
         
         console.log('📊 Public Event Check:', {
@@ -1578,11 +1578,11 @@ async function regenerateQR(req, res) {
                     <div class="info-box">
                       <h2 style="margin-top: 0; color: #667eea;">${event.title}</h2>
                       <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</p>
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}</p>
                       <p><strong>Time:</strong> ${event.time || 'TBD'}</p>
                       <p><strong>Location:</strong> ${event.location || 'TBD'}</p>
                     </div>
