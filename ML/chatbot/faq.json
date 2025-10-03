@@ -235,4 +235,139 @@
     "question": "How do I access support tickets?",
     "answer": "Support tickets can be viewed and managed from your dashboard under 'Support.'"
   }
+  ,
+  {
+    "question": "hi",
+    "answer": "Hi, I'm CampVerseBot! How can I help you today?"
+  },
+  {
+    "question": "hello",
+    "answer": "Hello! I'm CampVerseBot, here to assist you. What would you like to know?"
+  },
+  {
+    "question": "hey",
+    "answer": "Hey there! How can I help you at CampVerse today?"
+  },
+  {
+    "question": "good morning",
+    "answer": "Good morning! How can I help you today at CampVerse?"
+  },
+  {
+    "question": "good afternoon",
+    "answer": "Good afternoon! What can I do for you at CampVerse?"
+  },
+  {
+    "question": "good evening",
+    "answer": "Good evening! How can I assist you at CampVerse?"
+  },
+  {
+    "question": "bye",
+    "answer": "Goodbye! If you need anything else, just ask. Have a great day!"
+  },
+  {
+    "question": "goodbye",
+    "answer": "Goodbye! Thanks for visiting CampVerse. See you next time!"
+  },
+  {
+    "question": "see you",
+    "answer": "See you! If you have more questions, come back anytime."
+  }
+  ,
+  {
+    "question": "How do I create an account on CampVerse?",
+    "answer": "Click the 'Create Account' button on the homepage and fill in your details. You’ll receive a confirmation email to activate your account."
+  },
+  {
+    "question": "How do I verify my email address?",
+    "answer": "After signing up, check your inbox for a verification email from CampVerse. Click the link in the email to verify your address. If you don’t see it, check your spam folder or request a new verification email from your dashboard."
+  },
+  {
+    "question": "What should I do if I don’t receive a confirmation email?",
+    "answer": "First, check your spam or junk folder. If you still can’t find it, use the 'Resend Confirmation Email' option on the login page or contact support for help."
+  },
+  {
+    "question": "How do I browse and filter events?",
+    "answer": "Go to the Events section from the main menu. You can use filters to search by category, date, or institution to find events that interest you."
+  },
+  {
+    "question": "How do I join the CampVerse community?",
+    "answer": "Sign up with your college email and start participating in events, discussions, and feedback. You can also follow us on social media for updates."
+  },
+  {
+    "question": "How do I use the dashboard?",
+    "answer": "After logging in, your dashboard gives you access to your events, teams, certificates, notifications, and more. Use the sidebar to navigate different sections."
+  },
+  {
+    "question": "How do I contact support from the website?",
+    "answer": "Click the 'Support' or 'Help' link in the website footer or your dashboard to submit a ticket or chat with our support team."
+  },
+  {
+    "question": "What browsers and devices are supported?",
+    "answer": "CampVerse works best on the latest versions of Chrome, Firefox, Edge, and Safari. The platform is mobile-friendly and works on most smartphones and tablets."
+  },
+  {
+    "question": "How do I reset my password from the login page?",
+    "answer": "Click 'Forgot Password?' on the login page, enter your email, and follow the instructions sent to your inbox to reset your password."
+  },
+  {
+    "question": "How do I access event details and schedules?",
+    "answer": "Click on any event card to view its details, including schedule, rules, and prizes. Important dates are highlighted on the event page."
+  },
+  {
+    "question": "How do I use the Browse Events feature?",
+    "answer": "Use the 'Browse Events' button on the homepage or dashboard to see all upcoming and ongoing events. You can filter and sort events as needed."
+  },
+  {
+    "question": "How do I launch my own event on CampVerse?",
+    "answer": "If you’re an institution or host, log in to your dashboard and use the 'Create Event' option. Fill in the event details and submit for approval."
+  },
+  {
+    "question": "How do I access the institution dashboard?",
+    "answer": "Institution representatives can log in and access the institution dashboard from the main menu. Here you can manage events, view analytics, and more."
+  },
+  {
+    "question": "How do I update my profile or settings from the frontend?",
+    "answer": "Go to your dashboard, click on your profile icon, and select 'Edit Profile' to update your information, change your password, or manage notification settings."
+  },
+  {
+    "question": "Why can’t I see some events?",
+    "answer": "Some events may be restricted to certain colleges or require approval to join. Check the event’s eligibility criteria or contact support if you think there’s an error."
+  },
+  {
+    "question": "How do I know if an event is open to my college?",
+    "answer": "Each event page lists eligibility details. Look for 'Open to All' or check if your college is listed in the eligible institutions."
+  },
+  {
+    "question": "How do I join a team for an event?",
+    "answer": "When registering for an event, you can create a new team or join an existing one if the event allows teams. Follow the prompts during registration."
+  },
+  {
+    "question": "How do I leave feedback for an event?",
+    "answer": "After the event, go to the event page or your dashboard and look for the 'Leave Feedback' option. Your feedback helps us improve!"
+  },
+  {
+    "question": "How do I report inappropriate content or users?",
+    "answer": "Use the 'Report' button on user profiles or event pages, or contact support directly. We take all reports seriously and will investigate promptly."
+  },
+  {
+    "question": "How do I stay safe while using CampVerse?",
+    "answer": "Never share your password or sensitive information. Use official communication channels and report any suspicious activity to support."
+  }
+  ,
+  {
+    "question": "How do I get verified as a host?",
+    "answer": "To get verified as a host, register your host account through the dedicated portal. Our team will review your details and may request additional documentation. Once approved, you’ll receive a verification badge and access to host features."
+  },
+  {
+    "question": "What documents are required for host verification?",
+    "answer": "Typically, you’ll need to provide a valid ID and official contact information. Specific requirements are listed during the registration process."
+  },
+  {
+    "question": "How long does host verification take?",
+    "answer": "Host verification usually takes 2-5 business days after submitting all required documents. You’ll be notified by email once your account is verified."
+  },
+  {
+    "question": "What are the benefits of being a verified host?",
+    "answer": "Verified hosts can create and manage events, access advanced analytics, and gain greater visibility on CampVerse. A verification badge also builds trust with participants."
+  }
 ]
