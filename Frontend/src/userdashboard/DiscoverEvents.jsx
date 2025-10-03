@@ -50,29 +50,34 @@ const DiscoverEvents = () => {
           return false;
         });
         // Transform backend events to match component format
-        const transformedEvents = filteredEvents.map(event => ({
-          id: event._id,
-          title: event.title,
-          date: new Date(event.date).toLocaleDateString('en-US', {
-            month: "long",
-            day: "numeric",
-            year: "numeric"
-          }),
-          time: new Date(event.date).toLocaleTimeString('en-US', {
-            hour: "2-digit",
-            minute: "2-digit"
-          }),
-          location: event.location?.venue || event.location?.type || 'N/A',
-          host: event.organizationName || event.organizer?.name || 'Host',
-          participants: event.participants || event.registrations || 0,
-          tags: Array.isArray(event.tags) ? event.tags : [],
-          description: event.description || '',
-          sessions: event.sessions || [],
-          image: event.bannerURL || event.bannerImage || hackathonImg,
-          isPaid: event.isPaid,
-          price: event.price || event.fee,
-          _id: event._id
-        }));
+        const transformedEvents = filteredEvents.map(event => {
+          const d = new Date(event.date);
+          const year = d.getFullYear();
+          const month = d.toLocaleString('en-US', { month: 'long' });
+          const day = d.getDate();
+          let hours = d.getHours();
+          const minutes = d.getMinutes();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          hours = hours % 12 || 12;
+          const formattedMinutes = minutes.toString().padStart(2, '0');
+          
+          return {
+            id: event._id,
+            title: event.title,
+            date: `${month} ${day}, ${year}`,
+            time: `${hours}:${formattedMinutes} ${ampm}`,
+            location: event.location?.venue || event.location?.type || 'N/A',
+            host: event.organizationName || event.organizer?.name || 'Host',
+            participants: event.participants || event.registrations || 0,
+            tags: Array.isArray(event.tags) ? event.tags : [],
+            description: event.description || '',
+            sessions: event.sessions || [],
+            image: event.bannerURL || event.bannerImage || hackathonImg,
+            isPaid: event.isPaid,
+            price: event.price || event.fee,
+            _id: event._id
+          };
+        });
         setEvents(transformedEvents);
       } else {
         // API failed, show nothing

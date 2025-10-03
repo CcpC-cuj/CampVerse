@@ -47,8 +47,7 @@ async function createEvent(req, res) {
     if (isNaN(validatedCapacity) || validatedCapacity < 1) {
       return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
     }
-    if (!req.files || !req.files['banner']) {
-    }
+    
     // Extract and parse fields
     let {
       title,
@@ -164,9 +163,17 @@ async function createEvent(req, res) {
       return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
     
-    // Ensure date is stored as UTC (MongoDB will store as Date object in UTC)
-    // The frontend should send datetime-local which browser converts to ISO string
-    let eventDate = new Date(date);
+    // Parse date from datetime-local input
+    // datetime-local gives us a string like "2025-12-31T12:59" without timezone
+    // We need to treat this as the local time the user intended
+    let eventDate;
+    if (date.includes('T') && !date.includes('Z') && !date.includes('+')) {
+      // datetime-local format (YYYY-MM-DDTHH:MM) - treat as-is without timezone conversion
+      eventDate = new Date(date + ':00'); // Add seconds if missing
+    } else {
+      eventDate = new Date(date);
+    }
+    
     if (isNaN(eventDate.getTime())) {
       return res.status(400).json({ error: 'Invalid event date format.' });
     }

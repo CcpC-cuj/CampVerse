@@ -35,8 +35,8 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		certificateEnabled: false,
 		chatEnabled: false,
 	});
-	const [cohostInput, setCohostInput] = useState(''); // For adding cohost email
-	const [sessionInput, setSessionInput] = useState({ title: '', time: '', speaker: '' }); // For adding sessions
+	const [cohostInput, setCohostInput] = useState('');
+	const [sessionInput, setSessionInput] = useState({ title: '', time: '', speaker: '' });
 	const [bannerUrl, setBannerUrl] = useState(null);
 	const [logoUrl, setLogoUrl] = useState(null);
 	const [loading, setLoading] = useState(false);
@@ -147,7 +147,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		}));
 	};
 
-	const handleSubmit = async (e) => {
+		const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!validateStep(4)) return;
 		
@@ -157,13 +157,12 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			const eventData = {
 				title: eventForm.title,
 				description: eventForm.description,
-				about: eventForm.about || '',
 				type: eventForm.category,
 				organizationName: eventForm.organizationName,
 				location: {
 					type: eventForm.location || 'online',
-					venue: eventForm.location === 'offline' ? eventForm.venue : '',
-					link: eventForm.location === 'online' ? eventForm.eventLink : ''
+					venue: eventForm.location === 'offline' || eventForm.location === 'hybrid' ? eventForm.venue : '',
+					link: eventForm.location === 'online' || eventForm.location === 'hybrid' ? eventForm.eventLink : ''
 				},
 				capacity: parseInt(eventForm.maxParticipants) || 1,
 				date: eventForm.date,
@@ -188,6 +187,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					chatEnabled: eventForm.chatEnabled || false
 				}
 			};
+			
 			const formData = new FormData();
 			Object.keys(eventData).forEach(key => {
 				const value = eventData[key];
@@ -197,27 +197,40 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					formData.append(key, value);
 				}
 			});
+			
 			if (eventForm.bannerImage instanceof File) formData.append('banner', eventForm.bannerImage);
 			if (eventForm.logoImage instanceof File) formData.append('logo', eventForm.logoImage);
 
 			const response = await createEventWithFiles(formData);
 			if (response.success && response.event) {
-				if (onSuccess) onSuccess(response.event);
+				// Handle co-hosts nomination
 				if (eventForm.cohosts.length > 0) {
-					for (const email of eventForm.cohosts) {
-						const userResult = await findUserByEmail(email);
-						if (userResult.userId) {
-							await nominateCoHost({ eventId: response.event._id, userId: userResult.userId });
-						} else {
-							console.warn(`Could not find user with email: ${email}`);
+					try {
+						for (const email of eventForm.cohosts) {
+							const userResult = await findUserByEmail(email);
+							if (userResult.userId) {
+								await nominateCoHost({ eventId: response.event._id, userId: userResult.userId });
+							} else {
+								console.warn(`Could not find user with email: ${email}`);
+							}
 						}
+					} catch (cohostErr) {
+						console.warn('Error nominating co-hosts:', cohostErr);
 					}
 				}
+				
+				// Call success callback
+				if (onSuccess) onSuccess(response.event);
 			} else {
-				// ...existing code...
+				// Handle API error response
+				const errorMessage = response.error || response.message || 'Failed to create event. Please try again.';
+				alert(errorMessage);
 			}
 		} catch (err) {
-			// ...existing code...
+			// Handle network or unexpected errors
+			console.error('Error creating event:', err);
+			const errorMessage = err?.response?.data?.error || err?.message || 'An unexpected error occurred. Please try again.';
+			alert(errorMessage);
 		} finally {
 			setLoading(false);
 		}
@@ -252,17 +265,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 							/>
 							{formErrors.description && <p className="text-red-400 text-sm mt-1">{formErrors.description}</p>}
 						</div>
-						<div>
-							<label className="block text-sm font-medium text-purple-300 mb-2">About Event (Optional)</label>
-							<textarea 
-								name="about" 
-								value={eventForm.about} 
-								onChange={handleFormChange} 
-								rows={3} 
-								className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
-								placeholder="Additional details about your event..."
-							/>
-						</div>
+						{/* About Event field removed as requested */}
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Event Date & Time *</label>
 							<input 

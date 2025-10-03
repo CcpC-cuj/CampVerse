@@ -8,7 +8,8 @@ import {
   updateMyNotificationPreferences,
   deleteMyAccount,
   updateMe,
-  uploadProfilePhoto
+  uploadProfilePhoto,
+  getInstitutionById
 } from '../api';
 import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
 import NavBar from './NavBar';
@@ -20,6 +21,10 @@ const Settings = () => {
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Institution name state for display
+  const [institutionName, setInstitutionName] = useState('');
+  const [institutionVerified, setInstitutionVerified] = useState(false);
 
   // active section highlight for top navbar (purely visual; content is stacked)
   const [activeTab, setActiveTab] = useState('profile');
@@ -133,6 +138,29 @@ const [interests, setInterests] = useState(user?.interests || []);
 const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
 const [skills, setSkills] = useState(user?.skills || []);
 const [institution, setInstitution] = useState(user?.institution || null);
+
+  // Fetch institution name if institution is an ID or object
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (user?.institutionId) {
+          // Ensure institutionId is a string (convert ObjectId if needed)
+          const instId = typeof user.institutionId === 'object' && user.institutionId._id 
+            ? user.institutionId._id 
+            : String(user.institutionId);
+          const inst = await getInstitutionById(instId);
+          if (mounted && inst) {
+            setInstitutionName(inst.name || '');
+            setInstitutionVerified(inst.isVerified || false);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch institution:', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [user?.institutionId]);
 
 
 //: preferences
@@ -836,26 +864,16 @@ const handleSaveProfile = async () => {
                             >
                               <i className="ri-close-line text-sm"></i>
                             </button>
-                          )}
-                        </div>
-                       <input 
-                          type="text"
-                          value={institution?.name || ''}
-                          readOnly={editingField !== 'institution'}
-                          onChange={(e) =>
-                            setInstitution((prev) => ({ ...(prev || {}), name: e.target.value }))
-                          }
-                          onKeyPress={handleKeyPress}
-                          className={`w-full p-2 rounded bg-gray-900 border ${
-                            editingField !== 'institution'
-                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                          }`}
-                        />
-                      </div>
+                      )}
                     </div>
-
-                                             {/* Learning Goals */}
+                   <input 
+                      type="text"
+                      value={institutionName || 'Not set'}
+                      readOnly
+                      className="w-full p-2 rounded bg-gray-900 border border-gray-800 text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                </div>                                             {/* Learning Goals */}
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>

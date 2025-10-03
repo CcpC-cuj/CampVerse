@@ -93,13 +93,20 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    // Parse the date and display it as stored, without timezone conversion
+    const date = new Date(dateString);
+    
+    // Extract components directly from the Date object
+    const year = date.getFullYear();
+    const month = date.toLocaleString('en-US', { month: 'long' });
+    const day = date.getDate();
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
   };
 
 

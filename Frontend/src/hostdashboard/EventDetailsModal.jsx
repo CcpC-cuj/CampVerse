@@ -32,13 +32,17 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const d = new Date(dateString);
+    const year = d.getFullYear();
+    const month = d.toLocaleString('en-US', { month: 'long' });
+    const day = d.getDate();
+    let hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const getEventStatus = () => {

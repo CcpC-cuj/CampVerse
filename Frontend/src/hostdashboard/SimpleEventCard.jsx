@@ -4,13 +4,17 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    const d = new Date(dateString);
+    const month = d.toLocaleString('en-US', { month: 'short' });
+    const day = d.getDate();
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year}, ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const getStatusInfo = (status) => {
