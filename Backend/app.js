@@ -160,7 +160,7 @@ app.use(smartTimeout);
 // Rate limiting for different endpoint types
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // limit each IP to 10 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
