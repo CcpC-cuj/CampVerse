@@ -1,9 +1,6 @@
 const SupportTicket = require('../Models/SupportTicket');
 const { uploadUserDocument } = require('../Services/firebaseStorageService');
-const {
-  sendSupportTicketConfirmation,
-  sendSupportTicketUpdate,
-} = require('../Services/email');
+const { logger } = require('../Middleware/errorHandler');
 
 // Submit support ticket (user)
 async function submitTicket(req, res) {
@@ -36,7 +33,7 @@ async function submitTicket(req, res) {
           size: req.file.size,
         };
       } catch (uploadError) {
-        console.error('File upload failed:', uploadError);
+        logger.error('File upload failed:', uploadError);
         return res.status(500).json({ error: 'Failed to upload attachment' });
       }
     }
@@ -66,7 +63,7 @@ async function submitTicket(req, res) {
       },
     });
   } catch (err) {
-    console.error('Submit ticket error:', err);
+    logger.error('Submit ticket error:', err);
     res.status(500).json({ error: 'Failed to submit support ticket' });
   }
 }
@@ -81,7 +78,7 @@ async function getMyTickets(req, res) {
 
     res.json(tickets);
   } catch (err) {
-    console.error('Get tickets error:', err);
+    logger.error('Get tickets error:', err);
     res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 }
@@ -113,7 +110,7 @@ async function getTicketById(req, res) {
 
     res.json(ticket);
   } catch (err) {
-    console.error('Get ticket error:', err);
+    logger.error('Get ticket error:', err);
     res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 }
@@ -156,7 +153,7 @@ async function getAllTickets(req, res) {
       },
     });
   } catch (err) {
-    console.error('Get all tickets error:', err);
+    logger.error('Get all tickets error:', err);
     res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 }
@@ -215,7 +212,7 @@ async function updateTicket(req, res) {
       },
     });
   } catch (err) {
-    console.error('Update ticket error:', err);
+    logger.error('Update ticket error:', err);
     res.status(500).json({ error: 'Failed to update ticket' });
   }
 }
@@ -299,7 +296,7 @@ async function getSupportAnalytics(req, res) {
       avgResolutionTime: Math.round(avgResolutionTime / (1000 * 60 * 60 * 24)), // in days
     });
   } catch (err) {
-    console.error('Get support analytics error:', err);
+    logger.error('Get support analytics error:', err);
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 }

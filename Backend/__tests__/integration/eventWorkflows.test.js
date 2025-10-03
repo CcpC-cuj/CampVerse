@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Event Module Integration Tests
  * Tests all event workflows end-to-end

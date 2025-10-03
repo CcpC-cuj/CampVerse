@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Comprehensive RSVP Flow Tests
  * Tests all aspects of event registration, QR code lifecycle, and attendance marking
@@ -257,7 +258,7 @@ describe('RSVP Flow Tests', () => {
   });
 
   describe('5. Waitlist Management', () => {
-    let waitlistUsers = [];
+    const waitlistUsers = [];
 
     beforeAll(async () => {
       // Fill event to capacity
@@ -367,7 +368,7 @@ describe('RSVP Flow Tests', () => {
   });
 
   describe('7. Bulk Attendance Marking', () => {
-    let bulkUserIds = [];
+    const bulkUserIds = [];
 
     beforeAll(async () => {
       // Create users and register them

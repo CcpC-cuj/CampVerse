@@ -1,9 +1,7 @@
-const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../../Models/User');
-const { createOTPService } = require('../../Services/otp');
-const { sendOTP, sendWelcomeEmail } = require('../../Services/email');
+const { sendWelcomeEmail } = require('../../Services/email');
 
 // Mock external dependencies
 jest.mock('../../Services/otp');

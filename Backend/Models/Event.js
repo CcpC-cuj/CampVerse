@@ -47,11 +47,11 @@ const eventSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   organizationName: { type: String },
   logoURL: { type: String },
-  bannerURL: { type: String, required: true },
+  bannerURL: { type: String }, // Made optional - not all events may have a banner
   location: {
-    type: { type: String, enum: ['online', 'offline'], required: true },
-    venue: { type: String }, // For offline
-    link: { type: String },  // For online
+    type: { type: String, enum: ['online', 'offline', 'hybrid'], required: true },
+    venue: { type: String }, // For offline and hybrid
+    link: { type: String },  // For online and hybrid
   },
   // participants and participantCount removed; use EventParticipationLog for tracking
   capacity: { type: Number },

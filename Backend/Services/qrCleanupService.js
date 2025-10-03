@@ -5,7 +5,7 @@
 
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const { sendMail } = require('../Services/email').createEmailService();
-const User = require('../Models/User');
+const { logger } = require('../Middleware/errorHandler');
 
 /**
  * Clean up expired QR codes
@@ -25,7 +25,7 @@ async function cleanupExpiredQRCodes() {
     }).populate('eventId userId');
     
     if (expiredLogs.length === 0) {
-      console.log('[QR Cleanup] No expired QR codes found');
+      logger.info('[QR Cleanup] No expired QR codes found');
       return {
         success: true,
         processed: 0,
@@ -33,7 +33,7 @@ async function cleanupExpiredQRCodes() {
       };
     }
     
-    console.log(`[QR Cleanup] Found ${expiredLogs.length} expired QR codes`);
+    logger.info(`[QR Cleanup] Found ${expiredLogs.length} expired QR codes`);
     
     let notifiedCount = 0;
     const errors = [];
@@ -83,21 +83,21 @@ async function cleanupExpiredQRCodes() {
                       <div class="info-box">
                         <h2 style="margin-top: 0; color: #667eea;">${log.eventId.title}</h2>
                         <p><strong>Date:</strong> ${new Date(log.eventId.date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}</p>
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}</p>
                         <p><strong>Time:</strong> ${log.eventId.time || 'TBD'}</p>
                         <p><strong>Location:</strong> ${log.eventId.location || 'TBD'}</p>
                         <p><strong>QR Expired At:</strong> ${new Date(log.qrCode.expiresAt).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}</p>
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })}</p>
                       </div>
                       
                       <p>Your QR code has expired and can no longer be used for attendance marking. This typically happens when QR codes expire 2 hours after the event ends.</p>
@@ -123,7 +123,7 @@ async function cleanupExpiredQRCodes() {
             });
             notifiedCount++;
           } catch (emailErr) {
-            console.error(`[QR Cleanup] Failed to send expiration email to ${log.userId.email}:`, emailErr.message);
+            logger.error(`[QR Cleanup] Failed to send expiration email to ${log.userId.email}:`, emailErr.message);
             errors.push({
               logId: log._id,
               userId: log.userId._id,
@@ -132,7 +132,7 @@ async function cleanupExpiredQRCodes() {
           }
         }
       } catch (err) {
-        console.error(`[QR Cleanup] Error processing log ${log._id}:`, err.message);
+        logger.error(`[QR Cleanup] Error processing log ${log._id}:`, err.message);
         errors.push({
           logId: log._id,
           error: err.message
@@ -148,11 +148,11 @@ async function cleanupExpiredQRCodes() {
       timestamp: new Date().toISOString()
     };
     
-    console.log('[QR Cleanup] Cleanup completed:', result);
+    logger.info('[QR Cleanup] Cleanup completed:', result);
     return result;
     
   } catch (err) {
-    console.error('[QR Cleanup] Fatal error during cleanup:', err);
+    logger.error('[QR Cleanup] Fatal error during cleanup:', err);
     return {
       success: false,
       error: err.message,
@@ -178,7 +178,7 @@ async function cleanupCompletedEventQRCodes() {
     });
     
     if (completedEvents.length === 0) {
-      console.log('[QR Cleanup] No completed events found');
+      logger.info('[QR Cleanup] No completed events found');
       return {
         success: true,
         eventsProcessed: 0,
@@ -186,7 +186,7 @@ async function cleanupCompletedEventQRCodes() {
       };
     }
     
-    console.log(`[QR Cleanup] Found ${completedEvents.length} completed events`);
+    logger.info(`[QR Cleanup] Found ${completedEvents.length} completed events`);
     
     let qrCodesExpired = 0;
     
@@ -220,11 +220,11 @@ async function cleanupCompletedEventQRCodes() {
       timestamp: new Date().toISOString()
     };
     
-    console.log('[QR Cleanup] Completed event QR cleanup:', result);
+    logger.info('[QR Cleanup] Completed event QR cleanup:', result);
     return result;
     
   } catch (err) {
-    console.error('[QR Cleanup] Error cleaning up completed event QR codes:', err);
+    logger.error('[QR Cleanup] Error cleaning up completed event QR codes:', err);
     return {
       success: false,
       error: err.message,
@@ -238,7 +238,7 @@ async function cleanupCompletedEventQRCodes() {
  * @returns {Object} Combined cleanup statistics
  */
 async function runCleanup() {
-  console.log('[QR Cleanup] Starting scheduled cleanup...');
+  logger.info('[QR Cleanup] Starting scheduled cleanup...');
   
   const results = {
     startTime: new Date().toISOString(),
@@ -247,7 +247,7 @@ async function runCleanup() {
     endTime: new Date().toISOString()
   };
   
-  console.log('[QR Cleanup] Scheduled cleanup completed:', results);
+  logger.info('[QR Cleanup] Scheduled cleanup completed:', results);
   return results;
 }
 

@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 let mongoServer;
 
@@ -53,11 +51,10 @@ describe('Business Logic Tests', () => {
       expect(firstUser.email).toBe('test@university.edu');
 
       // Try to create second user with same email
-      let secondUser;
       let error;
 
       try {
-        secondUser = await User.create({
+        await User.create({
           name: 'Second User',
           email: 'test@university.edu',
           passwordHash: 'hashedpassword',
@@ -240,7 +237,6 @@ describe('Business Logic Tests', () => {
   describe('Achievement System Business Rules', () => {
     it('should award achievements based on participation', async () => {
       const User = require('../../Models/User');
-      const Achievement = require('../../Models/Achievement');
       const Event = require('../../Models/Event');
       const Certificate = require('../../Models/Certificate');
 

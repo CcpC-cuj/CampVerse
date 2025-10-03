@@ -10,8 +10,6 @@ const {
   getPendingInstitutionVerifications,
   getInstitutionAnalytics,
   getInstitutionDashboard,
-  requestPublicDashboard,
-  approvePublicDashboard,
   searchInstitutions,
   requestNewInstitution,
 } = require('../Controller/institution');
@@ -166,7 +164,7 @@ router.get('/search', authenticateToken, searchInstitutions);
  *             alert(`Error: ${error.error}`);
  *           }
  *         } catch (error) {
- *           console.error('Error:', error);
+ *           logger.error('Error:', error);
  *         }
  *       };
  *       ```
@@ -483,7 +481,7 @@ router.delete(
  *             alert(`Error: ${error.error}`);
  *           }
  *         } catch (error) {
- *           console.error('Error:', error);
+ *           logger.error('Error:', error);
  *         }
  *       };
  *
@@ -501,7 +499,7 @@ router.delete(
  *             // Refresh institution list
  *           }
  *         } catch (error) {
- *           console.error('Error:', error);
+ *           logger.error('Error:', error);
  *         }
  *       };
  *       ```

@@ -57,15 +57,18 @@ const QRViewer = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    const d = new Date(dateString);
+    const weekday = d.toLocaleString('en-US', { weekday: 'short', timeZone: 'UTC' });
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${weekday}, ${month} ${day}, ${year}, ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const isExpired = () => {

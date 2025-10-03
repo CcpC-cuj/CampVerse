@@ -1,5 +1,6 @@
 const express = require('express');
 const upload = require('../Middleware/upload');
+const { logger } = require('../Middleware/errorHandler');
 const {
   createEvent,
   getEventById,
@@ -60,7 +61,7 @@ router.get('/', async (req, res) => {
     // Check if user is authenticated
     const isAuthenticated = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
     
-    let query = {};
+    const query = {};
     if (!isAuthenticated) {
       // Only show approved events to anonymous users
       query.verificationStatus = 'approved';
@@ -75,7 +76,7 @@ router.get('/', async (req, res) => {
     res.json({
       success: true,
       data: {
-        events: events,
+        events,
         total: events.length
       }
     });
@@ -337,7 +338,7 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error fetching QR code:', err);
+    logger.error('Error fetching QR code:', err);
     res.status(500).json({ 
       success: false,
       error: 'Error fetching QR code.',
@@ -641,7 +642,7 @@ router.get('/user', authenticateToken, async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Error fetching user events:', err);
+    logger.error('Error fetching user events:', err);
     res.status(500).json({ 
       success: false, 
       error: 'Error fetching user events.',

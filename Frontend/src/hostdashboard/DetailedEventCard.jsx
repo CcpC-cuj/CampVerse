@@ -6,13 +6,17 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const { participantStats, loading: participantsLoading, error: participantsError, refetch } = useEventParticipants(event._id);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    const d = new Date(dateString);
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    const year = d.getUTCFullYear();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year}, ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const getStatusInfo = (status) => {

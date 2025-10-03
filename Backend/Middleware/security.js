@@ -107,7 +107,7 @@ function sqlInjectionProtection(req, res, next) {
   };
   
   const checkObject = (obj) => {
-    for (const [key, value] of Object.entries(obj)) {
+    for (const [, value] of Object.entries(obj)) {
       if (typeof value === 'object' && value !== null) {
         if (!checkObject(value)) return false;
       } else if (!checkValue(value)) {
@@ -217,7 +217,7 @@ function xssProtection(req, res, next) {
   };
   
   const checkObject = (obj) => {
-    for (const [key, value] of Object.entries(obj)) {
+    for (const [, value] of Object.entries(obj)) {
       if (typeof value === 'object' && value !== null) {
         if (!checkObject(value)) return false;
       } else if (!checkValue(value)) {

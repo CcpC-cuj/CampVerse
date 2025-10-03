@@ -89,7 +89,7 @@ function validatePhone(phone) {
   return phoneRegex.test(phone);
 }
 
-const { validatePassword, PASSWORD_REGEX } = require('../Utils/passwordUtils');
+const { validatePassword } = require('../Utils/passwordUtils');
 
 function validateName(name) {
   return name && name.trim().length >= 2;

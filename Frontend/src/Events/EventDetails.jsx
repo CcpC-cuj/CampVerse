@@ -16,14 +16,18 @@ const EventDetails = ({ event, onClose, onEdit, onRSVP, onCancelRSVP, onVerify, 
   
   const formatDate = (date) => {
     if (!date) return 'N/A';
-    return new Date(date).toLocaleString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const d = new Date(date);
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    const weekday = d.toLocaleString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${weekday}, ${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const getStatusBadge = (status) => {

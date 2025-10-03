@@ -1,3 +1,6 @@
+/* eslint-env browser */
+/* eslint-disable no-console */
+/* global io */
 /**
  * Frontend WebSocket Client Example
  * Use this instead of fetch() to bypass CORS issues

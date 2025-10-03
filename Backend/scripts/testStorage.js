@@ -16,7 +16,7 @@ async function testStorageService() {
     const info = getProviderInfo();
     
     // Test 2: Health check
-    const health = await healthCheck();
+    await healthCheck();
     
     // Test 3: Test provider switching (if applicable)
     const availableProviders = info.available;
@@ -25,8 +25,9 @@ async function testStorageService() {
       try {
         unifiedStorageService.switchProvider(provider);
         
-        const newHealth = await healthCheck();
+        await healthCheck();
       } catch (error) {
+        // Ignore errors during provider switching
       }
     }
     
@@ -36,7 +37,7 @@ async function testStorageService() {
     
     
   } catch (error) {
-   // ...existing code...
+    // ...existing code...
   }
 }
 
