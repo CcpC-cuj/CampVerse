@@ -4,6 +4,42 @@
     "answer": "Visit the Events section, select your event, and click 'Register.' Complete the required details to finish registration."
   },
   {
+    "question": "How do I sign up for CampVerse?",
+    "answer": "Welcome! To sign up, just click the 'Register' button on our homepage and fill in your details. We're excited to have you join our community!"
+  },
+  {
+    "question": "Is CampVerse free to use?",
+    "answer": "Yes! CampVerse is free for all users. Some events may have entry fees, but browsing and joining the platform is always free."
+  },
+  {
+    "question": "Can I get help if I'm stuck?",
+    "answer": "Absolutely! If you ever need help, just reach out via our Support page or chat with us here. We're always happy to assist you!"
+  },
+  {
+    "question": "What should I do if I can't find my certificate?",
+    "answer": "No worries! Certificates are usually available in your dashboard after the event. If you can't find yours, contact support and we'll help you out."
+  },
+  {
+    "question": "How do I change my password?",
+    "answer": "To change your password, go to your profile settings and select 'Change Password.' If you forgot your password, use the 'Forgot Password' link on the login page."
+  },
+  {
+    "question": "Can I participate if I'm new to coding?",
+    "answer": "Of course! CampVerse welcomes everyone, whether you're a beginner or an expert. Many events are designed for all skill levels."
+  },
+  {
+    "question": "How do I contact a team member?",
+    "answer": "You can message your team members directly from your dashboard or use the chat feature during events."
+  },
+  {
+    "question": "What happens after I register for an event?",
+    "answer": "After registering, you'll receive a confirmation email and see the event in your dashboard. We'll keep you updated with all the important details!"
+  },
+  {
+    "question": "Can I join more than one team?",
+    "answer": "You can only join one team per event, but you're welcome to participate in multiple events with different teams!"
+  },
+  {
     "question": "What are the rules for the upcoming hackathon?",
     "answer": "Rules are available on the event details page or in the official rulebook linked there."
   },

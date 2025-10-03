@@ -1,66 +1,107 @@
-import streamlit as st
 import pandas as pd
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import socketio
+import logging
 
-# --- 1. Load Data and Model (This runs only once at the start) ---
-@st.cache_resource
-def load_resources():
-    """Loads the FAQ data, creates embeddings, and builds the FAISS index."""
-    # Load the FAQ data from the JSON file
+# --- Logging setup ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("chatbot")
+
+# --- Load resources ---
+try:
     df = pd.read_json('faq.json')
-    
-    # Load a pre-trained sentence transformer model
-    # This model is great for understanding the meaning of sentences.
     model = SentenceTransformer('all-MiniLM-L6-v2')
-    
-    # Create embeddings for all the questions in our FAQ
-    # An embedding is a numerical representation of the text.
     question_embeddings = model.encode(df['question'].tolist(), convert_to_tensor=True)
-    
-    # Create a FAISS index to allow for fast similarity searching
-    # We are telling FAISS that our vectors have a dimension of 384 (which is the output size of the 'all-MiniLM-L6-v2' model).
     index = faiss.IndexFlatL2(question_embeddings.shape[1])
-    
-    # Add our question embeddings to the FAISS index
     index.add(question_embeddings.cpu().numpy())
-    
-    return df, model, index
+    logger.info("Resources loaded successfully.")
+except Exception as e:
+    logger.error(f"Error loading resources: {e}")
+    raise
 
-df, model, index = load_resources()
+# --- FastAPI REST API ---
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# --- 2. Build the Streamlit User Interface ---
+class QuestionRequest(BaseModel):
+    question: str
 
-st.title("🤖 Campverse Help Chatbot")
-st.write("Ask me anything about the platform, and I'll do my best to find the answer!")
+@app.post("/chatbot")
+async def chatbot(req: QuestionRequest, request: Request):
+    question = req.question.strip()
+    if not question:
+        logger.warning("Received empty question.")
+        return {"error": "Question cannot be empty."}
+    if len(question) > 512:
+        logger.warning("Question too long.")
+        return {"error": "Question too long."}
+    try:
+        user_question_embedding = model.encode(question, convert_to_tensor=True)
+        user_question_embedding_np = user_question_embedding.cpu().numpy().reshape(1, -1)
+        distances, indices = index.search(user_question_embedding_np, k=1)
+        best_match_index = indices[0][0]
+        retrieved_answer = df.iloc[best_match_index]['answer']
+        retrieved_question = df.iloc[best_match_index]['question']
+        logger.info(f"Answered question: {question} -> {retrieved_question}")
+        return {
+            "question": retrieved_question,
+            "answer": retrieved_answer
+        }
+    except Exception as e:
+        logger.error(f"Error processing question: {e}")
+        return {"error": "Internal server error."}
 
-# Create a text input box for the user's question
-user_question = st.text_input("What's your question?")
+# --- Socket.IO real-time API ---
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app_socket = socketio.ASGIApp(sio, app)
 
-if user_question:
-    # --- 3. Find the Most Relevant Answer ---
-    
-    # Create an embedding for the user's question
-    user_question_embedding = model.encode(user_question, convert_to_tensor=True)
-    
-    # Reshape the embedding to be a 2D array for FAISS search
-    user_question_embedding_np = user_question_embedding.cpu().numpy().reshape(1, -1)
-    
-    # Search the FAISS index for the most similar question
-    # We're asking for the top 1 most similar result (k=1)
-    distances, indices = index.search(user_question_embedding_np, k=1)
-    
-    # Get the index of the best match
-    best_match_index = indices[0][0]
-    
-    # Retrieve the corresponding answer from our dataframe
-    retrieved_answer = df.iloc[best_match_index]['answer']
-    retrieved_question = df.iloc[best_match_index]['question']
+@sio.event
+def connect(sid, environ):
+    logger.info(f"Client connected: {sid}")
 
-    # --- 4. Display the Result ---
-    st.write("Here's what I found:")
-    
-    # Using an expander to make the UI cleaner
-    with st.expander(f"**Best Match:** {retrieved_question}"):
-        st.write(retrieved_answer)
+@sio.event
+def disconnect(sid):
+    logger.info(f"Client disconnected: {sid}")
+
+@sio.event
+async def user_question(sid, data):
+    question = data.get('question', '').strip()
+    if not question:
+        await sio.emit('bot_answer', {'error': 'Question cannot be empty.'}, to=sid)
+        logger.warning(f"Empty question from {sid}")
+        return
+    if len(question) > 512:
+        await sio.emit('bot_answer', {'error': 'Question too long.'}, to=sid)
+        logger.warning(f"Long question from {sid}")
+        return
+    try:
+        user_question_embedding = model.encode(question, convert_to_tensor=True)
+        user_question_embedding_np = user_question_embedding.cpu().numpy().reshape(1, -1)
+        distances, indices = index.search(user_question_embedding_np, k=1)
+        best_match_index = indices[0][0]
+        retrieved_answer = df.iloc[best_match_index]['answer']
+        retrieved_question = df.iloc[best_match_index]['question']
+        await sio.emit('bot_answer', {
+            'question': retrieved_question,
+            'answer': retrieved_answer
+        }, to=sid)
+        logger.info(f"SocketIO answered: {question} -> {retrieved_question}")
+    except Exception as e:
+        await sio.emit('bot_answer', {'error': 'Internal server error.'}, to=sid)
+        logger.error(f"SocketIO error for {sid}: {e}")
+
+# --- For Uvicorn ---
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app_socket, host="0.0.0.0", port=8000)
