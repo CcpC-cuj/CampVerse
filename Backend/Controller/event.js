@@ -41,6 +41,12 @@ async function createEvent(req, res) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
+    
+    // Validate capacity is a valid positive number
+    const validatedCapacity = parseInt(req.body.capacity);
+    if (isNaN(validatedCapacity) || validatedCapacity < 1) {
+      return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
+    }
     if (!req.files || !req.files['banner']) {
     }
     // Extract and parse fields
@@ -51,7 +57,6 @@ async function createEvent(req, res) {
       type,
       organizationName,
       location,
-      capacity,
       date,
       isPaid,
       price,
@@ -60,6 +65,7 @@ async function createEvent(req, res) {
       audienceType,
       features,
       sessions,
+      about,
     } = req.body;
     if (typeof location === 'string') {
       try {
@@ -172,7 +178,7 @@ async function createEvent(req, res) {
       type,
       organizationName,
       location,
-      capacity,
+      capacity: validatedCapacity,
       date: eventDate, // Store as Date object in UTC
       isPaid: eventIsPaid,
       price: eventPrice,
@@ -181,11 +187,62 @@ async function createEvent(req, res) {
       audienceType: audienceType || 'public',
       features: features || { certificateEnabled: false, chatEnabled: false },
       sessions: sessions || [],
+      about: about || '',
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
+    
+    // Notify verifiers about new event pending verification
+    try {
+      const User = require('../Models/User');
+      const verifiers = await User.find({ 
+        roles: { $in: ['verifier', 'platformAdmin'] } 
+      }).select('_id email name notificationPreferences');
+      
+      const { notifyUser } = require('../Services/notification');
+      const host = await User.findById(req.user.id).select('name email');
+      
+      for (const verifier of verifiers) {
+        await notifyUser({
+          userId: verifier._id,
+          type: 'event_verification',
+          message: `New event "${event.title}" submitted by ${host?.name || 'Unknown'} requires verification`,
+          data: { 
+            eventId: event._id, 
+            eventTitle: event.title,
+            hostName: host?.name,
+            hostEmail: host?.email,
+            status: 'pending' 
+          },
+          emailOptions: verifier.notificationPreferences?.email?.event_verification !== false ? {
+            to: verifier.email,
+            subject: `New Event Pending Verification: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #9b5de5;">New Event Requires Verification</h2>
+                <p>Hi ${verifier.name},</p>
+                <p>A new event has been submitted and requires your verification:</p>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #9b5de5; margin: 15px 0;">
+                  <p><strong>Event Title:</strong> ${event.title}</p>
+                  <p><strong>Host:</strong> ${host?.name || 'Unknown'} (${host?.email || ''})</p>
+                  <p><strong>Event Type:</strong> ${event.type}</p>
+                  <p><strong>Event Date:</strong> ${new Date(event.date).toLocaleString()}</p>
+                  <p><strong>Status:</strong> Pending Verification</p>
+                </div>
+                <p>Please review this event in the verifier dashboard and approve or reject it.</p>
+                <p>Best regards,<br>CampVerse Team</p>
+              </div>
+            `,
+          } : null,
+        });
+      }
+    } catch (notifErr) {
+      // Don't fail event creation if notification fails
+      logger && logger.error ? logger.error('Error sending event verification notifications:', notifErr) : null;
+    }
+    
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
