@@ -58,12 +58,12 @@ const QRViewer = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const d = new Date(dateString);
-    const weekday = d.toLocaleString('en-US', { weekday: 'short' });
-    const year = d.getFullYear();
-    const month = d.toLocaleString('en-US', { month: 'short' });
-    const day = d.getDate();
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
+    const weekday = d.toLocaleString('en-US', { weekday: 'short', timeZone: 'UTC' });
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     const formattedMinutes = minutes.toString().padStart(2, '0');

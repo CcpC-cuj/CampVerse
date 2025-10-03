@@ -7,11 +7,11 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
 
   const formatDate = (dateString) => {
     const d = new Date(dateString);
-    const month = d.toLocaleString('en-US', { month: 'short' });
-    const day = d.getDate();
-    const year = d.getFullYear();
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    const year = d.getUTCFullYear();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     const formattedMinutes = minutes.toString().padStart(2, '0');

@@ -33,11 +33,11 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
 
   const formatDate = (dateString) => {
     const d = new Date(dateString);
-    const year = d.getFullYear();
-    const month = d.toLocaleString('en-US', { month: 'long' });
-    const day = d.getDate();
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     const formattedMinutes = minutes.toString().padStart(2, '0');

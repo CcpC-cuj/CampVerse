@@ -93,15 +93,15 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
   };
 
   const formatDate = (dateString) => {
-    // Parse the date and display it as stored, without timezone conversion
+    // Parse the date and display it in UTC as stored in the database
     const date = new Date(dateString);
     
-    // Extract components directly from the Date object
-    const year = date.getFullYear();
-    const month = date.toLocaleString('en-US', { month: 'long' });
-    const day = date.getDate();
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
+    // Extract components using UTC methods to avoid timezone conversion
+    const year = date.getUTCFullYear();
+    const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = date.getUTCDate();
+    let hours = date.getUTCHours();
+    const minutes = date.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     const formattedMinutes = minutes.toString().padStart(2, '0');

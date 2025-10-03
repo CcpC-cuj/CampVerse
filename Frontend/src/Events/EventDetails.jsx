@@ -17,12 +17,12 @@ const EventDetails = ({ event, onClose, onEdit, onRSVP, onCancelRSVP, onVerify, 
   const formatDate = (date) => {
     if (!date) return 'N/A';
     const d = new Date(date);
-    const year = d.getFullYear();
-    const month = d.toLocaleString('en-US', { month: 'long' });
-    const day = d.getDate();
-    const weekday = d.toLocaleString('en-US', { weekday: 'long' });
-    let hours = d.getHours();
-    const minutes = d.getMinutes();
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    const weekday = d.toLocaleString('en-US', { weekday: 'long', timeZone: 'UTC' });
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
     const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
     const formattedMinutes = minutes.toString().padStart(2, '0');
