@@ -1,6 +1,7 @@
 const Feedback = require('../Models/Feedback');
 const { uploadUserDocument } = require('../Services/firebaseStorageService');
 const { sendFeedbackConfirmation } = require('../Services/email');
+const { logger } = require('../Middleware/errorHandler');
 
 // Submit feedback (user)
 async function submitFeedback(req, res) {
@@ -39,7 +40,7 @@ async function submitFeedback(req, res) {
           size: req.file.size,
         };
       } catch (uploadError) {
-        console.error('File upload failed:', uploadError);
+        logger.error('File upload failed:', uploadError);
         return res.status(500).json({ error: 'Failed to upload attachment' });
       }
     }
@@ -71,7 +72,7 @@ async function submitFeedback(req, res) {
         });
       }
     } catch (emailError) {
-      console.error('Failed to send feedback confirmation email:', emailError);
+      logger.error('Failed to send feedback confirmation email:', emailError);
       // Don't fail the request if email fails
     }
 
@@ -87,7 +88,7 @@ async function submitFeedback(req, res) {
       },
     });
   } catch (err) {
-    console.error('Submit feedback error:', err);
+    logger.error('Submit feedback error:', err);
     res.status(500).json({ error: 'Failed to submit feedback' });
   }
 }
@@ -102,7 +103,7 @@ async function getMyFeedback(req, res) {
 
     res.json(feedback);
   } catch (err) {
-    console.error('Get feedback error:', err);
+    logger.error('Get feedback error:', err);
     res.status(500).json({ error: 'Failed to fetch feedback' });
   }
 }
@@ -144,7 +145,7 @@ async function getAllFeedback(req, res) {
       },
     });
   } catch (err) {
-    console.error('Get all feedback error:', err);
+    logger.error('Get all feedback error:', err);
     res.status(500).json({ error: 'Failed to fetch feedback' });
   }
 }
@@ -196,7 +197,7 @@ async function updateFeedbackStatus(req, res) {
       },
     });
   } catch (err) {
-    console.error('Update feedback error:', err);
+    logger.error('Update feedback error:', err);
     res.status(500).json({ error: 'Failed to update feedback' });
   }
 }
@@ -255,7 +256,7 @@ async function getFeedbackAnalytics(req, res) {
       monthlyTrend,
     });
   } catch (err) {
-    console.error('Get feedback analytics error:', err);
+    logger.error('Get feedback analytics error:', err);
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 }

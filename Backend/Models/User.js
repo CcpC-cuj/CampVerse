@@ -123,7 +123,6 @@ userSchema.pre('save', function (next) {
 });
 
 // Performance indexes for common queries
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ institutionId: 1 });
 userSchema.index({ roles: 1 });
 userSchema.index({ isVerified: 1 });

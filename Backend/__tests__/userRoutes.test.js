@@ -1,10 +1,9 @@
+/* eslint-disable no-unused-vars */
 require('./setup'); // Import test utilities
 const { testUtils } = require('./setup');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 let mongoServer;
 let app;

@@ -31,7 +31,7 @@ jest.mock('../../Services/firebaseStorageService', () => ({
   firebaseStorageService: mockFirebaseService
 }));
 
-const { StorageService, storageService } = require('../../Services/storageService');
+const { StorageService } = require('../../Services/storageService');
 
 describe('Storage Service Abstraction Layer Unit Tests', () => {
   let service;

@@ -1,6 +1,7 @@
 const { emailsender } = require('./email');
 const Notification = require('../Models/Notification');
 const User = require('../Models/User');
+const { logger } = require('../Middleware/errorHandler');
 
 // Store io instance
 let io = null;
@@ -30,12 +31,12 @@ async function createNotification(userId, type, message, data = {}) {
     // Emit real-time notification via Socket.IO
     if (io) {
       io.to(`user:${userId}`).emit('notification', notification);
-      console.log(`Real-time notification sent to user:${userId}`);
+      logger.info(`Real-time notification sent to user:${userId}`);
     }
     
     return notification;
   } catch (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification:', error);
     throw error;
   }
 }
@@ -68,9 +69,9 @@ async function notifyHostRequest(userId, userName, userEmail) {
       }
     }
 
-    console.log(`Notified ${adminsAndVerifiers.length} admins/verifiers about host request from ${userName}`);
+    logger.info(`Notified ${adminsAndVerifiers.length} admins/verifiers about host request from ${userName}`);
   } catch (error) {
-    console.error('Error notifying host request:', error);
+    logger.error('Error notifying host request:', error);
   }
 }
 
@@ -96,7 +97,7 @@ async function notifyHostStatusUpdate(
     // Send email notification
     await sendHostStatusEmail(userEmail, userName, status, remarks);
   } catch (error) {
-    console.error('Error notifying host status update:', error);
+    logger.error('Error notifying host status update:', error);
   }
 }
 
@@ -125,7 +126,7 @@ async function notifyInstitutionRequest({
     
   // Notified ${adminAndVerifiers.length} admins/verifiers about institution request for ${institutionName} (console.log removed)
   } catch (error) {
-    console.error('Error notifying institution request:', error);
+    logger.error('Error notifying institution request:', error);
   }
 }
 
@@ -149,7 +150,7 @@ async function sendHostRequestEmail(
       },
     });
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse Admin" <noreply@campverse.com>',
       to: adminEmail,
       subject: 'New Host Request - Action Required',
@@ -167,7 +168,7 @@ async function sendHostRequestEmail(
       `,
     });
   } catch (error) {
-    console.error('Error sending host request email:', error);
+    logger.error('Error sending host request email:', error);
   }
 }
 
@@ -189,7 +190,7 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Host Request ${status === 'approved' ? 'Approved' : 'Rejected'}`;
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse" <noreply@campverse.com>',
       to: userEmail,
       subject,
@@ -207,7 +208,7 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
       `,
     });
   } catch (error) {
-    console.error('Error sending host status email:', error);
+    logger.error('Error sending host status email:', error);
   }
 }
 
@@ -221,7 +222,7 @@ async function getUserNotifications(userId, limit = 20) {
       .limit(limit);
     return notifications;
   } catch (error) {
-    console.error('Error fetching user notifications:', error);
+    logger.error('Error fetching user notifications:', error);
     throw error;
   }
 }
@@ -237,7 +238,7 @@ async function markNotificationAsRead(notificationId) {
     await notification.save();
     return true;
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read:', error);
     return false;
   }
 }
@@ -252,7 +253,7 @@ async function markAllNotificationsAsRead(userId) {
       { isRead: true },
     );
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+    logger.error('Error marking all notifications as read:', error);
     throw error;
   }
 }
@@ -270,7 +271,7 @@ async function notifyUser({
   try {
     const user = await User.findById(userId).select('notificationPreferences');
     if (!user) {
-      console.warn(`User not found: ${userId}`);
+      logger.warn(`User not found: ${userId}`);
       return;
     }
     // Check notification preferences
@@ -288,7 +289,7 @@ async function notifyUser({
       await emailsender(emailOptions);
     }
   } catch (error) {
-    console.error('Error in notifyUser:', error);
+    logger.error('Error in notifyUser:', error);
   }
 }
 
@@ -341,7 +342,7 @@ async function notifyInstitutionStatusUpdate({
     
   // Notified ${affectedUsers.length} users about institution ${statusText}: ${institutionName} (console.log removed)
   } catch (error) {
-    console.error('Error notifying institution status update:', error);
+    logger.error('Error notifying institution status update:', error);
   }
 }
 
@@ -363,7 +364,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Institution ${status === 'approved' ? 'Approved' : 'Rejected'} - ${institutionName}`;
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse" <noreply@campverse.com>',
       to: userEmail,
       subject,
@@ -409,7 +410,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
       `,
     });
   } catch (error) {
-    console.error('Error sending institution status email:', error);
+    logger.error('Error sending institution status email:', error);
   }
 }
 

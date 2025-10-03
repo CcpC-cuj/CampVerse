@@ -92,7 +92,6 @@ const institutionSchema = new mongoose.Schema({
 });
 
 // Performance indexes for common queries
-institutionSchema.index({ emailDomain: 1 }, { unique: true });
 institutionSchema.index({ isVerified: 1 });
 institutionSchema.index({ verificationRequested: 1 });
 institutionSchema.index({ type: 1 });

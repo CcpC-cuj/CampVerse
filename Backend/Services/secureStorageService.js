@@ -45,12 +45,11 @@ class SecureStorageService {
       // Create user-specific file path
       const timestamp = Date.now();
       const uniqueId = Math.random().toString(36).substring(2, 8);
-      const extension = filename.split('.').pop();
       const cleanFilename = `${timestamp}_${uniqueId}_${filename}`;
       const filePath = `${this.baseFolder}/users/${userId}/${category}/${cleanFilename}`;
 
       // Upload using admin client (bypasses RLS)
-      const { data, error } = await this.supabaseAdmin.storage
+      const { error } = await this.supabaseAdmin.storage
         .from(this.bucketName)
         .upload(filePath, fileBuffer, {
           contentType: mimetype,

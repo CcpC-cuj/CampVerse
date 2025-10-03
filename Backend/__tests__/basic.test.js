@@ -33,8 +33,14 @@ jest.mock('../Services/email.js', () => ({
 }));
 
 jest.mock('../Services/notification.js', () => ({
+  setSocketIO: jest.fn(),
   notifyHostRequest: jest.fn().mockResolvedValue(true),
   notifyHostStatusUpdate: jest.fn().mockResolvedValue(true),
+  notifyInstitutionRequest: jest.fn().mockResolvedValue(true),
+  notifyInstitutionStatusUpdate: jest.fn().mockResolvedValue(true),
+  createNotification: jest.fn().mockResolvedValue(true),
+  notifyUser: jest.fn().mockResolvedValue(true),
+  notifyUsers: jest.fn().mockResolvedValue(true),
 }));
 
 beforeAll(async () => {

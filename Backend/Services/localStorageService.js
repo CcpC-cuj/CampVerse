@@ -45,7 +45,7 @@ class LocalStorageService {
   /**
    * Upload event image (logo or banner)
    */
-  async uploadEventImage(fileBuffer, filename, type, mimetype) {
+  async uploadEventImage(fileBuffer, filename, type, _mimetype) {
     try {
       if (!this.initialized) {
         throw new Error('Local storage service not initialized');
@@ -69,7 +69,7 @@ class LocalStorageService {
   /**
    * Upload profile photo
    */
-  async uploadProfilePhoto(fileBuffer, filename, userId, mimetype) {
+  async uploadProfilePhoto(fileBuffer, filename, userId, _mimetype) {
     try {
       if (!this.initialized) {
         throw new Error('Local storage service not initialized');

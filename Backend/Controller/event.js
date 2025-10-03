@@ -29,7 +29,6 @@ const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
-const { unifiedStorageService } = require('../Services/driveService');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
@@ -49,22 +48,25 @@ async function createEvent(req, res) {
     }
     
     // Extract and parse fields
-    let {
+    const {
       title,
       description,
-      tags,
       type,
       organizationName,
-      location,
       date,
       isPaid,
       price,
+      audienceType,
+      about,
+    } = req.body;
+    
+    let {
+      tags,
+      location,
       requirements,
       socialLinks,
-      audienceType,
       features,
       sessions,
-      about,
     } = req.body;
     if (typeof location === 'string') {
       try {
@@ -309,7 +311,7 @@ async function getEventById(req, res) {
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
-    console.log('Update Event Request Body:', JSON.stringify(req.body, null, 2));
+    logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
     // Validate required fields for update (if present)
     const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
@@ -1296,7 +1298,7 @@ async function getPublicEventById(req, res) {
           userId
         });
         
-        console.log('📊 Public Event Check:', {
+        logger.info('📊 Public Event Check:', {
           eventId,
           userId,
           hasRegistration: !!userRegistration,
@@ -1304,7 +1306,7 @@ async function getPublicEventById(req, res) {
         });
       } catch (authErr) {
         // Authentication failed - user not logged in, continue without userRegistration
-        console.log('⚠️ Optional auth failed for public event (user not logged in)');
+        logger.info('⚠️ Optional auth failed for public event (user not logged in)');
       }
     }
 
@@ -1319,7 +1321,7 @@ async function getPublicEventById(req, res) {
       }
     });
   } catch (err) {
-    console.error('❌ Error fetching public event:', err);
+    logger.error('❌ Error fetching public event:', err);
     res.status(500).json({
       success: false,
       error: 'Error fetching public event.'
@@ -1384,7 +1386,7 @@ async function getAttendance(req, res) {
     });
 
   } catch (err) {
-    console.error('Error getting attendance:', err);
+    logger.error('Error getting attendance:', err);
     res.status(500).json({
       success: false,
       error: 'Failed to get attendance',
@@ -1461,7 +1463,7 @@ async function bulkMarkAttendance(req, res) {
           });
         }
       } catch (err) {
-        console.error('Error sending bulk attendance notifications:', err);
+        logger.error('Error sending bulk attendance notifications:', err);
       }
     });
 
@@ -1472,7 +1474,7 @@ async function bulkMarkAttendance(req, res) {
     });
 
   } catch (err) {
-    console.error('Error marking bulk attendance:', err);
+    logger.error('Error marking bulk attendance:', err);
     res.status(500).json({
       success: false,
       error: 'Failed to mark bulk attendance',
@@ -1609,7 +1611,7 @@ async function regenerateQR(req, res) {
           });
         }
       } catch (err) {
-        console.error('Error sending regenerated QR email:', err);
+        logger.error('Error sending regenerated QR email:', err);
       }
     });
 
@@ -1623,7 +1625,7 @@ async function regenerateQR(req, res) {
     });
 
   } catch (err) {
-    console.error('Error regenerating QR code:', err);
+    logger.error('Error regenerating QR code:', err);
     res.status(500).json({
       success: false,
       error: 'Failed to regenerate QR code',

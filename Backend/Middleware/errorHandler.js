@@ -1,9 +1,7 @@
 const winston = require('winston');
 const { 
-  AppError, 
   isOperationalError, 
-  isDatabaseError, 
-  isValidationError 
+  isDatabaseError,
 } = require('../Utils/errors');
 
 // Configure logger
@@ -37,7 +35,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Enhanced error handling middleware
-function errorHandler(err, req, res, next) {
+function errorHandler(err, req, res, _next) {
   // Generate correlation ID for request tracking
   const correlationId = req.correlationId || generateCorrelationId();
   

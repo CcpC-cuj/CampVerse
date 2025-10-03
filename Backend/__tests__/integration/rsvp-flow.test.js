@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Comprehensive RSVP Flow Tests
  * Tests all aspects of event registration, QR code lifecycle, and attendance marking

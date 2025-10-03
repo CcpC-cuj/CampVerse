@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 require('./setup'); // Import test utilities
 const { testUtils } = require('./setup');
 const request = require('supertest');

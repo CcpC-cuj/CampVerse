@@ -48,7 +48,6 @@ eventParticipationLogSchema.index({ userId: 1, eventId: 1 }, { unique: true });
 eventParticipationLogSchema.index({ eventId: 1, status: 1 }); // For capacity checks
 eventParticipationLogSchema.index({ userId: 1, status: 1 }); // For user's registrations
 eventParticipationLogSchema.index({ qrToken: 1 }, { sparse: true }); // For QR scanning (legacy)
-eventParticipationLogSchema.index({ 'qrCode.token': 1 }, { sparse: true }); // For enhanced QR scanning
 eventParticipationLogSchema.index({ 'qrCode.expiresAt': 1 }, { sparse: true }); // For cleanup
 eventParticipationLogSchema.index({ eventId: 1, status: 1, userId: 1 }); // Compound for analytics
 

@@ -10,7 +10,6 @@ jest.mock('bcrypt');
 // Import service functions
 const otpService = require('../../Services/otp');
 const emailService = require('../../Services/email');
-const notificationService = require('../../Services/notification');
 
 describe('Services Unit Tests', () => {
   beforeEach(() => {
