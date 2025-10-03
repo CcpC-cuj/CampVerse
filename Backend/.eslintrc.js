@@ -26,4 +26,12 @@ module.exports = {
     __dirname: 'readonly',
     __filename: 'readonly',
   },
+  overrides: [
+    {
+      files: ['scripts/**/*.js', '__tests__/**/*.js', 'examples/**/*.js'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
+  ],
 };

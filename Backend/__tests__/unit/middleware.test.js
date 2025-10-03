@@ -1,12 +1,9 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 
 // Mock external dependencies
 jest.mock('jsonwebtoken');
-jest.mock('bcrypt');
 
 // Import middleware functions
-const authMiddleware = require('../../Middleware/Auth');
 const jwtCheck = require('../../Middleware/JWTcheck');
 const errorHandler = require('../../Middleware/errorHandler');
 
@@ -205,7 +202,7 @@ describe('Middleware Unit Tests', () => {
       const rateLimiter = require('express-rate-limit');
 
       // Mock rate limiter
-      const mockLimiter = jest.fn((options) => {
+      const mockLimiter = jest.fn((_options) => {
         return (req, res, next) => {
           // Simulate successful request
           next();

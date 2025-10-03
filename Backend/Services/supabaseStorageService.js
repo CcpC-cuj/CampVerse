@@ -86,7 +86,7 @@ class SupabaseStorageService {
   /**
    * Upload file to Supabase Storage (Private)
    */
-  async uploadFile(fileBuffer, filename, filePath, mimetype, metadata = {}, userToken = null) {
+  async uploadFile(fileBuffer, filename, filePath, mimetype, metadata = {}, _userToken = null) {
     try {
       if (!this.initialized) {
         throw new Error('Supabase Storage Service not initialized');

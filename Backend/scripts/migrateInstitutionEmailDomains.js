@@ -27,7 +27,7 @@ async function migrateInstitutionEmailDomains() {
 
     // Process duplicates
     let duplicatesFound = 0;
-    for (const [domain, insts] of Object.entries(domainGroups)) {
+    for (const [, insts] of Object.entries(domainGroups)) {
       if (insts.length > 1) {
         duplicatesFound++;
         // ...existing code...
@@ -42,7 +42,7 @@ async function migrateInstitutionEmailDomains() {
           // ...existing code...
 
           // Update users that reference the removed institution
-          const updatedUsers = await User.updateMany(
+          await User.updateMany(
             { institutionId: removeInst._id },
             { institutionId: keep._id },
           );

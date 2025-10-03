@@ -6,8 +6,6 @@ require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const { createClient } = require('redis');
@@ -16,7 +14,6 @@ const { Server } = require('socket.io');
 const userRoutes = require('./Routes/userRoutes');
 const hostRoutes = require('./Routes/hostRoutes');
 const rateLimit = require('express-rate-limit');
-const winston = require('winston');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const institutionRoutes = require('./Routes/institutionRoutes');

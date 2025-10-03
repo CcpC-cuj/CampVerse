@@ -24,6 +24,7 @@
 const dotenv = require('dotenv');
 dotenv.config();
 const nodemailer = require('nodemailer');
+const { logger } = require('../Middleware/errorHandler');
 
 function createEmailTransporter() {
   return nodemailer.createTransport({
@@ -101,7 +102,7 @@ async function sendFeedbackConfirmation(to, name, feedbackData) {
     });
     return true;
   } catch (e) {
-    console.error('Feedback confirmation email failed:', e);
+    logger.error('Feedback confirmation email failed:', e);
     return false;
   }
 }
@@ -141,7 +142,7 @@ async function sendSupportTicketConfirmation(to, name, ticketData) {
     });
     return true;
   } catch (e) {
-    console.error('Support ticket confirmation email failed:', e);
+    logger.error('Support ticket confirmation email failed:', e);
     return false;
   }
 }
@@ -181,7 +182,7 @@ async function sendSupportTicketUpdate(to, name, ticketData) {
     });
     return true;
   } catch (e) {
-    console.error('Support ticket update email failed:', e);
+    logger.error('Support ticket update email failed:', e);
     return false;
   }
 }

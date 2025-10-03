@@ -400,9 +400,6 @@ function validateFile(type = 'image') {
 
 // Rate limiting validation
 function validateRateLimit(req, res, next) {
-  const clientIP = req.ip || req.connection.remoteAddress;
-  const endpoint = req.originalUrl;
-  
   // Basic rate limiting check
   if (req.rateLimit && req.rateLimit.remaining === 0) {
     return res.status(429).json({
