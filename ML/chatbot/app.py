@@ -7,6 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import socketio
 import logging
+import os
+
+# Import custom services
+from event_service import EventService
+from intent_classifier import IntentClassifier
 
 # --- Logging setup ---
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +24,15 @@ try:
     question_embeddings = model.encode(df['question'].tolist(), convert_to_tensor=True)
     index = faiss.IndexFlatL2(question_embeddings.shape[1])
     index.add(question_embeddings.cpu().numpy())
+    
+    # Initialize event service and intent classifier
+    backend_url = os.getenv('BACKEND_URL', 'http://localhost:5000')
+    event_service = EventService(backend_url, model)
+    intent_classifier = IntentClassifier()
+    
+    # Fetch events on startup
+    event_service.fetch_events()
+    
     logger.info("Resources loaded successfully.")
 except Exception as e:
     logger.error(f"Error loading resources: {e}")
@@ -47,6 +61,31 @@ async def chatbot(req: QuestionRequest, request: Request):
         logger.warning("Question too long.")
         return {"error": "Question too long."}
     try:
+        # Classify intent
+        intent, confidence = intent_classifier.classify(question)
+        logger.info(f"Intent: {intent} (confidence: {confidence})")
+        
+        # Handle specific intents
+        if intent in ['greeting', 'farewell', 'thanks', 'help']:
+            response = intent_classifier.get_response_for_intent(intent)
+            return {
+                "question": question,
+                "answer": response,
+                "intent": intent
+            }
+        
+        # Handle event search
+        if intent == 'event_search':
+            events = event_service.search_events(question, top_k=5)
+            response = event_service.format_event_response(events)
+            return {
+                "question": question,
+                "answer": response,
+                "intent": intent,
+                "events": events
+            }
+        
+        # Default: FAQ search
         user_question_embedding = model.encode(question, convert_to_tensor=True)
         user_question_embedding_np = user_question_embedding.cpu().numpy().reshape(1, -1)
         distances, indices = index.search(user_question_embedding_np, k=1)
@@ -56,7 +95,8 @@ async def chatbot(req: QuestionRequest, request: Request):
         logger.info(f"Answered question: {question} -> {retrieved_question}")
         return {
             "question": retrieved_question,
-            "answer": retrieved_answer
+            "answer": retrieved_answer,
+            "intent": intent
         }
     except Exception as e:
         logger.error(f"Error processing question: {e}")
@@ -86,6 +126,33 @@ async def user_question(sid, data):
         logger.warning(f"Long question from {sid}")
         return
     try:
+        # Classify intent
+        intent, confidence = intent_classifier.classify(question)
+        logger.info(f"Intent: {intent} (confidence: {confidence})")
+        
+        # Handle specific intents
+        if intent in ['greeting', 'farewell', 'thanks', 'help']:
+            response = intent_classifier.get_response_for_intent(intent)
+            await sio.emit('bot_answer', {
+                'question': question,
+                'answer': response,
+                'intent': intent
+            }, to=sid)
+            return
+        
+        # Handle event search
+        if intent == 'event_search':
+            events = event_service.search_events(question, top_k=5)
+            response = event_service.format_event_response(events)
+            await sio.emit('bot_answer', {
+                'question': question,
+                'answer': response,
+                'intent': intent
+            }, to=sid)
+            logger.info(f"SocketIO event search: {question}")
+            return
+        
+        # Default: FAQ search
         user_question_embedding = model.encode(question, convert_to_tensor=True)
         user_question_embedding_np = user_question_embedding.cpu().numpy().reshape(1, -1)
         distances, indices = index.search(user_question_embedding_np, k=1)
@@ -94,7 +161,8 @@ async def user_question(sid, data):
         retrieved_question = df.iloc[best_match_index]['question']
         await sio.emit('bot_answer', {
             'question': retrieved_question,
-            'answer': retrieved_answer
+            'answer': retrieved_answer,
+            'intent': intent
         }, to=sid)
         logger.info(f"SocketIO answered: {question} -> {retrieved_question}")
     except Exception as e:

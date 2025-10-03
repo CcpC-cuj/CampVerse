@@ -7,3 +7,5 @@ numpy==2.0.2
 python-socketio==5.11.4
 python-engineio==4.10.1
 python-socketio[client]==5.11.4
+requests==2.32.3
+scikit-learn==1.5.2

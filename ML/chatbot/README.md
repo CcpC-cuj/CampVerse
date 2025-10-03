@@ -22,11 +22,10 @@ If you're new and want to run this chatbot microservice, you can choose either D
   ```
 
 3. **Start the Backend Service**
-  ```bash
-  uvicorn app:app_socket --host 0.0.0.0 --port 8000
-  ```
-
-4. **Test with CLI Chat Client**
+   ```bash
+   export BACKEND_URL=http://localhost:5001  # Set backend URL
+   uvicorn app:app_socket --host 0.0.0.0 --port 8000
+   ```4. **Test with CLI Chat Client**
   Open a new terminal and run:
   ```bash
   python cli_chat.py
@@ -43,11 +42,9 @@ If you're new and want to run this chatbot microservice, you can choose either D
   ```
 
 2. **Run the Docker Container**
-  ```bash
-  docker run -p 8000:8000 chatbot-service
-  ```
-
-3. **Test the Service**
+   ```bash
+   docker run -p 8000:8000 -e BACKEND_URL=http://localhost:5001 chatbot-service
+   ```3. **Test the Service**
   - REST API: 
     ```bash
     curl -X POST http://localhost:8000/chatbot -H "Content-Type: application/json" -d '{"question":"How do I register?"}'
@@ -71,6 +68,8 @@ A production-ready chatbot microservice using FastAPI, Socket.IO, and sentence t
 - 🚀 **FastAPI REST API**: HTTP endpoint for Q&A
 - 🔌 **Socket.IO Real-time**: WebSocket support for live chat
 - 🤖 **AI-Powered**: Uses sentence transformers and FAISS for semantic search
+- 🎯 **Intent Classification**: Detects greetings, event queries, help requests, and more
+- 🔍 **Dynamic Event Discovery**: Fetches and searches live events from backend API
 - 🐳 **Docker Ready**: Containerized for easy deployment
 - 📝 **Logging**: Comprehensive logging for debugging
 - ✅ **Input Validation**: Validates question length and content
