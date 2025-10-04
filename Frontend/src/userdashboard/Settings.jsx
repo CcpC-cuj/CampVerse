@@ -1055,16 +1055,7 @@ const handleSaveProfile = async () => {
 
 
 
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={handleSaveProfile}
-                        disabled={profileSaving}
-                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-button transition-colors disabled:opacity-50"
-                      >
-                        {profileSaving ? 'Saving...' : 'Save Changes'}
-                      </button>
-                    </div>
+                    {/* Removed Save Changes button for notification preferences. Changes are now instant. */}
 
                     {/* ✅ FIXED: Host CTA Logic - Check if user is already a verified host */}
                     <div className="mt-4 flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
@@ -1168,7 +1159,7 @@ const handleSaveProfile = async () => {
                         <input
                           type="checkbox"
                           checked={emailNotifications}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const checked = e.target.checked;
                             setEmailNotifications(checked);
                             const updated = { ...notifPrefs, email: { ...notifPrefs.email } };
@@ -1176,6 +1167,7 @@ const handleSaveProfile = async () => {
                               updated.email[k] = checked;
                             }
                             setNotifPrefs(updated);
+                            await updateMyNotificationPreferences({ email: updated.email, inApp: updated.inApp });
                           }}
                           className="sr-only peer"
                         />
@@ -1192,7 +1184,7 @@ const handleSaveProfile = async () => {
                         <input
                           type="checkbox"
                           checked={pushNotifications}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const checked = e.target.checked;
                             setPushNotifications(checked);
                             const updated = { ...notifPrefs, inApp: { ...notifPrefs.inApp } };
@@ -1200,6 +1192,7 @@ const handleSaveProfile = async () => {
                               updated.inApp[k] = checked;
                             }
                             setNotifPrefs(updated);
+                            await updateMyNotificationPreferences({ email: updated.email, inApp: updated.inApp });
                           }}
                           className="sr-only peer"
                         />
@@ -1220,9 +1213,11 @@ const handleSaveProfile = async () => {
                               <input
                                 type="checkbox"
                                 checked={!!notifPrefs.email[cat]}
-                                onChange={(e) =>
-                                  setNotifPrefs({ ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } })
-                                }
+                                onChange={async (e) => {
+                                  const updated = { ...notifPrefs, email: { ...notifPrefs.email, [cat]: e.target.checked } };
+                                  setNotifPrefs(updated);
+                                  await updateMyNotificationPreferences({ email: updated.email, inApp: updated.inApp });
+                                }}
                                 className="sr-only peer"
                               />
                               <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-4 after:h-4 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-4"></div>
@@ -1234,9 +1229,11 @@ const handleSaveProfile = async () => {
                               <input
                                 type="checkbox"
                                 checked={!!notifPrefs.inApp[cat]}
-                                onChange={(e) =>
-                                  setNotifPrefs({ ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } })
-                                }
+                                onChange={async (e) => {
+                                  const updated = { ...notifPrefs, inApp: { ...notifPrefs.inApp, [cat]: e.target.checked } };
+                                  setNotifPrefs(updated);
+                                  await updateMyNotificationPreferences({ email: updated.email, inApp: updated.inApp });
+                                }}
                                 className="sr-only peer"
                               />
                               <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-[#9b5de5] after:content-[''] after:absolute after:w-4 after:h-4 after:rounded-full after:bg-white after:top-[2px] after:left-[2px] after:transition-all peer-checked:after:translate-x-4"></div>
@@ -1246,18 +1243,11 @@ const handleSaveProfile = async () => {
                       </div>
                     ))}
 
-                    <div className="flex justify-end gap-2">
-                      {notifMessage && (
+                    {notifMessage && (
+                      <div className="flex justify-end">
                         <span className="text-sm text-gray-300 self-center">{notifMessage}</span>
-                      )}
-                      <button
-                        onClick={saveNotificationPrefs}
-                        disabled={notifSaving}
-                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button disabled:opacity-50"
-                      >
-                        {notifSaving ? 'Saving...' : 'Save Preferences'}
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

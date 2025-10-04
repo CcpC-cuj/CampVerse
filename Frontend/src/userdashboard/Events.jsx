@@ -54,9 +54,9 @@ const Events = () => {
   const loadUserRsvpStatus = async () => {
     try {
       const response = await getUserEvents();
-      if (response.success && response.data && response.data.registeredEvents) {
+      if (response.success && response.data && response.data.events) {
         const rsvpedEventIds = new Set(
-          response.data.registeredEvents.map(event => event._id || event.id)
+          response.data.events.map(event => event._id || event.id)
         );
         setUserRsvps(rsvpedEventIds);
       }
@@ -81,7 +81,7 @@ const Events = () => {
 
       // Load registered events and build RSVP set
       if (userEventsRes.success && userEventsRes.data) {
-        const registeredEvents = userEventsRes.data.registeredEvents || userEventsRes.data.events || [];
+  const registeredEvents = userEventsRes.data.events || [];
         newEvents.registered = registeredEvents;
         registeredEvents.forEach((event) => rsvpSet.add(event._id));
         if (userEventsRes.data.savedEvents) newEvents.saved = userEventsRes.data.savedEvents;
