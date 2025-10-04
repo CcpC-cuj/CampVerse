@@ -3,9 +3,12 @@ const User = require('../Models/User');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const axios = require('axios');
 const logger = require('winston');
+const { config } = require('../config/environment');
 
 // ML API configuration
-const ML_API_URL = process.env.ML_API_URL || 'http://localhost:5002';
+const ML_API_URL = config.ml.apiUrl;
+const ML_RECOMMENDATION_ENABLED = config.ml.recommendationEnabled;
+const ML_API_TIMEOUT = config.ml.timeout;
 
 /**
  * Get personalized event recommendations for a user
@@ -80,11 +83,37 @@ async function getEventRecommendations(req, res) {
 
     // Call ML API for recommendations
     try {
+      // Check if ML recommendations are enabled
+      if (!ML_RECOMMENDATION_ENABLED) {
+        logger.info('ML recommendations disabled, using fallback');
+        const fallbackRecommendations = await getFallbackRecommendations(
+          userProfile,
+          availableEvents,
+          limit,
+        );
+
+        return res.json({
+          recommendations: fallbackRecommendations,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: fallbackRecommendations.length,
+          },
+          userProfile: {
+            interests: userProfile.interests,
+            skills: userProfile.skills,
+            attendedCount: userProfile.attendedEvents.length,
+            registeredCount: userProfile.registeredEvents.length,
+          },
+          note: 'Using fallback recommendations (ML feature disabled)',
+        });
+      }
+
       const mlResponse = await axios.post(
         `${ML_API_URL}/recommend`,
         recommendationData,
         {
-          timeout: 10000,
+          timeout: ML_API_TIMEOUT,
         },
       );
 

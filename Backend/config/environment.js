@@ -150,6 +150,16 @@ const config = {
     allowedImageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     allowedDocumentTypes: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     maxFiles: 5
+  },
+
+  // ML Recommendation Service configuration
+  ml: {
+    recommendationEnabled: process.env.ML_RECOMMENDATION_ENABLED === 'true',
+    apiUrl: process.env.ML_API_URL || 'http://localhost:5002',
+    timeout: parseInt(process.env.ML_API_TIMEOUT) || 10000,
+    fallbackEnabled: true,
+    retryAttempts: 2,
+    retryDelay: 1000
   }
 };
 
