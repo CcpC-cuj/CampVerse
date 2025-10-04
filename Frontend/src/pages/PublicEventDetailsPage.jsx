@@ -71,17 +71,33 @@ const EventDetailsPage = () => {
   };
 
   const fetchQrCode = async (forceFresh = false) => {
-    if (!user) return;
+    if (!user) {
+      console.log('❌ Cannot fetch QR: User not logged in');
+      return;
+    }
     
     try {
       setQrCodeLoading(true);
+      console.log('🎫 Fetching QR code for event:', id);
+      
       // Add cache-busting if forcing fresh fetch
       const cacheBuster = forceFresh ? `?t=${Date.now()}` : '';
       const response = await getMyEventQrCode(id, cacheBuster);
-      if (response.success && response.qrCode) {
+      
+      console.log('🎫 QR API Raw Response:', response);
+      console.log('🎫 QR API Response:', {
+        success: response.success,
+        hasQrCode: !!response.qrCode,
+        hasImage: !!response.qrCode?.image,
+        error: response.error || response.message
+      });
+      
+      if (response.success && response.qrCode && response.qrCode.image) {
+        console.log('✅ QR code loaded successfully');
         setQrCodeImage(response.qrCode.image);
       } else {
         // If QR fetch fails, don't show old cached QR
+        console.warn('⚠️ QR code not available:', response.error || response.message || 'Unknown error');
         setQrCodeImage(null);
       }
     } catch (err) {
@@ -499,14 +515,6 @@ const EventDetailsPage = () => {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-white">🎫 Your Event QR Code</h2>
-                <button
-                  onClick={() => fetchQrCode(true)}
-                  disabled={qrCodeLoading}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Refresh QR Code"
-                >
-                  {qrCodeLoading ? '⏳ Loading...' : '🔄 Refresh'}
-                </button>
               </div>
               <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
                 {qrCodeLoading ? (
@@ -539,7 +547,7 @@ const EventDetailsPage = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-purple-300 mb-4">
-                      ⚠️ QR code not available. Please check your email or contact support.
+                      ⚠️ QR code not available. Please check your email or <a href="/help" className="underline text-blue-400 hover:text-blue-600" target="_blank" rel="noopener noreferrer">Contact Support</a>.
                     </p>
                     <button
                       onClick={() => fetchQrCode(true)}
