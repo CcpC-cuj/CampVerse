@@ -564,34 +564,46 @@ async function rsvpEvent(req, res) {
     // Async notifications (non-blocking)
     setImmediate(async () => {
       try {
-        // Notify user (confirmation)
+        // Notify user (confirmation) with public event link
+        const publicEventLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${eventId}`;
         await notifyUser({
           userId: req.user.id,
           type: 'rsvp',
           message: `You have successfully registered for ${event.title}.`,
-          data: { eventId: event._id, eventTitle: event.title },
+          data: { eventId: event._id, eventTitle: event.title, publicEventLink },
+          link: `/events/${eventId}`, // Link to event details
           emailOptions: {
             to: req.user.email,
             subject: `RSVP Confirmation for ${event.title}`,
-            html: `<p>Hi ${req.user.name},<br>You have successfully registered for <b>${event.title}</b>.</p>`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #9b5de5;">Registration Confirmed!</h2>
+                <p>Hi ${req.user.name},</p>
+                <p>You have successfully registered for <b>${event.title}</b>.</p>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #9b5de5; margin: 15px 0;">
+                  <p><strong>Event Link:</strong></p>
+                  <p><a href="${publicEventLink}" style="color: #9b5de5; font-size: 16px;">${publicEventLink}</a></p>
+                  <p style="color: #666; font-size: 14px; margin-top: 10px;">
+                    💡 Visit this link anytime to view your registration details and QR code.
+                  </p>
+                </div>
+                ${status === 'registered' ? `
+                  <p style="color: #28a745; font-weight: bold;">✅ You are confirmed for this event!</p>
+                  <p>Your QR code has been sent in a separate email. You can also view it by clicking the link above.</p>
+                ` : `
+                  <p style="color: #ffc107; font-weight: bold;">⏳ You are currently on the waitlist.</p>
+                  <p>We'll notify you if a spot becomes available.</p>
+                `}
+                <hr style="margin: 20px 0;">
+                <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse.</p>
+              </div>
+            `,
           },
         });
         
-        // Notify host/co-hosts (new registration)
-        const hostAndCoHosts = [event.hostUserId, ...(event.coHosts || [])]
-          .filter((id) => id != null)
-          .map((id) => String(id))
-          .filter((id) => id !== req.user.id);
-          
-        if (hostAndCoHosts.length > 0) {
-          await notifyUsers({
-            userIds: hostAndCoHosts,
-            type: 'rsvp',
-            message: `${req.user.name} has registered for your event: ${event.title}.`,
-            data: { eventId: event._id, userId: req.user.id },
-            emailOptionsFn: async () => null,
-          });
-        }
+        // DO NOT notify host/co-hosts about new registrations (as per requirement)
+        // Hosts can view registrations in their dashboard
+        
       } catch (notificationError) {
         logger && logger.error ? logger.error('Notification error:', notificationError) : null;
       }
@@ -757,6 +769,7 @@ async function cancelRsvp(req, res) {
 
 // Email QR code to user
 async function sendQrEmail(to, qrImage, eventTitle, eventId) {
+  const publicEventLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${eventId}`;
   const qrViewLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/my-qr/${eventId}`;
   
   await emailService.sendMail({
@@ -772,7 +785,14 @@ async function sendQrEmail(to, qrImage, eventTitle, eventId) {
           <img src="${qrImage}" alt="Event QR Code" style="max-width: 200px; border: 2px solid #ddd; padding: 10px;" />
         </div>
         <p><strong>Important:</strong> This QR code is unique to you and this event only.</p>
-        <p>View your QR code anytime: <a href="${qrViewLink}" style="color: #9b5de5;">${qrViewLink}</a></p>
+        <div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #9b5de5; margin: 20px 0;">
+          <p><strong>📍 Event Page:</strong></p>
+          <p><a href="${publicEventLink}" style="color: #9b5de5; font-size: 16px;">${publicEventLink}</a></p>
+          <p style="color: #666; font-size: 14px; margin-top: 10px;">
+            💡 Visit this link anytime to view your registration details and QR code.
+          </p>
+        </div>
+        <p><strong>Or view your QR code directly:</strong> <a href="${qrViewLink}" style="color: #9b5de5;">${qrViewLink}</a></p>
         <p>Show this QR code at the event entrance for check-in.</p>
         <p style="color: #ff6b6b;">⚠️ This QR code expires 2 hours after the event ends and can only be used once.</p>
         <hr style="margin: 20px 0;">
@@ -1039,6 +1059,15 @@ async function nominateCoHost(req, res) {
     }
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+    
+    // Validate that the user exists and is registered on the platform
+    const nominatedUser = await User.findById(userId);
+    if (!nominatedUser) {
+      return res
+        .status(404)
+        .json({ error: 'User not found. Please ensure the user is registered on the platform.' });
+    }
+    
     // Only host can nominate
     if (event.hostUserId.toString() !== req.user.id) {
       return res
@@ -1062,21 +1091,47 @@ async function nominateCoHost(req, res) {
       requestedAt: new Date(),
     });
     await event.save();
-    // Notify nominated user
-    const nominatedUser = await User.findById(userId);
-    if (nominatedUser) {
-      await notifyUser({
-        userId,
-        type: 'cohost',
-        message: `You have been nominated as a co-host for ${event.title}. Please wait for verifier approval.`,
-        data: { eventId, eventTitle: event.title },
-        emailOptions: {
-          to: nominatedUser.email,
-          subject: `Co-host Nomination for ${event.title}`,
-          html: `<p>Hi ${nominatedUser.name},<br>You have been nominated as a co-host for <b>${event.title}</b>. Please wait for approval from a verifier.</p>`,
-        },
-      });
-    }
+    
+    // Notify nominated user with in-app notification and request for ID card if not a host
+    const isHost = nominatedUser.canHost;
+    const needsIdCard = !isHost && !nominatedUser.hostRequestIdCardPhoto;
+    
+    await notifyUser({
+      userId,
+      type: 'cohost_request',
+      message: `You have been nominated as a co-host for ${event.title}.${needsIdCard ? ' Please upload your ID card to complete the process.' : ' Please wait for verifier approval.'}`,
+      data: { 
+        eventId, 
+        eventTitle: event.title, 
+        needsIdCard,
+        isHost 
+      },
+      link: needsIdCard ? `/profile/host-request` : `/events/${eventId}`,
+      emailOptions: nominatedUser.notificationPreferences?.email?.cohost !== false ? {
+        to: nominatedUser.email,
+        subject: `Co-host Nomination for ${event.title}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #9b5de5;">Co-host Nomination</h2>
+            <p>Hi ${nominatedUser.name},</p>
+            <p>You have been nominated as a co-host for <b>${event.title}</b>.</p>
+            ${needsIdCard ? `
+              <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0;">
+                <p><strong>⚠️ Action Required:</strong></p>
+                <p>To complete your co-host nomination, please upload your ID card in your profile settings.</p>
+                <p><a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/profile/host-request" style="color: #9b5de5;">Upload ID Card</a></p>
+              </div>
+            ` : `
+              <div style="background: #d1ecf1; padding: 15px; border-left: 4px solid #0c5460; margin: 15px 0;">
+                <p>✅ Your nomination is pending approval from a verifier.</p>
+                <p>You will be notified once it's approved.</p>
+              </div>
+            `}
+            <p>Best regards,<br>CampVerse Team</p>
+          </div>
+        `,
+      } : null,
+    });
     // Notify verifiers (approval needed)
     const verifiers = await User.find({ roles: 'verifier' });
     await notifyUsers({
@@ -1294,20 +1349,29 @@ async function getPublicEventById(req, res) {
         
         // Check if user is registered for this event
         userRegistration = await EventParticipationLog.findOne({
-          eventId,
-          userId
+          eventId: new mongoose.Types.ObjectId(eventId),
+          userId: new mongoose.Types.ObjectId(userId)
         });
         
         logger.info('📊 Public Event Check:', {
           eventId,
           userId,
           hasRegistration: !!userRegistration,
-          registrationStatus: userRegistration?.status
+          registrationStatus: userRegistration?.status,
+          registrationDetails: userRegistration ? {
+            id: userRegistration._id.toString(),
+            status: userRegistration.status,
+            registeredAt: userRegistration.registeredAt
+          } : 'No registration found'
         });
       } catch (authErr) {
         // Authentication failed - user not logged in, continue without userRegistration
-        logger.info('⚠️ Optional auth failed for public event (user not logged in)');
+        logger.info('⚠️ Optional auth failed for public event (user not logged in)', {
+          error: authErr.message
+        });
       }
+    } else {
+      logger.info('📊 Public Event - No auth header provided');
     }
 
     res.json({

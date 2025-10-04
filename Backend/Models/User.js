@@ -89,11 +89,13 @@ const userSchema = new mongoose.Schema({
   deletionScheduledFor: { type: Date },
   notificationPreferences: {
     email: {
-      rsvp: { type: Boolean, default: true },
-      certificate: { type: Boolean, default: true },
-      cohost: { type: Boolean, default: true },
-      event_verification: { type: Boolean, default: true },
-      host_request: { type: Boolean, default: true },
+      rsvp: { type: Boolean, default: false },
+      certificate: { type: Boolean, default: false },
+      cohost: { type: Boolean, default: false },
+      cohost_request: { type: Boolean, default: false },
+      event_verification: { type: Boolean, default: false },
+      host_request: { type: Boolean, default: false },
+      registration: { type: Boolean, default: false }, // Host notifications about registrations
     },
     inApp: {
       rsvp: { type: Boolean, default: true },
@@ -101,6 +103,7 @@ const userSchema = new mongoose.Schema({
       cohost: { type: Boolean, default: true },
       event_verification: { type: Boolean, default: true },
       host_request: { type: Boolean, default: true },
+      registration: { type: Boolean, default: false }, // Disable in-app notifications for host about registrations
     },
   },
   // Frontend gate: mark onboarding as completed to avoid showing modal repeatedly

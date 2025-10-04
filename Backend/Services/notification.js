@@ -16,13 +16,14 @@ function setSocketIO(socketIO) {
 /**
  * Create an in-app notification and emit via Socket.IO
  */
-async function createNotification(userId, type, message, data = {}) {
+async function createNotification(userId, type, message, data = {}, link = null) {
   try {
     const notification = new Notification({
       targetUserId: userId,
       type,
       message,
       data,
+      link, // Add link for actionable notifications
       isRead: false,
       createdAt: new Date(),
     });
@@ -266,6 +267,7 @@ async function notifyUser({
   type,
   message,
   data = {},
+  link = null, // Add link parameter
   emailOptions = null,
 }) {
   try {
@@ -277,12 +279,12 @@ async function notifyUser({
     // Check notification preferences
     const prefs = user.notificationPreferences || {};
     const emailPref =
-      prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : true;
+      prefs.email && prefs.email[type] !== undefined ? prefs.email[type] : false; // Default to FALSE for email
     const inAppPref =
-      prefs.inApp && prefs.inApp[type] !== undefined ? prefs.inApp[type] : true;
+      prefs.inApp && prefs.inApp[type] !== undefined ? prefs.inApp[type] : true; // Default to TRUE for in-app
     // In-app notification
     if (inAppPref) {
-      await createNotification(userId, type, message, data);
+      await createNotification(userId, type, message, data, link);
     }
     // Email notification
     if (emailPref && emailOptions) {

@@ -5,13 +5,14 @@ import Sidebar from "../userdashboard/sidebar";
 import NavBar from "./NavBar";
 import ShareButton from './ShareButton';
 import { formatDateLong, formatDateShort } from "../utils/dateUtils";
+import { addToGoogleCalendar, downloadICSFile } from "../utils/googleCalendar";
 
 const Events = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("registered");
-  const [events, setEvents] = useState({ registered: [], upcoming: [], past: [], saved: [] });
+  const [events, setEvents] = useState({ registered: [], past: [], saved: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -75,7 +76,7 @@ const Events = () => {
         getPastEvents().catch(() => ({ success: false })),
       ]);
 
-      const newEvents = { registered: [], upcoming: [], past: [], saved: [] };
+      const newEvents = { registered: [], past: [], saved: [] };
       const rsvpSet = new Set();
 
       // Load registered events and build RSVP set
@@ -86,12 +87,6 @@ const Events = () => {
         if (userEventsRes.data.savedEvents) newEvents.saved = userEventsRes.data.savedEvents;
       }
 
-      // Load upcoming events (filter out already registered ones)
-      if (upcomingRes.success && upcomingRes.data) {
-        const allUpcoming = upcomingRes.data.events || upcomingRes.data || [];
-        newEvents.upcoming = allUpcoming.filter(event => !rsvpSet.has(event._id));
-      }
-      
       // Load past events
       if (pastRes.success && pastRes.data) {
         newEvents.past = pastRes.data.events || pastRes.data || [];
@@ -198,7 +193,7 @@ const Events = () => {
         <Sidebar />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden bg-[#141a45]">
-        <NavBar onOpenSidebar={() => setSidebarOpen(true)} eventsData={[]} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <NavBar onOpenSidebar={() => setSidebarOpen(true)} eventsData={events.registered} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
             <div>
@@ -210,7 +205,6 @@ const Events = () => {
           <div className="flex flex-wrap gap-2 mb-6">
             {[
               { key: "registered", label: "Registered", count: events.registered.length },
-              { key: "upcoming", label: "Discover", count: events.upcoming.length },
               { key: "past", label: "Past Events", count: events.past.length },
               { key: "saved", label: "Saved", count: events.saved.length },
             ].map((tab) => (
@@ -254,23 +248,7 @@ const Events = () => {
                 </div>
               )}
 
-              {selectedTab === "upcoming" && (
-                <div>
-                  <h2 className="text-xl font-bold mb-4 text-white">Discover Events</h2>
-                  {getFilteredEvents(events.upcoming).length === 0 ? (
-                    <div className="text-center py-12">
-                      <p className="text-gray-400 text-lg">No upcoming events</p>
-                      <p className="text-gray-500 text-sm mt-2">Check back later for new events</p>
-                    </div>
-                  ) : (
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {getFilteredEvents(events.upcoming).map((event) => (
-                        <EventCard key={event._id} event={event} showRSVPButton={true} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Discover tab removed as requested */}
 
               {selectedTab === "past" && (
                 <div>
@@ -412,6 +390,24 @@ const Events = () => {
         >
           {userRsvps.has(selectedEvent._id) ? "Cancel RSVP" : "RSVP"}
         </button>
+        {userRsvps.has(selectedEvent._id) && (
+          <>
+            <button
+              onClick={() => addToGoogleCalendar(selectedEvent)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              title="Add to Google Calendar"
+            >
+              📅 Google Calendar
+            </button>
+            <button
+              onClick={() => downloadICSFile(selectedEvent)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+              title="Download .ics file"
+            >
+              💾 Download
+            </button>
+          </>
+        )}
       </div>
     </div>
   </div>

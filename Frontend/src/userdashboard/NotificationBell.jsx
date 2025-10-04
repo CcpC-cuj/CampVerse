@@ -25,6 +25,30 @@ const NotificationBell = () => {
     }
   };
 
+  // Show browser notification for new real-time notifications
+  const showBrowserNotification = (notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notif = new Notification('CampVerse', {
+        body: notification.message,
+        icon: '/logo.png',
+        badge: '/logo.png',
+      });
+      notif.onclick = () => {
+        window.focus();
+        if (notification.link) {
+          window.location.href = notification.link;
+        }
+      };
+    }
+  };
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
   // Initialize Socket.IO connection for real-time notifications
   useEffect(() => {
     fetchNotifications();
@@ -53,8 +77,11 @@ const NotificationBell = () => {
 
       // Listen for new notifications
       socketRef.current.on('notification', (newNotification) => {
-        console.log('New notification received:', newNotification);
+        console.log('🔔 New notification received:', newNotification);
         setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+        
+        // Show browser notification
+        showBrowserNotification(newNotification);
         
         // If host status update notification, refresh user data to update UI
         if (newNotification.type === 'host_status_update') {
@@ -79,19 +106,18 @@ const NotificationBell = () => {
       });
     }
 
+    // Auto-refresh notifications every 2 seconds (polling fallback)
+    const refreshInterval = setInterval(() => {
+      fetchNotifications();
+    }, 2000);
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
+      clearInterval(refreshInterval);
     };
   }, []);
-
-  // Refresh when dropdown opens
-  useEffect(() => {
-    if (open) {
-      fetchNotifications();
-    }
-  }, [open]);
 
   // Close when clicking outside
   useEffect(() => {
@@ -104,14 +130,23 @@ const NotificationBell = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Mark notification as read
-  const handleMarkAsRead = async (notificationId) => {
+  // Mark notification as read and navigate to link
+  const handleNotificationClick = async (notification) => {
     try {
-      await markNotificationAsRead(notificationId);
-      // Refresh notifications
-      await fetchNotifications();
+      if (!notification.isRead) {
+        await markNotificationAsRead(notification._id);
+        // Update local state
+        setNotifications(prev => 
+          prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
+        );
+      }
+      
+      // Navigate to link if available
+      if (notification.link) {
+        window.location.href = notification.link;
+      }
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error('Failed to handle notification click:', error);
     }
   };
 
@@ -161,7 +196,7 @@ const NotificationBell = () => {
               {notifications.map((notification) => (
                 <li
                   key={notification._id}
-                  onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                  onClick={() => handleNotificationClick(notification)}
                   className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${
                     !notification.isRead ? 'bg-[#9b5de5]/10' : ''
                   }`}

@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ShareButton from '../userdashboard/ShareButton';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
+import { addToGoogleCalendar, downloadICSFile } from '../utils/googleCalendar';
 
 const EventDetailsPage = () => {
   const { id } = useParams();
@@ -21,15 +22,26 @@ const EventDetailsPage = () => {
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [rsvpError, setRsvpError] = useState("");
   const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Force refresh key
 
   useEffect(() => {
     loadEvent();
-  }, [id]);
+    // Auto-refresh every 30 seconds if user is logged in and viewing their registered event
+    const interval = setInterval(() => {
+      if (user && isRsvped) {
+        loadEvent();
+      }
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [id, user, isRsvped]);
 
   const loadEvent = async () => {
     try {
       setLoading(true);
       setError(null);
+      // Add cache-busting timestamp to force fresh data
       const response = await getPublicEventById(id);
       if (response.success && response.data) {
         setEvent(response.data);
@@ -39,12 +51,13 @@ const EventDetailsPage = () => {
         // Store registration status (registered or waitlisted)
         if (response.data.userRegistration) {
           setRegistrationStatus(response.data.userRegistration.status);
-          // If user is registered, fetch their QR code
+          // If user is registered, fetch their QR code (with cache-busting)
           if (response.data.userRegistration.status === 'registered') {
-            fetchQrCode();
+            fetchQrCode(true); // Force fresh fetch
           }
         } else {
           setRegistrationStatus(null);
+          setQrCodeImage(null); // Clear QR if not registered
         }
       } else {
         setError('Event not found');
@@ -57,17 +70,23 @@ const EventDetailsPage = () => {
     }
   };
 
-  const fetchQrCode = async () => {
+  const fetchQrCode = async (forceFresh = false) => {
     if (!user) return;
     
     try {
       setQrCodeLoading(true);
-      const response = await getMyEventQrCode(id);
+      // Add cache-busting if forcing fresh fetch
+      const cacheBuster = forceFresh ? `?t=${Date.now()}` : '';
+      const response = await getMyEventQrCode(id, cacheBuster);
       if (response.success && response.qrCode) {
         setQrCodeImage(response.qrCode.image);
+      } else {
+        // If QR fetch fails, don't show old cached QR
+        setQrCodeImage(null);
       }
     } catch (err) {
       console.error('❌ Error loading QR code:', err);
+      setQrCodeImage(null);
       // Don't show error to user - QR code might be expired or used
     } finally {
       setQrCodeLoading(false);
@@ -87,8 +106,10 @@ const EventDetailsPage = () => {
       const response = await rsvpEvent(id);
       
       if (response.success) {
-        // Store QR code if provided
-        if (response.data && response.data.qrImage) {
+        // Store QR code if provided (backend returns it directly in response)
+        if (response.qrImage) {
+          setQrCodeImage(response.qrImage);
+        } else if (response.data && response.data.qrImage) {
           setQrCodeImage(response.data.qrImage);
         }
         
@@ -99,6 +120,8 @@ const EventDetailsPage = () => {
         // Show success message based on status
         if (response.status === 'registered') {
           alert('✅ Successfully registered for the event! Check your email for QR code.');
+          // Show Google Calendar prompt
+          setShowCalendarPrompt(true);
         } else if (response.status === 'waitlisted') {
           alert('⏳ You have been added to the waitlist. You will be notified if a spot opens up.');
         }
@@ -283,7 +306,7 @@ const EventDetailsPage = () => {
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     }`}
                   >
-                    {rsvpLoading ? "⏳ Processing..." : "📝 Register for Event"}
+                    {rsvpLoading ? "⏳ Processing..." : "📝 RSVP for Event"}
                   </button>
                 ) : (
                   // Already registered - show status badge and cancel button
@@ -310,12 +333,21 @@ const EventDetailsPage = () => {
                     
                     {/* View QR Code button for registered users */}
                     {registrationStatus === 'registered' && (
-                      <button
-                        onClick={() => navigate(`/events/${id}/qr`)}
-                        className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
-                      >
-                        🎫 View QR Code
-                      </button>
+                      <>
+                        <button
+                          onClick={() => navigate(`/events/${id}/qr`)}
+                          className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
+                        >
+                          🎫 View QR Code
+                        </button>
+                        <button
+                          onClick={() => addToGoogleCalendar(event)}
+                          className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-lg transition-colors shadow-md"
+                          title="Add to Google Calendar"
+                        >
+                          📅 Add to Calendar
+                        </button>
+                      </>
                     )}
                   </>
                 )}
@@ -465,7 +497,17 @@ const EventDetailsPage = () => {
           {/* QR Code Section - Show only for registered users */}
           {isRsvped && registrationStatus === 'registered' && (
             <div className="mt-8">
-              <h2 className="text-2xl font-bold text-white mb-4">🎫 Your Event QR Code</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">🎫 Your Event QR Code</h2>
+                <button
+                  onClick={() => fetchQrCode(true)}
+                  disabled={qrCodeLoading}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Refresh QR Code"
+                >
+                  {qrCodeLoading ? '⏳ Loading...' : '🔄 Refresh'}
+                </button>
+              </div>
               <div className="bg-purple-900/20 p-6 rounded-lg border border-purple-500/30">
                 {qrCodeLoading ? (
                   <div className="text-center py-8">
@@ -479,19 +521,32 @@ const EventDetailsPage = () => {
                       alt="Event QR Code" 
                       className="mx-auto mb-4 bg-white p-4 rounded-lg"
                       style={{ maxWidth: '300px', width: '100%' }}
+                      key={refreshKey} // Force re-render on refresh
                     />
                     <p className="text-purple-300 text-sm mb-2">
                       ✅ Present this QR code at the event entrance
                     </p>
-                    <p className="text-purple-400 text-xs">
+                    <p className="text-purple-400 text-xs mb-3">
                       💡 Save this code or check your email for a copy
                     </p>
+                    <button
+                      onClick={() => navigate(`/events/${id}/qr`)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      📱 View Full QR Page
+                    </button>
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-purple-300">
+                    <p className="text-purple-300 mb-4">
                       ⚠️ QR code not available. Please check your email or contact support.
                     </p>
+                    <button
+                      onClick={() => fetchQrCode(true)}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      🔄 Try Again
+                    </button>
                   </div>
                 )}
               </div>
@@ -512,6 +567,44 @@ const EventDetailsPage = () => {
       )}
       {showSignupModal && (
         <SignupModal onClose={() => setShowSignupModal(false)} />
+      )}
+
+      {/* Google Calendar Prompt Modal */}
+      {showCalendarPrompt && event && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-purple-600 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <h3 className="text-2xl font-bold text-white mb-4">📅 Add to Calendar</h3>
+            <p className="text-gray-300 mb-6">
+              Would you like to add this event to your calendar so you don't forget?
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  addToGoogleCalendar(event);
+                  setShowCalendarPrompt(false);
+                }}
+                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                📅 Add to Google Calendar
+              </button>
+              <button
+                onClick={() => {
+                  downloadICSFile(event);
+                  setShowCalendarPrompt(false);
+                }}
+                className="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                💾 Download Calendar File (.ics)
+              </button>
+              <button
+                onClick={() => setShowCalendarPrompt(false)}
+                className="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

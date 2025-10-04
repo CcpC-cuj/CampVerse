@@ -277,13 +277,22 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const EventParticipationLog = require('../Models/EventParticipationLog');
     
+    logger.info('🎫 Fetching QR code:', { eventId, userId });
+    
     const log = await EventParticipationLog.findOne({
       userId,
       eventId,
       status: 'registered'
     }).populate('eventId');
     
+    logger.info('🔍 QR Log found:', { 
+      found: !!log, 
+      hasQrToken: !!(log?.qrToken || log?.qrCode?.token),
+      status: log?.status 
+    });
+    
     if (!log) {
+      logger.warn('⚠️ No registration found for QR request');
       return res.status(404).json({ 
         success: false,
         error: 'No RSVP found for this event.',
@@ -326,6 +335,8 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
     const qrcode = require('qrcode');
     const qrImage = await qrcode.toDataURL(qrToken);
     
+    logger.info('✅ QR code generated successfully');
+    
     res.json({
       success: true,
       qrCode: {
@@ -334,11 +345,11 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
         expiresAt: log.qrCode?.expiresAt || null,
         eventTitle: log.eventId.title,
         eventDate: log.eventId.date,
-        eventLocation: log.eventId.location
+        eventLocation: log.eventId.location?.venue || log.eventId.location?.type || 'TBD'
       }
     });
   } catch (err) {
-    logger.error('Error fetching QR code:', err);
+    logger.error('❌ Error fetching QR code:', err);
     res.status(500).json({ 
       success: false,
       error: 'Error fetching QR code.',
