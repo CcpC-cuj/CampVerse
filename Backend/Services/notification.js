@@ -1,4 +1,4 @@
-const { emailsender } = require('./email');
+const { createEmailService } = require('./email');
 const Notification = require('../Models/Notification');
 const User = require('../Models/User');
 const { logger } = require('../Middleware/errorHandler');
@@ -288,7 +288,8 @@ async function notifyUser({
     }
     // Email notification
     if (emailPref && emailOptions) {
-      await emailsender(emailOptions);
+      const emailService = createEmailService();
+      await emailService.sendMail(emailOptions);
     }
   } catch (error) {
     logger.error('Error in notifyUser:', error);

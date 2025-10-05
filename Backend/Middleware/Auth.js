@@ -74,16 +74,17 @@ async function authenticateToken(req, res, next) {
       // Validate user still exists in database and is active
       try {
         const User = require('../Models/User');
-        const dbUser = await User.findById(user.id).select('_id roles isVerified name');
+        const dbUser = await User.findById(user.id).select('_id roles isVerified name email');
         
         if (!dbUser) {
           return res.status(401).json({ error: 'User no longer exists.' });
         }
         
-        // Update user object with latest roles from database
+        // Update user object with latest data from database
         user.roles = dbUser.roles;
         user.isVerified = dbUser.isVerified;
         user.name = dbUser.name;
+        user.email = dbUser.email;
       } catch (dbError) {
         logger.error('User validation error:', dbError);
         return res.status(500).json({ error: 'Authentication validation failed.' });

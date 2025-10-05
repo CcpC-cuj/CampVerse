@@ -529,16 +529,20 @@ async function rsvpEvent(req, res) {
     if (status === 'registered') {
       try {
         qrImage = await qrcode.toDataURL(qrToken);
-        
+        logger && logger.info ? logger.info('📧 QR image for email:', { qrImage: typeof qrImage === 'string' ? qrImage.slice(0, 50) + '...' : qrImage }) : null;
         // Email QR code to user (non-blocking)
-        try {
-          await sendQrEmail(req.user.email, qrImage, event.title, eventId);
-          emailSent = true;
-          logger && logger.info ? logger.info('✅ QR code email sent successfully') : null;
-        } catch (emailErr) {
-          logger && logger.error ? logger.error('❌ Failed to send QR email:', emailErr) : null;
-          // Don't fail the RSVP, but inform user
-        }
+          if (!req.user.email || typeof req.user.email !== 'string' || !req.user.email.includes('@')) {
+            logger && logger.error ? logger.error('❌ Cannot send QR email: recipient email missing or invalid', { userId, eventId, email: req.user.email }) : null;
+          } else {
+            try {
+              await sendQrEmail(req.user.email, qrImage, event.title, eventId);
+              emailSent = true;
+              logger && logger.info ? logger.info('✅ QR code email sent successfully') : null;
+            } catch (emailErr) {
+              logger && logger.error ? logger.error('❌ Failed to send QR email:', emailErr) : null;
+              // Don't fail the RSVP, but inform user
+            }
+          }
       } catch (qrError) {
         logger && logger.error ? logger.error('❌ QR generation failed:', qrError) : null;
         // Continue without QR
@@ -770,7 +774,11 @@ async function cancelRsvp(req, res) {
 // Email QR code to user
 async function sendQrEmail(to, qrImage, eventTitle, eventId) {
   const publicEventLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${eventId}`;
-  const qrViewLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/my-qr/${eventId}`;
+  const qrViewLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${eventId}/qr`;
+  
+  // Convert data URL to buffer for attachment
+  const base64Data = qrImage.replace(/^data:image\/png;base64,/, '');
+  const qrBuffer = Buffer.from(base64Data, 'base64');
   
   await emailService.sendMail({
     from: 'CampVerse <noreply@campverse.com>',
@@ -781,9 +789,11 @@ async function sendQrEmail(to, qrImage, eventTitle, eventId) {
         <h2 style="color: #333;">Your Event Ticket</h2>
         <p>Hi there!</p>
         <p>Here is your QR code for <b>${eventTitle}</b>:</p>
-        <div style="text-align: center; margin: 20px 0;">
-          <img src="${qrImage}" alt="Event QR Code" style="max-width: 200px; border: 2px solid #ddd; padding: 10px;" />
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <img src="cid:qr-code.png" alt="Event QR Code" style="max-width: 250px; border: 2px solid #ddd; padding: 10px; background: white;" />
         </div>
+        
         <p><strong>Important:</strong> This QR code is unique to you and this event only.</p>
         <div style="background: #f0f8ff; padding: 15px; border-left: 4px solid #9b5de5; margin: 20px 0;">
           <p><strong>📍 Event Page:</strong></p>
@@ -799,6 +809,14 @@ async function sendQrEmail(to, qrImage, eventTitle, eventId) {
         <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse. Please do not reply to this email.</p>
       </div>
     `,
+    attachments: [
+      {
+        filename: 'qr-code.png',
+        content: qrBuffer,
+        contentType: 'image/png',
+        cid: 'qr-code.png' // Content-ID for inline embedding
+      }
+    ]
   });
 }
 
