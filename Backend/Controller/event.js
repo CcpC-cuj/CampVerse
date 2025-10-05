@@ -781,7 +781,7 @@ async function sendQrEmail(to, qrImage, eventTitle, eventId) {
   const qrBuffer = Buffer.from(base64Data, 'base64');
   
   await emailService.sendMail({
-    from: 'CampVerse <noreply@campverse.com>',
+    from: `CampVerse <${process.env.EMAIL_USER}>`,
     to,
     subject: `Your QR Code for ${eventTitle}`,
     html: `
@@ -1632,7 +1632,8 @@ async function regenerateQR(req, res) {
       try {
         const user = await User.findById(userId);
         if (user && user.email) {
-          await emailService.sendEmail({
+          await emailService.sendMail({
+            from: `CampVerse <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: `New QR Code - ${event.title}`,
             html: `
