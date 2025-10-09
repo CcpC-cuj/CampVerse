@@ -36,6 +36,7 @@ const Chatbot = () => {
 			{ from: "bot", text: data.answer || data.error || "Sorry, I couldn't understand that." }
 		]);
 	} catch (err) {
+		console.error('Chatbot error:', err);
 		setMessages((msgs) => [
 			...msgs,
 			{ from: "bot", text: "Network error. Please try again." }
@@ -80,7 +81,12 @@ const Chatbot = () => {
 												: 'bg-white text-gray-900 border border-gray-200 rounded-bl-none'
 										}`}
 									>
-										{msg.text}
+										{msg.text.split('\n').map((line, idx) => (
+											<React.Fragment key={idx}>
+												{line}
+												{idx < msg.text.split('\n').length - 1 && <br />}
+											</React.Fragment>
+										))}
 									</div>
 								</div>
 							))}

@@ -66,8 +66,9 @@ async def chatbot(req: QuestionRequest, request: Request):
         logger.info(f"Intent: {intent} (confidence: {confidence})")
         
         # Handle specific intents
-        if intent in ['greeting', 'farewell', 'thanks', 'help']:
+        if intent in ['greeting', 'farewell', 'thanks', 'help', 'host_help']:
             response = intent_classifier.get_response_for_intent(intent)
+            logger.info(f"Response for {intent}: {repr(response)}")  # Debug log
             return {
                 "question": question,
                 "answer": response,
@@ -131,7 +132,7 @@ async def user_question(sid, data):
         logger.info(f"Intent: {intent} (confidence: {confidence})")
         
         # Handle specific intents
-        if intent in ['greeting', 'farewell', 'thanks', 'help']:
+        if intent in ['greeting', 'farewell', 'thanks', 'help', 'host_help']:
             response = intent_classifier.get_response_for_intent(intent)
             await sio.emit('bot_answer', {
                 'question': question,
