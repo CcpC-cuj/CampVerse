@@ -66,6 +66,29 @@ services:
   #   networks:
   #     - campverse
 
+  # Chatbot microservice
+  chatbot:
+    build:
+      context: ./ML/chatbot
+      dockerfile: Dockerfile
+    container_name: campverse-chatbot
+    ports:
+      - "8000:8000"
+    environment:
+      - BACKEND_URL=http://backend:5001
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./ML/chatbot:/app
+    depends_on:
+      - backend
+    networks:
+      - campverse
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # ML Recommendation Service (Microservice)
   ml-recommendation:
     build:

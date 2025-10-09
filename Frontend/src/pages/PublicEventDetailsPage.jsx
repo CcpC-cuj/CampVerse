@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ShareButton from '../userdashboard/ShareButton';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
+import Chatbot from '../components/Chatbot';
 import { addToGoogleCalendar, downloadICSFile } from '../utils/googleCalendar';
 
 const EventDetailsPage = () => {
@@ -576,6 +577,7 @@ const EventDetailsPage = () => {
       {showSignupModal && (
         <SignupModal onClose={() => setShowSignupModal(false)} />
       )}
+      <Chatbot />
 
       {/* Google Calendar Prompt Modal */}
       {showCalendarPrompt && event && (
