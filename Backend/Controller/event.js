@@ -150,11 +150,11 @@ async function createEvent(req, res) {
     }
     let logoURL, bannerURL;
     // File upload using storage service
-    if (req.files['logo']) {
+    if (req.files && req.files['logo']) {
       const f = req.files['logo'][0];
       logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
     }
-    if (req.files['banner']) {
+    if (req.files && req.files['banner']) {
       const f = req.files['banner'][0];
       bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
