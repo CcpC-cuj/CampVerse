@@ -15,6 +15,7 @@ import FaqCta from "../landing/faq";
 import Footer from "../landing/footer";
 import FeaturesSection from "../landing/features";
 import ForgotPasswordModal from "./ForgotPasswordModal";
+import Chatbot from '../components/Chatbot';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -105,6 +106,9 @@ const Landing = () => {
       <Testimonials />
       <FaqCta />
       <Footer />
+
+      {/* Chatbot only on landing page */}
+      <Chatbot />
 
       {/* Login Modal (unchanged) */}
       {showLogin && (
