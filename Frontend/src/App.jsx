@@ -28,10 +28,10 @@ import {
   HostApplications,
   HostAnalytics,
   HostSettings,
+  QRScanner,
+  BulkAttendance,
+  AttendanceDashboard,
 } from "./hostdashboard";
-import QRScanner from "./hostdashboard/QRScanner";
-import BulkAttendance from "./hostdashboard/BulkAttendance";
-import AttendanceDashboard from "./hostdashboard/AttendanceDashboard";
 
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {

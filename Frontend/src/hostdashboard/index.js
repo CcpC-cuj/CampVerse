@@ -13,6 +13,12 @@ export { default as ManageEvents } from './EventsManagement'; // Alias for backw
 export { default as HostEventsDashboard } from './HostEventsDashboard';
 export { default as HostEventsNew } from './HostEventsDashboard'; // Alias for backward compatibility
 export { default as ParticipantsModal } from './ParticipantsModal';
+export { default as EventDetailsModal } from './EventDetailsModal';
+
+// Event-specific features
+export { default as QRScanner } from './QRScanner';
+export { default as AttendanceDashboard } from './AttendanceDashboard';
+export { default as BulkAttendance } from './BulkAttendance';
 
 // Event Forms
 export { default as CreateEventForm } from './CreateEventForm';
