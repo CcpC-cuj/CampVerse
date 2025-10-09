@@ -6,8 +6,6 @@ require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const { createClient } = require('redis');
@@ -16,7 +14,6 @@ const { Server } = require('socket.io');
 const userRoutes = require('./Routes/userRoutes');
 const hostRoutes = require('./Routes/hostRoutes');
 const rateLimit = require('express-rate-limit');
-const winston = require('winston');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 const institutionRoutes = require('./Routes/institutionRoutes');
@@ -163,7 +160,7 @@ app.use(smartTimeout);
 // Rate limiting for different endpoint types
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
+  max: 500, // limit each IP to 500 requests per windowMs
   message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -514,15 +511,27 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));
 app.use('/api/support', require('./Routes/supportRoutes'));
 
+// Initialize Socket.IO in notification service for real-time notifications
+const { setSocketIO } = require('./Services/notification');
+setSocketIO(io);
+
 // Socket.IO event handlers
 io.on('connection', (socket) => {
   logger.info(`New socket connection: ${socket.id}`);
   
-  // Authentication event
-  socket.on('authenticate', (_token) => {
-    // TODO: Implement JWT verification for socket authentication
-    logger.info(`Socket ${socket.id} attempting authentication`);
-    socket.emit('authenticated', { success: true, socketId: socket.id });
+  // Authentication event - join user room for notifications
+  socket.on('authenticate', (token) => {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.userId;
+      socket.join(`user:${userId}`);
+      logger.info(`Socket ${socket.id} authenticated for user ${userId}`);
+      socket.emit('authenticated', { success: true, socketId: socket.id, userId });
+    } catch (error) {
+      logger.error('Socket authentication error:', error);
+      socket.emit('authenticated', { success: false, error: 'Invalid token' });
+    }
   });
   
   // API proxy events - bypass CORS by routing through WebSocket
@@ -632,6 +641,23 @@ mongoose
     mongoose.connection.on('disconnected', () => {
       logger.warn('MongoDB disconnected');
     });
+    
+    // Initialize QR Code cleanup cron job
+    const { runCleanup } = require('./Services/qrCleanupService');
+    const cron = require('node-cron');
+    
+    // Run QR cleanup every hour
+    cron.schedule('0 * * * *', async () => {
+      logger.info('[Cron] Starting hourly QR code cleanup...');
+      try {
+        const results = await runCleanup();
+        logger.info('[Cron] QR cleanup completed:', results);
+      } catch (err) {
+        logger.error('[Cron] QR cleanup failed:', err);
+      }
+    });
+    
+    logger.info('QR code cleanup cron job scheduled (runs hourly)');
     
     // Graceful shutdown
     process.on('SIGINT', async () => {

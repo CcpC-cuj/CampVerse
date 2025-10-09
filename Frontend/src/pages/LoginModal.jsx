@@ -32,35 +32,32 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = '/dashboard';
+        // No redirect: stay on current page so event view updates with authentication
       } else {
-        alert(response.error || 'Login failed');
+  // ...existing code...
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed: ' + error.message);
+  // ...existing code...
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
-    console.log("🔵 [LOGIN MODAL] Google Sign-In button clicked");
-    console.log("🔵 [LOGIN MODAL] Timestamp:", new Date().toISOString());
     setError("");
     setForceLogout(false);
+    // Store current route for post-auth redirect
+    sessionStorage.setItem('postAuthRedirect', window.location.pathname + window.location.search + window.location.hash);
     try {
       setIsLoading(true);
-      console.log("🔵 [LOGIN MODAL] Getting Google token...");
       const token = await getGoogleToken();
-      console.log("🔵 [LOGIN MODAL] Token received, calling API...");
       const response = await googleSignIn({ token });
-      console.log("🔵 [LOGIN MODAL] API response received:", response);
 
       if (response.token) {
         authLogin(response.token, response.user);
         onClose();
-        window.location.href = "/dashboard";
+        // No redirect: stay on current page so event view updates with authentication
       } else if (response.error) {
         if (response.forceLogout) {
           authLogout();

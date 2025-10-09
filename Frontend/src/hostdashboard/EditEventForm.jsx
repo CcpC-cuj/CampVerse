@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { nominateCoHost } from "../api/events";
 import { findUserByEmail } from "../api/users";
+import { useAuth } from "../contexts/AuthContext";
 
 const EditEventForm = ({ event, onSave, onCancel, loading }) => {
-  console.log('EditEventForm received event:', event);
+  const { user } = useAuth();
+  // EditEventForm received event: (console.log removed)
   const [eventForm, setEventForm] = useState({
     title: '',
     description: '',
@@ -35,8 +37,27 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
 
   useEffect(() => {
     if (event) {
-      console.log('Event data in useEffect:', event);
+  // ...existing code...
       
+      // Extract contact info from event or organizer
+      let contactEmail = '';
+      let contactPhone = '';
+      
+      if (event.contactEmail) {
+        contactEmail = event.contactEmail;
+      } else if (event.organizer && typeof event.organizer === 'object' && event.organizer.contactEmail) {
+        contactEmail = event.organizer.contactEmail;
+      } else if (user?.email) {
+        contactEmail = user.email;
+      }
+      
+      if (event.contactPhone) {
+        contactPhone = event.contactPhone;
+      } else if (event.organizer && typeof event.organizer === 'object' && event.organizer.contactPhone) {
+        contactPhone = event.organizer.contactPhone;
+      } else if (user?.phone) {
+        contactPhone = user.phone;
+      }
 
       setEventForm({
         title: event.title || '',
@@ -52,8 +73,8 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
         fee: event.price?.toString() || '',
         tags: Array.isArray(event.tags) ? event.tags.join(', ') : '',
         requirements: Array.isArray(event.requirements) ? event.requirements.join('\n') : '',
-        contactEmail: event.contactEmail || '',
-        contactPhone: event.contactPhone || '',
+        contactEmail,
+        contactPhone,
         socialLinks: {
           website: event.socialLinks?.website || '',
           linkedin: event.socialLinks?.linkedin || '',
@@ -70,7 +91,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
       if (event?.bannerURL) setBannerUrl(event.bannerURL);
       if (event?.logoURL) setLogoUrl(event.logoURL);
     }
-  }, [event]);
+  }, [event, user]);
 
   const handleFormChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -114,15 +135,31 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!eventForm.title || !eventForm.description || !eventForm.date || !eventForm.location || !eventForm.contactEmail || !eventForm.contactPhone) {
+  // ...existing code...
+      return;
+    }
+    
     const transformedData = {
       ...eventForm,
       date: new Date(eventForm.date).toISOString(),
-      tags: eventForm.tags.split(',').map(tag => tag.trim()),
-      requirements: eventForm.requirements.split('\n').map(req => req.trim()),
+      tags: eventForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+      requirements: eventForm.requirements.split('\n').map(req => req.trim()).filter(req => req),
       sessions: eventForm.sessions.split('\n').map(sessionLine => {
         const parts = sessionLine.trim().split(' - ');
         return { title: parts[0] || '', time: parts[1] || '', speaker: parts[2] || '' };
-      }),
+      }).filter(s => s.title),
+      contactEmail: eventForm.contactEmail,
+      contactPhone: eventForm.contactPhone,
+      // Ensure organizer object includes contact info
+      organizer: {
+        name: eventForm.organizationName || user?.name || '',
+        type: eventForm.organizer || 'institution',
+        contactEmail: eventForm.contactEmail,
+        contactPhone: eventForm.contactPhone
+      }
     };
     if (onSave) {
       onSave(transformedData, bannerUrl, logoUrl);
@@ -243,7 +280,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-purple-300 mb-2">Registration Fee (₹) *</label>
                   <input type="number" name="fee" value={eventForm.fee} onChange={handleFormChange} min="1" step="0.01" required={eventForm.isPaid} placeholder="Enter amount" className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" />
-                  <button type="button" disabled={!eventForm.fee || !eventForm.title || !eventForm.date} className="mt-2 w-full px-4 py-3 bg-purple-700/30 border border-purple-500/50 text-purple-300 rounded-lg font-medium disabled:opacity-50 hover:bg-purple-600/30 transition-colors" onClick={() => alert('Payment info integration coming soon!')}>Add Payment Info</button>
+                  <button type="button" disabled={!eventForm.fee || !eventForm.title || !eventForm.date} className="mt-2 w-full px-4 py-3 bg-purple-700/30 border border-purple-500/50 text-purple-300 rounded-lg font-medium disabled:opacity-50 hover:bg-purple-600/30 transition-colors">Add Payment Info</button>
                 </div>
               )}
             </div>
@@ -255,12 +292,28 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
             {/* Contact Information */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-purple-300 mb-2">Contact Email</label>
-                <input type="email" name="contactEmail" value={eventForm.contactEmail} readOnly className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed" />
+                <label className="block text-sm font-medium text-purple-300 mb-2">Contact Email *</label>
+                <input 
+                  type="email" 
+                  name="contactEmail" 
+                  value={eventForm.contactEmail} 
+                  onChange={handleFormChange}
+                  required
+                  placeholder="contact@example.com"
+                  className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-purple-300 mb-2">Contact Phone</label>
-                <input type="text" name="contactPhone" value={eventForm.contactPhone} readOnly className="w-full px-4 py-3 bg-transparent border border-purple-500/50 rounded-lg text-purple-300 placeholder-purple-400 focus:outline-none cursor-not-allowed" />
+                <label className="block text-sm font-medium text-purple-300 mb-2">Contact Phone *</label>
+                <input 
+                  type="tel" 
+                  name="contactPhone" 
+                  value={eventForm.contactPhone} 
+                  onChange={handleFormChange}
+                  required
+                  placeholder="+91 1234567890"
+                  className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                />
               </div>
             </div>
             {/* Event Audience */}

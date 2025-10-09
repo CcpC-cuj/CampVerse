@@ -13,7 +13,11 @@ const Sidebar = ({ onDiscoverClick }) => {
     (async () => {
       try {
         if (user?.institutionId) {
-          const inst = await getInstitutionById(user.institutionId);
+          // Ensure institutionId is a string (convert ObjectId if needed)
+          const instId = typeof user.institutionId === 'object' && user.institutionId._id 
+            ? user.institutionId._id 
+            : String(user.institutionId);
+          const inst = await getInstitutionById(instId);
           if (mounted && inst) {
             setInstitutionName(inst.name || '');
             setInstitutionVerified(inst.isVerified || false);
@@ -24,7 +28,16 @@ const Sidebar = ({ onDiscoverClick }) => {
     })();
   }, [user?.institutionId]);
 
-  const profileUrl = user?.profilePhoto || user?.avatar || "/default-avatar.png";
+  // Fix: Ensure profileUrl is absolute if needed
+  const getProfileUrl = () => {
+    const rawUrl = user?.profilePhoto || user?.avatar;
+    if (!rawUrl) return "/default-avatar.png";
+    // If already absolute (starts with http/https), use as is
+    if (/^https?:\/\//.test(rawUrl)) return rawUrl;
+    // Otherwise, prepend backend base URL (adjust as needed)
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/${rawUrl.replace(/^\/+/, '')}`;
+  };
+  const profileUrl = getProfileUrl();
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
 
   return (
@@ -192,4 +205,3 @@ const SidebarLink = ({ icon, to, label, badge, badgeColor = "bg-[#9b5de5]", end 
 };
 
 export default Sidebar;
- 

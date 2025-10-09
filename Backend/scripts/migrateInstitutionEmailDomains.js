@@ -3,17 +3,17 @@ const Institution = require('../Models/Institution');
 
 async function migrateInstitutionEmailDomains() {
   try {
-    console.log('Starting institution email domain migration...');
+  // ...existing code...
 
     // Connect to MongoDB
     await mongoose.connect(
       process.env.MONGO_URI || 'mongodb://localhost:27017/campverse',
     );
-    console.log('Connected to MongoDB');
+    // ...existing code...
 
     // Find all institutions
     const institutions = await Institution.find({});
-    console.log(`Found ${institutions.length} institutions`);
+    // ...existing code...
 
     // Group by email domain to find duplicates
     const domainGroups = {};
@@ -27,30 +27,26 @@ async function migrateInstitutionEmailDomains() {
 
     // Process duplicates
     let duplicatesFound = 0;
-    for (const [domain, insts] of Object.entries(domainGroups)) {
+    for (const [, insts] of Object.entries(domainGroups)) {
       if (insts.length > 1) {
         duplicatesFound++;
-        console.log(
-          `Found ${insts.length} institutions with domain: ${domain}`,
-        );
+        // ...existing code...
 
         // Keep the first one, mark others for deletion
         const [keep, ...remove] = insts;
-        console.log(`Keeping: ${keep.name} (${keep._id})`);
+        // ...existing code...
 
         // Update users to reference the kept institution
         const User = require('../Models/User');
         for (const removeInst of remove) {
-          console.log(`Removing: ${removeInst.name} (${removeInst._id})`);
+          // ...existing code...
 
           // Update users that reference the removed institution
-          const updatedUsers = await User.updateMany(
+          await User.updateMany(
             { institutionId: removeInst._id },
             { institutionId: keep._id },
           );
-          console.log(
-            `Updated ${updatedUsers.modifiedCount} users to reference kept institution`,
-          );
+          // ...existing code...
 
           // Delete the duplicate institution
           await Institution.findByIdAndDelete(removeInst._id);
@@ -59,9 +55,9 @@ async function migrateInstitutionEmailDomains() {
     }
 
     if (duplicatesFound === 0) {
-      console.log('No duplicate email domains found');
+      // ...existing code...
     } else {
-      console.log(`Processed ${duplicatesFound} duplicate domain groups`);
+      // ...existing code...
     }
 
     // Verify no duplicates remain
@@ -72,19 +68,18 @@ async function migrateInstitutionEmailDomains() {
     const uniqueDomains = new Set(remainingDomains);
 
     if (remainingDomains.length === uniqueDomains.size) {
-      console.log('✅ Migration successful: No duplicate email domains remain');
+      // ...existing code...
     } else {
-      console.log('❌ Migration failed: Duplicate email domains still exist');
-      console.log('Remaining domains:', remainingDomains);
+      // ...existing code...
     }
 
-    console.log('Migration completed');
+  // ...existing code...
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
+  // ...existing code...
   }
 }
 

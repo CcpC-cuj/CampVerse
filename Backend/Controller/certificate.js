@@ -2,11 +2,10 @@ const Certificate = require('../Models/Certificate');
 const User = require('../Models/User');
 const Event = require('../Models/Event');
 const EventParticipationLog = require('../Models/EventParticipationLog');
-const Institution = require('../Models/Institution');
 const axios = require('axios');
 const QRCode = require('qrcode');
-const nodemailer = require('nodemailer'); // Added for email notifications
 const { notifyUser } = require('../Services/notification');
+const { logger } = require('../Middleware/errorHandler');
 
 // ML Certificate Generation API Configuration
 const ML_API_CONFIG = {
@@ -73,7 +72,7 @@ async function prepareCertificateData(userId, eventId, certificateType) {
 
     return certificateData;
   } catch (error) {
-    console.error('Error preparing certificate data:', error);
+    logger.error('Error preparing certificate data:', error);
     throw error;
   }
 }
@@ -99,7 +98,7 @@ async function sendToMLAPI(certificateData) {
       generationStatus: 'generated',
     };
   } catch (error) {
-    console.error('ML API Error:', error.response?.data || error.message);
+    logger.error('ML API Error:', error.response?.data || error.message);
     return {
       success: false,
       requestId: null,
@@ -232,7 +231,7 @@ async function generateCertificate(req, res) {
       },
     });
   } catch (error) {
-    console.error('Certificate generation error:', error);
+    logger.error('Certificate generation error:', error);
     return res.status(500).json({ error: 'Error generating certificate' });
   }
 }
@@ -357,7 +356,7 @@ async function generateBatchCertificates(req, res) {
           certificateURL: certificate.certificateURL,
         });
       } catch (error) {
-        console.error(
+        logger.error(
           `Error generating certificate for user ${attendance.userId._id}:`,
           error,
         );
@@ -379,7 +378,7 @@ async function generateBatchCertificates(req, res) {
       results,
     });
   } catch (error) {
-    console.error('Batch certificate generation error:', error);
+    logger.error('Batch certificate generation error:', error);
     return res
       .status(500)
       .json({ error: 'Error generating batch certificates' });
@@ -398,7 +397,7 @@ async function getUserCertificates(req, res) {
 
     return res.json({ certificates });
   } catch (error) {
-    console.error('Error fetching user certificates:', error);
+    logger.error('Error fetching user certificates:', error);
     return res.status(500).json({ error: 'Error fetching certificates' });
   }
 }
@@ -419,7 +418,7 @@ async function getCertificateById(req, res) {
 
     return res.json({ certificate });
   } catch (error) {
-    console.error('Error fetching certificate:', error);
+    logger.error('Error fetching certificate:', error);
     return res.status(500).json({ error: 'Error fetching certificate' });
   }
 }
@@ -472,7 +471,7 @@ async function verifyCertificate(req, res) {
       },
     });
   } catch (error) {
-    console.error('Certificate verification error:', error);
+    logger.error('Certificate verification error:', error);
     return res.status(500).json({ error: 'Error verifying certificate' });
   }
 }
@@ -538,7 +537,7 @@ async function exportAttendedUsers(req, res) {
       count: attendedUsers.length,
     });
   } catch (error) {
-    console.error('Export attended users error:', error);
+    logger.error('Export attended users error:', error);
     return res.status(500).json({ error: 'Error exporting attended users' });
   }
 }
@@ -602,7 +601,7 @@ async function retryCertificateGeneration(req, res) {
       certificateURL: certificate.certificateURL,
     });
   } catch (error) {
-    console.error('Retry certificate generation error:', error);
+    logger.error('Retry certificate generation error:', error);
     return res
       .status(500)
       .json({ error: 'Error retrying certificate generation' });
@@ -639,7 +638,7 @@ async function getCertificateStats(req, res) {
       stats,
     });
   } catch (error) {
-    console.error('Certificate stats error:', error);
+    logger.error('Certificate stats error:', error);
     return res
       .status(500)
       .json({ error: 'Error fetching certificate statistics' });
@@ -708,7 +707,7 @@ async function getCertificateProgress(req, res) {
 
     return res.json(progress);
   } catch (error) {
-    console.error('Certificate progress error:', error);
+    logger.error('Certificate progress error:', error);
     return res
       .status(500)
       .json({ error: 'Error fetching certificate progress' });
@@ -774,7 +773,7 @@ async function sendCertificateNotification(req, res) {
       recipient: certificate.userId.email,
     });
   } catch (error) {
-    console.error('Send certificate notification error:', error);
+    logger.error('Send certificate notification error:', error);
     return res
       .status(500)
       .json({ error: 'Error sending certificate notification' });
@@ -895,7 +894,7 @@ async function getCertificateDashboard(req, res) {
       })),
     });
   } catch (error) {
-    console.error('Certificate dashboard error:', error);
+    logger.error('Certificate dashboard error:', error);
     return res
       .status(500)
       .json({ error: 'Error fetching certificate dashboard' });
@@ -982,7 +981,7 @@ async function bulkRetryFailedCertificates(req, res) {
           errorMessage: mlResponse.errorMessage,
         });
       } catch (error) {
-        console.error(`Error retrying certificate ${certificate._id}:`, error);
+        logger.error(`Error retrying certificate ${certificate._id}:`, error);
         results.failed++;
         results.certificates.push({
           certificateId: certificate._id,
@@ -1000,7 +999,7 @@ async function bulkRetryFailedCertificates(req, res) {
       results,
     });
   } catch (error) {
-    console.error('Bulk retry error:', error);
+    logger.error('Bulk retry error:', error);
     return res
       .status(500)
       .json({ error: 'Error retrying failed certificates' });

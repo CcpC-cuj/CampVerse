@@ -9,7 +9,7 @@ import GradientCircularProgress from "../components/GradientCircularProgress.jsx
 import NavBar from './NavBar.jsx';
 
 const UserDashboard = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [loadingGate, setLoadingGate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -49,6 +49,8 @@ const UserDashboard = () => {
           }));
           setEventsData(formattedEvents);
         }
+        
+        // If you want to refresh user data, call refreshUser() only when needed (e.g., after profile update)
       } catch {
         setShowOnboarding(false);
       } finally {
@@ -56,7 +58,8 @@ const UserDashboard = () => {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [refreshUser]);
+
 
   // 🔹 Scroll to Discover Events if route matches
   useEffect(() => {

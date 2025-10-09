@@ -89,7 +89,7 @@ function validatePhone(phone) {
   return phoneRegex.test(phone);
 }
 
-const { validatePassword, PASSWORD_REGEX } = require('../Utils/passwordUtils');
+const { validatePassword } = require('../Utils/passwordUtils');
 
 function validateName(name) {
   return name && name.trim().length >= 2;
@@ -129,8 +129,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email: mockEmail });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: mockName,
@@ -159,7 +160,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -219,8 +220,9 @@ async function googleSignIn(req, res) {
       }
       let user = await User.findOne({ email });
       if (!user) {
-        // Create Google-first account without hidden password semantics
-        const randomPassword = `google_user_${Date.now()}`;
+        // Create Google-first account with cryptographically secure password
+        const crypto = require('crypto');
+        const randomPassword = crypto.randomBytes(32).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
         user = new User({
           name: name || email.split("@")[0],
@@ -260,7 +262,7 @@ async function googleSignIn(req, res) {
       user.lastLogin = new Date();
       await user.save();
       const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -767,7 +769,7 @@ async function verifyOtp(req, res) {
       }
       await redisClient.del(email);
       const token = jwt.sign(
-        { id: user._id, roles: user.roles },
+        { id: user._id, roles: user.roles, name: user.name },
         process.env.JWT_SECRET,
         {
           expiresIn: "1h",
@@ -804,7 +806,7 @@ async function verifyOtp(req, res) {
     await redisClient.del(email);
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
@@ -843,7 +845,7 @@ async function login(req, res) {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, roles: user.roles },
+      { id: user._id, roles: user.roles, name: user.name },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
@@ -1023,10 +1025,29 @@ async function getDashboard(req, res) {
     // Get participation logs for more detailed stats
     const participationLogs = await EventParticipationLog.find({
       userId: user._id,
+    }).populate({
+      path: 'eventId',
+      populate: {
+        path: 'hostUserId',
+        select: 'name email profilePicture'
+      }
     });
+    
     const registeredEvents = participationLogs.filter(
       (log) => log.status === "registered",
     ).length;
+
+    // Get registered events with full details for dashboard
+    const registeredEventsWithDetails = participationLogs
+      .filter(log => log.status === "registered" && log.eventId)
+      .map(log => ({
+        ...log.eventId.toObject(),
+        userRegistration: {
+          status: log.status,
+          registeredAt: log.registeredAt,
+          qrToken: log.qrToken
+        }
+      }));
 
     // Upcoming events count for the user (registered and in the future)
     const now = new Date();
@@ -1037,7 +1058,7 @@ async function getDashboard(req, res) {
     if (registeredEventIds.length > 0) {
       upcomingEventsCount = await Event.countDocuments({
         _id: { $in: registeredEventIds },
-        "schedule.start": { $gt: now },
+        date: { $gt: now },
       });
     }
 
@@ -1089,7 +1110,12 @@ async function getDashboard(req, res) {
         (Date.now() - user.createdAt) / (1000 * 60 * 60 * 24),
       ), // days since account creation
     };
-    return res.json({ user, stats });
+    
+    return res.json({ 
+      user, 
+      stats,
+      events: registeredEventsWithDetails // Include registered events in dashboard response
+    });
   } catch (err) {
     logger.error("GetDashboard error:", err);
     return res.status(500).json({ error: "Server error fetching dashboard." });
@@ -1230,24 +1256,61 @@ async function requestHostAccess(req, res) {
       return res.status(400).json({ error: "User is already a host." });
     }
 
-    // Handle file uploads with validation and Firebase Storage
-    const bucket = require('../firebase');
-    const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    // Handle file uploads with validation and storage based on STORAGE_PROVIDER
+    const storageProvider = process.env.STORAGE_PROVIDER || 'firebase';
+    const { firebaseStorageService } = require('../Services/firebaseStorageService');
+    const { supabaseStorageService } = require('../Services/supabaseStorageService');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
     const maxSize = 2 * 1024 * 1024; // 2MB
     let idCardPhotoUrl = "";
     let eventPermissionUrl = "";
+    
     if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
       const file = req.files.idCardPhoto[0];
       if (!allowedTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: "Invalid ID card photo type." });
+        return res.status(400).json({ error: "Invalid ID card photo type. Only JPEG, PNG, and PDF allowed." });
       }
       if (file.size > maxSize) {
         return res.status(400).json({ error: "ID card photo too large (max 2MB)." });
       }
-      const fileName = `campverse/hostRequests/${userId}/idCardPhoto_${Date.now()}`;
-      const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
-      idCardPhotoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      
+      // Upload based on STORAGE_PROVIDER setting
+      try {
+        if (storageProvider === 'firebase') {
+          // Upload to Firebase only
+          idCardPhotoUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Firebase for user ${userId}`);
+        } else if (storageProvider === 'supabase') {
+          // Upload to Supabase only
+          idCardPhotoUrl = await supabaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Supabase for user ${userId}`);
+        } else {
+          // Default to Firebase if provider is unknown
+          idCardPhotoUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'id-cards',
+            userId,
+            file.mimetype
+          );
+          logger.info(`ID card uploaded to Firebase (default) for user ${userId}`);
+        }
+      } catch (uploadError) {
+        logger.error('Failed to upload ID card:', uploadError);
+        return res.status(500).json({ error: "Failed to upload ID card. Please try again." });
+      }
     } else {
       return res.status(400).json({ error: "ID card photo is required." });
     }
@@ -1255,15 +1318,49 @@ async function requestHostAccess(req, res) {
     if (req.files && req.files.eventPermission && req.files.eventPermission[0]) {
       const file = req.files.eventPermission[0];
       if (!allowedTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: "Invalid event permission file type." });
+        return res.status(400).json({ error: "Invalid event permission file type. Only JPEG, PNG, and PDF allowed." });
       }
       if (file.size > maxSize) {
         return res.status(400).json({ error: "Event permission file too large (max 2MB)." });
       }
-      const fileName = `campverse/hostRequests/${userId}/eventPermission_${Date.now()}`;
-      const fileUpload = bucket.file(fileName);
-      await fileUpload.save(file.buffer, { metadata: { contentType: file.mimetype } });
-      eventPermissionUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      
+      // Upload based on STORAGE_PROVIDER setting
+      try {
+        if (storageProvider === 'firebase') {
+          // Upload to Firebase only
+          eventPermissionUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Firebase for user ${userId}`);
+        } else if (storageProvider === 'supabase') {
+          // Upload to Supabase only
+          eventPermissionUrl = await supabaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Supabase for user ${userId}`);
+        } else {
+          // Default to Firebase if provider is unknown
+          eventPermissionUrl = await firebaseStorageService.uploadUserDocument(
+            file.buffer,
+            file.originalname,
+            'permissions',
+            userId,
+            file.mimetype
+          );
+          logger.info(`Event permission uploaded to Firebase (default) for user ${userId}`);
+        }
+      } catch (uploadError) {
+        logger.error('Failed to upload event permission:', uploadError);
+        return res.status(500).json({ error: "Failed to upload event permission. Please try again." });
+      }
     }
 
     user.hostEligibilityStatus = {
@@ -1286,7 +1383,7 @@ async function requestHostAccess(req, res) {
     logger.error("RequestHostAccess error:", err);
     return res
       .status(500)
-      .json({ error: "Server error requesting host access." });
+      .json({ error: err.message || "Server error requesting host access." });
   }
 }
 

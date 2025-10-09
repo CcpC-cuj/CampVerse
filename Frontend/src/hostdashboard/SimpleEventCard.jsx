@@ -4,13 +4,17 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    const d = new Date(dateString);
+    const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    const year = d.getUTCFullYear();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+    
+    return `${month} ${day}, ${year}, ${hours}:${formattedMinutes} ${ampm}`;
   };
 
   const getStatusInfo = (status) => {
@@ -32,10 +36,9 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const getEventStatus = () => {
     const now = new Date();
     const eventDate = new Date(event.date);
-    const endDate = event.endDate ? new Date(event.endDate) : eventDate;
 
     if (now < eventDate) return 'upcoming';
-    if (now > endDate) return 'past';
+    if (now > eventDate) return 'past';
     return 'ongoing';
   };
 
@@ -111,7 +114,7 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/events/${event._id}`);
-                    alert('Event link copied to clipboard!');
+                    // ...existing code...
                     setShowDropdown(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800 flex items-center gap-2"
@@ -152,7 +155,7 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            {formatDate(event.date || event.schedule?.start)}
+            {formatDate(event.date)}
           </div>
 
           {(event.location || event.venue) && (

@@ -280,9 +280,10 @@ const querySchemas = {
     type: joi.string().optional(),
   }).strict(),
 
+  // Date range validation (for filtering, not for event creation)
   dateRange: joi.object({
-    startDate: joi.date().iso().optional(),
-    endDate: joi.date().iso().min(joi.ref('startDate')).optional(),
+    startDate: joi.date().iso().optional(), // Used for filtering date ranges
+    endDate: joi.date().iso().min(joi.ref('startDate')).optional(), // Used for filtering date ranges
   }).strict(),
 };
 
@@ -399,9 +400,6 @@ function validateFile(type = 'image') {
 
 // Rate limiting validation
 function validateRateLimit(req, res, next) {
-  const clientIP = req.ip || req.connection.remoteAddress;
-  const endpoint = req.originalUrl;
-  
   // Basic rate limiting check
   if (req.rateLimit && req.rateLimit.remaining === 0) {
     return res.status(429).json({

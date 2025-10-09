@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+sentence-transformers==3.3.1
+faiss-cpu==1.9.0.post1
+pandas==2.2.3
+numpy==2.0.2
+python-socketio==5.11.4
+python-engineio==4.10.1
+python-socketio[client]==5.11.4
+requests==2.32.3
+scikit-learn==1.5.2

@@ -2,9 +2,8 @@ const mongoose = require('mongoose');
 const Institution = require('../Models/Institution');
 const User = require('../Models/User');
 const Event = require('../Models/Event');
-const EventParticipationLog = require('../Models/EventParticipationLog');
-const Certificate = require('../Models/Certificate');
 const { notifyInstitutionRequest, notifyInstitutionStatusUpdate } = require('../Services/notification');
+const { logger } = require('../Middleware/errorHandler');
 
 // Create a new institution (admin only)
 async function createInstitution(req, res) {
@@ -209,7 +208,7 @@ async function approveInstitutionVerification(req, res) {
         verifierName: verifierUser?.name || 'Administrator',
       });
     } catch (e) {
-      console.error('Failed to notify users about institution approval:', e);
+      logger.error('Failed to notify users about institution approval:', e);
       // Non-blocking - continue with response
     }
 
@@ -230,7 +229,7 @@ async function approveInstitutionVerification(req, res) {
       },
     });
   } catch (err) {
-    console.error('Error approving institution verification:', err);
+    logger.error('Error approving institution verification:', err);
     res.status(500).json({ error: 'Error approving verification.' });
   }
 }
@@ -293,7 +292,7 @@ async function rejectInstitutionVerification(req, res) {
         verifierName: verifierUser?.name || 'Administrator',
       });
     } catch (e) {
-      console.error('Failed to notify users about institution rejection:', e);
+      logger.error('Failed to notify users about institution rejection:', e);
       // Non-blocking - continue with response
     }
 
@@ -538,7 +537,7 @@ async function getInstitutionDashboard(req, res) {
       eventTypes: dashboardData.eventTypes || {},
     });
   } catch (err) {
-    console.error('Dashboard aggregation error:', err);
+    logger.error('Dashboard aggregation error:', err);
     res.status(500).json({ error: 'Error fetching dashboard.' });
   }
 }
@@ -738,7 +737,7 @@ async function requestNewInstitution(req, res) {
       });
     } catch (e) {
       // Log error but don't fail the request
-      console.error('Failed to notify institution request:', e);
+      logger.error('Failed to notify institution request:', e);
     }
 
     return res.status(201).json({

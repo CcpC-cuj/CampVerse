@@ -29,7 +29,6 @@ const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
-const { unifiedStorageService } = require('../Services/driveService');
 
 // Create a new event (host/co-host)
 async function createEvent(req, res) {
@@ -41,24 +40,31 @@ async function createEvent(req, res) {
         return res.status(400).json({ error: `Missing required field: ${field}` });
       }
     }
-    if (!req.files || !req.files['banner']) {
-      return res.status(400).json({ error: 'Banner image is required.' });
+    
+    // Validate capacity is a valid positive number
+    const validatedCapacity = parseInt(req.body.capacity);
+    if (isNaN(validatedCapacity) || validatedCapacity < 1) {
+      return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
     }
+    
     // Extract and parse fields
-    let {
+    const {
       title,
       description,
-      tags,
       type,
       organizationName,
-      location,
-      capacity,
       date,
       isPaid,
       price,
+      audienceType,
+      about,
+    } = req.body;
+    
+    let {
+      tags,
+      location,
       requirements,
       socialLinks,
-      audienceType,
       features,
       sessions,
     } = req.body;
@@ -153,11 +159,27 @@ async function createEvent(req, res) {
       bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     // Validate isPaid and price
-    let eventIsPaid = isPaid === true || isPaid === 'true';
-    let eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
+    const eventIsPaid = isPaid === true || isPaid === 'true';
+    const eventPrice = eventIsPaid ? (typeof price === 'number' ? price : parseFloat(price) || 0) : 0;
     if (eventIsPaid && eventPrice <= 0) {
       return res.status(400).json({ error: 'Paid events must have a valid price.' });
     }
+    
+    // Parse date from datetime-local input
+    // datetime-local gives us a string like "2025-12-31T12:59" without timezone
+    // We need to treat this as the local time the user intended
+    let eventDate;
+    if (date.includes('T') && !date.includes('Z') && !date.includes('+')) {
+      // datetime-local format (YYYY-MM-DDTHH:MM) - treat as-is without timezone conversion
+      eventDate = new Date(`${date  }:00`); // Add seconds if missing
+    } else {
+      eventDate = new Date(date);
+    }
+    
+    if (isNaN(eventDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid event date format.' });
+    }
+    
     const event = await Event.create({
       title,
       description,
@@ -165,8 +187,8 @@ async function createEvent(req, res) {
       type,
       organizationName,
       location,
-      capacity,
-      date,
+      capacity: validatedCapacity,
+      date: eventDate, // Store as Date object in UTC
       isPaid: eventIsPaid,
       price: eventPrice,
       requirements,
@@ -174,11 +196,62 @@ async function createEvent(req, res) {
       audienceType: audienceType || 'public',
       features: features || { certificateEnabled: false, chatEnabled: false },
       sessions: sessions || [],
+      about: about || '',
       logoURL,
       bannerURL,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
+    
+    // Notify verifiers about new event pending verification
+    try {
+      const User = require('../Models/User');
+      const verifiers = await User.find({ 
+        roles: { $in: ['verifier', 'platformAdmin'] } 
+      }).select('_id email name notificationPreferences');
+      
+      const { notifyUser } = require('../Services/notification');
+      const host = await User.findById(req.user.id).select('name email');
+      
+      for (const verifier of verifiers) {
+        await notifyUser({
+          userId: verifier._id,
+          type: 'event_verification',
+          message: `New event "${event.title}" submitted by ${host?.name || 'Unknown'} requires verification`,
+          data: { 
+            eventId: event._id, 
+            eventTitle: event.title,
+            hostName: host?.name,
+            hostEmail: host?.email,
+            status: 'pending' 
+          },
+          emailOptions: verifier.notificationPreferences?.email?.event_verification !== false ? {
+            to: verifier.email,
+            subject: `New Event Pending Verification: ${event.title}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #9b5de5;">New Event Requires Verification</h2>
+                <p>Hi ${verifier.name},</p>
+                <p>A new event has been submitted and requires your verification:</p>
+                <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #9b5de5; margin: 15px 0;">
+                  <p><strong>Event Title:</strong> ${event.title}</p>
+                  <p><strong>Host:</strong> ${host?.name || 'Unknown'} (${host?.email || ''})</p>
+                  <p><strong>Event Type:</strong> ${event.type}</p>
+                  <p><strong>Event Date:</strong> ${new Date(event.date).toLocaleString()}</p>
+                  <p><strong>Status:</strong> Pending Verification</p>
+                </div>
+                <p>Please review this event in the verifier dashboard and approve or reject it.</p>
+                <p>Best regards,<br>CampVerse Team</p>
+              </div>
+            `,
+          } : null,
+        });
+      }
+    } catch (notifErr) {
+      // Don't fail event creation if notification fails
+      logger && logger.error ? logger.error('Error sending event verification notifications:', notifErr) : null;
+    }
+    
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
@@ -197,18 +270,48 @@ async function createEvent(req, res) {
 // Get event by ID
 async function getEventById(req, res) {
   try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    res.json(event);
+    const eventId = req.params.id;
+    const userId = req.user?.id; // Get user ID if authenticated
+    
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Event not found.' 
+      });
+    }
+
+    let userRegistration = null;
+    if (userId) {
+      // Check if user is registered for this event
+      userRegistration = await EventParticipationLog.findOne({
+        eventId,
+        userId
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...event.toObject(),
+        userRegistration: userRegistration ? {
+          status: userRegistration.status,
+          registeredAt: userRegistration.registeredAt
+        } : null
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching event.' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching event.' 
+    });
   }
 }
 
 // Update event (host/co-host)
 async function updateEvent(req, res) {
   try {
-    console.log('Update Event Request Body:', JSON.stringify(req.body, null, 2));
+    logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
     // Validate required fields for update (if present)
     const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
@@ -308,7 +411,7 @@ async function updateEvent(req, res) {
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
     res.json(updatedEvent);
   } catch (err) {
-  logger && logger.error ? logger.error('Error updating event:', err) : null;
+    logger && logger.error ? logger.error('Error updating event:', err) : null;
     res.status(500).json({ error: 'Error updating event.' });
   }
 }
@@ -327,25 +430,22 @@ async function deleteEvent(req, res) {
   }
 }
 
-// RSVP/register for event (user) - Fixed race condition with atomic operations
+// RSVP/register for event (user) - Without transactions for standalone MongoDB
 async function rsvpEvent(req, res) {
   try {
     const { eventId } = req.body;
     const userId = req.user.id;
     
-    // Check if user already registered
-    const existingLog = await EventParticipationLog.findOne({
-      eventId,
-      userId
-    });
+    logger && logger.info ? logger.info('🎯 RSVP Request:', { eventId, userId }) : null;
     
-    if (existingLog) {
-      return res.status(409).json({ error: 'User already registered for this event' });
-    }
-    
+    // Validate event exists first
     const event = await Event.findById(eventId);
     if (!event) {
-      return res.status(404).json({ error: 'Event not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'Event not found',
+        message: 'The event you are trying to register for does not exist'
+      });
     }
     
     // Check capacity and determine status
@@ -363,18 +463,50 @@ async function rsvpEvent(req, res) {
       }
     }
     
-    // Generate secure QR token
+    // Generate secure QR token using crypto
     const crypto = require('crypto');
     qrToken = crypto.randomBytes(32).toString('hex');
     
-    // Create participation log
-    await EventParticipationLog.create({
+    // Calculate QR expiration (event end + 2 hours)
+    const qrExpiresAt = new Date(event.date);
+    if (event.endDate) {
+      qrExpiresAt.setTime(new Date(event.endDate).getTime() + 2 * 60 * 60 * 1000);
+    } else {
+      qrExpiresAt.setTime(event.date.getTime() + 2 * 60 * 60 * 1000);
+    }
+    
+    // Check if user is already registered
+    const existingLog = await EventParticipationLog.findOne({ userId, eventId });
+    if (existingLog) {
+      logger && logger.warn ? logger.warn('⚠️ User already registered:', { eventId, userId }) : null;
+      return res.status(409).json({ 
+        success: false,
+        error: 'User already registered for this event',
+        message: 'You have already registered for this event'
+      });
+    }
+    
+    // Create new participation log
+    const participationLog = await EventParticipationLog.create({
       userId,
       eventId,
       status,
-      qrToken,
-      registeredAt: new Date()
+      qrToken, // Legacy field
+      registeredAt: new Date(),
+      qrCode: {
+        token: qrToken,
+        generatedAt: new Date(),
+        expiresAt: qrExpiresAt,
+        isUsed: false
+      }
     });
+    
+    logger && logger.info ? logger.info('✅ RSVP Created:', { 
+      eventId, 
+      userId, 
+      status, 
+      participationLogId: participationLog._id 
+    }) : null;
     
     // Update event waitlist
     if (status === 'waitlisted') {
@@ -390,24 +522,44 @@ async function rsvpEvent(req, res) {
       );
     }
     
-    // Generate QR code image
-    const qrImage = await qrcode.toDataURL(qrToken);
+    // Generate QR code image ONLY for registered users
+    let qrImage = null;
+    let emailSent = false;
     
-    // Send response
-    res.status(201).json({
-      message: `RSVP successful. Status: ${status}. QR code sent to email.`,
-      qrImage,
-      status
-    });
-    
-    // Email QR code to user (non-blocking)
-    try {
-      await sendQrEmail(req.user.email, qrImage, event.title);
-  // Audit: QR code email sent successfully
-    } catch (emailErr) {
-  logger && logger.error ? logger.error('Failed to send QR email:', emailErr) : null;
-      // Don't fail the RSVP, just log the email error
+    if (status === 'registered') {
+      try {
+        qrImage = await qrcode.toDataURL(qrToken);
+        
+        // Email QR code to user (non-blocking)
+        try {
+          await sendQrEmail(req.user.email, qrImage, event.title, eventId);
+          emailSent = true;
+          logger && logger.info ? logger.info('✅ QR code email sent successfully') : null;
+        } catch (emailErr) {
+          logger && logger.error ? logger.error('❌ Failed to send QR email:', emailErr) : null;
+          // Don't fail the RSVP, but inform user
+        }
+      } catch (qrError) {
+        logger && logger.error ? logger.error('❌ QR generation failed:', qrError) : null;
+        // Continue without QR
+      }
     }
+    
+    // Send response with appropriate message based on status
+    const responseMessage = status === 'registered'
+      ? (emailSent 
+        ? 'RSVP successful! You are registered. QR code sent to email.'
+        : 'RSVP successful! You are registered. Note: Email delivery failed, but QR code is shown below.')
+      : 'RSVP successful! You are on the waitlist for this event.';
+    
+    res.status(201).json({
+      success: true,
+      message: responseMessage,
+      qrImage: status === 'registered' ? qrImage : null,
+      status,
+      eventId,
+      emailSent: status === 'registered' ? emailSent : false
+    });
     
     // Async notifications (non-blocking)
     setImmediate(async () => {
@@ -441,13 +593,27 @@ async function rsvpEvent(req, res) {
           });
         }
       } catch (notificationError) {
-  logger && logger.error ? logger.error('Notification error:', notificationError) : null;
+        logger && logger.error ? logger.error('Notification error:', notificationError) : null;
       }
     });
     
   } catch (err) {
-  logger && logger.error ? logger.error('RSVP error:', err) : null;
-    res.status(500).json({ error: 'Error registering for event.' });
+    logger && logger.error ? logger.error('RSVP error:', err) : null;
+    
+    // Handle duplicate key error specifically
+    if (err.code === 11000) {
+      return res.status(409).json({ 
+        success: false,
+        error: 'User already registered for this event',
+        message: 'You have already registered for this event'
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      error: 'Error registering for event.',
+      message: 'Failed to register for the event. Please try again.'
+    });
   }
 }
 
@@ -456,68 +622,163 @@ async function cancelRsvp(req, res) {
   try {
     const { eventId } = req.body;
     const userId = req.user.id;
+    
+    logger && logger.info ? logger.info('🎯 Cancel RSVP Request:', { eventId, userId }) : null;
+    
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    // Remove participation log
+    if (!event) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Event not found.',
+        message: 'The event you are trying to cancel RSVP for does not exist'
+      });
+    }
+    
+    // Find and remove participation log
     const log = await EventParticipationLog.findOneAndDelete({
       eventId,
       userId,
     });
-    if (!log)
-      return res.status(404).json({ error: 'No RSVP found for this user.' });
+    
+    if (!log) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'No RSVP found for this user.',
+        message: 'You have not registered for this event'
+      });
+    }
+    
     // Remove from event waitlist if present
     event.waitlist = event.waitlist.filter(
       (id) => id.toString() !== userId.toString(),
     );
-    await event.save();
+    
     // If user was registered, promote first waitlisted user
-    if (log.status === 'registered') {
-      if (event.waitlist.length > 0) {
-        const nextUserId = event.waitlist[0];
-        // Update their participation log
-        const nextLog = await EventParticipationLog.findOne({
-          eventId,
-          userId: nextUserId,
-          status: 'waitlisted',
-        });
-        if (nextLog) {
-          nextLog.status = 'registered';
-          await nextLog.save();
-          // Notify promoted user
-          const promotedUser = await User.findById(nextUserId);
-          if (promotedUser) {
-            await notifyUser({
-              userId: nextUserId,
-              type: 'rsvp',
-              message: `You have been promoted from waitlist to registered for ${event.title}.`,
-              data: { eventId, eventTitle: event.title },
-              emailOptions: {
-                to: promotedUser.email,
-                subject: `You're Registered for ${event.title}!`,
-                html: `<p>Hi ${promotedUser.name},<br>You have been promoted from the waitlist and are now registered for <b>${event.title}</b>!</p>`,
-              },
-            });
-          }
+    if (log.status === 'registered' && event.waitlist.length > 0) {
+      const nextUserId = event.waitlist[0];
+      
+      // Update their participation log
+      const nextLog = await EventParticipationLog.findOne({
+        eventId,
+        userId: nextUserId,
+        status: 'waitlisted',
+      });
+      
+      if (nextLog) {
+        nextLog.status = 'registered';
+        
+        // Generate QR code for promoted user
+        const crypto = require('crypto');
+        const newQrToken = crypto.randomBytes(32).toString('hex');
+        nextLog.qrToken = newQrToken;
+        
+        // Calculate QR expiration
+        const qrExpiresAt = new Date(event.date);
+        if (event.endDate) {
+          qrExpiresAt.setTime(new Date(event.endDate).getTime() + 2 * 60 * 60 * 1000);
+        } else {
+          qrExpiresAt.setTime(event.date.getTime() + 2 * 60 * 60 * 1000);
         }
+        
+        nextLog.qrCode = {
+          token: newQrToken,
+          generatedAt: new Date(),
+          expiresAt: qrExpiresAt,
+          isUsed: false
+        };
+        
+        await nextLog.save();
+        
+        // Notify promoted user
+        const promotedUser = await User.findById(nextUserId);
+        if (promotedUser) {
+          // Generate and send QR code
+          try {
+            const qrImage = await qrcode.toDataURL(newQrToken);
+            await sendQrEmail(promotedUser.email, qrImage, event.title, eventId);
+          } catch (qrError) {
+            logger && logger.error ? logger.error('❌ Failed to send QR to promoted user:', qrError) : null;
+          }
+          
+          await notifyUser({
+            userId: nextUserId,
+            type: 'rsvp',
+            message: `You have been promoted from waitlist to registered for ${event.title}.`,
+            data: { eventId, eventTitle: event.title },
+            emailOptions: {
+              to: promotedUser.email,
+              subject: `You're Registered for ${event.title}!`,
+              html: `<p>Hi ${promotedUser.name},<br>You have been promoted from the waitlist and are now registered for <b>${event.title}</b>!</p>`,
+            },
+          });
+        }
+        
         // Remove from waitlist
         event.waitlist = event.waitlist.slice(1);
-        await event.save();
       }
     }
-  // Audit: Cancel RSVP: user ${userId} for event ${eventId}
-    res.json({ message: 'RSVP cancelled.' });
+    
+    await event.save();
+    
+    logger && logger.info ? logger.info('✅ RSVP Cancelled:', { eventId, userId, wasRegistered: log.status === 'registered' }) : null;
+    
+    // Notify user of cancellation
+    setImmediate(async () => {
+      try {
+        await notifyUser({
+          userId: req.user.id,
+          type: 'rsvp',
+          message: `You have cancelled your RSVP for ${event.title}.`,
+          data: { eventId: event._id, eventTitle: event.title },
+          emailOptions: {
+            to: req.user.email,
+            subject: `RSVP Cancelled for ${event.title}`,
+            html: `<p>Hi ${req.user.name},<br>Your RSVP for <b>${event.title}</b> has been cancelled.</p>`,
+          },
+        });
+      } catch (notificationError) {
+        logger && logger.error ? logger.error('Notification error:', notificationError) : null;
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'RSVP cancelled successfully.' 
+    });
   } catch (err) {
-    res.status(500).json({ error: 'Error cancelling RSVP.' });
+    logger && logger.error ? logger.error('Cancel RSVP error:', err) : null;
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error cancelling RSVP.',
+      message: 'Failed to cancel RSVP. Please try again.'
+    });
   }
 }
 
 // Email QR code to user
-async function sendQrEmail(to, qrImage, eventTitle) {
+async function sendQrEmail(to, qrImage, eventTitle, eventId) {
+  const qrViewLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/my-qr/${eventId}`;
+  
   await emailService.sendMail({
     from: 'CampVerse <noreply@campverse.com>',
     to,
-    subject: `Your Ticket for ${eventTitle}`,
-    html: `<p>Here is your QR ticket for <b>${eventTitle}</b>:</p><img src="${qrImage}" alt="QR Ticket" />`,
+    subject: `Your QR Code for ${eventTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333;">Your Event Ticket</h2>
+        <p>Hi there!</p>
+        <p>Here is your QR code for <b>${eventTitle}</b>:</p>
+        <div style="text-align: center; margin: 20px 0;">
+          <img src="${qrImage}" alt="Event QR Code" style="max-width: 200px; border: 2px solid #ddd; padding: 10px;" />
+        </div>
+        <p><strong>Important:</strong> This QR code is unique to you and this event only.</p>
+        <p>View your QR code anytime: <a href="${qrViewLink}" style="color: #9b5de5;">${qrViewLink}</a></p>
+        <p>Show this QR code at the event entrance for check-in.</p>
+        <p style="color: #ff6b6b;">⚠️ This QR code expires 2 hours after the event ends and can only be used once.</p>
+        <hr style="margin: 20px 0;">
+        <p style="color: #666; font-size: 12px;">This is an automated message from CampVerse. Please do not reply to this email.</p>
+      </div>
+    `,
   });
 }
 
@@ -551,71 +812,156 @@ async function scanQr(req, res) {
   try {
     const { eventId, qrToken } = req.body;
     if (!eventId || !qrToken) {
-      return res
-        .status(400)
-        .json({ error: 'eventId and qrToken are required.' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'eventId and qrToken are required.',
+        message: 'Missing required fields'
+      });
     }
+    
     // Find event and check permissions
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    if (!event) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Event not found.',
+        message: 'The event does not exist'
+      });
+    }
+    
     const userId = req.user.id;
     const isHost = event.hostUserId && event.hostUserId.toString() === userId;
-    const isCoHost =
-      event.coHosts &&
-      event.coHosts.map((id) => id.toString()).includes(userId);
+    const isCoHost = event.coHosts && event.coHosts.map((id) => id.toString()).includes(userId);
+    
     if (!isHost && !isCoHost) {
-      return res
-        .status(403)
-        .json({
-          error:
-            'Only host or approved co-host can scan attendance for this event.',
-        });
+      return res.status(403).json({
+        success: false,
+        error: 'Only host or approved co-host can scan attendance for this event.',
+        message: 'You do not have permission to scan QR codes for this event'
+      });
     }
+    
     // Brute-force protection (simple in-memory, per user per event)
     if (!global.scanRateLimit) global.scanRateLimit = {};
     const key = `${userId}_${eventId}`;
     const now = Date.now();
     if (global.scanRateLimit[key] && now - global.scanRateLimit[key] < 2000) {
-      return res
-        .status(429)
-        .json({ error: 'Too many scans. Please wait a moment.' });
+      return res.status(429).json({ 
+        success: false,
+        error: 'Too many scans. Please wait a moment.',
+        message: 'Please wait before scanning again'
+      });
     }
     global.scanRateLimit[key] = now;
-    // Find participation log
-    const log = await EventParticipationLog.findOne({ eventId, qrToken });
-    if (!log) return res.status(404).json({ error: 'Invalid QR code.' });
-    if (log.status === 'attended') {
-      return res
-        .status(409)
-        .json({ error: 'Attendance already marked for this user.' });
+    
+    // Find participation log - check both legacy qrToken and new qrCode.token
+    const log = await EventParticipationLog.findOne({ 
+      eventId, 
+      $or: [
+        { qrToken },
+        { 'qrCode.token': qrToken }
+      ]
+    });
+    
+    if (!log) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Invalid QR code.',
+        message: 'QR code not found or invalid'
+      });
     }
+    
+    // Check if QR code is already used (enhanced system)
+    if (log.qrCode && log.qrCode.isUsed) {
+      return res.status(409).json({ 
+        success: false,
+        error: 'QR code has already been used.',
+        message: 'This QR code has already been scanned'
+      });
+    }
+    
+    // Check if QR code is expired (enhanced system)
+    if (log.qrCode && log.qrCode.expiresAt && new Date() > log.qrCode.expiresAt) {
+      return res.status(410).json({ 
+        success: false,
+        error: 'QR code has expired.',
+        message: 'This QR code has expired'
+      });
+    }
+    
+    // Check if attendance already marked (legacy check)
+    if (log.status === 'attended') {
+      return res.status(409).json({ 
+        success: false,
+        error: 'Attendance already marked for this user.',
+        message: 'Attendance has already been marked'
+      });
+    }
+    
+    // Only registered users can have attendance marked
+    if (log.status !== 'registered') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Only registered participants can check in.',
+        message: 'User must be registered (not waitlisted) to check in'
+      });
+    }
+    
     // Mark attendance
     log.status = 'attended';
     log.attendanceTimestamp = new Date();
     log.attendanceMarkedBy = userId;
     log.attendanceMarkedAt = new Date();
+    
+    // Invalidate QR code (enhanced system)
+    if (log.qrCode) {
+      log.qrCode.isUsed = true;
+      log.qrCode.usedAt = new Date();
+      log.qrCode.usedBy = userId;
+    }
+    
     await log.save();
+    
+    logger && logger.info ? logger.info('✅ Attendance marked:', { 
+      eventId, 
+      participantId: log.userId, 
+      scannedBy: userId 
+    }) : null;
+    
     // Fetch participant user for notification
     const participant = await User.findById(log.userId);
     if (participant) {
-      await notifyUser({
-        userId: log.userId,
-        type: 'attendance',
-        message: `Your attendance for ${event.title} has been marked. Thank you for participating!`,
-        data: { eventId, eventTitle: event.title },
-        emailOptions: {
-          to: participant.email,
-          subject: `Attendance Marked for ${event.title}`,
-          html: `<p>Hi ${participant.name},<br>Your attendance for <b>${event.title}</b> has been successfully marked. Thank you for participating!</p>`,
-        },
+      setImmediate(async () => {
+        try {
+          await notifyUser({
+            userId: log.userId,
+            type: 'attendance',
+            message: `Your attendance for ${event.title} has been marked. Thank you for participating!`,
+            data: { eventId, eventTitle: event.title },
+            emailOptions: {
+              to: participant.email,
+              subject: `Attendance Confirmed for ${event.title}`,
+              html: `<p>Hi ${participant.name},<br>Your attendance for <b>${event.title}</b> has been successfully marked. Thank you for participating!</p>`,
+            },
+          });
+        } catch (notificationError) {
+          logger && logger.error ? logger.error('Notification error:', notificationError) : null;
+        }
       });
     }
-    // Audit log
-  // Audit: Scan QR: user ${userId} scanned for event ${eventId}, participant ${log.userId}, log ${log._id}
-    res.json({ message: 'Attendance marked.' });
+    
+    res.json({ 
+      success: true,
+      message: 'Attendance marked successfully. QR code invalidated.',
+      participantName: participant?.name || 'Unknown'
+    });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in scanQr:', err) : null;
-    res.status(500).json({ error: 'Error marking attendance.' });
+    logger && logger.error ? logger.error('Error in scanQr:', err) : null;
+    res.status(500).json({ 
+      success: false,
+      error: 'Error marking attendance.',
+      message: 'Failed to mark attendance. Please try again.'
+    });
   }
 }
 
@@ -752,10 +1098,10 @@ async function nominateCoHost(req, res) {
       },
     });
     // Audit log
-  // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
+    // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
     res.status(500).json({ error: 'Error nominating co-host.' });
   }
 }
@@ -811,10 +1157,10 @@ async function approveCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
+    // Audit: Approve co-host: verifier ${req.user.id} approved user ${userId} for event ${eventId}
     res.json({ message: 'Co-host approved.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in approveCoHost:', err) : null;
     res.status(500).json({ error: 'Error approving co-host.' });
   }
 }
@@ -866,10 +1212,10 @@ async function rejectCoHost(req, res) {
       });
     }
     // Audit log
-  // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
+    // Audit: Reject co-host: verifier ${req.user.id} rejected user ${userId} for event ${eventId}
     res.json({ message: 'Co-host rejected.' });
   } catch (err) {
-  logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
+    logger && logger.error ? logger.error('Error in rejectCoHost:', err) : null;
     res.status(500).json({ error: 'Error rejecting co-host.' });
   }
 }
@@ -921,6 +1267,372 @@ async function getGoogleCalendarLink(req, res) {
     res.status(500).json({ error: 'Error generating calendar link.' });
   }
 }
+/**
+ * Get public event by ID (for sharing, only approved events, no auth required)
+ */
+async function getPublicEventById(req, res) {
+  try {
+    const eventId = req.params.id;
+    const event = await Event.findOne({ _id: eventId, verificationStatus: 'approved' });
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found or not approved.'
+      });
+    }
+
+    // Check if user is authenticated and registered for this event
+    let userRegistration = null;
+    let userId = null;
+    if (req.headers.authorization) {
+      try {
+        // Try to extract user from token (optional authentication)
+        const token = req.headers.authorization.split(' ')[1];
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.id;
+        
+        // Check if user is registered for this event
+        userRegistration = await EventParticipationLog.findOne({
+          eventId,
+          userId
+        });
+        
+        logger.info('📊 Public Event Check:', {
+          eventId,
+          userId,
+          hasRegistration: !!userRegistration,
+          registrationStatus: userRegistration?.status
+        });
+      } catch (authErr) {
+        // Authentication failed - user not logged in, continue without userRegistration
+        logger.info('⚠️ Optional auth failed for public event (user not logged in)');
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...event.toObject(),
+        userRegistration: userRegistration ? {
+          status: userRegistration.status,
+          registeredAt: userRegistration.registeredAt
+        } : null
+      }
+    });
+  } catch (err) {
+    logger.error('❌ Error fetching public event:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Error fetching public event.'
+    });
+  }
+}
+
+/**
+ * Get attendance list for an event
+ * @route GET /api/events/:id/attendance
+ */
+async function getAttendance(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Check if event exists
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found',
+      });
+    }
+
+    // Check if user is host or co-host
+    const isHost = event.hostId.toString() === userId;
+    const isCoHost = event.coHosts.some(ch => ch.toString() === userId);
+    
+    if (!isHost && !isCoHost) {
+      return res.status(403).json({
+        success: false,
+        error: 'You do not have permission to view attendance for this event',
+      });
+    }
+
+    // Get all participants
+    const allParticipants = await EventParticipationLog.find({
+      eventId: id,
+      status: 'registered'
+    }).populate('userId', 'name email');
+
+    // Get attended participants (those who scanned QR)
+    const attendedParticipants = await EventParticipationLog.find({
+      eventId: id,
+      status: 'registered',
+      attended: true
+    }).populate('userId', 'name email');
+
+    res.json({
+      success: true,
+      totalRegistered: allParticipants.length,
+      attendees: attendedParticipants.map(p => ({
+        _id: p._id,
+        userId: p.userId,
+        scanTime: p.qrCode?.usedAt || p.createdAt,
+        attended: p.attended
+      })),
+      attendanceRate: allParticipants.length > 0 
+        ? Math.round((attendedParticipants.length / allParticipants.length) * 100)
+        : 0
+    });
+
+  } catch (err) {
+    logger.error('Error getting attendance:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get attendance',
+      message: err.message
+    });
+  }
+}
+
+/**
+ * Bulk mark attendance for multiple users
+ * @route POST /api/events/:id/bulk-attendance
+ */
+async function bulkMarkAttendance(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'User IDs array is required',
+      });
+    }
+
+    // Check if event exists
+    const event = await Event.findById(id);
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        error: 'Event not found',
+      });
+    }
+
+    // Check if user is host or co-host
+    const isHost = event.hostId.toString() === userId;
+    const isCoHost = event.coHosts.some(ch => ch.toString() === userId);
+    
+    if (!isHost && !isCoHost) {
+      return res.status(403).json({
+        success: false,
+        error: 'You do not have permission to mark attendance for this event',
+      });
+    }
+
+    // Mark attendance for all specified users
+    const result = await EventParticipationLog.updateMany(
+      {
+        eventId: id,
+        userId: { $in: userIds },
+        status: 'registered'
+      },
+      {
+        $set: {
+          attended: true,
+          'qrCode.isUsed': true,
+          'qrCode.usedAt': new Date(),
+          'qrCode.usedBy': `bulk_${userId}`
+        }
+      }
+    );
+
+    // Send notifications to users (async, non-blocking)
+    setImmediate(async () => {
+      try {
+        const users = await User.find({ _id: { $in: userIds } });
+        for (const user of users) {
+          await notifyUser(user._id, {
+            type: 'attendance_marked',
+            title: 'Attendance Marked',
+            message: `Your attendance has been marked for "${event.title}"`,
+            eventId: event._id,
+            eventTitle: event.title,
+          });
+        }
+      } catch (err) {
+        logger.error('Error sending bulk attendance notifications:', err);
+      }
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully marked attendance for ${result.modifiedCount} participant(s)`,
+      marked: result.modifiedCount
+    });
+
+  } catch (err) {
+    logger.error('Error marking bulk attendance:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to mark bulk attendance',
+      message: err.message
+    });
+  }
+}
+
+/**
+ * Regenerate QR code for a user's registration
+ * @route POST /api/events/:id/regenerate-qr
+ */
+async function regenerateQR(req, res) {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Find user's registration
+    const log = await EventParticipationLog.findOne({
+      eventId: id,
+      userId,
+      status: 'registered'
+    }).populate('eventId');
+
+    if (!log) {
+      return res.status(404).json({
+        success: false,
+        error: 'No active registration found for this event',
+      });
+    }
+
+    // Check if event has ended
+    const event = log.eventId;
+    const eventEndTime = new Date(event.date);
+    const now = new Date();
+    
+    if (now > eventEndTime) {
+      return res.status(410).json({
+        success: false,
+        error: 'Cannot regenerate QR code for past events',
+        message: 'This event has already ended'
+      });
+    }
+
+    // Generate new QR token
+    const crypto = require('crypto');
+    const qrToken = crypto.randomBytes(32).toString('hex');
+
+    // Calculate expiration (event end + 2 hours)
+    const qrExpiration = new Date(eventEndTime.getTime() + 2 * 60 * 60 * 1000);
+
+    // Generate QR code image
+    const qrImage = await qrcode.toDataURL(qrToken);
+
+    // Update log with new QR code
+    log.qrCode = {
+      token: qrToken,
+      imageUrl: qrImage,
+      generatedAt: new Date(),
+      expiresAt: qrExpiration,
+      isUsed: false,
+      usedAt: null,
+      usedBy: null
+    };
+    
+    // Also update legacy qrToken for backwards compatibility
+    log.qrToken = qrToken;
+    
+    await log.save();
+
+    // Send new QR code via email (async)
+    setImmediate(async () => {
+      try {
+        const user = await User.findById(userId);
+        if (user && user.email) {
+          await emailService.sendEmail({
+            to: user.email,
+            subject: `New QR Code - ${event.title}`,
+            html: `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <style>
+                  body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                  .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                  .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+                  .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+                  .qr-container { background: white; padding: 30px; text-align: center; border-radius: 8px; margin: 20px 0; }
+                  .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
+                  .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                  .footer { text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px; }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <div class="header">
+                    <h1>🎫 New QR Code Generated</h1>
+                  </div>
+                  <div class="content">
+                    <p>Dear ${user.name},</p>
+                    <p>A new QR code has been generated for your registration:</p>
+                    
+                    <div class="info-box">
+                      <h2 style="margin-top: 0; color: #667eea;">${event.title}</h2>
+                      <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })}</p>
+                      <p><strong>Time:</strong> ${event.time || 'TBD'}</p>
+                      <p><strong>Location:</strong> ${event.location || 'TBD'}</p>
+                    </div>
+                    
+                    <div class="qr-container">
+                      <img src="${qrImage}" alt="QR Code" style="max-width: 300px; width: 100%;" />
+                      <p style="margin-top: 20px; color: #6b7280;">Show this QR code at the event entrance</p>
+                    </div>
+                    
+                    <p><strong>⚠️ Important:</strong> Your previous QR code is no longer valid. Please use this new QR code.</p>
+                    
+                    <p style="text-align: center;">
+                      <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${event._id}/qr" class="button">View QR Code Online</a>
+                    </p>
+                    
+                    <div class="footer">
+                      <p>This is an automated email from CampVerse</p>
+                    </div>
+                  </div>
+                </div>
+              </body>
+              </html>
+            `
+          });
+        }
+      } catch (err) {
+        logger.error('Error sending regenerated QR email:', err);
+      }
+    });
+
+    res.json({
+      success: true,
+      message: 'QR code regenerated successfully. Check your email for the new QR code.',
+      qrCode: {
+        image: qrImage,
+        expiresAt: qrExpiration
+      }
+    });
+
+  } catch (err) {
+    logger.error('Error regenerating QR code:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to regenerate QR code',
+      message: err.message
+    });
+  }
+}
 
 
 module.exports = {
@@ -938,4 +1650,8 @@ module.exports = {
   rejectCoHost,
   verifyEvent,
   getGoogleCalendarLink,
+  getPublicEventById,
+  getAttendance,
+  bulkMarkAttendance,
+  regenerateQR,
 };

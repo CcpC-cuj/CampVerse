@@ -25,7 +25,7 @@ async function seed() {
   });
 
   // Create users
-  const admin = await User.create({
+  await User.create({
     name: 'Admin',
     email: 'admin@test.edu.in',
     phone: '1111111111',
@@ -43,7 +43,7 @@ async function seed() {
     institutionId: institution._id,
     isVerified: true,
   });
-  const student = await User.create({
+  await User.create({
     name: 'Student',
     email: 'student@test.edu.in',
     phone: '3333333333',
@@ -54,7 +54,7 @@ async function seed() {
   });
 
   // Create event
-  const event = await Event.create({
+  await Event.create({
     title: 'Test Event',
     description: 'A test event',
     tags: ['workshop'],
@@ -70,7 +70,7 @@ async function seed() {
     verificationStatus: 'approved',
   });
 
-  console.log('Seed data created.');
+  // ...existing code...
   process.exit(0);
 }
 

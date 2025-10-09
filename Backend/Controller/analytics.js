@@ -48,8 +48,6 @@ const advancedEventSearch = async (req, res) => {
         ? 1
         : -1
       : -1;
-    const parsedPage = parseInt(page);
-    const parsedLimit = parseInt(limit);
     const validatedPage =
       Number.isInteger(Number(page)) && Number(page) > 0 ? Number(page) : 1;
     const validatedLimit =

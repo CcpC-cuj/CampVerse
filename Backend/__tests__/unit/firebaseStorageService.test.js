@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, no-undef */
 /**
  * Firebase Storage Service Unit Tests
  * Comprehensive testing for all storage operations
@@ -29,18 +30,9 @@ jest.mock('../../Middleware/errorHandler', () => ({
   }
 }));
 
+// eslint-disable-next-line no-unused-vars
 const {
   FirebaseStorageService,
-  firebaseStorageService,
-  uploadEventImage,
-  uploadProfilePhoto,
-  uploadUserDocument,
-  uploadCertificate,
-  uploadInstitutionLogo,
-  deleteEventImage,
-  deleteProfilePhoto,
-  listFiles,
-  getFileMetadata
 } = require('../../Services/firebaseStorageService');
 
 const mockBucket = require('../../firebase');

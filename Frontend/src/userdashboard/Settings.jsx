@@ -8,17 +8,23 @@ import {
   updateMyNotificationPreferences,
   deleteMyAccount,
   updateMe,
-  uploadProfilePhoto
+  uploadProfilePhoto,
+  getInstitutionById
 } from '../api';
 import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
 import NavBar from './NavBar';
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { user, setUser, logout } = useAuth();
+  const { user, setUser, logout, refreshUser, lastRefresh } = useAuth();
 
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Institution name state for display
+  const [institutionName, setInstitutionName] = useState('');
+  const [institutionVerified, setInstitutionVerified] = useState(false);
 
   // active section highlight for top navbar (purely visual; content is stacked)
   const [activeTab, setActiveTab] = useState('profile');
@@ -64,6 +70,14 @@ const Settings = () => {
 
   // Reset scroll position when component mounts and disable scroll restoration
   useEffect(() => {
+    // Refresh user data on component mount to ensure latest status
+    const doRefresh = async () => {
+      setIsRefreshing(true);
+      await refreshUser();
+      setIsRefreshing(false);
+    };
+    doRefresh();
+
     // Disable browser scroll restoration
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
@@ -124,6 +138,29 @@ const [interests, setInterests] = useState(user?.interests || []);
 const [learningGoals, setLearningGoals] = useState(user?.learningGoals || []);
 const [skills, setSkills] = useState(user?.skills || []);
 const [institution, setInstitution] = useState(user?.institution || null);
+
+  // Fetch institution name if institution is an ID or object
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (user?.institutionId) {
+          // Ensure institutionId is a string (convert ObjectId if needed)
+          const instId = typeof user.institutionId === 'object' && user.institutionId._id 
+            ? user.institutionId._id 
+            : String(user.institutionId);
+          const inst = await getInstitutionById(instId);
+          if (mounted && inst) {
+            setInstitutionName(inst.name || '');
+            setInstitutionVerified(inst.isVerified || false);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch institution:', err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [user?.institutionId]);
 
 
 //: preferences
@@ -827,26 +864,16 @@ const handleSaveProfile = async () => {
                             >
                               <i className="ri-close-line text-sm"></i>
                             </button>
-                          )}
-                        </div>
-                       <input 
-                          type="text"
-                          value={institution?.name || ''}
-                          readOnly={editingField !== 'institution'}
-                          onChange={(e) =>
-                            setInstitution((prev) => ({ ...(prev || {}), name: e.target.value }))
-                          }
-                          onKeyPress={handleKeyPress}
-                          className={`w-full p-2 rounded bg-gray-900 border ${
-                            editingField !== 'institution'
-                              ? 'border-gray-800 text-gray-500 cursor-not-allowed'
-                              : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
-                          }`}
-                        />
-                      </div>
+                      )}
                     </div>
-
-                                             {/* Learning Goals */}
+                   <input 
+                      type="text"
+                      value={institutionName || 'Not set'}
+                      readOnly
+                      className="w-full p-2 rounded bg-gray-900 border border-gray-800 text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                </div>                                             {/* Learning Goals */}
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="block text-sm text-gray-300 mb-1">Learning Goals</label>
@@ -1039,23 +1066,71 @@ const handleSaveProfile = async () => {
                       </button>
                     </div>
 
-                    {/* ✅ ADDED: Become a Host CTA (non-destructive) */}
+                    {/* ✅ FIXED: Host CTA Logic - Check if user is already a verified host */}
                     <div className="mt-4 flex items-center justify-between p-4 border border-[#9b5de5]/30 rounded-lg bg-[#9b5de5]/10">
                       <div>
-                        <h4 className="font-medium text-[#cbb3ff]">Want to become a host?</h4>
-                        <p className="text-sm text-[#cbb3ff]/80">
-                          Start hosting events and manage attendees from your host dashboard.
-                        </p>
+                        {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                          <>
+                            <h4 className="font-medium text-[#cbb3ff]">You're a verified host!</h4>
+                            <p className="text-sm text-[#cbb3ff]/80">
+                              Access your host dashboard to manage events and attendees.
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <h4 className="font-medium text-[#cbb3ff]">Want to become a host?</h4>
+                            <p className="text-sm text-[#cbb3ff]/80">
+                              Start hosting events and manage attendees from your host dashboard.
+                            </p>
+                          </>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowHostModal(true)}
-                        className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
-                      >
-                        Become a Host
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        {user?.hostEligibilityStatus?.status === 'approved' && user?.canHost ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate('/host/manage-events')}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-button"
+                          >
+                            Go to Host Dashboard
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowHostModal(true)}
+                            className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                          >
+                            Become a Host
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsRefreshing(true);
+                            await refreshUser();
+                            setIsRefreshing(false);
+                          }}
+                          disabled={isRefreshing}
+                          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-button text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isRefreshing ? (
+                            <>
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Refreshing...
+                            </>
+                          ) : (
+                            <>
+                              <i className="ri-refresh-line"></i>
+                              Refresh Data
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                    {/* ✅ /ADDED */}
+                    {/* ✅ /FIXED */}
                   </div>
                 </div>
               </div>

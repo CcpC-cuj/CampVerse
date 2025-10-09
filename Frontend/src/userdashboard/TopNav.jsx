@@ -14,9 +14,10 @@ const TopNav = () => {
           <i className="ri-notification-3-line text-xl" />
         </button>
         <img
-          src={user?.profilePicture || "/default-profile.png"}
+          src={user?.profilePhoto || user?.googleProfileImage || user?.avatar || "/default-avatar.png"}
           alt="Profile"
           className="w-10 h-10 rounded-full border border-[#9b5de5]/30"
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/default-avatar.png'; }}
         />
       </div>
     </div>

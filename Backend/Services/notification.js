@@ -1,9 +1,20 @@
 const { emailsender } = require('./email');
 const Notification = require('../Models/Notification');
 const User = require('../Models/User');
+const { logger } = require('../Middleware/errorHandler');
+
+// Store io instance
+let io = null;
 
 /**
- * Create an in-app notification
+ * Set Socket.IO instance for real-time notifications
+ */
+function setSocketIO(socketIO) {
+  io = socketIO;
+}
+
+/**
+ * Create an in-app notification and emit via Socket.IO
  */
 async function createNotification(userId, type, message, data = {}) {
   try {
@@ -16,9 +27,16 @@ async function createNotification(userId, type, message, data = {}) {
       createdAt: new Date(),
     });
     await notification.save();
+    
+    // Emit real-time notification via Socket.IO
+    if (io) {
+      io.to(`user:${userId}`).emit('notification', notification);
+      logger.info(`Real-time notification sent to user:${userId}`);
+    }
+    
     return notification;
   } catch (error) {
-    console.error('Error creating notification:', error);
+    logger.error('Error creating notification:', error);
     throw error;
   }
 }
@@ -28,26 +46,32 @@ async function createNotification(userId, type, message, data = {}) {
  */
 async function notifyHostRequest(userId, userName, userEmail) {
   try {
-    // Find platform admin users
+    // Find platform admin users AND verifiers (since verifiers can approve host requests)
     const User = require('../Models/User');
-    const platformAdmins = await User.find({ roles: 'platformAdmin' });
+    const adminsAndVerifiers = await User.find({ 
+      roles: { $in: ['platformAdmin', 'verifier'] } 
+    });
 
-    // Create in-app notifications for all platform admins
-    for (const admin of platformAdmins) {
+    // Create in-app notifications for all platform admins and verifiers
+    for (const user of adminsAndVerifiers) {
       await createNotification(
-        admin._id,
+        user._id,
         'host_request',
         `New host request from ${userName} (${userEmail})`,
         { userId, userName, userEmail },
       );
     }
 
-    // Send email notification to platform admins
-    for (const admin of platformAdmins) {
-      await sendHostRequestEmail(admin.email, admin.name, userName, userEmail);
+    // Send email notification to platform admins and verifiers
+    for (const user of adminsAndVerifiers) {
+      if (user.notificationPreferences?.email?.host_request !== false) {
+        await sendHostRequestEmail(user.email, user.name, userName, userEmail);
+      }
     }
+
+    logger.info(`Notified ${adminsAndVerifiers.length} admins/verifiers about host request from ${userName}`);
   } catch (error) {
-    console.error('Error notifying host request:', error);
+    logger.error('Error notifying host request:', error);
   }
 }
 
@@ -73,7 +97,7 @@ async function notifyHostStatusUpdate(
     // Send email notification
     await sendHostStatusEmail(userEmail, userName, status, remarks);
   } catch (error) {
-    console.error('Error notifying host status update:', error);
+    logger.error('Error notifying host status update:', error);
   }
 }
 
@@ -100,9 +124,9 @@ async function notifyInstitutionRequest({
       );
     }
     
-    console.log(`Notified ${adminAndVerifiers.length} admins/verifiers about institution request for ${institutionName}`);
+  // Notified ${adminAndVerifiers.length} admins/verifiers about institution request for ${institutionName} (console.log removed)
   } catch (error) {
-    console.error('Error notifying institution request:', error);
+    logger.error('Error notifying institution request:', error);
   }
 }
 
@@ -126,7 +150,7 @@ async function sendHostRequestEmail(
       },
     });
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse Admin" <noreply@campverse.com>',
       to: adminEmail,
       subject: 'New Host Request - Action Required',
@@ -144,7 +168,7 @@ async function sendHostRequestEmail(
       `,
     });
   } catch (error) {
-    console.error('Error sending host request email:', error);
+    logger.error('Error sending host request email:', error);
   }
 }
 
@@ -166,7 +190,7 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Host Request ${status === 'approved' ? 'Approved' : 'Rejected'}`;
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse" <noreply@campverse.com>',
       to: userEmail,
       subject,
@@ -184,7 +208,7 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
       `,
     });
   } catch (error) {
-    console.error('Error sending host status email:', error);
+    logger.error('Error sending host status email:', error);
   }
 }
 
@@ -198,7 +222,7 @@ async function getUserNotifications(userId, limit = 20) {
       .limit(limit);
     return notifications;
   } catch (error) {
-    console.error('Error fetching user notifications:', error);
+    logger.error('Error fetching user notifications:', error);
     throw error;
   }
 }
@@ -214,7 +238,7 @@ async function markNotificationAsRead(notificationId) {
     await notification.save();
     return true;
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    logger.error('Error marking notification as read:', error);
     return false;
   }
 }
@@ -229,7 +253,7 @@ async function markAllNotificationsAsRead(userId) {
       { isRead: true },
     );
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+    logger.error('Error marking all notifications as read:', error);
     throw error;
   }
 }
@@ -247,7 +271,7 @@ async function notifyUser({
   try {
     const user = await User.findById(userId).select('notificationPreferences');
     if (!user) {
-      console.warn(`User not found: ${userId}`);
+      logger.warn(`User not found: ${userId}`);
       return;
     }
     // Check notification preferences
@@ -265,7 +289,7 @@ async function notifyUser({
       await emailsender(emailOptions);
     }
   } catch (error) {
-    console.error('Error in notifyUser:', error);
+    logger.error('Error in notifyUser:', error);
   }
 }
 
@@ -316,9 +340,9 @@ async function notifyInstitutionStatusUpdate({
       await sendInstitutionStatusEmail(user.email, user.name, institutionName, status, remarks);
     }
     
-    console.log(`Notified ${affectedUsers.length} users about institution ${statusText}: ${institutionName}`);
+  // Notified ${affectedUsers.length} users about institution ${statusText}: ${institutionName} (console.log removed)
   } catch (error) {
-    console.error('Error notifying institution status update:', error);
+    logger.error('Error notifying institution status update:', error);
   }
 }
 
@@ -340,7 +364,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Institution ${status === 'approved' ? 'Approved' : 'Rejected'} - ${institutionName}`;
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: '"CampVerse" <noreply@campverse.com>',
       to: userEmail,
       subject,
@@ -354,8 +378,8 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
             ${remarks}
           </div>` : ''}
           ${
-            status === 'approved'
-              ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
+  status === 'approved'
+    ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
                    🎉 <strong>Great news!</strong> You can now:
                    <ul>
                      <li>Host events on CampVerse</li>
@@ -364,7 +388,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
                      <li>View institution analytics</li>
                    </ul>
                  </div>`
-              : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+    : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
                    😔 <strong>Unfortunately, we could not verify this institution at this time.</strong>
                    <br><br>
                    <strong>What you can do:</strong>
@@ -376,7 +400,7 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
                    </ul>
                    <p>You can still discover and join events, but hosting will require institution verification.</p>
                  </div>`
-          }
+}
           <hr style="margin: 25px 0; border: none; height: 1px; background: #dee2e6;">
           <p style="color: #6c757d; font-size: 14px;">
             If you have questions, please contact us at support@campverse.com<br>
@@ -386,11 +410,12 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
       `,
     });
   } catch (error) {
-    console.error('Error sending institution status email:', error);
+    logger.error('Error sending institution status email:', error);
   }
 }
 
 module.exports = {
+  setSocketIO,
   createNotification,
   notifyHostRequest,
   notifyHostStatusUpdate,

@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Event = require('../../Models/Event');
 const User = require('../../Models/User');
 const EventParticipationLog = require('../../Models/EventParticipationLog');

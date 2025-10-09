@@ -15,7 +15,6 @@ const {
 } = require('../Controller/certificate');
 const {
   authenticateToken,
-  requireRole,
   requireSelfOrRole,
 } = require('../Middleware/Auth');
 

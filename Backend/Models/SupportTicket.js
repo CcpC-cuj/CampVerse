@@ -97,7 +97,6 @@ supportTicketSchema.pre('save', function (next) {
 
 // Index for efficient queries
 supportTicketSchema.index({ userId: 1, status: 1 });
-supportTicketSchema.index({ ticketId: 1 });
 supportTicketSchema.index({ status: 1, priority: 1 });
 
 module.exports = mongoose.model('SupportTicket', supportTicketSchema);

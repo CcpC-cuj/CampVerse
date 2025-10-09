@@ -1,4 +1,5 @@
 import React from "react";
+import ShareButton from "../userdashboard/ShareButton";
 
 const EventCard = ({ event, role, onViewDetails, onEdit, onDelete, onShare }) => {
   // Defensive: ensure tags is always array
@@ -28,14 +29,14 @@ const EventCard = ({ event, role, onViewDetails, onEdit, onDelete, onShare }) =>
         {role === 'user' && (
           <>
             <button onClick={() => onViewDetails(event)} className="px-4 py-2 bg-purple-700 text-white rounded-lg font-medium hover:bg-purple-800 transition-colors">View Details</button>
-            <button onClick={() => onShare(event)} className="px-4 py-2 bg-purple-700/30 text-purple-300 rounded-lg font-medium hover:bg-purple-800/30 transition-colors">Share Event Link</button>
+            <ShareButton event={event} />
           </>
         )}
         {(role === 'host' || role === 'verifier') && (
           <>
             <button onClick={() => onEdit(event)} className="px-4 py-2 bg-purple-700 text-white rounded-lg font-medium hover:bg-purple-800 transition-colors">Edit</button>
             <button onClick={() => onDelete(event)} className="px-4 py-2 bg-red-700 text-white rounded-lg font-medium hover:bg-red-800 transition-colors">Delete</button>
-            <button onClick={() => onShare(event)} className="px-4 py-2 bg-purple-700/30 text-purple-300 rounded-lg font-medium hover:bg-purple-800/30 transition-colors">Share Event</button>
+            <ShareButton event={event} />
           </>
         )}
       </div>
