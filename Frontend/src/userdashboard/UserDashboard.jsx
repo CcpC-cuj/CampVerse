@@ -7,6 +7,7 @@ import { getDashboard, updateMe } from '../api';
 import DiscoverEvents from './DiscoverEvents';
 import GradientCircularProgress from "../components/GradientCircularProgress.jsx";
 import NavBar from './NavBar.jsx';
+import UnifiedSidebar from "../userdashboard/UnifiedSidebar.jsx";
 
 const UserDashboard = () => {
   const { user, refreshUser } = useAuth();
@@ -90,7 +91,8 @@ const UserDashboard = () => {
 
       {/* Sidebar */}
       <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 sm:translate-x-0`}>
-        <Sidebar />
+        {/* <Sidebar /> */}
+        <UnifiedSidebar></UnifiedSidebar>
       </div>
 
       {/* Main Content */}
