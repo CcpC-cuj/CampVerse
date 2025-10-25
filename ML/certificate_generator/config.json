@@ -1,0 +1,73 @@
+{
+  "certificate_type": "participation",
+  "name_settings": {
+    "position": {
+      "x": 810,
+      "y": 596
+    },
+    "font_path": "DancingScript-Regular.ttf",
+    "font_size": 85,
+    "color": "black"
+  },
+  "award_text_settings": {
+    "text": "For outstanding participation in the CSI Workshop 2025",
+    "position": {
+      "x": 810,
+      "y": 720
+    },
+    "font_path": "DancingScript-Regular.ttf",
+    "font_size": 45,
+    "color": "black",
+    "max_width": 1000
+  },
+  "left_logo": {
+    "filename": "logo_left.png",
+    "position": {
+      "x": 200,
+      "y": 170
+    },
+    "max_fraction": 0.18
+  },
+  "right_logo": {
+    "filename": "logo_right.png",
+    "position": {
+      "x": 1500,
+      "y": 170
+    },
+    "max_fraction": 0.18
+  },
+  "left_signatory": {
+    "filename": "signature_left.png",
+    "name": "Dr. John Doe",
+    "title": "Director, CSI Chapter",
+    "image_position": {
+      "x": 400,
+      "y": 1100
+    },
+    "text_position": {
+      "x": 400,
+      "y": 1200
+    },
+    "font_size": 35,
+    "color": "black"
+  },
+  "right_signatory": {
+    "filename": "signature_right.png",
+    "name": "Prof. Jane Smith",
+    "title": "Head of Department",
+    "image_position": {
+      "x": 1200,
+      "y": 1100
+    },
+    "text_position": {
+      "x": 1200,
+      "y": 1200
+    },
+    "font_size": 35,
+    "color": "black"
+  },
+  "signature_max_size": {
+    "width": 300,
+    "height": 150
+  }
+}
