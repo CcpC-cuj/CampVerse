@@ -47,7 +47,7 @@ services:
     depends_on:
       - mongo
       - redis
-      - ml-recommendation
+      # - ml-recommendation
     networks:
       - campverse
     healthcheck:
