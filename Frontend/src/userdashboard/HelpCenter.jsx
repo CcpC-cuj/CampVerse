@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+import SupportTicketHistoryModal from "./SupportTicketHistoryModal";
+import ArticleModal from "./ArticleModal";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
 import NavBar from "./NavBar";
@@ -103,6 +105,9 @@ const CATEGORIES = [
 const HelpCenter = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTickets, setShowTickets] = useState(false);
+  const [showArticle, setShowArticle] = useState(false);
+  const [activeArticle, setActiveArticle] = useState(null);
 
   // Top search + category filter
   const [query, setQuery] = useState("");
@@ -236,9 +241,25 @@ const HelpCenter = () => {
                       <div className="mb-2 text-xs text-gray-400 uppercase tracking-wide">
                         {CATEGORIES.find((c) => c.id === a.category)?.label || "Article"}
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">{a.title}</h3>
-                      <p className="text-gray-300">{a.body}</p>
-                      {/* TODO: BACKEND—link to a full article route or CMS if needed */}
+                      <h3 className="text-lg font-semibold text-white mb-2">
+                        <button
+                          className="text-left text-white hover:underline"
+                          onClick={() => { setActiveArticle(a); setShowArticle(true); }}
+                        >
+                          {a.title}
+                        </button>
+                      </h3>
+                      <p className="text-gray-300">
+                        {a.body.length > 120 ? (
+                          <>
+                            {a.body.slice(0, 120)}...
+                            <button
+                              className="ml-2 text-[#9b5de5] hover:underline text-sm"
+                              onClick={() => { setActiveArticle(a); setShowArticle(true); }}
+                            >Read more</button>
+                          </>
+                        ) : a.body}
+                      </p>
                     </article>
                   ))
                 )}
@@ -269,7 +290,7 @@ const HelpCenter = () => {
                   {/* TODO: BACKEND—Add route to view user tickets, e.g. /support/tickets */}
                   <button
                     className="w-full flex items-center justify-start px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all text-gray-200 hover:text-white"
-                    onClick={() => alert("Coming soon: ticket history")}
+                    onClick={() => setShowTickets(true)}
                   >
                     <i className="ri-file-list-3-line mr-3 text-lg"></i> 
                     <span>View my tickets</span>
@@ -380,6 +401,10 @@ const HelpCenter = () => {
           </div>
         </div>
       </div>
+      {/* Support Ticket History Modal */}
+      <SupportTicketHistoryModal open={showTickets} onClose={() => setShowTickets(false)} />
+      {/* Article Modal */}
+      <ArticleModal open={showArticle} article={activeArticle} onClose={() => setShowArticle(false)} />
     </div>
   );
 };

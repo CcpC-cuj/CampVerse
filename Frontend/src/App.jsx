@@ -18,6 +18,10 @@ import QRViewer from "./components/QRViewer";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 import { EventProvider } from "./userdashboard/EventContext";
+import VerifierDashboard from "./verifier/VerifierDashboard";
+import EventVerificationQueue from "./verifier/EventVerificationQueue";
+import CertificateReview from "./verifier/CertificateReview";
+import VerifierAnalytics from "./verifier/VerifierAnalytics";
 
 
 
@@ -84,6 +88,38 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/dashboard"
+              element={
+                <ProtectedRoute>
+                  <VerifierDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/event-queue"
+              element={
+                <ProtectedRoute>
+                  <EventVerificationQueue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/certificate-review"
+              element={
+                <ProtectedRoute>
+                  <CertificateReview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/analytics"
+              element={
+                <ProtectedRoute>
+                  <VerifierAnalytics />
                 </ProtectedRoute>
               }
             />
