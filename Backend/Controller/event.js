@@ -1321,6 +1321,54 @@ async function verifyEvent(req, res) {
   }
 }
 
+// Event rejection (verifier)
+async function rejectEvent(req, res) {
+  try {
+    const { reason } = req.body;
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+
+    // Check if user is verifier or platformAdmin
+    if (!req.user.roles.includes('verifier') && !req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ error: 'Only verifiers can reject events' });
+    }
+
+    event.verificationStatus = 'rejected';
+    event.rejectionReason = reason || 'Event verification failed';
+    event.rejectedBy = req.user.id;
+    event.rejectedAt = new Date();
+    await event.save();
+
+    res.json({
+      message: 'Event rejected.',
+      event: {
+        id: event._id,
+        verificationStatus: event.verificationStatus,
+        rejectionReason: event.rejectionReason,
+        rejectedAt: event.rejectedAt
+      }
+    });
+
+    // Notify host of event rejection
+    const host = await User.findById(event.hostUserId);
+    if (host) {
+      await notifyUser({
+        userId: event.hostUserId,
+        type: 'event_verification',
+        message: `Your event '${event.title}' has been rejected.`,
+        data: { eventId: event._id, status: 'rejected', reason: event.rejectionReason },
+        emailOptions: {
+          to: host.email,
+          subject: `Event Verification Rejected: ${event.title}`,
+          html: `<p>Hi ${host.name},<br>Your event <b>${event.title}</b> has been <b>rejected</b> by a verifier.</p><p><strong>Reason:</strong> ${event.rejectionReason}</p><p>Please contact support if you believe this is an error.</p>`,
+        },
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Error rejecting event.' });
+  }
+}
+
 // Google Calendar link endpoint
 async function getGoogleCalendarLink(req, res) {
   try {
@@ -1732,6 +1780,7 @@ module.exports = {
   approveCoHost,
   rejectCoHost,
   verifyEvent,
+  rejectEvent,
   getGoogleCalendarLink,
   getPublicEventById,
   getAttendance,

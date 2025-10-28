@@ -15,6 +15,7 @@ const {
   approveCoHost,
   rejectCoHost,
   verifyEvent,
+  rejectEvent,
   getGoogleCalendarLink,
   getAttendance,
   bulkMarkAttendance,
@@ -66,7 +67,11 @@ router.get('/', async (req, res) => {
       // Only show approved events to anonymous users
       query.verificationStatus = 'approved';
     }
-    // Authenticated users can see all events (approved, pending) so they can RSVP
+    
+    // Support status filtering for authenticated users
+    if (isAuthenticated && req.query.status) {
+      query.verificationStatus = req.query.status;
+    }
     
     const events = await require('../Models/Event')
       .find(query)
@@ -81,6 +86,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error fetching events:', err);
     res.status(500).json({ 
       success: false, 
       error: 'Error fetching events.',
@@ -551,6 +557,41 @@ router.post(
   authenticateToken,
   requireRole('verifier'),
   verifyEvent,
+);
+
+/**
+ * @swagger
+ * /api/events/{id}/reject:
+ *   post:
+ *     summary: Reject event (verifier)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for rejection
+ *     responses:
+ *       200: { description: Event rejected }
+ *       403: { description: Forbidden }
+ */
+router.post(
+  '/:id/reject',
+  authenticateToken,
+  requireRole('verifier'),
+  rejectEvent,
 );
 
 /**

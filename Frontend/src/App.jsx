@@ -94,7 +94,7 @@ function App() {
             <Route
               path="/verifier/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
                   <VerifierDashboard />
                 </ProtectedRoute>
               }
@@ -102,7 +102,7 @@ function App() {
             <Route
               path="/verifier/event-queue"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
                   <EventVerificationQueue />
                 </ProtectedRoute>
               }
@@ -110,7 +110,7 @@ function App() {
             <Route
               path="/verifier/certificate-review"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
                   <CertificateReview />
                 </ProtectedRoute>
               }
@@ -118,7 +118,7 @@ function App() {
             <Route
               path="/verifier/analytics"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
                   <VerifierAnalytics />
                 </ProtectedRoute>
               }

@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { getInstitutionAnalytics } from "../api/institution";
 import { getCertificateStats } from "../api/certificates";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function VerifierAnalytics() {
+  const { user } = useAuth();
   const [institutionStats, setInstitutionStats] = useState(null);
   const [certificateStats, setCertificateStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,7 @@ export default function VerifierAnalytics() {
         const certificateRes = await getCertificateStats();
         setCertificateStats(certificateRes?.data || null);
       } catch (e) {
+        console.error('Error fetching analytics:', e);
         setInstitutionStats(null);
         setCertificateStats(null);
       }
@@ -29,7 +32,7 @@ export default function VerifierAnalytics() {
   }, []);
 
   return (
-    <Layout>
+    <Layout user={user} roles={user?.roles}>
       <div style={{ padding: "2rem" }}>
         <h3>Verifier Analytics</h3>
         {loading ? (

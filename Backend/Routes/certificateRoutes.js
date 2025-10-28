@@ -12,10 +12,13 @@ const {
   sendCertificateNotification,
   getCertificateDashboard,
   bulkRetryFailedCertificates,
+  approveCertificate,
+  rejectCertificate,
 } = require('../Controller/certificate');
 const {
   authenticateToken,
   requireSelfOrRole,
+  requireRole,
 } = require('../Middleware/Auth');
 
 const router = express.Router();
@@ -685,5 +688,103 @@ router.post(
 
 // Keep parameterized route last to avoid collisions with static and prefixed routes
 router.get('/:id', authenticateToken, getCertificateById);
+
+/**
+ * @swagger
+ * /api/certificates/{certificateId}/approve:
+ *   post:
+ *     summary: Approve certificate (verifier only)
+ *     tags: [Certificate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: certificateId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Certificate approved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 certificate:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     verificationStatus:
+ *                       type: string
+ *                     verifiedAt:
+ *                       type: string
+ *                       format: date-time
+ *       403:
+ *         description: Forbidden - Only verifiers can approve certificates
+ *       404:
+ *         description: Certificate not found
+ */
+router.post('/:certificateId/approve', authenticateToken, requireRole('verifier'), approveCertificate);
+
+/**
+ * @swagger
+ * /api/certificates/{certificateId}/reject:
+ *   post:
+ *     summary: Reject certificate (verifier only)
+ *     tags: [Certificate]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: certificateId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for rejection
+ *     responses:
+ *       200:
+ *         description: Certificate rejected successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 certificate:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                     verificationStatus:
+ *                       type: string
+ *                     verifiedAt:
+ *                       type: string
+ *                       format: date-time
+ *                     rejectionReason:
+ *                       type: string
+ *       403:
+ *         description: Forbidden - Only verifiers can reject certificates
+ *       404:
+ *         description: Certificate not found
+ */
+router.post('/:certificateId/reject', authenticateToken, requireRole('verifier'), rejectCertificate);
 
 module.exports = router;

@@ -102,4 +102,21 @@ export async function bulkRetryFailedCertificates(eventId) {
   return res.json();
 }
 
+export async function approveCertificate(certificateId) {
+  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/approve`, {
+    method: 'POST',
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+export async function rejectCertificate(certificateId, reason = '') {
+  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ reason }),
+  });
+  return res.json();
+}
+
 

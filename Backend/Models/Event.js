@@ -35,6 +35,16 @@ const eventSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
   },
+  rejectedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  rejectedAt: {
+    type: Date,
+  },
+  rejectionReason: {
+    type: String,
+  },
   features: {
     certificateEnabled: { type: Boolean, default: false },
     chatEnabled: { type: Boolean, default: false },
