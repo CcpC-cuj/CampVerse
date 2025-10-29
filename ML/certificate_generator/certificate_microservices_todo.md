@@ -10,6 +10,7 @@ This document tracks the steps and context for building a certificate generation
 - Verifiers check certificate validity via QR code or certificate ID.
 - All assets (templates, logos, signatures, generated certificates) stored in Supabase/Firebase.
 - Security: JWT/OAuth, asset validation, access control.
+- Generated certificates should be visible in each user's profile under the "Past Events" section. Users can view and download certificates for events they participated in. This requires linking certificate records to user profiles and event history in the metadata DB and frontend.
 
 ## TODO List
 
@@ -23,6 +24,8 @@ This document tracks the steps and context for building a certificate generation
 - [ ] Set up metadata DB:
     - Tables for templates, assets, jobs, certificates, verification records
     - Table for certificate_requests (host_id, event_id, count, last_requested)
+    - Link certificates to user profiles and event participation records for profile display
+    - Ensure generated certificates are queryable by user and event for frontend profile rendering
 - [ ] Integrate Supabase/Firebase SDK for asset management
 
 ### 2. Frontend UX & Flow
@@ -37,6 +40,8 @@ This document tracks the steps and context for building a certificate generation
 - [ ] User/student portal:
     - Download certificate for event
     - Verification link/QR code
+    - Show generated certificates in user's profile under "Past Events" section
+    - View/download certificates for each event participated
 - [ ] Admin dashboard:
     - Upload/manage templates
     - Approve templates for host use
