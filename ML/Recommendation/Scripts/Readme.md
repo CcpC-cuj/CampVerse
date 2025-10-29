@@ -34,8 +34,6 @@ Run the **hybrid_recommendation()** function with user id parameter (optional- n
 
 **Output** = Recommended Events id
 
-The n
-
 
 
 
