@@ -15,6 +15,7 @@ const {
   approveCoHost,
   rejectCoHost,
   verifyEvent,
+  rejectEvent,
   getGoogleCalendarLink,
   getAttendance,
   bulkMarkAttendance,
@@ -29,6 +30,7 @@ const {
   getUserActivityTimeline,
   getGrowthTrends,
   getZeroResultSearches,
+  getVerifierAnalytics,
 } = require('../Controller/analytics');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const {
@@ -66,7 +68,11 @@ router.get('/', async (req, res) => {
       // Only show approved events to anonymous users
       query.verificationStatus = 'approved';
     }
-    // Authenticated users can see all events (approved, pending) so they can RSVP
+    
+    // Support status filtering for authenticated users
+    if (isAuthenticated && req.query.status) {
+      query.verificationStatus = req.query.status;
+    }
     
     const events = await require('../Models/Event')
       .find(query)
@@ -81,6 +87,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error fetching events:', err);
     res.status(500).json({ 
       success: false, 
       error: 'Error fetching events.',
@@ -555,6 +562,41 @@ router.post(
 
 /**
  * @swagger
+ * /api/events/{id}/reject:
+ *   post:
+ *     summary: Reject event (verifier)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for rejection
+ *     responses:
+ *       200: { description: Event rejected }
+ *       403: { description: Forbidden }
+ */
+router.post(
+  '/:id/reject',
+  authenticateToken,
+  requireRole('verifier'),
+  rejectEvent,
+);
+
+/**
+ * @swagger
  * /api/events/{id}/calendar-link:
  *   get:
  *     summary: Get Google Calendar link for event
@@ -576,6 +618,8 @@ router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 // Advanced event search (filter, sort, paginate)
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
+// Verifier analytics (verification stats)
+router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
 // Platform insights (global stats)
 router.get(
   '/platform-insights',

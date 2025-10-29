@@ -319,7 +319,6 @@ async function getPendingInstitutionVerifications(req, res) {
     }
 
     const pendingInstitutions = await Institution.find({
-      verificationRequested: true,
       isVerified: false,
     })
       .populate('verificationRequests.requestedBy', 'name email')
@@ -346,6 +345,7 @@ async function getPendingInstitutionVerifications(req, res) {
           status: latestRequest?.status,
         },
         requestedAt: institution.updatedAt,
+        verificationRequested: institution.verificationRequested,
       };
     });
 

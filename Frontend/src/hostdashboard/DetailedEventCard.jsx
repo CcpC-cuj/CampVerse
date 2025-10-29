@@ -36,7 +36,11 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   };
 
   const getEventStatus = () => {
-    // If event is not verified, always show 'draft'
+    // If event is pending verification, show 'pending'
+    if (event.verificationStatus === 'pending') {
+      return 'pending';
+    }
+    // If event is not verified, show 'draft'
     if (event.verified === false || event.verified === 'false' || event.status === 'draft' || event.status === 'Draft') {
       return 'draft';
     }
@@ -76,11 +80,14 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
         <div className="absolute top-2 right-2">
           <span className={`text-xs px-2 py-1 rounded-full font-medium ${
             eventStatus === 'draft' ? 'bg-gray-500/20 text-gray-300' :
+            eventStatus === 'pending' ? 'bg-orange-500/20 text-orange-300' :
             eventStatus === 'upcoming' ? 'bg-blue-500/20 text-blue-300' :
             eventStatus === 'ongoing' ? 'bg-green-500/20 text-green-300' :
             'bg-gray-500/20 text-gray-300'
           }`}>
-            {eventStatus === 'draft' ? 'Draft' : eventStatus.charAt(0).toUpperCase() + eventStatus.slice(1)}
+            {eventStatus === 'draft' ? 'Draft' : 
+             eventStatus === 'pending' ? 'Pending' : 
+             eventStatus.charAt(0).toUpperCase() + eventStatus.slice(1)}
           </span>
         </div>
 

@@ -45,7 +45,7 @@ const Sidebar = ({ onDiscoverClick }) => {
     : user?.role === "verifier";
 
   return (
-    <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
+    <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white overflow-hidden">
       {/* Top Logo */}
       <div className="px-4 py-4.5 border-b border-gray-700 flex items-center">
         <img 

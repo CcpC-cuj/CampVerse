@@ -274,6 +274,15 @@ export async function verifyEvent(eventId) {
   return res.json();
 }
 
+export async function rejectEvent(eventId, reason = '') {
+  const res = await fetch(`${API_URL}/api/events/${eventId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ reason }),
+  });
+  return res.json();
+}
+
 export async function getGoogleCalendarLink(eventId) {
   const res = await fetch(`${API_URL}/api/events/${eventId}/calendar-link`, {
     headers: { ...getAuthHeaders() },

@@ -1,27 +1,22 @@
-
 import React, { useEffect, useState } from "react";
-import Layout from "../components/Layout";
-import { getInstitutionAnalytics } from "../api/institution";
-import { getCertificateStats } from "../api/certificates";
+import Sidebar from "../userdashboard/sidebar";
+import NavBar from "../userdashboard/NavBar";
+import { getPlatformInsights } from "../api/events";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function VerifierAnalytics() {
-  const [institutionStats, setInstitutionStats] = useState(null);
-  const [certificateStats, setCertificateStats] = useState(null);
+  const { user } = useAuth();
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAnalytics() {
       setLoading(true);
       try {
-        // For demo, use institutionId = 'demo' (replace with real ID if available)
-        const institutionRes = await getInstitutionAnalytics('demo');
-        setInstitutionStats(institutionRes?.data || null);
-
-        const certificateRes = await getCertificateStats();
-        setCertificateStats(certificateRes?.data || null);
-      } catch (e) {
-        setInstitutionStats(null);
-        setCertificateStats(null);
+        const res = await getPlatformInsights();
+        setAnalytics(res?.data || null);
+      } catch {
+        setAnalytics(null);
       }
       setLoading(false);
     }
@@ -29,28 +24,35 @@ export default function VerifierAnalytics() {
   }, []);
 
   return (
-    <Layout>
-      <div style={{ padding: "2rem" }}>
-        <h3>Verifier Analytics</h3>
-        {loading ? (
-          <p>Loading analytics...</p>
-        ) : (
-          <div>
-            <h4>Institution Analytics</h4>
-            {institutionStats ? (
-              <pre style={{ background: '#f5f5f5', padding: '1rem' }}>{JSON.stringify(institutionStats, null, 2)}</pre>
-            ) : (
-              <p>No institution analytics available.</p>
-            )}
-            <h4>Certificate Stats</h4>
-            {certificateStats ? (
-              <pre style={{ background: '#f5f5f5', padding: '1rem' }}>{JSON.stringify(certificateStats, null, 2)}</pre>
-            ) : (
-              <p>No certificate stats available.</p>
-            )}
+    <div className="h-screen bg-[#141a45] text-white font-poppins">
+      <div className="flex h-screen">
+        <Sidebar user={user} roles={user?.roles} activeRole="verifier" />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <NavBar user={user} />
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="max-w-4xl mx-auto py-10 px-4">
+              <h2 className="text-3xl font-bold mb-8 text-white" style={{textShadow: "0 0 8px rgba(155, 93, 229, 0.35)"}}>
+                Verifier Analytics
+              </h2>
+              <div className="bg-gray-800/60 rounded-xl p-8 border border-gray-700/40 mb-8">
+                <h3 className="text-2xl font-semibold mb-6 text-[#9b5de5]">Your Analytics</h3>
+                {loading ? (
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <i className="ri-loader-4-line animate-spin text-2xl text-[#9b5de5]" />
+                    <span>Loading analytics...</span>
+                  </div>
+                ) : !analytics ? (
+                  <div className="text-gray-400 text-lg">No analytics data available.</div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Analytics content */}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
-    </Layout>
+    </div>
   );
 }

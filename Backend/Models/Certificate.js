@@ -48,6 +48,21 @@ const certificateSchema = new mongoose.Schema({
     errorMessage: String,
     generatedAt: Date,
   },
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  verifiedAt: {
+    type: Date,
+  },
+  rejectionReason: {
+    type: String,
+  },
   issuedAt: {
     type: Date,
     default: Date.now,
