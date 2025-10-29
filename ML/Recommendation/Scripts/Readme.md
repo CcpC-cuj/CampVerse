@@ -3,19 +3,19 @@ There are three scripts
 2. user
 3. Main
 
-#Event Scripts
+# Event Scripts
 
 For data preprocessing in the event dataset
 (Change this according to the original event dataset)
 
-#User Scripts
+# User Scripts
 
 For data preprocessing in the user dataset
 (Change this according to the original user dataset)
 
 
 
-#Main Scripts
+# Main Scripts
 
 For the recommendation engine
 (Do not make changes in this)
