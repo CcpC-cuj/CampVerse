@@ -471,7 +471,7 @@ const handleSaveProfile = async () => {
 
   return (
     // MATCHED to Dashboard outer gradient + typography
-    <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* mobile overlay for sidebar */}
       {sidebarOpen && (
         <div

@@ -1299,6 +1299,8 @@ async function verifyEvent(req, res) {
     const event = await Event.findById(req.params.id);
     if (!event) return res.status(404).json({ error: 'Event not found.' });
     event.verificationStatus = 'approved';
+    event.verifiedBy = req.user._id;
+    event.verifiedAt = new Date();
     await event.save();
     res.json({ message: 'Event verified.' });
     // Notify host of event verification result

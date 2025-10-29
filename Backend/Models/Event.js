@@ -45,6 +45,13 @@ const eventSchema = new mongoose.Schema({
   rejectionReason: {
     type: String,
   },
+  verifiedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  verifiedAt: {
+    type: Date,
+  },
   features: {
     certificateEnabled: { type: Boolean, default: false },
     chatEnabled: { type: Boolean, default: false },

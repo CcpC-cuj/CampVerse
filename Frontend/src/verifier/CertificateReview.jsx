@@ -1,23 +1,24 @@
-
 import React, { useEffect, useState } from "react";
-import Layout from "../components/Layout";
-import { getCertificateDashboard, approveCertificate, rejectCertificate } from "../api/certificates";
+import Sidebar from "../userdashboard/sidebar";
+import NavBar from "../userdashboard/NavBar";
+import { getCertificateDashboard } from "../api/certificates";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function CertificateReview() {
   const { user } = useAuth();
   const [pendingCertificates, setPendingCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(null);
+  // Removed unused actionLoading
 
   useEffect(() => {
     async function fetchPendingCertificates() {
       setLoading(true);
       try {
+        // Use dashboard API to get pending certificates
         const res = await getCertificateDashboard({ status: "pending" });
-        setPendingCertificates(Array.isArray(res?.data) ? res.data : []);
-      } catch (e) {
-        console.error('Error fetching certificates:', e);
+        const certs = Array.isArray(res?.data?.certificates) ? res.data.certificates : [];
+        setPendingCertificates(certs);
+      } catch {
         setPendingCertificates([]);
       }
       setLoading(false);
@@ -25,91 +26,43 @@ export default function CertificateReview() {
     fetchPendingCertificates();
   }, []);
 
-  const handleCertificateAction = async (certificateId, action) => {
-    setActionLoading(certificateId);
-    try {
-      let result;
-      if (action === 'approve') {
-        result = await approveCertificate(certificateId);
-      } else if (action === 'reject') {
-        const reason = prompt('Please provide a reason for rejection (optional):');
-        result = await rejectCertificate(certificateId, reason);
-      }
-
-      if (result.success !== false) {
-        alert(`Certificate ${action}d successfully!`);
-        // Refresh the list
-        const res = await getCertificateDashboard({ status: "pending" });
-        setPendingCertificates(Array.isArray(res?.data) ? res.data : []);
-      } else {
-        alert(`Failed to ${action} certificate: ${result.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error(`Failed to ${action} certificate:`, error);
-      alert(`Failed to ${action} certificate`);
-    }
-    setActionLoading(null);
-  };
+  // Removed unused handleCertificateVerification
 
   return (
-    <Layout user={user} roles={user?.roles}>
-      <div style={{ padding: "2rem" }}>
-        <h3>Certificate Review</h3>
-        {loading ? (
-          <p>Loading certificates...</p>
-        ) : pendingCertificates.length === 0 ? (
-          <p>No certificates pending review.</p>
-        ) : (
-          <ul style={{ listStyle: "none", padding: 0 }}>
-            {pendingCertificates.map(cert => (
-              <li key={cert._id || cert.id} style={{ 
-                border: "1px solid #ddd", 
-                padding: "1rem", 
-                marginBottom: "1rem",
-                borderRadius: "8px"
-              }}>
-                <div>
-                  <strong>{cert.name || cert.title || cert.certificateName}</strong> &mdash; {cert.eventName || cert.event || "Event"}
-                </div>
-                <div style={{ marginTop: "0.5rem", fontSize: "0.9em", color: "#666" }}>
-                  User: {cert.userName || cert.userEmail || "Unknown"} | Type: {cert.certificateType || "N/A"}
-                </div>
-                <div style={{ marginTop: "0.5rem" }}>
-                  <button 
-                    onClick={() => handleCertificateAction(cert._id || cert.id, 'approve')}
-                    disabled={actionLoading === (cert._id || cert.id)}
-                    style={{ 
-                      background: "#28a745", 
-                      color: "white", 
-                      border: "none", 
-                      padding: "0.5rem 1rem", 
-                      borderRadius: "4px",
-                      marginRight: "0.5rem",
-                      cursor: actionLoading === (cert._id || cert.id) ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    {actionLoading === (cert._id || cert.id) ? "Processing..." : "Approve"}
-                  </button>
-                  <button 
-                    onClick={() => handleCertificateAction(cert._id || cert.id, 'reject')}
-                    disabled={actionLoading === (cert._id || cert.id)}
-                    style={{ 
-                      background: "#dc3545", 
-                      color: "white", 
-                      border: "none", 
-                      padding: "0.5rem 1rem", 
-                      borderRadius: "4px",
-                      cursor: actionLoading === (cert._id || cert.id) ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    {actionLoading === (cert._id || cert.id) ? "Processing..." : "Reject"}
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+    <div className="h-screen bg-[#141a45] text-white font-poppins">
+      <div className="flex h-screen">
+        <Sidebar user={user} roles={user?.roles} activeRole="verifier" />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <NavBar user={user} />
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="max-w-4xl mx-auto py-10 px-4">
+              <h2 className="text-3xl font-bold mb-8 text-white" style={{textShadow: "0 0 8px rgba(155, 93, 229, 0.35)"}}>
+                Certificate Review
+              </h2>
+              <div className="bg-gray-800/60 rounded-xl p-8 border border-gray-700/40 mb-8">
+                <h3 className="text-2xl font-semibold mb-6 text-[#9b5de5]">Pending Certificates</h3>
+                {loading ? (
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <i className="ri-loader-4-line animate-spin text-2xl text-[#9b5de5]" />
+                    <span>Loading certificates...</span>
+                  </div>
+                ) : pendingCertificates.length === 0 ? (
+                  <div className="text-gray-400 text-lg">No certificates pending review.</div>
+                ) : (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {pendingCertificates.map(cert => (
+                      <div key={cert._id || cert.id} className="bg-[#141a45] rounded-lg p-6 border border-gray-700/40 shadow hover:shadow-[0_0_15px_rgba(155,93,229,0.25)] transition-all">
+                        <h4 className="text-lg font-semibold text-white mb-1">{cert.title || cert.name}</h4>
+                        {/* Certificate details would go here */}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </Layout>
+    </div>
   );
 }

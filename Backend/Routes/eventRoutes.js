@@ -30,6 +30,7 @@ const {
   getUserActivityTimeline,
   getGrowthTrends,
   getZeroResultSearches,
+  getVerifierAnalytics,
 } = require('../Controller/analytics');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const {
@@ -617,6 +618,8 @@ router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 // Advanced event search (filter, sort, paginate)
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
+// Verifier analytics (verification stats)
+router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
 // Platform insights (global stats)
 router.get(
   '/platform-insights',
