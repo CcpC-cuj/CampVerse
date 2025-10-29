@@ -18,7 +18,7 @@ For data preprocessing in the user dataset
 # Main Scripts
 
 For the recommendation engine
-(Do not make changes in this)
+**(Do not make changes in this)**
 (This is an hybrid recommendation ie the combination of content based and user based filtering)
 
 
