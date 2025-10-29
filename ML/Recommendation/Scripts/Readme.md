@@ -8,13 +8,13 @@ There are three scripts
 
 For data preprocessing in the event dataset
 
-(Change this according to the original event dataset)
+(Change this according to the original event dataset and make sure to put the correct dataset location)
 
 # User Scripts
 
 For data preprocessing in the user dataset
 
-(Change this according to the original user dataset)
+(Change this according to the original user dataset and make sure to put the correct dataset location)
 
 
 
