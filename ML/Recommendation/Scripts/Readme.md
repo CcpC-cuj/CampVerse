@@ -27,10 +27,11 @@ For the recommendation engine
 
 
 # Flow
-
 **Input** = User id
 
 **Output** = Recommended Events id
+
+Run the **hybrid_recommendation()** function for that
 
 
 
