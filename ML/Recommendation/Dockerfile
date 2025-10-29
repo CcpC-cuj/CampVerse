@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first for better layer caching
 COPY requirements_server.txt ./
 
-RUN pip install --no-cache-dir --root-user-action=ignore -r requirements_server.txt
+RUN pip install --no-cache-dir -r requirements_server.txt
 
 # Copy application files
 COPY server.py ./
