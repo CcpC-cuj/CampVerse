@@ -26,4 +26,11 @@ For the recommendation engine
 (This is an hybrid recommendation ie the combination of content based and user based filtering)
 
 
+# Flow
+
+**Input** = User id
+
+**Output** = Recommended Events id
+
+
 
