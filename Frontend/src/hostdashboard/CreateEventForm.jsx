@@ -585,10 +585,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 									type="checkbox" 
 									name="certificateEnabled" 
 									checked={eventForm.certificateEnabled} 
-									onChange={(e) => setEventForm(prev => ({ ...prev, certificateEnabled: e.target.checked }))}
+									disabled
 									className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
 								/>
-								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates</label>
+								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates (coming soon...)</label>
 							</div>
 							<div className="flex items-center gap-3">
 								<input 
