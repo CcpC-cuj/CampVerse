@@ -47,7 +47,7 @@ services:
     depends_on:
       - mongo
       - redis
-      # - ml-recommendation
+      - ml-recommendation
     networks:
       - campverse
     healthcheck:
@@ -90,25 +90,26 @@ services:
   #     retries: 3
 
   # # ML Recommendation Service (Microservice)
-  # ml-recommendation:
-  #   build:
-  #     context: ./ML/Recommendation
-  #     dockerfile: Dockerfile
-  #   container_name: ml-recommendation-service
-  #   ports:
-  #     - "5002:5002"
-  #   environment:
-  #     - FLASK_ENV=production
-  #     - FLASK_APP=server.py
-  #   networks:
-  #     - campverse
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 10s
-  #   restart: unless-stopped
+  # ML Recommendation Service (Microservice)
+  ml-recommendation:
+    build:
+      context: ./ML/Recommendation
+      dockerfile: Dockerfile
+    container_name: ml-recommendation-service
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=server.py
+    networks:
+      - campverse
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   mongo:
     image: mongo:6

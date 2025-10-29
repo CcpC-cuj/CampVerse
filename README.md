@@ -181,9 +181,37 @@ docker-compose logs frontend
    ```
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:5001
-   - ML Service (optional, disabled by default): http://localhost:8000
+   - ML Service (optional, disabled by default): http://localhost:5002
    - MongoDB: localhost:27017
    - Redis: localhost:6379
+
+## Activating the ML recommendation service
+
+The ML recommendation microservice lives in `ML/Recommendation` and is optional by default. To activate it you can either start it via Docker Compose or run it locally.
+
+- Start the ML service with Docker Compose (recommended):
+
+```bash
+# Build and start the full stack (frontend, backend, ML, DBs)
+docker-compose up --build
+
+# Or build and start only backend + ML service
+docker-compose up --build backend ml-recommendation
+```
+
+- Run the ML service locally (without Docker):
+
+```bash
+cd ML/Recommendation
+python -m pip install -r requirements_server.txt
+python server.py
+```
+
+The ML API exposes:
+- POST /recommend — generates recommendations
+- GET /health — health check (used by Docker healthcheck)
+
+If you enable the ML service, ensure `ML_RECOMMENDATION_ENABLED=true` and `ML_API_URL` are set in your backend environment (these are set in the `docker-compose.yml` for the backend service by default).
 
 2. **Environment Variables:**
    - Copy `.env.example` to `.env` in each service directory and fill in secrets as needed.

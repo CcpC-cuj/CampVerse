@@ -12,12 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first for better layer caching
 COPY requirements_server.txt ./
 
-# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements_server.txt
 
 # Copy application files
 COPY server.py ./
-COPY Infer.py ./
+# COPY Infer.py ./   # Removed because Infer.py does not exist
 COPY model/ ./model/
 
 # Create non-root user
