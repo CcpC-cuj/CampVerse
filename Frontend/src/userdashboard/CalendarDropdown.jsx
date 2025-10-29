@@ -4,6 +4,7 @@ import "react-calendar/dist/Calendar.css";
 
 const CalendarDropdown = ({ events = [] }) => {
   const [open, setOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -16,15 +17,36 @@ const CalendarDropdown = ({ events = [] }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Get events for a specific date
+  const getEventsForDate = (date) => {
+    const dateStr = date.toISOString().split("T")[0];
+    return events.filter((e) => {
+      if (!e.date) return false;
+      const eventDate = new Date(e.date).toISOString().split("T")[0];
+      return eventDate === dateStr;
+    });
+  };
+
   const tileClassName = ({ date, view }) => {
     if (view === "month" && events.length > 0) {
       const dateStr = date.toISOString().split("T")[0];
-      const event = events.find((e) => e.date === dateStr);
-      if (event) {
+      const hasEvent = events.some((e) => {
+        if (!e.date) return false;
+        const eventDate = new Date(e.date).toISOString().split("T")[0];
+        return eventDate === dateStr;
+      });
+      if (hasEvent) {
         return "bg-[#9b5de5] text-purple-200 rounded-full";
       }
     }
     return "";
+  };
+
+  const handleDateClick = (date) => {
+    const eventsOnDate = getEventsForDate(date);
+    if (eventsOnDate.length > 0) {
+      setSelectedDate(date);
+    }
   };
 
   return (
@@ -49,6 +71,7 @@ const CalendarDropdown = ({ events = [] }) => {
             className="!bg-transparent text-purple-300"
             nextLabel="›"
             prevLabel="‹"
+            onClickDay={handleDateClick}
             navigationLabel={({ date }) =>
               date.toLocaleDateString("default", {
                 month: "long",
@@ -57,9 +80,27 @@ const CalendarDropdown = ({ events = [] }) => {
             }
           />
 
+          {selectedDate && getEventsForDate(selectedDate).length > 0 && (
+            <div className="mt-4 p-3 bg-purple-900/30 rounded-lg border border-purple-700">
+              <h4 className="text-purple-300 font-semibold mb-2">
+                Events on {selectedDate.toLocaleDateString()}:
+              </h4>
+              <ul className="space-y-2">
+                {getEventsForDate(selectedDate).map((event, idx) => (
+                  <li key={idx} className="text-sm">
+                    <div className="text-white font-medium">{event.title}</div>
+                    <div className="text-purple-300 text-xs">
+                      📍 {event.location?.venue || event.location?.type || "TBD"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {events.length === 0 && (
             <p className="text-purple-500 text-sm text-center mt-2">
-              No events
+              No registered events
             </p>
           )}
         </div>

@@ -2,28 +2,58 @@ import React, { useState, useRef, useEffect } from "react";
 import { getNotifications, markNotificationAsRead } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import io from 'socket.io-client';
+import "./NotificationBell.css";
 
 const NotificationBell = () => {
-  const { refreshUser } = useAuth();
+  const { refreshUserSilently } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [animatedIds, setAnimatedIds] = useState([]);
   const dropdownRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Fetch notifications from backend
-  const fetchNotifications = async () => {
+  // Fetch notifications from backend (silent = don't show loading spinner)
+  const fetchNotifications = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const data = await getNotifications(10); // Get latest 10 notifications
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       setNotifications([]);
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
+
+  // Show browser notification for new real-time notifications
+  const showBrowserNotification = (notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notif = new Notification('CampVerse', {
+        body: notification.message,
+        icon: '/logo.png',
+        badge: '/logo.png',
+      });
+      notif.onclick = () => {
+        window.focus();
+        if (notification.link) {
+          window.location.href = notification.link;
+        }
+      };
+    }
+  };
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
   // Initialize Socket.IO connection for real-time notifications
   useEffect(() => {
@@ -53,13 +83,15 @@ const NotificationBell = () => {
 
       // Listen for new notifications
       socketRef.current.on('notification', (newNotification) => {
-        console.log('New notification received:', newNotification);
+        console.log('🔔 New notification received:', newNotification);
         setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+        setAnimatedIds(prev => [newNotification._id, ...prev].slice(0, 10));
+        showBrowserNotification(newNotification);
         
         // If host status update notification, refresh user data to update UI
         if (newNotification.type === 'host_status_update') {
           console.log('Host status updated, refreshing user data...');
-          refreshUser();
+          refreshUserSilently();
         }
       });
 
@@ -86,11 +118,21 @@ const NotificationBell = () => {
     };
   }, []);
 
-  // Refresh when dropdown opens
+  // Separate polling effect that depends on open state
   useEffect(() => {
     if (open) {
-      fetchNotifications();
+      // Stop polling when dropdown is open
+      return;
     }
+
+    // Start polling when dropdown is closed
+    const refreshInterval = setInterval(() => {
+      fetchNotifications(true); // Silent fetch (no loading spinner)
+    }, 2000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [open]);
 
   // Close when clicking outside
@@ -104,14 +146,30 @@ const NotificationBell = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Mark notification as read
-  const handleMarkAsRead = async (notificationId) => {
+  // Fetch when dropdown opens (for fresh data)
+  useEffect(() => {
+    if (open) {
+      fetchNotifications(true); // Silent fetch when opening
+    }
+  }, [open]);
+
+  // Mark notification as read and navigate to link
+  const handleNotificationClick = async (notification) => {
     try {
-      await markNotificationAsRead(notificationId);
-      // Refresh notifications
-      await fetchNotifications();
+      if (!notification.isRead) {
+        await markNotificationAsRead(notification._id);
+        // Update local state
+        setNotifications(prev => 
+          prev.map(n => n._id === notification._id ? { ...n, isRead: true } : n)
+        );
+      }
+      
+      // Navigate to link if available
+      if (notification.link) {
+        window.location.href = notification.link;
+      }
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      console.error('Failed to handle notification click:', error);
     }
   };
 
@@ -161,10 +219,13 @@ const NotificationBell = () => {
               {notifications.map((notification) => (
                 <li
                   key={notification._id}
-                  onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+                  onClick={() => handleNotificationClick(notification)}
                   className={`p-4 border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${
                     !notification.isRead ? 'bg-[#9b5de5]/10' : ''
-                  }`}
+                  } ${animatedIds.includes(notification._id) ? 'animate-notif-in' : ''}`}
+                  onAnimationEnd={() => {
+                    setAnimatedIds(ids => ids.filter(id => id !== notification._id));
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`mt-1 ${!notification.isRead ? 'text-[#9b5de5]' : 'text-gray-500'}`}>

@@ -87,7 +87,7 @@ const EventsManagement = () => {
 
   // Helper function to determine event status
   const getEventStatus = (event) => {
-    if (event.verificationStatus === 'pending') return 'draft';
+    if (event.verificationStatus === 'pending') return 'pending';
     if (event.verificationStatus === 'rejected') return 'rejected';
     
     const now = new Date();
@@ -108,6 +108,7 @@ const EventsManagement = () => {
     if (selectedTab === "active") return matchesSearch && (event.status === "active" || event.status === "upcoming");
     if (selectedTab === "upcoming") return matchesSearch && event.status === "upcoming";
     if (selectedTab === "draft") return matchesSearch && event.status === "draft";
+    if (selectedTab === "pending") return matchesSearch && event.verificationStatus === "pending";
     if (selectedTab === "past") return matchesSearch && event.status === "past";
     
     return matchesSearch;
@@ -118,6 +119,7 @@ const EventsManagement = () => {
     active: events.filter(e => e.status === "active" || e.status === "upcoming").length,
     upcoming: events.filter(e => e.status === "upcoming").length,
     draft: events.filter(e => e.status === "draft").length,
+    pending: events.filter(e => e.verificationStatus === "pending").length,
     past: events.filter(e => e.status === "past").length
   };
 
@@ -330,12 +332,13 @@ const EventsManagement = () => {
           </div>
 
           {/* Stats Overview */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 mb-6">
             {[
               { label: "Total Events", count: statsCalculated.total, icon: "ri-calendar-line", color: "bg-[#9b5de5]/20 text-[#d9c4ff]" },
               { label: "Active", count: statsCalculated.active, icon: "ri-play-circle-line", color: "bg-green-500/20 text-green-400" },
               { label: "Upcoming", count: statsCalculated.upcoming, icon: "ri-time-line", color: "bg-blue-500/20 text-blue-400" },
               { label: "Drafts", count: statsCalculated.draft, icon: "ri-draft-line", color: "bg-yellow-500/20 text-yellow-400" },
+              { label: "Pending", count: statsCalculated.pending, icon: "ri-time-line", color: "bg-orange-500/20 text-orange-400" },
               { label: "Past", count: statsCalculated.past, icon: "ri-history-line", color: "bg-gray-500/20 text-gray-400" }
             ].map((stat, index) => (
               <div key={index} className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
@@ -355,6 +358,7 @@ const EventsManagement = () => {
                   { id: "active", label: "Active", count: statsCalculated.active },
                   { id: "upcoming", label: "Upcoming", count: statsCalculated.upcoming },
                   { id: "draft", label: "Drafts", count: statsCalculated.draft },
+                  { id: "pending", label: "Pending", count: statsCalculated.pending },
                   { id: "past", label: "Past", count: statsCalculated.past }
                 ].map((tab) => (
                   <button

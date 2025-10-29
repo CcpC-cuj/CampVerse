@@ -18,6 +18,10 @@ import QRViewer from "./components/QRViewer";
 import "remixicon/fonts/remixicon.css";
 import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
 import { EventProvider } from "./userdashboard/EventContext";
+import VerifierDashboard from "./verifier/VerifierDashboard";
+import EventVerificationQueue from "./verifier/EventVerificationQueue";
+import CertificateReview from "./verifier/CertificateReview";
+import VerifierAnalytics from "./verifier/VerifierAnalytics";
 
 
 
@@ -28,10 +32,10 @@ import {
   HostApplications,
   HostAnalytics,
   HostSettings,
+  QRScanner,
+  BulkAttendance,
+  AttendanceDashboard,
 } from "./hostdashboard";
-import QRScanner from "./hostdashboard/QRScanner";
-import BulkAttendance from "./hostdashboard/BulkAttendance";
-import AttendanceDashboard from "./hostdashboard/AttendanceDashboard";
 
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {
@@ -84,6 +88,38 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/dashboard"
+              element={
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                  <VerifierDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/event-queue"
+              element={
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                  <EventVerificationQueue />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/certificate-review"
+              element={
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                  <CertificateReview />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/verifier/analytics"
+              element={
+                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                  <VerifierAnalytics />
                 </ProtectedRoute>
               }
             />

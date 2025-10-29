@@ -1006,6 +1006,152 @@ async function bulkRetryFailedCertificates(req, res) {
   }
 }
 
+/**
+ * Approve certificate (verifier only)
+ */
+async function approveCertificate(req, res) {
+  try {
+    const { certificateId } = req.params;
+    const verifierId = req.user.id;
+
+    const certificate = await Certificate.findById(certificateId)
+      .populate('userId', 'name email')
+      .populate('eventId', 'title hostUserId');
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'Certificate not found' });
+    }
+
+    // Check if user is verifier or platformAdmin
+    if (!req.user.roles.includes('verifier') && !req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ error: 'Only verifiers can approve certificates' });
+    }
+
+    // Check if certificate is already approved or rejected
+    if (certificate.verificationStatus === 'approved') {
+      return res.status(400).json({ error: 'Certificate is already approved' });
+    }
+
+    if (certificate.verificationStatus === 'rejected') {
+      return res.status(400).json({ error: 'Certificate is already rejected' });
+    }
+
+    // Update certificate status
+    certificate.verificationStatus = 'approved';
+    certificate.verifiedBy = verifierId;
+    certificate.verifiedAt = new Date();
+    await certificate.save();
+
+    // Notify user of certificate approval
+    const user = certificate.userId;
+    if (user) {
+      await notifyUser({
+        userId: user._id,
+        type: 'certificate_verification',
+        message: `Your certificate for ${certificate.eventId.title} has been approved!`,
+        data: {
+          certificateId: certificate._id,
+          eventId: certificate.eventId._id,
+          status: 'approved'
+        },
+        emailOptions: {
+          to: user.email,
+          subject: `Certificate Approved: ${certificate.eventId.title}`,
+          html: `<h2>🎉 Certificate Approved!</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been <strong>approved</strong> by a verifier.</p><p>You can now view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+        },
+      });
+    }
+
+    return res.json({
+      message: 'Certificate approved successfully',
+      certificate: {
+        id: certificate._id,
+        status: certificate.status,
+        verificationStatus: certificate.verificationStatus,
+        verifiedAt: certificate.verifiedAt
+      }
+    });
+  } catch (error) {
+    logger.error('Certificate approval error:', error);
+    return res.status(500).json({ error: 'Error approving certificate' });
+  }
+}
+
+/**
+ * Reject certificate (verifier only)
+ */
+async function rejectCertificate(req, res) {
+  try {
+    const { certificateId } = req.params;
+    const { reason } = req.body;
+    const verifierId = req.user.id;
+
+    const certificate = await Certificate.findById(certificateId)
+      .populate('userId', 'name email')
+      .populate('eventId', 'title hostUserId');
+
+    if (!certificate) {
+      return res.status(404).json({ error: 'Certificate not found' });
+    }
+
+    // Check if user is verifier or platformAdmin
+    if (!req.user.roles.includes('verifier') && !req.user.roles.includes('platformAdmin')) {
+      return res.status(403).json({ error: 'Only verifiers can reject certificates' });
+    }
+
+    // Check if certificate is already approved or rejected
+    if (certificate.verificationStatus === 'approved') {
+      return res.status(400).json({ error: 'Certificate is already approved' });
+    }
+
+    if (certificate.verificationStatus === 'rejected') {
+      return res.status(400).json({ error: 'Certificate is already rejected' });
+    }
+
+    // Update certificate status
+    certificate.verificationStatus = 'rejected';
+    certificate.verifiedBy = verifierId;
+    certificate.verifiedAt = new Date();
+    certificate.rejectionReason = reason || 'Certificate verification failed';
+    await certificate.save();
+
+    // Notify user of certificate rejection
+    const user = certificate.userId;
+    if (user) {
+      await notifyUser({
+        userId: user._id,
+        type: 'certificate_verification',
+        message: `Your certificate for ${certificate.eventId.title} has been rejected.`,
+        data: {
+          certificateId: certificate._id,
+          eventId: certificate.eventId._id,
+          status: 'rejected',
+          reason: certificate.rejectionReason
+        },
+        emailOptions: {
+          to: user.email,
+          subject: `Certificate Rejected: ${certificate.eventId.title}`,
+          html: `<h2>⚠️ Certificate Rejected</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been <strong>rejected</strong> by a verifier.</p><p><strong>Reason:</strong> ${certificate.rejectionReason}</p><p>Please contact support if you believe this is an error.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+        },
+      });
+    }
+
+    return res.json({
+      message: 'Certificate rejected successfully',
+      certificate: {
+        id: certificate._id,
+        status: certificate.status,
+        verificationStatus: certificate.verificationStatus,
+        verifiedAt: certificate.verifiedAt,
+        rejectionReason: certificate.rejectionReason
+      }
+    });
+  } catch (error) {
+    logger.error('Certificate rejection error:', error);
+    return res.status(500).json({ error: 'Error rejecting certificate' });
+  }
+}
+
 module.exports = {
   generateCertificate,
   getUserCertificates,
@@ -1019,4 +1165,6 @@ module.exports = {
   sendCertificateNotification,
   getCertificateDashboard,
   bulkRetryFailedCertificates,
+  approveCertificate,
+  rejectCertificate,
 };

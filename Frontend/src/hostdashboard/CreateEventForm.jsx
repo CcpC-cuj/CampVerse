@@ -80,13 +80,19 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		return Object.keys(errors).length === 0;
 	};
 
-	const nextStep = () => {
+	const nextStep = (e) => {
+		if (e) e.preventDefault(); // Prevent any form submission
+		console.log('Current step:', currentStep, 'Form data:', eventForm);
 		if (validateStep(currentStep)) {
+			console.log('Validation passed, moving to next step');
 			setCurrentStep(prev => Math.min(prev + 1, 4));
+		} else {
+			console.log('Validation failed:', formErrors);
 		}
 	};
 
-	const prevStep = () => {
+	const prevStep = (e) => {
+		if (e) e.preventDefault(); // Prevent any form submission
 		setCurrentStep(prev => Math.max(prev - 1, 1));
 	};
 
@@ -149,6 +155,13 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 
 		const handleSubmit = async (e) => {
 		e.preventDefault();
+		
+		// Only allow submission on step 4
+		if (currentStep !== 4) {
+			console.log('Form submission prevented - not on step 4. Current step:', currentStep);
+			return;
+		}
+		
 		if (!validateStep(4)) return;
 		
 		setLoading(true);
@@ -572,10 +585,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 									type="checkbox" 
 									name="certificateEnabled" 
 									checked={eventForm.certificateEnabled} 
-									onChange={(e) => setEventForm(prev => ({ ...prev, certificateEnabled: e.target.checked }))}
+									disabled
 									className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
 								/>
-								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates</label>
+								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates (coming soon...)</label>
 							</div>
 							<div className="flex items-center gap-3">
 								<input 

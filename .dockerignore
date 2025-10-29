@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode
+.idea
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test files
+__tests__/
+*.test.js
+coverage/
+
+# Environment files
+.env
+.env.*
+
+# Build artifacts
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore

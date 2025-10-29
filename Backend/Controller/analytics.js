@@ -295,6 +295,31 @@ const getZeroResultSearches = async (req, res) => {
   }
 };
 
+// Verifier analytics (verification stats)
+const getVerifierAnalytics = async (req, res) => {
+  try {
+    const verifierId = req.user._id;
+    const eventsVerified = await Event.countDocuments({ verifiedBy: verifierId });
+    const institutionsVerified = await Institution.countDocuments({
+      'verificationHistory.action': 'approved',
+      'verificationHistory.performedBy': verifierId
+    });
+    const certificatesReviewed = await Certificate.countDocuments({
+      verifiedBy: verifierId,
+      verificationStatus: { $in: ['approved', 'rejected'] }
+    });
+    const avgReviewTime = 5; // Placeholder, calculate from logs if available
+    res.json({
+      eventsVerified,
+      institutionsVerified,
+      certificatesReviewed,
+      avgReviewTime,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching verifier analytics.' });
+  }
+};
+
 module.exports = {
   advancedEventSearch,
   getUserAnalytics,
@@ -304,4 +329,5 @@ module.exports = {
   getUserActivityTimeline,
   getGrowthTrends,
   getZeroResultSearches,
+  getVerifierAnalytics,
 };

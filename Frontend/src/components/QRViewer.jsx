@@ -10,6 +10,7 @@ const QRViewer = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -17,6 +18,13 @@ const QRViewer = () => {
       return;
     }
     loadQRCode();
+    
+    // Auto-refresh every 60 seconds to keep QR code fresh
+    const interval = setInterval(() => {
+      loadQRCode();
+    }, 60000); // 60 seconds
+    
+    return () => clearInterval(interval);
   }, [id, user]);
 
   const loadQRCode = async () => {
@@ -25,12 +33,15 @@ const QRViewer = () => {
       setError(null);
       
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/my-qr/${id}`, {
+      // Add cache-busting timestamp
+      const cacheBuster = `?t=${Date.now()}`;
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/my-qr/${id}${cacheBuster}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        cache: 'no-store', // Force no caching
       });
 
       const data = await response.json();
@@ -232,13 +243,28 @@ const QRViewer = () => {
           )}
 
           {/* QR Code Image */}
-          <div className="bg-white p-8 rounded-xl mb-6 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-xl mb-4 flex items-center justify-center relative">
             <img 
               src={qrData.image} 
               alt="Event QR Code" 
               className={`max-w-full h-auto ${expired ? 'opacity-40 grayscale' : ''}`}
               style={{ maxWidth: '300px', width: '100%' }}
+              key={refreshKey} // Force re-render on refresh
             />
+          </div>
+          
+          {/* Refresh Button */}
+          <div className="text-center mb-6">
+            <button
+              onClick={() => {
+                setRefreshKey(prev => prev + 1);
+                loadQRCode();
+              }}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              🔄 Refresh QR Code
+            </button>
+            <p className="text-purple-400 text-xs mt-2">Auto-refreshes every 60 seconds</p>
           </div>
 
           {/* Expiry Info */}

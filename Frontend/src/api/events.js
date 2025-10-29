@@ -85,10 +85,11 @@ export async function getEventById(id) {
   }
 }
 
-// Public event fetching without authentication (for shared links)
+// Public event fetching with optional authentication (for shared links)
+// If user is logged in, backend will include their registration status
 export async function getPublicEventById(id) {
   const res = await fetch(`${API_URL}/api/events/public/${id}`, {
-    // No authentication headers for public access
+    headers: { ...getAuthHeaders() }, // Include auth headers if available (optional)
   });
   const data = await res.json();
   
@@ -273,6 +274,15 @@ export async function verifyEvent(eventId) {
   return res.json();
 }
 
+export async function rejectEvent(eventId, reason = '') {
+  const res = await fetch(`${API_URL}/api/events/${eventId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ reason }),
+  });
+  return res.json();
+}
+
 export async function getGoogleCalendarLink(eventId) {
   const res = await fetch(`${API_URL}/api/events/${eventId}/calendar-link`, {
     headers: { ...getAuthHeaders() },
@@ -340,9 +350,10 @@ export async function getEventQrCode(eventId) {
 }
 
 // Get user's QR code for a registered event
-export async function getMyEventQrCode(eventId) {
-  const res = await fetch(`${API_URL}/api/events/my-qr/${eventId}`, {
+export async function getMyEventQrCode(eventId, cacheBuster = '') {
+  const res = await fetch(`${API_URL}/api/events/my-qr/${eventId}${cacheBuster}`, {
     headers: { ...getAuthHeaders() },
+    cache: 'no-store', // Force no caching
   });
   return res.json();
 }

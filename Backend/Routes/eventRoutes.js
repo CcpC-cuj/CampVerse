@@ -15,6 +15,7 @@ const {
   approveCoHost,
   rejectCoHost,
   verifyEvent,
+  rejectEvent,
   getGoogleCalendarLink,
   getAttendance,
   bulkMarkAttendance,
@@ -29,6 +30,7 @@ const {
   getUserActivityTimeline,
   getGrowthTrends,
   getZeroResultSearches,
+  getVerifierAnalytics,
 } = require('../Controller/analytics');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const {
@@ -66,7 +68,11 @@ router.get('/', async (req, res) => {
       // Only show approved events to anonymous users
       query.verificationStatus = 'approved';
     }
-    // Authenticated users can see all events (approved, pending) so they can RSVP
+    
+    // Support status filtering for authenticated users
+    if (isAuthenticated && req.query.status) {
+      query.verificationStatus = req.query.status;
+    }
     
     const events = await require('../Models/Event')
       .find(query)
@@ -81,6 +87,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('Error fetching events:', err);
     res.status(500).json({ 
       success: false, 
       error: 'Error fetching events.',
@@ -277,13 +284,22 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const EventParticipationLog = require('../Models/EventParticipationLog');
     
+    logger.info('🎫 Fetching QR code:', { eventId, userId });
+    
     const log = await EventParticipationLog.findOne({
       userId,
       eventId,
       status: 'registered'
     }).populate('eventId');
     
+    logger.info('🔍 QR Log found:', { 
+      found: !!log, 
+      hasQrToken: !!(log?.qrToken || log?.qrCode?.token),
+      status: log?.status 
+    });
+    
     if (!log) {
+      logger.warn('⚠️ No registration found for QR request');
       return res.status(404).json({ 
         success: false,
         error: 'No RSVP found for this event.',
@@ -326,6 +342,8 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
     const qrcode = require('qrcode');
     const qrImage = await qrcode.toDataURL(qrToken);
     
+    logger.info('✅ QR code generated successfully');
+    
     res.json({
       success: true,
       qrCode: {
@@ -334,11 +352,11 @@ router.get('/my-qr/:eventId', authenticateToken, async (req, res) => {
         expiresAt: log.qrCode?.expiresAt || null,
         eventTitle: log.eventId.title,
         eventDate: log.eventId.date,
-        eventLocation: log.eventId.location
+        eventLocation: log.eventId.location?.venue || log.eventId.location?.type || 'TBD'
       }
     });
   } catch (err) {
-    logger.error('Error fetching QR code:', err);
+    logger.error('❌ Error fetching QR code:', err);
     res.status(500).json({ 
       success: false,
       error: 'Error fetching QR code.',
@@ -544,6 +562,41 @@ router.post(
 
 /**
  * @swagger
+ * /api/events/{id}/reject:
+ *   post:
+ *     summary: Reject event (verifier)
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 description: Reason for rejection
+ *     responses:
+ *       200: { description: Event rejected }
+ *       403: { description: Forbidden }
+ */
+router.post(
+  '/:id/reject',
+  authenticateToken,
+  requireRole('verifier'),
+  rejectEvent,
+);
+
+/**
+ * @swagger
  * /api/events/{id}/calendar-link:
  *   get:
  *     summary: Get Google Calendar link for event
@@ -565,6 +618,8 @@ router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 // Advanced event search (filter, sort, paginate)
 // User analytics (participation stats)
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
+// Verifier analytics (verification stats)
+router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
 // Platform insights (global stats)
 router.get(
   '/platform-insights',

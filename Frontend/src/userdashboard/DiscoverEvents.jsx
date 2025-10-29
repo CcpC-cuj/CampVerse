@@ -85,7 +85,7 @@ const DiscoverEvents = () => {
       }
     } catch (err) {
       console.error('Error fetching events:', err);
-      setError('Failed to load events. Showing sample events.');
+      setError('Failed to load events. Still Fetching.');
       setEvents(mockEvents);
     } finally {
       setLoading(false);

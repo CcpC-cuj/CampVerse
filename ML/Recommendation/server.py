@@ -9,13 +9,19 @@ import json
 app = Flask(__name__)
 CORS(app)
 
-# Load pre-trained model (if available)
-try:
-    with open('model/events_similarity.pkl', 'rb') as f:
-        similarity_matrix = pickle.load(f)
-    print("Loaded pre-trained similarity matrix")
-except FileNotFoundError:
-    similarity_matrix = None
+
+import os
+similarity_matrix = None
+model_path = 'model/events_similarity.pkl'
+if os.path.exists(model_path):
+    try:
+        with open(model_path, 'rb') as f:
+            similarity_matrix = pickle.load(f)
+        print("Loaded pre-trained similarity matrix")
+    except Exception as e:
+        similarity_matrix = None
+        print(f"Error loading similarity matrix: {e}")
+else:
     print("No pre-trained model found, using dynamic calculation")
 
 @app.route('/recommend', methods=['POST'])

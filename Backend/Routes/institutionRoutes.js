@@ -260,18 +260,18 @@ router.get('/search', authenticateToken, searchInstitutions);
  */
 router.post('/request-new', authenticateToken, requestNewInstitution);
 
-// New: Get pending institution verifications (verifier or admin)
+// New: Get unverified institutions (verifier or admin)
 /**
  * @swagger
  * /api/institutions/pending-verifications:
  *   get:
- *     summary: Get pending institution verifications (verifier or admin)
+ *     summary: Get unverified institutions (verifier or admin)
  *     tags: [Institution]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200: 
- *         description: List of pending institution verifications
+ *         description: List of unverified institutions
  *         content:
  *           application/json:
  *             schema:
@@ -289,6 +289,7 @@ router.post('/request-new', authenticateToken, requestNewInstitution);
  *                       website: { type: string }
  *                       phone: { type: string }
  *                       info: { type: string }
+ *                       verificationRequested: { type: boolean }
  *                       latestRequest:
  *                         type: object
  *                         properties:

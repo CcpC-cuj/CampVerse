@@ -39,9 +39,13 @@ const Sidebar = ({ onDiscoverClick }) => {
   };
   const profileUrl = getProfileUrl();
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
+  // Check if user has verifier role
+  const isVerifier = Array.isArray(user?.roles)
+    ? user.roles.includes("verifier")
+    : user?.role === "verifier";
 
   return (
-    <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white font-poppins overflow-hidden">
+    <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white overflow-hidden">
       {/* Top Logo */}
       <div className="px-4 py-4.5 border-b border-gray-700 flex items-center">
         <img 
@@ -51,7 +55,6 @@ const Sidebar = ({ onDiscoverClick }) => {
         />
         <div className="text-xl font-['Pacifico'] text-white">CampVerse</div>
       </div>
-
       {/* Scrollable Section */}
       <div className="flex-1 overflow-y-auto custom-scroll">
         {/* User Profile */}
@@ -105,25 +108,24 @@ const Sidebar = ({ onDiscoverClick }) => {
             label="Discover Events"
             end
           />
-         
-
-
-
-
           <SidebarSection title="Events" />
-           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
-          {/* <SidebarLink icon="ri-calendar-check-line" to="/events/registered" label="Registered" />
-          <SidebarLink icon="ri-time-line" to="/events/waitlisted" label="Waitlisted" />
-          <SidebarLink icon="ri-bookmark-line" to="/events/saved" label="Saved" />
-          <SidebarLink icon="ri-history-line" to="/events/past" label="Past Events" /> */}
-
+          <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
           <SidebarSection title="Community" />
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
           <SidebarLink icon="ri-medal-line" to="/achievements" label="Achievements" />
           <SidebarLink icon="ri-feedback-line" to="/feedback" label="Feedback" />
+          {/* Verifier Section: Only show if user is a verifier */}
+          {isVerifier && (
+            <>
+              <SidebarSection title="Verifier" />
+              <SidebarLink icon="ri-shield-user-line" to="/verifier/dashboard" label="Verifier Dashboard" />
+              <SidebarLink icon="ri-list-check-2" to="/verifier/event-queue" label="Event Verification Queue" />
+              <SidebarLink icon="ri-file-check-line" to="/verifier/certificate-review" label="Certificate Review" />
+              <SidebarLink icon="ri-bar-chart-box-line" to="/verifier/analytics" label="Verifier Analytics" />
+            </>
+          )}
         </div>
       </div>
-
       {/* Bottom Fixed Section */}
       <div className="p-4 border-t border-gray-700">
         <SidebarLink icon="ri-settings-3-line" to="/settings" label="Settings" />

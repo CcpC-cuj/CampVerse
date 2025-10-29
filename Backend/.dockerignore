@@ -2,7 +2,6 @@ node_modules
 npm-debug.log
 .git
 .gitignore
-README.md
 .env
 .env.local
 .env.development
@@ -10,10 +9,16 @@ README.md
 .env.production
 .nyc_output
 coverage
-.nyc_output
 *.log
 .DS_Store
 .vscode
 .idea
 *.md
-!README.md 
+__tests__
+*.test.js
+jest.config.js
+eslint.config.mjs
+.github
+logs
+examples
+scripts 

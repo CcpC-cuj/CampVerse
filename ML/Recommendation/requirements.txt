@@ -77,7 +77,7 @@ narwhals==1.30.0
 networkx==3.4.2
 newspaper3k==0.2.8
 nltk==3.9.1
-numpy==1.26.4
+numpy==1.24.3
 openai==0.28.0
 opencv-python==4.10.0.84
 orjson==3.10.18

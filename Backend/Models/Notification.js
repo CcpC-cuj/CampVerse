@@ -20,12 +20,14 @@ const notificationSchema = new mongoose.Schema({
       'rsvp',
       'attendance',
       'cohost',
+      'cohost_request',
       'event_verification',
     ],
     required: true,
   },
   message: { type: String, required: true },
   data: { type: Object, default: {} },
+  link: { type: String }, // Link to open when notification is clicked (e.g., /events/:id)
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });

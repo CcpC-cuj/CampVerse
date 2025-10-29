@@ -27,6 +27,8 @@ services:
       # - EMAIL_PASSWORD=znbafaztvcqjkskd
       - ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
       - ML_API_KEY=your_ml_api_key_here
+      - ML_API_URL=http://ml-recommendation:5002
+      - ML_RECOMMENDATION_ENABLED=true
       - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
       - FRONTEND_URL=http://localhost:3000
       # Alternative email service (uncomment if Gmail doesn't work)
@@ -45,6 +47,7 @@ services:
     depends_on:
       - mongo
       - redis
+      - ml-recommendation
     networks:
       - campverse
     healthcheck:
@@ -85,6 +88,27 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+  # # ML Recommendation Service (Microservice)
+  # ML Recommendation Service (Microservice)
+  ml-recommendation:
+    build:
+      context: ./ML/Recommendation
+      dockerfile: Dockerfile
+    container_name: ml-recommendation-service
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=server.py
+    networks:
+      - campverse
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   mongo:
     image: mongo:6
