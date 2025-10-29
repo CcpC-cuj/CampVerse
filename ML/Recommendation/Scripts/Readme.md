@@ -28,7 +28,7 @@ For the recommendation engine
 
 # Flow
 
-Run the **hybrid_recommendation()** function with user id parameter (optional number of recommended events as a second parameter , here the default number is 10) 
+Run the **hybrid_recommendation()** function with user id parameter (optional- number of recommended events as a second parameter , here the default number is 10) 
 
 **Input** = User id
 
