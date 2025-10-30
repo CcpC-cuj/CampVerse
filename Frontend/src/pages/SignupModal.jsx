@@ -19,6 +19,8 @@ const SignupModal = ({
   });
   const [error, setError] = useState("");
   const { login: authLogin } = useAuth();
+  // Block manual signup
+  const serverMaintenance = true;
 
   useEffect(() => {
     initializeGoogleAuth();
@@ -91,20 +93,21 @@ const SignupModal = ({
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white">Join CampVerse</h2>
-          <p className="text-sm text-purple-300">Find new ideas to try</p>
+          <p className="text-sm text-purple-300">Server under maintenance.<br />Please Continue with Google to sign up.</p>
         </div>
 
         {error && <div className="text-red-500 text-center mb-2">{error}</div>}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Form (all fields disabled) */}
+        <form className="space-y-4">
           <input
             name="name"
             type="text"
             placeholder="Full Name"
+            disabled
             value={formData.name}
             onChange={handleInputChange}
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed"
             required
           />
 
@@ -112,9 +115,10 @@ const SignupModal = ({
             name="email"
             type="email"
             placeholder="College Email"
+            disabled
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed"
             required
           />
 
@@ -122,9 +126,10 @@ const SignupModal = ({
             name="phone"
             type="tel"
             placeholder="Phone Number"
+            disabled
             value={formData.phone}
             onChange={handleInputChange}
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed"
             required
           />
 
@@ -133,14 +138,15 @@ const SignupModal = ({
               name="password"
               type={showPassword ? "text" : "password"}
               placeholder="Create a password"
+              disabled
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 pr-10"
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed pr-10"
               required
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 opacity-60 cursor-not-allowed"
             >
               {showPassword ? "Hide" : "Show"}
             </span>
@@ -148,8 +154,8 @@ const SignupModal = ({
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Creating Account..." : "Continue"}
           </button>
