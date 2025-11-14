@@ -56,6 +56,25 @@ const eventSchema = new mongoose.Schema({
     certificateEnabled: { type: Boolean, default: false },
     chatEnabled: { type: Boolean, default: false },
   },
+  certificateSettings: {
+    certificateType: { type: String, enum: ['participation', 'achievement'], default: 'participation' },
+    awardText: { type: String },
+    leftSignatory: {
+      name: { type: String },
+      title: { type: String },
+    },
+    rightSignatory: {
+      name: { type: String },
+      title: { type: String },
+    },
+    uploadedAssets: [
+      {
+        originalName: { type: String },
+        assetType: { type: String },
+        uploadedAt: { type: Date, default: Date.now },
+      }
+    ],
+  },
   title: { type: String, required: true },
   description: { type: String, required: true },
   tags: [String],

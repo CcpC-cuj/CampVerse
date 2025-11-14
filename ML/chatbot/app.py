@@ -26,7 +26,8 @@ try:
     index.add(question_embeddings.cpu().numpy())
     
     # Initialize event service and intent classifier
-    backend_url = os.getenv('BACKEND_URL', 'http://localhost:5000')
+    backend_url = os.getenv('BACKEND_URL') or 'https://campverse-26hm.onrender.com' or 'http://localhost:5000'
+    # If BACKEND_URL is not set, try Render, then fallback to localhost
     event_service = EventService(backend_url, model)
     intent_classifier = IntentClassifier()
     
@@ -173,4 +174,4 @@ async def user_question(sid, data):
 # --- For Uvicorn ---
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app_socket, host="0.0.0.0", port=8000)
+    uvicorn.run(app_socket, port=8000)

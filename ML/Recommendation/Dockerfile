@@ -1,36 +1,14 @@
-FROM python:3.10-slim
+FROM python:3.9
 
-# Set working directory
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+
 WORKDIR /app
 
-# Install system dependencies and curl for healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY --chown=user ./requirements.txt requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Copy requirements first for better layer caching
-COPY requirements_server.txt ./
+COPY --chown=user . /app
 
-RUN pip install --no-cache-dir --root-user-action=ignore -r requirements_server.txt
-
-# Copy application files
-COPY server.py ./
-# COPY Infer.py ./   # Removed because Infer.py does not exist
-COPY model/ ./model/
-
-# Create non-root user
-RUN useradd -m -u 1001 mluser && \
-    chown -R mluser:mluser /app
-
-USER mluser
-
-# Expose port
-EXPOSE 5002
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:5002/health || exit 1
-
-# Run the server
-CMD ["python", "server.py"] 
+CMD ["python", "server.py"]

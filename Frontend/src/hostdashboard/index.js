@@ -19,6 +19,7 @@ export { default as EventDetailsModal } from './EventDetailsModal';
 export { default as QRScanner } from './QRScanner';
 export { default as AttendanceDashboard } from './AttendanceDashboard';
 export { default as BulkAttendance } from './BulkAttendance';
+export { default as CertificateManagement } from './CertificateManagement';
 
 // Event Forms
 export { default as CreateEventForm } from './CreateEventForm';

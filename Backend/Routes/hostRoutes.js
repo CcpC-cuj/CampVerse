@@ -7,6 +7,7 @@ const {
   getMyEvents,
   getEventParticipants,
 } = require('../Controller/host');
+const { scanQr } = require('../Controller/event');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
 const router = express.Router();
@@ -250,6 +251,64 @@ router.get(
   authenticateToken,
   requireRole('host'),
   getEventParticipants,
+);
+
+/**
+ * @swagger
+ * /api/hosts/scan-qr:
+ *   post:
+ *     summary: Scan QR code to mark attendance (host/co-host only)
+ *     tags: [Host]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - eventId
+ *               - qrToken
+ *             properties:
+ *               eventId:
+ *                 type: string
+ *                 description: Event ID
+ *               qrToken:
+ *                 type: string
+ *                 description: QR token scanned from participant's QR code
+ *     responses:
+ *       200:
+ *         description: Attendance marked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 participantName:
+ *                   type: string
+ *       400:
+ *         description: Missing fields or invalid request
+ *       403:
+ *         description: Only host/co-host can scan
+ *       404:
+ *         description: Event or QR code not found
+ *       409:
+ *         description: QR already used or attendance already marked
+ *       410:
+ *         description: QR code expired
+ *       429:
+ *         description: Too many scan attempts
+ */
+router.post(
+  '/scan-qr',
+  authenticateToken,
+  requireRole('host'),
+  scanQr
 );
 
 module.exports = router;
