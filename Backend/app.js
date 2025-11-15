@@ -20,6 +20,7 @@ const institutionRoutes = require('./Routes/institutionRoutes');
 const eventRoutes = require('./Routes/eventRoutes');
 const certificateRoutes = require('./Routes/certificateRoutes');
 const certificateManagementRoutes = require('./Routes/certificateManagementRoutes');
+const certificateVerificationRoutes = require('./Routes/certificateVerificationRoutes');
 const findUserRoutes = require('./Routes/findUserRoutes');
 const recommendationRoutes = require('./Routes/recommendationRoutes');
 const { errorHandler, addCorrelationId, logger } = require('./Middleware/errorHandler');
@@ -159,6 +160,17 @@ app.use(smartTimeout);
 // Security middleware will be set up after Redis client is initialized
 
 // Rate limiting for different endpoint types
+// Host-specific rate limiter (same as events)
+const hostLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100000, // limit each IP to 1000 requests per windowMs
+  message: { error: 'Too many host API requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many host API requests, please try again later.' });
+  }
+});
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500, // limit each IP to 500 requests per windowMs
@@ -173,7 +185,7 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs
   message: { error: 'Too many API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -184,7 +196,7 @@ const apiLimiter = rateLimit({
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  max: 1000, // limit each IP to 1000 requests per windowMs
   message: { error: 'Too many requests to this endpoint, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -203,6 +215,7 @@ app.use('/api/users/reset-password', strictLimiter);
 
 // Apply general API rate limiting
 app.use('/api/events', apiLimiter);
+app.use('/api/hosts', hostLimiter);
 app.use('/api/certificates', apiLimiter);
 app.use('/api/institutions', apiLimiter);
 app.use('/api/recommendations', apiLimiter);
@@ -508,6 +521,7 @@ app.use('/api/institutions', institutionRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/certificate-management', certificateManagementRoutes);
+app.use('/api/certificate-verification', certificateVerificationRoutes);
 app.use('/api', findUserRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));

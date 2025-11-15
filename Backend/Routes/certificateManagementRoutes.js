@@ -7,9 +7,10 @@ const {
   getUserCertificate,
   regenerateCertificates,
   bulkUploadParticipants,
+  renderCertificate,
 } = require('../Controller/certificateManagement');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
-const { upload } = require('../Middleware/upload');
+const upload = require('../Middleware/upload');
 
 const router = express.Router();
 
@@ -351,6 +352,47 @@ router.post(
   requireRole('host'),
   upload.single('file'),
   bulkUploadParticipants
+);
+
+/**
+ * @swagger
+ * /api/certificate-management/events/{eventId}/render/{userId}:
+ *   get:
+ *     summary: Render certificate on-demand for a specific user
+ *     description: Generates and streams certificate PDF in real-time without storing it
+ *     tags: [Certificate Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Event ID
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Certificate PDF streamed successfully
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       403:
+ *         description: Can only access own certificate or certificates from hosted events
+ *       404:
+ *         description: Certificate not available or event not found
+ */
+router.get(
+  '/events/:eventId/render/:userId',
+  authenticateToken,
+  renderCertificate
 );
 
 module.exports = router;

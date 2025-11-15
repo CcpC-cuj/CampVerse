@@ -273,7 +273,10 @@ async function getEventById(req, res) {
     const eventId = req.params.id;
     const userId = req.user?.id; // Get user ID if authenticated
     
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(eventId)
+      .populate('hostUserId', 'name email') // Populate host user details
+      .populate('coHosts', 'name email'); // Populate co-hosts too
+      
     if (!event) {
       return res.status(404).json({ 
         success: false, 
@@ -313,6 +316,43 @@ async function updateEvent(req, res) {
   try {
     logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
     const update = req.body;
+    
+    // Parse location if it's a string
+    if ('location' in req.body && typeof req.body.location === 'string') {
+      try {
+        update.location = JSON.parse(req.body.location);
+      } catch (e) {
+        logger.error('Failed to parse location:', e);
+      }
+    }
+    
+    // Parse features if it's a string
+    if ('features' in req.body && typeof req.body.features === 'string') {
+      try {
+        update.features = JSON.parse(req.body.features);
+      } catch (e) {
+        logger.error('Failed to parse features:', e);
+      }
+    }
+    
+    // Parse organizer if it's a string
+    if ('organizer' in req.body && typeof req.body.organizer === 'string') {
+      try {
+        update.organizer = JSON.parse(req.body.organizer);
+      } catch (e) {
+        logger.error('Failed to parse organizer:', e);
+      }
+    }
+    
+    // Parse socialLinks if it's a string
+    if ('socialLinks' in req.body && typeof req.body.socialLinks === 'string') {
+      try {
+        update.socialLinks = JSON.parse(req.body.socialLinks);
+      } catch (e) {
+        logger.error('Failed to parse socialLinks:', e);
+      }
+    }
+    
     // Validate required fields for update (if present)
     const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
     for (const field of updatableFields) {
@@ -400,6 +440,12 @@ async function updateEvent(req, res) {
       update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
     }
     update.updatedAt = new Date();
+    
+    // Log the features field specifically to debug
+    if ('features' in update) {
+      logger.info('🎯 Features field in update:', JSON.stringify(update.features, null, 2));
+    }
+    
     // Validate isPaid and price
     if ('isPaid' in update) {
       update.isPaid = update.isPaid === true || update.isPaid === 'true';
@@ -408,7 +454,15 @@ async function updateEvent(req, res) {
         return res.status(400).json({ error: 'Paid events must have a valid price.' });
       }
     }
+    
+    // Log the complete update object before saving
+    logger.info('📝 Complete update object:', JSON.stringify(update, null, 2));
+    
     const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
+    
+    // Log the updated event to verify features were saved
+    logger.info('✅ Updated event features:', JSON.stringify(updatedEvent.features, null, 2));
+    
     res.json(updatedEvent);
   } catch (err) {
     logger && logger.error ? logger.error('Error updating event:', err) : null;
@@ -650,8 +704,8 @@ async function cancelRsvp(req, res) {
       });
     }
     
-    // Find and remove participation log
-    const log = await EventParticipationLog.findOneAndDelete({
+    // Find participation log
+    const log = await EventParticipationLog.findOne({
       eventId,
       userId,
     });
@@ -663,6 +717,18 @@ async function cancelRsvp(req, res) {
         message: 'You have not registered for this event'
       });
     }
+    
+    // Check if attendance was already marked (QR was scanned)
+    if (log.status === 'attended' || (log.qrCode && log.qrCode.isUsed)) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Cannot cancel RSVP after attendance has been marked.',
+        message: 'Your attendance has already been recorded. You cannot cancel your registration.'
+      });
+    }
+    
+    // Delete the participation log
+    await EventParticipationLog.findByIdAndDelete(log._id);
     
     // Remove from event waitlist if present
     event.waitlist = event.waitlist.filter(
@@ -849,11 +915,18 @@ async function getParticipants(req, res) {
 async function scanQr(req, res) {
   try {
     const { eventId, qrToken } = req.body;
+    logger && logger.info ? logger.info('📱 QR Scan Request:', { 
+      eventId, 
+      qrToken: qrToken ? qrToken.substring(0, 10) + '...' : 'missing',
+      body: req.body 
+    }) : null;
+    
     if (!eventId || !qrToken) {
       return res.status(400).json({ 
         success: false,
         error: 'eventId and qrToken are required.',
-        message: 'Missing required fields'
+        message: 'Missing required fields',
+        debug: { receivedEventId: !!eventId, receivedQrToken: !!qrToken }
       });
     }
     
@@ -878,19 +951,6 @@ async function scanQr(req, res) {
         message: 'You do not have permission to scan QR codes for this event'
       });
     }
-    
-    // Brute-force protection (simple in-memory, per user per event)
-    if (!global.scanRateLimit) global.scanRateLimit = {};
-    const key = `${userId}_${eventId}`;
-    const now = Date.now();
-    if (global.scanRateLimit[key] && now - global.scanRateLimit[key] < 2000) {
-      return res.status(429).json({ 
-        success: false,
-        error: 'Too many scans. Please wait a moment.',
-        message: 'Please wait before scanning again'
-      });
-    }
-    global.scanRateLimit[key] = now;
     
     // Find participation log - check both legacy qrToken and new qrCode.token
     const log = await EventParticipationLog.findOne({ 
@@ -1480,8 +1540,8 @@ async function getAttendance(req, res) {
     }
 
     // Check if user is host or co-host
-    const isHost = event.hostId.toString() === userId;
-    const isCoHost = event.coHosts.some(ch => ch.toString() === userId);
+    const isHost = event.hostUserId.toString() === userId;
+    const isCoHost = event.coHosts && event.coHosts.some(ch => ch.toString() === userId);
     
     if (!isHost && !isCoHost) {
       return res.status(403).json({
@@ -1554,8 +1614,8 @@ async function bulkMarkAttendance(req, res) {
     }
 
     // Check if user is host or co-host
-    const isHost = event.hostId.toString() === userId;
-    const isCoHost = event.coHosts.some(ch => ch.toString() === userId);
+    const isHost = event.hostUserId.toString() === userId;
+    const isCoHost = event.coHosts && event.coHosts.some(ch => ch.toString() === userId);
     
     if (!isHost && !isCoHost) {
       return res.status(403).json({

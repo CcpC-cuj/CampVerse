@@ -18,11 +18,17 @@ const certificateSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'generated', 'failed'],
+    enum: ['pending', 'ready', 'failed'],
     default: 'pending',
+    // 'pending': Certificate generation not yet started
+    // 'ready': Certificate assets validated and ready to render on-demand
+    // 'failed': Certificate generation validation failed
   },
   certificateURL: {
     type: String,
+    // DEPRECATED: Certificates are no longer stored in cloud storage
+    // Instead, they are rendered on-demand via GET /api/certificate-management/events/:eventId/render/:userId
+    // This field is kept for backward compatibility but should not be used for new certificates
   },
   certificateData: {
     // Data sent to ML API for certificate generation

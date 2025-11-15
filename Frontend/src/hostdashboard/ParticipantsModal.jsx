@@ -9,26 +9,35 @@ const ParticipantsModal = ({ event, onClose }) => {
 
   useEffect(() => {
     if (event?._id) {
-      loadParticipants();
+      fetchParticipants();
     }
   }, [event]);
 
-  const loadParticipants = async () => {
+  const fetchParticipants = async () => {
+    if (!event?._id) return;
+    
     try {
       setLoading(true);
       setError(null);
       const response = await getEventParticipants(event._id);
       
+      // Handle different response formats
       if (Array.isArray(response)) {
         setParticipants(response);
-      } else if (response.success && response.data) {
+      } else if (response.success && Array.isArray(response.data)) {
         setParticipants(response.data);
+      } else if (response.success && response.data && !Array.isArray(response.data)) {
+        // If data is a single object, wrap it in an array
+        console.warn('Unexpected participants response format - single object:', response.data);
+        setParticipants([]);
       } else {
-        setError(response.error || 'Failed to load participants');
+        console.warn('Unexpected participants response format:', response);
+        setParticipants([]);
       }
     } catch (err) {
-      console.error('Error loading participants:', err);
+      console.error('Failed to fetch participants:', err);
       setError('Failed to load participants');
+      setParticipants([]);
     } finally {
       setLoading(false);
     }
@@ -68,15 +77,27 @@ const ParticipantsModal = ({ event, onClose }) => {
   const exportToCSV = () => {
     const csvContent = [
       ['Name', 'Email', 'Phone', 'Status', 'Payment Status', 'Payment Type', 'Attendance Time'],
-      ...getFilteredParticipants().map(p => [
-        p.name || 'N/A',
-        p.email || 'N/A',
-        p.phone || 'N/A',
-        p.status || 'N/A',
-        p.paymentStatus || 'N/A',
-        p.paymentType || 'N/A',
-        p.attendanceTimestamp ? new Date(p.attendanceTimestamp).toLocaleString() : 'N/A'
-      ])
+      ...getFilteredParticipants().map(p => {
+        const userName = typeof p.userId === 'object' && p.userId?.name
+          ? p.userId.name
+          : p.name || p.userName || 'N/A';
+        const userEmail = typeof p.userId === 'object' && p.userId?.email
+          ? p.userId.email
+          : p.email || p.userEmail || 'N/A';
+        const userPhone = typeof p.userId === 'object' && p.userId?.phone
+          ? p.userId.phone
+          : p.phone || p.userPhone || 'N/A';
+        
+        return [
+          userName,
+          userEmail,
+          userPhone,
+          p.status || 'N/A',
+          p.paymentStatus || 'N/A',
+          p.paymentType || 'N/A',
+          p.attendanceTimestamp ? new Date(p.attendanceTimestamp).toLocaleString() : 'N/A'
+        ];
+      })
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -179,7 +200,7 @@ const ParticipantsModal = ({ event, onClose }) => {
             <div className="text-center py-8">
               <p className="text-red-400">{error}</p>
               <button
-                onClick={loadParticipants}
+                onClick={fetchParticipants}
                 className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
               >
                 Retry
@@ -195,9 +216,21 @@ const ParticipantsModal = ({ event, onClose }) => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {getFilteredParticipants().map((participant, index) => (
+                  {getFilteredParticipants().map((participant, index) => {
+                    // Handle different data structures
+                    const userName = typeof participant.userId === 'object' && participant.userId?.name
+                      ? participant.userId.name
+                      : participant.name || participant.userName || 'Unknown User';
+                    const userEmail = typeof participant.userId === 'object' && participant.userId?.email
+                      ? participant.userId.email
+                      : participant.email || participant.userEmail || 'N/A';
+                    const userPhone = typeof participant.userId === 'object' && participant.userId?.phone
+                      ? participant.userId.phone
+                      : participant.phone || participant.userPhone;
+                    
+                    return (
                     <div
-                      key={index}
+                      key={participant._id || participant.userId?._id || index}
                       className="bg-gray-700/50 rounded-lg p-4 border border-gray-600"
                     >
                       <div className="flex justify-between items-start">
@@ -205,20 +238,20 @@ const ParticipantsModal = ({ event, onClose }) => {
                           <div className="flex items-center gap-3 mb-2">
                             <div className="w-10 h-10 bg-[#9b5de5] rounded-full flex items-center justify-center">
                               <span className="text-white font-semibold">
-                                {participant.name ? participant.name.charAt(0).toUpperCase() : 'U'}
+                                {userName.charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div>
                               <h4 className="font-medium text-white">
-                                {participant.name || 'Unknown User'}
+                                {userName}
                               </h4>
-                              <p className="text-sm text-gray-400">{participant.email}</p>
+                              <p className="text-sm text-gray-400">{userEmail}</p>
                             </div>
                           </div>
                           
-                          {participant.phone && (
+                          {userPhone && (
                             <p className="text-sm text-gray-400 mb-2">
-                              📞 {participant.phone}
+                              📞 {userPhone}
                             </p>
                           )}
                           
@@ -242,7 +275,8 @@ const ParticipantsModal = ({ event, onClose }) => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>

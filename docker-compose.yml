@@ -29,6 +29,7 @@ services:
       - ML_API_KEY=your_ml_api_key_here
       - ML_API_URL=http://ml-recommendation:5002
       - ML_RECOMMENDATION_ENABLED=true
+      - ML_SERVICE_URL=http://ml-certificate:8000
       - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
       - FRONTEND_URL=http://localhost:3000
       # Alternative email service (uncomment if Gmail doesn't work)
@@ -48,6 +49,7 @@ services:
       - mongo
       - redis
       - ml-recommendation
+      - ml-certificate
     networks:
       - campverse
     healthcheck:
@@ -57,38 +59,51 @@ services:
       retries: 5
       start_period: 10s
 
-  # ml:
-  #   build: ./ML/Recommendation
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     - mongo
-  #   networks:
-  #     - campverse
-
-  # Chatbot microservice
-  chatbot:
+  # ML Certificate Generator Service (Microservice)
+  ml-certificate:
     build:
-      context: ./ML/chatbot
+      context: ./ML/certificate_generator
       dockerfile: Dockerfile
-    container_name: campverse-chatbot
+    container_name: ml-certificate-service
     ports:
-      - "7860:7860"
+      - "8000:8000"
     environment:
-      - BACKEND_URL=http://backend:5001
+      - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
-    volumes:
-      - ./ML/chatbot:/app
-    depends_on:
-      - backend
     networks:
       - campverse
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7860/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-  # # ML Recommendation Service (Microservice)
+      start_period: 15s
+    restart: unless-stopped
+
+  # Chatbot microservice (DISABLED - not needed for testing)
+  # chatbot:
+  #   build:
+  #     context: ./ML/chatbot
+  #     dockerfile: Dockerfile
+  #   container_name: campverse-chatbot
+  #   ports:
+  #     - "7860:7860"
+  #   environment:
+  #     - BACKEND_URL=http://backend:5001
+  #     - LOG_LEVEL=INFO
+  #   volumes:
+  #     - ./ML/chatbot:/app
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - campverse
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:7860/docs"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+
+  # ML Recommendation Service (Microservice)
   # ML Recommendation Service (Microservice)
   ml-recommendation:
     build:

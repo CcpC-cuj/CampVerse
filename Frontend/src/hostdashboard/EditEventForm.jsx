@@ -143,8 +143,20 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
     }
     
     const transformedData = {
-      ...eventForm,
+      title: eventForm.title,
+      description: eventForm.description,
       date: new Date(eventForm.date).toISOString(),
+      // Transform location properly
+      location: {
+        type: eventForm.location || 'online',
+        venue: (eventForm.location === 'offline' || eventForm.location === 'hybrid') ? eventForm.venue : '',
+        link: (eventForm.location === 'online' || eventForm.location === 'hybrid') ? eventForm.eventLink : ''
+      },
+      organizationName: eventForm.organizationName,
+      type: eventForm.category,
+      capacity: eventForm.maxParticipants ? parseInt(eventForm.maxParticipants) : undefined,
+      isPaid: eventForm.isPaid,
+      price: eventForm.fee ? parseFloat(eventForm.fee) : 0,
       tags: eventForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
       requirements: eventForm.requirements.split('\n').map(req => req.trim()).filter(req => req),
       sessions: eventForm.sessions.split('\n').map(sessionLine => {
@@ -153,14 +165,25 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
       }).filter(s => s.title),
       contactEmail: eventForm.contactEmail,
       contactPhone: eventForm.contactPhone,
+      socialLinks: eventForm.socialLinks,
+      audienceType: eventForm.audienceType,
+      // Add features object with certificate and chat settings
+      features: {
+        certificateEnabled: eventForm.certificateEnabled,
+        chatEnabled: eventForm.chatEnabled
+      },
       // Ensure organizer object includes contact info
       organizer: {
         name: eventForm.organizationName || user?.name || '',
-        type: eventForm.organizer || 'institution',
+        type: 'institution',
         contactEmail: eventForm.contactEmail,
         contactPhone: eventForm.contactPhone
-      }
+      },
+      // Include images if they exist
+      bannerImage: eventForm.bannerImage,
+      logoImage: eventForm.logoImage
     };
+    
     if (onSave) {
       onSave(transformedData, bannerUrl, logoUrl);
       if (eventForm.cohosts.length > 0) {
@@ -397,6 +420,16 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
                 <label className="text-sm font-medium text-purple-300">Enable Chat System</label>
               </div>
             </div>
+            {eventForm.certificateEnabled && (
+              <div className="bg-purple-900/30 border border-purple-500/50 rounded-lg p-4">
+                <p className="text-sm text-purple-300 mb-2">
+                  📜 Certificates are enabled for this event. You can configure certificate templates, upload logos, signatures, and manage certificate settings from the event management dashboard.
+                </p>
+                <p className="text-xs text-purple-400">
+                  Navigate to Event Management → Certificate Settings to configure certificates.
+                </p>
+              </div>
+            )}
             {/* Social Links */}
             <div className="grid grid-cols-2 gap-4">
               <div>

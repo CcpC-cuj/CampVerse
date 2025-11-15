@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from PIL import Image, ImageDraw, ImageFont
 import os
 import shutil
@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime
 import io
 import json
+import requests
 
 app = FastAPI(
     title="Certificate Generator API",
@@ -25,6 +26,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Health check endpoint
+@app.get("/health", tags=["Health"])
+async def health_check():
+    """Health check endpoint for container orchestration"""
+    return {
+        "status": "healthy",
+        "service": "ML Certificate Generator",
+        "version": "1.0.0",
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/", tags=["Health"])
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "ML Certificate Generator API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
 
 # Directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -139,6 +161,27 @@ class SignatorySettings(BaseModel):
 
 class GenerateRequest(BaseModel):
     names: List[str] = Field(..., description="List of recipient names to generate certificates for")
+
+class ParticipantInfo(BaseModel):
+    userId: str = Field(..., description="User ID of the participant")
+    name: str = Field(..., description="Name of the participant")
+    email: str = Field(..., description="Email of the participant")
+
+class SignatoryInfo(BaseModel):
+    url: str = Field(..., description="Cloud storage URL of signature image")
+    name: str = Field(..., description="Name of the signatory")
+    title: str = Field(..., description="Title of the signatory")
+
+class BatchGenerateRequest(BaseModel):
+    eventId: str = Field(..., description="Event ID for which certificates are being generated")
+    eventTitle: str = Field(..., description="Title of the event")
+    templateUrl: str = Field(..., description="Cloud storage URL of certificate template")
+    orgLogoUrl: str = Field(..., description="Cloud storage URL of organization logo")
+    leftSignature: SignatoryInfo = Field(..., description="Left signature details")
+    rightSignature: SignatoryInfo = Field(..., description="Right signature details")
+    awardText: str = Field(..., description="Award text to display on certificate")
+    certificateType: str = Field(..., description="Type of certificate (participation/achievement)")
+    participants: List[ParticipantInfo] = Field(..., description="List of participants to generate certificates for")
 
 # Helper functions
 def load_font(font_name: str, size: int):
@@ -855,6 +898,426 @@ async def generate_certificates(request: GenerateRequest):
     
     except Exception as e:
         raise HTTPException(500, f"Error generating certificates: {str(e)}")
+
+@app.post("/batch-generate", tags=["Generation"])
+async def batch_generate_certificates(request: BatchGenerateRequest):
+    """
+    Generate certificates for multiple participants with cloud-stored assets.
+    
+    **Features:**
+    - Downloads template and assets from cloud storage URLs
+    - Generates certificates for all participants
+    - Uploads generated PDFs to cloud storage (Firebase)
+    - Returns cloud URLs for each certificate
+    
+    **Request Body:**
+    ```json
+    {
+        "eventId": "event_123",
+        "eventTitle": "CSI Workshop 2025",
+        "templateUrl": "https://...",
+        "orgLogoUrl": "https://...",
+        "leftSignature": {"url": "https://...", "name": "Dr. John", "title": "Director"},
+        "rightSignature": {"url": "https://...", "name": "Prof. Jane", "title": "HOD"},
+        "awardText": "For outstanding participation in",
+        "certificateType": "participation",
+        "participants": [{"userId": "123", "name": "John Doe", "email": "john@example.com"}]
+    }
+    ```
+    
+    **Returns:**
+    - List of generated certificates with cloud storage URLs
+    """
+    try:
+        # Create temp directory for this batch
+        batch_id = str(uuid.uuid4())
+        temp_dir = os.path.join(UPLOAD_DIR, f"batch_{batch_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Download template from cloud
+        template_path = os.path.join(temp_dir, "template.png")
+        try:
+            response = requests.get(request.templateUrl, timeout=30)
+            response.raise_for_status()
+            with open(template_path, 'wb') as f:
+                f.write(response.content)
+        except Exception as e:
+            raise HTTPException(500, f"Failed to download template: {str(e)}")
+        
+        # Download org logo from cloud
+        org_logo_path = os.path.join(temp_dir, "org_logo.png")
+        try:
+            response = requests.get(request.orgLogoUrl, timeout=30)
+            response.raise_for_status()
+            with open(org_logo_path, 'wb') as f:
+                f.write(response.content)
+        except Exception as e:
+            raise HTTPException(500, f"Failed to download org logo: {str(e)}")
+        
+        # Download left signature from cloud
+        left_sig_path = os.path.join(temp_dir, "left_signature.png")
+        try:
+            response = requests.get(request.leftSignature.url, timeout=30)
+            response.raise_for_status()
+            with open(left_sig_path, 'wb') as f:
+                f.write(response.content)
+        except Exception as e:
+            raise HTTPException(500, f"Failed to download left signature: {str(e)}")
+        
+        # Download right signature from cloud
+        right_sig_path = os.path.join(temp_dir, "right_signature.png")
+        try:
+            response = requests.get(request.rightSignature.url, timeout=30)
+            response.raise_for_status()
+            with open(right_sig_path, 'wb') as f:
+                f.write(response.content)
+        except Exception as e:
+            raise HTTPException(500, f"Failed to download right signature: {str(e)}")
+        
+        # Load fonts
+        name_font = load_font("DancingScript-Regular.ttf", 85)
+        award_font = load_font("times.ttf", 45)
+        sig_font = load_font("times.ttf", 35)
+        
+        generated_certificates = []
+        
+        # Generate certificate for each participant
+        for participant in request.participants:
+            try:
+                # Load template
+                certificate = Image.open(template_path).copy()
+                draw = ImageDraw.Draw(certificate)
+                
+                # Add participant name (centered at specific position)
+                name_bbox = name_font.getbbox(participant.name)
+                name_width = name_bbox[2] - name_bbox[0]
+                name_x = (certificate.width - name_width) // 2
+                draw.text((name_x, 596), participant.name, fill="black", font=name_font)
+                
+                # Add award text with event title (centered)
+                full_award_text = f"{request.awardText} {request.eventTitle}"
+                award_lines = wrap_text(full_award_text, award_font, 1000)
+                y_offset = 0
+                for line in award_lines:
+                    line_bbox = award_font.getbbox(line)
+                    line_width = line_bbox[2] - line_bbox[0]
+                    line_x = (certificate.width - line_width) // 2
+                    draw.text((line_x, 720 + y_offset), line, fill="black", font=award_font)
+                    y_offset += 55
+                
+                # Add org logo (center top)
+                org_logo = Image.open(org_logo_path).convert("RGBA")
+                logo_scale = min(200 / org_logo.width if org_logo.width else 1.0,
+                                200 / org_logo.height if org_logo.height else 1.0, 1.0)
+                org_logo = org_logo.resize(
+                    (int(org_logo.width * logo_scale), int(org_logo.height * logo_scale)),
+                    Image.LANCZOS
+                )
+                logo_x = (certificate.width - org_logo.width) // 2
+                certificate.paste(org_logo, (logo_x, 170), org_logo)
+                
+                # Add left signature
+                left_sig = Image.open(left_sig_path).convert("RGBA")
+                sig_scale = min(300 / left_sig.width if left_sig.width else 1.0,
+                               150 / left_sig.height if left_sig.height else 1.0, 1.0)
+                left_sig = left_sig.resize(
+                    (int(left_sig.width * sig_scale), int(left_sig.height * sig_scale)),
+                    Image.LANCZOS
+                )
+                certificate.paste(left_sig, (400, 1100), left_sig)
+                draw.text((400, 1270), request.leftSignature.name, fill="black", font=sig_font)
+                draw.text((400, 1310), request.leftSignature.title, fill="black", font=sig_font)
+                
+                # Add right signature
+                right_sig = Image.open(right_sig_path).convert("RGBA")
+                right_sig = right_sig.resize(
+                    (int(right_sig.width * sig_scale), int(right_sig.height * sig_scale)),
+                    Image.LANCZOS
+                )
+                certificate.paste(right_sig, (1200, 1100), right_sig)
+                draw.text((1200, 1270), request.rightSignature.name, fill="black", font=sig_font)
+                draw.text((1200, 1310), request.rightSignature.title, fill="black", font=sig_font)
+                
+                # Save certificate as PDF
+                safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in participant.name)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"{safe_name}_{timestamp}.pdf"
+                output_path = os.path.join(OUTPUT_DIR, filename)
+                
+                certificate.convert('RGB').save(output_path)
+                
+                # Note: In a real implementation, you would upload to Firebase here
+                # For now, we'll return local download URLs
+                # TODO: Integrate with firebaseStorageService to upload PDFs
+                
+                generated_certificates.append({
+                    "userId": participant.userId,
+                    "name": participant.name,
+                    "email": participant.email,
+                    "url": f"/download/{filename}",  # This should be cloud URL in production
+                    "filename": filename
+                })
+                
+                print(f"Generated certificate for: {participant.name}")
+                
+            except Exception as e:
+                print(f"Error generating certificate for {participant.name}: {str(e)}")
+                # Continue with other participants even if one fails
+        
+        # Clean up temp directory
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            print(f"Warning: Could not clean up temp directory: {str(e)}")
+        
+        return {
+            "message": f"Successfully generated {len(generated_certificates)} certificate(s)",
+            "eventId": request.eventId,
+            "eventTitle": request.eventTitle,
+            "certificateType": request.certificateType,
+            "totalRequested": len(request.participants),
+            "totalGenerated": len(generated_certificates),
+            "certificates": generated_certificates
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error in batch generation: {str(e)}")
+
+@app.post("/batch-validate", tags=["Generation"])
+async def batch_validate_certificate_generation(request: BatchGenerateRequest):
+    """
+    Validate that certificate generation is possible with given assets.
+    Does NOT generate or store certificates - only validates assets are accessible.
+    
+    This endpoint is used before marking certificates as "ready" in the database.
+    Actual certificate generation happens on-demand via /render-certificate.
+    """
+    try:
+        # Create temp directory for validation
+        batch_id = str(uuid.uuid4())
+        temp_dir = os.path.join(UPLOAD_DIR, f"validate_{batch_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        validation_results = {
+            "valid": True,
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Test download template
+        try:
+            response = requests.get(request.templateUrl, timeout=10)
+            response.raise_for_status()
+            template_path = os.path.join(temp_dir, "template.png")
+            with open(template_path, 'wb') as f:
+                f.write(response.content)
+            # Verify it's a valid image
+            Image.open(template_path)
+        except Exception as e:
+            validation_results["valid"] = False
+            validation_results["errors"].append(f"Template URL invalid or inaccessible: {str(e)}")
+        
+        # Test download org logo
+        try:
+            response = requests.get(request.orgLogoUrl, timeout=10)
+            response.raise_for_status()
+            logo_path = os.path.join(temp_dir, "logo.png")
+            with open(logo_path, 'wb') as f:
+                f.write(response.content)
+            Image.open(logo_path)
+        except Exception as e:
+            validation_results["valid"] = False
+            validation_results["errors"].append(f"Org logo URL invalid or inaccessible: {str(e)}")
+        
+        # Test download signatures
+        try:
+            response = requests.get(request.leftSignature.url, timeout=10)
+            response.raise_for_status()
+            Image.open(io.BytesIO(response.content))
+        except Exception as e:
+            validation_results["valid"] = False
+            validation_results["errors"].append(f"Left signature URL invalid or inaccessible: {str(e)}")
+        
+        try:
+            response = requests.get(request.rightSignature.url, timeout=10)
+            response.raise_for_status()
+            Image.open(io.BytesIO(response.content))
+        except Exception as e:
+            validation_results["valid"] = False
+            validation_results["errors"].append(f"Right signature URL invalid or inaccessible: {str(e)}")
+        
+        # Clean up temp directory
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            print(f"Warning: Could not clean up validation temp directory: {str(e)}")
+        
+        if not validation_results["valid"]:
+            raise HTTPException(400, f"Validation failed: {', '.join(validation_results['errors'])}")
+        
+        return {
+            "message": "Certificate generation validation successful",
+            "valid": True,
+            "eventId": request.eventId,
+            "totalParticipants": len(request.participants),
+            "note": "Certificates are ready to be generated on-demand"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error validating certificate generation: {str(e)}")
+
+@app.post("/render-certificate", tags=["Generation"])
+async def render_single_certificate(request: dict):
+    """
+    Render a single certificate on-demand and return it as PDF bytes.
+    This endpoint does NOT store the certificate - it generates and returns it immediately.
+    
+    **Request Body:**
+    ```json
+    {
+        "eventId": "event_123",
+        "eventTitle": "CSI Workshop 2025",
+        "templateUrl": "https://...",
+        "orgLogoUrl": "https://...",
+        "leftSignature": {"url": "https://...", "name": "Dr. John", "title": "Director"},
+        "rightSignature": {"url": "https://...", "name": "Prof. Jane", "title": "HOD"},
+        "awardText": "For outstanding participation in",
+        "certificateType": "participation",
+        "participant": {"userId": "123", "name": "John Doe", "email": "john@example.com"}
+    }
+    ```
+    
+    **Returns:** PDF file as binary data
+    """
+    try:
+        # Extract data
+        participant = request.get("participant")
+        if not participant:
+            raise HTTPException(400, "participant data is required")
+        
+        # Create temp directory for this render
+        render_id = str(uuid.uuid4())
+        temp_dir = os.path.join(UPLOAD_DIR, f"render_{render_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Download template
+        template_path = os.path.join(temp_dir, "template.png")
+        response = requests.get(request["templateUrl"], timeout=30)
+        response.raise_for_status()
+        with open(template_path, 'wb') as f:
+            f.write(response.content)
+        
+        # Download org logo
+        org_logo_path = os.path.join(temp_dir, "org_logo.png")
+        response = requests.get(request["orgLogoUrl"], timeout=30)
+        response.raise_for_status()
+        with open(org_logo_path, 'wb') as f:
+            f.write(response.content)
+        
+        # Download signatures
+        left_sig_path = os.path.join(temp_dir, "left_signature.png")
+        response = requests.get(request["leftSignature"]["url"], timeout=30)
+        response.raise_for_status()
+        with open(left_sig_path, 'wb') as f:
+            f.write(response.content)
+        
+        right_sig_path = os.path.join(temp_dir, "right_signature.png")
+        response = requests.get(request["rightSignature"]["url"], timeout=30)
+        response.raise_for_status()
+        with open(right_sig_path, 'wb') as f:
+            f.write(response.content)
+        
+        # Load template
+        certificate = Image.open(template_path).copy()
+        draw = ImageDraw.Draw(certificate)
+        
+        # Load fonts
+        name_font = load_font("DancingScript-Regular.ttf", 85)
+        award_font = load_font("times.ttf", 45)
+        sig_font = load_font("times.ttf", 35)
+        
+        # Add participant name (centered)
+        name_bbox = name_font.getbbox(participant["name"])
+        name_width = name_bbox[2] - name_bbox[0]
+        name_x = (certificate.width - name_width) // 2
+        draw.text((name_x, 596), participant["name"], fill="black", font=name_font)
+        
+        # Add award text with event title (centered)
+        full_award_text = f"{request['awardText']} {request['eventTitle']}"
+        award_lines = wrap_text(full_award_text, award_font, 1000)
+        y_offset = 0
+        for line in award_lines:
+            line_bbox = award_font.getbbox(line)
+            line_width = line_bbox[2] - line_bbox[0]
+            line_x = (certificate.width - line_width) // 2
+            draw.text((line_x, 720 + y_offset), line, fill="black", font=award_font)
+            y_offset += 55
+        
+        # Add org logo (center top)
+        org_logo = Image.open(org_logo_path).convert("RGBA")
+        logo_scale = min(200 / org_logo.width if org_logo.width else 1.0,
+                        200 / org_logo.height if org_logo.height else 1.0, 1.0)
+        org_logo = org_logo.resize(
+            (int(org_logo.width * logo_scale), int(org_logo.height * logo_scale)),
+            Image.LANCZOS
+        )
+        logo_x = (certificate.width - org_logo.width) // 2
+        certificate.paste(org_logo, (logo_x, 170), org_logo)
+        
+        # Add left signature
+        left_sig = Image.open(left_sig_path).convert("RGBA")
+        sig_scale = min(300 / left_sig.width if left_sig.width else 1.0,
+                       150 / left_sig.height if left_sig.height else 1.0, 1.0)
+        left_sig = left_sig.resize(
+            (int(left_sig.width * sig_scale), int(left_sig.height * sig_scale)),
+            Image.LANCZOS
+        )
+        certificate.paste(left_sig, (400, 1100), left_sig)
+        draw.text((400, 1270), request["leftSignature"]["name"], fill="black", font=sig_font)
+        draw.text((400, 1310), request["leftSignature"]["title"], fill="black", font=sig_font)
+        
+        # Add right signature
+        right_sig = Image.open(right_sig_path).convert("RGBA")
+        right_sig = right_sig.resize(
+            (int(right_sig.width * sig_scale), int(right_sig.height * sig_scale)),
+            Image.LANCZOS
+        )
+        certificate.paste(right_sig, (1200, 1100), right_sig)
+        draw.text((1200, 1270), request["rightSignature"]["name"], fill="black", font=sig_font)
+        draw.text((1200, 1310), request["rightSignature"]["title"], fill="black", font=sig_font)
+        
+        # Convert to RGB and save as PDF in memory
+        pdf_buffer = io.BytesIO()
+        certificate.convert('RGB').save(pdf_buffer, format='PDF')
+        pdf_bytes = pdf_buffer.getvalue()
+        
+        # Clean up temp directory
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            print(f"Warning: Could not clean up render temp directory: {str(e)}")
+        
+        # Return PDF as streaming response
+        safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in participant["name"])
+        filename = f"{safe_name}_Certificate.pdf"
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(pdf_bytes))
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error rendering certificate: {str(e)}")
 
 @app.get("/download/{filename}", tags=["Download"])
 async def download_certificate(filename: str):

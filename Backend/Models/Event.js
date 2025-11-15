@@ -57,8 +57,14 @@ const eventSchema = new mongoose.Schema({
     chatEnabled: { type: Boolean, default: false },
   },
   certificateSettings: {
+    // Template selection
+    selectedTemplateId: { type: String },
     certificateType: { type: String, enum: ['participation', 'achievement'], default: 'participation' },
+    
+    // Content
     awardText: { type: String },
+    
+    // Signatories
     leftSignatory: {
       name: { type: String },
       title: { type: String },
@@ -67,13 +73,38 @@ const eventSchema = new mongoose.Schema({
       name: { type: String },
       title: { type: String },
     },
-    uploadedAssets: [
-      {
-        originalName: { type: String },
-        assetType: { type: String },
-        uploadedAt: { type: Date, default: Date.now },
-      }
-    ],
+    
+    // Uploaded assets (cloud storage URLs)
+    uploadedAssets: {
+      organizationLogo: { type: String }, // Cloud storage URL
+      leftSignature: { type: String },    // Cloud storage URL
+      rightSignature: { type: String },   // Cloud storage URL
+    },
+    
+    // Verification status (similar to event verification)
+    verificationStatus: {
+      type: String,
+      enum: ['not_configured', 'pending', 'approved', 'rejected'],
+      default: 'not_configured',
+    },
+    submittedAt: { type: Date },
+    submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    verifiedAt: { type: Date },
+    rejectionReason: { type: String },
+    specificIssues: [String],
+    requestedChanges: [String],
+    changesRequestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    changesRequestedAt: { type: Date },
+    
+    // Generation status
+    generationStatus: {
+      type: String,
+      enum: ['not_generated', 'in_progress', 'completed', 'failed'],
+      default: 'not_generated',
+    },
+    generatedAt: { type: Date },
+    totalGenerated: { type: Number, default: 0 },
   },
   title: { type: String, required: true },
   description: { type: String, required: true },

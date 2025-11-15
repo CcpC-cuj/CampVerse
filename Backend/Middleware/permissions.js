@@ -3,10 +3,18 @@ const Event = require('../Models/Event');
 async function requireHostOrCoHost(req, res, next) {
   const userId = req.user.id;
   // SECURITY FIX: Only use req.params.id to prevent authorization bypass
-  const eventId = req.params.id || req.params.eventId;
+  // For POST /api/events/scan, eventId is in req.body (special case)
+  const eventId = req.params.id || req.params.eventId || req.body.eventId;
   
   if (!eventId) {
-    return res.status(400).json({ error: 'Event ID is required.' });
+    return res.status(400).json({ 
+      error: 'Event ID is required.',
+      debug: { 
+        paramsId: req.params.id, 
+        paramsEventId: req.params.eventId,
+        bodyEventId: req.body.eventId 
+      }
+    });
   }
   
   try {
@@ -75,10 +83,30 @@ function requireSelfOrRole(role) {
   };
 }
 
+function requireRole(roles) {
+  return (req, res, next) => {
+    if (!req.user || !req.user.roles) {
+      return res.status(403).json({ error: 'Forbidden: user not authenticated or missing roles.' });
+    }
+    
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    const hasRole = rolesArray.some(role => req.user.roles.includes(role));
+    
+    if (hasRole || req.user.roles.includes('platformAdmin')) {
+      return next();
+    }
+    
+    return res.status(403).json({ 
+      error: `Forbidden: requires one of the following roles: ${rolesArray.join(', ')}` 
+    });
+  };
+}
+
 module.exports = {
   requireHostOrCoHost,
   requireVerifier,
   requireAdmin,
   requireInstitution,
   requireSelfOrRole,
+  requireRole,
 };

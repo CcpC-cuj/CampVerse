@@ -1,0 +1,19 @@
+# Ignore model binaries and large files for Hugging Face Spaces
+Event Recommendation System Doc.pdf
+model/*.pkl
+model/*.bak
+*.pdf
+*.docx
+*.ttf
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp4
+*.zip
+*.tar.gz
+*.tar
+*.7z
+*.exe
+*.bin
+*.node

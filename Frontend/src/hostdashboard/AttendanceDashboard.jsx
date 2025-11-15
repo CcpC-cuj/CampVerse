@@ -264,10 +264,14 @@ const AttendanceDashboard = () => {
                       </div>
                       <div>
                         <h4 className="text-white font-semibold text-lg">
-                          {scan.userId?.name || 'Unknown User'}
+                          {typeof scan.userId === 'object' && scan.userId?.name 
+                            ? scan.userId.name 
+                            : scan.userName || scan.name || 'Unknown User'}
                         </h4>
                         <p className="text-purple-300 text-sm">
-                          {scan.userId?.email || 'N/A'}
+                          {typeof scan.userId === 'object' && scan.userId?.email 
+                            ? scan.userId.email 
+                            : scan.userEmail || scan.email || 'N/A'}
                         </p>
                       </div>
                     </div>

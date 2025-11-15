@@ -122,12 +122,25 @@ const QRScanner = () => {
 
     html5QrCodeScanner.render(
       async (decodedText) => {
-        // Success callback
-        await handleScan(decodedText);
-        // Pause scanner briefly after successful scan
-        setTimeout(() => {
+        // Success callback - pause scanner immediately
+        try {
           if (html5QrCodeScannerRef.current) {
-            html5QrCodeScannerRef.current.resume();
+            await html5QrCodeScannerRef.current.pause(true);
+          }
+        } catch (err) {
+          console.log('Scanner pause info:', err.message);
+        }
+        
+        await handleScan(decodedText);
+        
+        // Resume scanner after a delay
+        setTimeout(() => {
+          try {
+            if (html5QrCodeScannerRef.current) {
+              html5QrCodeScannerRef.current.resume();
+            }
+          } catch (err) {
+            console.log('Scanner resume info:', err.message);
           }
         }, 2000);
       },
@@ -151,8 +164,25 @@ const QRScanner = () => {
   const handleScan = async (qrToken) => {
     if (!qrToken) return;
 
+    if (!eventId) {
+      setScanResult({
+        success: false,
+        message: 'Event ID is required. Please refresh the page.',
+      });
+      return;
+    }
+
+    console.log('🔍 QR Scan Debug:', { 
+      eventId, 
+      qrToken: qrToken.substring(0, 10) + '...', 
+      qrTokenLength: qrToken.length 
+    });
+
     try {
       const token = localStorage.getItem('token');
+      const payload = { eventId, qrToken };
+      console.log('📤 Sending to backend:', payload);
+      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/scan`,
         {
@@ -161,7 +191,7 @@ const QRScanner = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ qrToken }),
+          body: JSON.stringify(payload),
         }
       );
 

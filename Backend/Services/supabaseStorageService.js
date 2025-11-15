@@ -288,6 +288,96 @@ class SupabaseStorageService {
   }
 
   /**
+   * Upload certificate template
+   */
+  async uploadCertificateTemplate(fileBuffer, filename, eventId, templateType, mimetype) {
+    try {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(mimetype)) {
+        throw new Error(`Invalid file type: ${mimetype}. Allowed types: ${allowedTypes.join(', ')}`);
+      }
+
+      const filePath = `${this.baseFolder}/certificates/assets/${eventId}/templates/${templateType}_${Date.now()}_${filename}`;
+      
+      const metadata = {
+        category: 'certificate-template',
+        eventId,
+        templateType,
+        fileType: 'image'
+      };
+
+      const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
+      
+      logger.info(`Certificate template uploaded to Supabase successfully for event ${eventId}, type: ${templateType}`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to upload certificate template to Supabase:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload certificate logo (organization logo)
+   */
+  async uploadCertificateLogo(fileBuffer, filename, eventId, logoType, mimetype) {
+    try {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(mimetype)) {
+        throw new Error(`Invalid file type: ${mimetype}. Allowed types: ${allowedTypes.join(', ')}`);
+      }
+
+      const filePath = `${this.baseFolder}/certificates/assets/${eventId}/logos/${logoType}_${Date.now()}_${filename}`;
+      
+      const metadata = {
+        category: 'certificate-logo',
+        eventId,
+        logoType,
+        fileType: 'image'
+      };
+
+      const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
+      
+      logger.info(`Certificate logo uploaded to Supabase successfully for event ${eventId}, type: ${logoType}`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to upload certificate logo to Supabase:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload certificate signature
+   */
+  async uploadCertificateSignature(fileBuffer, filename, eventId, signatureType, mimetype) {
+    try {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(mimetype)) {
+        throw new Error(`Invalid file type: ${mimetype}. Allowed types: ${allowedTypes.join(', ')}`);
+      }
+
+      const filePath = `${this.baseFolder}/certificates/assets/${eventId}/signatures/${signatureType}_${Date.now()}_${filename}`;
+      
+      const metadata = {
+        category: 'certificate-signature',
+        eventId,
+        signatureType,
+        fileType: 'image'
+      };
+
+      const result = await this.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
+      
+      logger.info(`Certificate signature uploaded to Supabase successfully for event ${eventId}, type: ${signatureType}`);
+      return result;
+    } catch (error) {
+      logger.error('Failed to upload certificate signature to Supabase:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Upload institution logo
    */
   async uploadInstitutionLogo(fileBuffer, filename, institutionId, mimetype) {

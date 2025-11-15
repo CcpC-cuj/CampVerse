@@ -28,7 +28,7 @@
 - [x] Validate uploads (file type, size).
 - [x] Ensure only hosts/co-hosts can trigger certificate generation.
 - [x] QR code expiry and single-use validation
-- [x] Rate limiting on QR scans
+- [x] Per-event QR verification (scan must match event) with unlimited scans
 
 ---
 

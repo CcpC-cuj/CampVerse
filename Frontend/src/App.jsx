@@ -35,6 +35,7 @@ import {
   QRScanner,
   BulkAttendance,
   AttendanceDashboard,
+  CertificateManagement,
 } from "./hostdashboard";
 
 // Component to handle OAuth detection and redirection
@@ -241,6 +242,16 @@ function App() {
               element={
                 <ProtectedRoute>
                   <BulkAttendance />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Certificate Management route */}
+            <Route
+              path="/host/events/:eventId/certificates"
+              element={
+                <ProtectedRoute>
+                  <CertificateManagement />
                 </ProtectedRoute>
               }
             />

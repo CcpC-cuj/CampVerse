@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { getMyEvents } from "../api/host";
-import HostSidebar from "./HostSidebar";
+import Sidebar from "../userdashboard/sidebar";
 import HostNavBar from "./HostNavBar";
 import DetailedEventCard from "./DetailedEventCard";
 import CreateEventForm from "./CreateEventForm";
 import EditEventForm from "./EditEventForm";
+import ParticipantsModal from "./ParticipantsModal";
+import EventDetailsModal from "./EventDetailsModal";
+import CertificateManagementModal from "./CertificateManagementModal";
 
 const EventsManagement = () => {
   const { user } = useAuth();
@@ -21,6 +24,9 @@ const EventsManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showParticipantsModal, setShowParticipantsModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   const loadEventsData = async () => {
     try {
@@ -64,8 +70,8 @@ const EventsManagement = () => {
         verificationStatus: event.verificationStatus,
         category: event.type || 'Uncategorized',
         participants: event.participants || [],
-        venue: event.venue || "Location TBD",
-        maxRegistrations: event.maxParticipants || 100,
+        venue: event.location?.venue || event.location?.type || event.venue || "Location TBD",
+        maxRegistrations: event.capacity || event.maxParticipants || 100,
         tags: Array.isArray(event.tags) ? event.tags : (event.tags ? [event.tags] : []),
         description: event.description || "No description available"
       }));
@@ -84,6 +90,33 @@ const EventsManagement = () => {
   useEffect(() => {
     loadEventsData();
   }, []);
+
+  // Separate useEffect for certificate modal event listener
+  useEffect(() => {
+    const handleOpenCertificateModal = (e) => {
+      const event = events.find(ev => ev._id === e.detail.eventId);
+      if (event) {
+        setSelectedEvent(event);
+        setShowCertificateModal(true);
+      }
+    };
+    
+    const handleEditEventRequest = (e) => {
+      const event = e.detail.event;
+      if (event) {
+        setSelectedEvent(event);
+        setShowEditModal(true);
+      }
+    };
+    
+    window.addEventListener('openCertificateModal', handleOpenCertificateModal);
+    window.addEventListener('editEvent', handleEditEventRequest);
+    
+    return () => {
+      window.removeEventListener('openCertificateModal', handleOpenCertificateModal);
+      window.removeEventListener('editEvent', handleEditEventRequest);
+    };
+  }, [events]);
 
   // Helper function to determine event status
   const getEventStatus = (event) => {
@@ -147,8 +180,13 @@ const EventsManagement = () => {
   };
 
   const handleViewParticipants = (event) => {
-  // View participants for event: (console.log removed)
-    // Open participants modal or navigate to participants view
+    setSelectedEvent(event);
+    setShowParticipantsModal(true);
+  };
+
+  const handleViewDetails = (event) => {
+    setSelectedEvent(event);
+    setShowDetailsModal(true);
   };
 
   const handleEventCreated = () => {
@@ -166,7 +204,7 @@ const EventsManagement = () => {
       // Add text fields
       Object.keys(eventData).forEach(key => {
         if (eventData[key] !== null && eventData[key] !== undefined) {
-          if (key === 'organizer' || key === 'location' || key === 'socialLinks') {
+          if (key === 'organizer' || key === 'location' || key === 'socialLinks' || key === 'features') {
             formData.append(key, JSON.stringify(eventData[key]));
           } else {
             formData.append(key, eventData[key]);
@@ -298,7 +336,7 @@ const EventsManagement = () => {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } transition-transform duration-300 sm:translate-x-0 border-r border-gray-800`}
       >
-        <HostSidebar />
+  <Sidebar />
       </div>
 
       {/* Main */}
@@ -404,6 +442,7 @@ const EventsManagement = () => {
                       onEdit={handleEditEvent}
                       onDelete={handleDeleteEvent}
                       onViewParticipants={handleViewParticipants}
+                      onViewDetails={handleViewDetails}
                     />
                   ))}
                 </div>
@@ -476,6 +515,39 @@ const EventsManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Participants Modal */}
+      {showParticipantsModal && selectedEvent && (
+        <ParticipantsModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowParticipantsModal(false);
+            setSelectedEvent(null);
+          }}
+        />
+      )}
+
+      {/* Event Details Modal */}
+      {showDetailsModal && selectedEvent && (
+        <EventDetailsModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedEvent(null);
+          }}
+        />
+      )}
+
+      {/* Certificate Management Modal */}
+      {showCertificateModal && selectedEvent && (
+        <CertificateManagementModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowCertificateModal(false);
+            setSelectedEvent(null);
+          }}
+        />
       )}
     </div>
   );

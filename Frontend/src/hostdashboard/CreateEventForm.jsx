@@ -585,10 +585,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 									type="checkbox" 
 									name="certificateEnabled" 
 									checked={eventForm.certificateEnabled} 
-									disabled
+									onChange={(e) => setEventForm(prev => ({ ...prev, certificateEnabled: e.target.checked }))}
 									className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
 								/>
-								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates (coming soon...)</label>
+								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates</label>
 							</div>
 							<div className="flex items-center gap-3">
 								<input 
@@ -601,6 +601,27 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								<label className="text-sm font-medium text-purple-300">💬 Enable Chat System</label>
 							</div>
 						</div>
+						{eventForm.certificateEnabled && (
+							<div className="bg-purple-900/30 border border-purple-500/50 rounded-lg p-4">
+								<div className="flex items-start gap-3">
+									<div className="flex-shrink-0 text-2xl">📜</div>
+									<div className="flex-1">
+										<p className="text-sm text-purple-300 mb-2 font-medium">
+											Certificates Enabled!
+										</p>
+										<p className="text-xs text-purple-400 mb-3">
+											After creating the event, you'll be able to configure certificate templates, add signatures, customize designs, and manage certificate distribution.
+										</p>
+										<div className="flex items-center gap-2 text-xs text-purple-300">
+											<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+											</svg>
+											<span>Certificate management will be available in the event's action menu after creation</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						)}
 						<div className="grid grid-cols-2 gap-4">
 							<div>
 								<label className="block text-sm font-medium text-purple-300 mb-2">Website</label>

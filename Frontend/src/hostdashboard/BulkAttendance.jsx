@@ -61,8 +61,17 @@ const BulkAttendance = () => {
       );
 
       const participantsData = await participantsResponse.json();
-      if (participantsResponse.ok && participantsData.success) {
-        setParticipants(participantsData.participants || []);
+      if (participantsResponse.ok) {
+        // Handle different response formats
+        let participantsList = [];
+        if (participantsData.success && participantsData.participants) {
+          participantsList = participantsData.participants;
+        } else if (participantsData.success && participantsData.data) {
+          participantsList = participantsData.data;
+        } else if (Array.isArray(participantsData)) {
+          participantsList = participantsData;
+        }
+        setParticipants(participantsList);
       }
     } catch (err) {
       console.error('Error loading data:', err);
@@ -86,7 +95,9 @@ const BulkAttendance = () => {
 
   const selectAll = () => {
     const filtered = getFilteredParticipants();
-    const notAttendedUsers = filtered.filter(p => !p.attended).map(p => p.userId._id);
+    const notAttendedUsers = filtered
+      .filter(p => !p.attended && p.status !== 'attended')
+      .map(p => p.userId?._id || p.userId);
     setSelectedUsers(new Set(notAttendedUsers));
   };
 
@@ -153,11 +164,17 @@ const BulkAttendance = () => {
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        p =>
-          p.userId?.name?.toLowerCase().includes(query) ||
-          p.userId?.email?.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(p => {
+        const name = typeof p.userId === 'object' 
+          ? p.userId?.name 
+          : p.name || p.userName || '';
+        const email = typeof p.userId === 'object'
+          ? p.userId?.email
+          : p.email || p.userEmail || '';
+        
+        return name.toLowerCase().includes(query) ||
+               email.toLowerCase().includes(query);
+      });
     }
 
     return filtered;
@@ -283,9 +300,15 @@ const BulkAttendance = () => {
               </div>
             ) : (
               filteredParticipants.map((participant) => {
-                const userId = participant.userId?._id;
+                const userId = participant.userId?._id || participant.userId;
+                const userName = typeof participant.userId === 'object' 
+                  ? participant.userId?.name 
+                  : participant.name || participant.userName;
+                const userEmail = typeof participant.userId === 'object'
+                  ? participant.userId?.email
+                  : participant.email || participant.userEmail;
                 const isSelected = selectedUsers.has(userId);
-                const isAttended = participant.attended;
+                const isAttended = participant.attended || participant.status === 'attended';
 
                 return (
                   <div
@@ -311,10 +334,10 @@ const BulkAttendance = () => {
                     {/* User Info */}
                     <div className="flex-1">
                       <h4 className="text-white font-semibold">
-                        {participant.userId?.name || 'Unknown'}
+                        {userName || 'Unknown'}
                       </h4>
                       <p className="text-purple-300 text-sm">
-                        {participant.userId?.email || 'N/A'}
+                        {userEmail || 'N/A'}
                       </p>
                     </div>
 

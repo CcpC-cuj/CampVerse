@@ -39,10 +39,13 @@ const Sidebar = ({ onDiscoverClick }) => {
   };
   const profileUrl = getProfileUrl();
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
-  // Check if user has verifier role
+  // Check if user has verifier or host role
   const isVerifier = Array.isArray(user?.roles)
     ? user.roles.includes("verifier")
     : user?.role === "verifier";
+  const isHost = Array.isArray(user?.roles)
+    ? user.roles.includes("host")
+    : user?.role === "host";
 
   return (
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white overflow-hidden">
@@ -95,7 +98,6 @@ const Sidebar = ({ onDiscoverClick }) => {
             ))}
           </div>
         </div>
-
         {/* Navigation Sections */}
         <div className="py-2">
           <SidebarSection title="Main" />
@@ -114,6 +116,13 @@ const Sidebar = ({ onDiscoverClick }) => {
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
           <SidebarLink icon="ri-medal-line" to="/achievements" label="Achievements" />
           <SidebarLink icon="ri-feedback-line" to="/feedback" label="Feedback" />
+          {/* Host Section: Only show if user is a host */}
+          {isHost && (
+            <>
+              <SidebarSection title="Host" />
+              <SidebarLink icon="ri-calendar-2-line" to="/host/manage-events" label="Manage Events" />
+            </>
+          )}
           {/* Verifier Section: Only show if user is a verifier */}
           {isVerifier && (
             <>
@@ -125,21 +134,21 @@ const Sidebar = ({ onDiscoverClick }) => {
             </>
           )}
         </div>
-      </div>
-      {/* Bottom Fixed Section */}
-      <div className="p-4 border-t border-gray-700">
-        <SidebarLink icon="ri-settings-3-line" to="/settings" label="Settings" />
-        <SidebarLink icon="ri-question-line" to="/help" label="Help Center" />
+        {/* Bottom Fixed Section */}
+        <div className="p-4 border-t border-gray-700">
+          <SidebarLink icon="ri-settings-3-line" to="/settings" label="Settings" />
+          <SidebarLink icon="ri-question-line" to="/help" label="Help Center" />
 
-        {/* Logout (purple theme) */}
-        <button
-          onClick={logout}
-          aria-label="Logout"
-          className="group mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] bg-transparent hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all duration-200 hover:shadow-[0_0_15px_rgba(155,93,229,0.35)] active:scale-[0.98] backdrop-blur-sm"
-        >
-          <i className="ri-logout-box-r-line transition-transform duration-200 group-hover:-translate-x-0.5"></i>
-          <span className="text-sm font-medium">Logout</span>
-        </button>
+          {/* Logout (purple theme) */}
+          <button
+            onClick={logout}
+            aria-label="Logout"
+            className="group mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-button border border-[#9b5de5]/40 text-[#e9ddff] bg-transparent hover:bg-[#9b5de5]/20 hover:border-[#9b5de5]/60 transition-all duration-200 hover:shadow-[0_0_15px_rgba(155,93,229,0.35)] active:scale-[0.98] backdrop-blur-sm"
+          >
+            <i className="ri-logout-box-r-line transition-transform duration-200 group-hover:-translate-x-0.5"></i>
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+        </div>
       </div>
     </div>
   );

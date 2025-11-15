@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box,
@@ -719,4 +720,10 @@ const CertificateManagement = ({ eventId }) => {
   );
 };
 
-export default CertificateManagement;
+// Wrapper component to get eventId from URL params
+const CertificateManagementWrapper = () => {
+  const { eventId } = useParams();
+  return <CertificateManagement eventId={eventId} />;
+};
+
+export default CertificateManagementWrapper;

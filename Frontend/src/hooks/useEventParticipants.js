@@ -1,26 +1,23 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getEventParticipants, getEventAnalytics } from '../api/events';
 
-export const useEventParticipants = (eventId) => {
+
+export const useEventParticipants = (eventId, options = {}) => {
   const [participants, setParticipants] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const intervalRef = React.useRef();
 
   const fetchParticipants = async () => {
     if (!eventId) return;
-    
     try {
       setLoading(true);
       setError(null);
-      
-      // Fetch both participants and analytics
       const [participantsResponse, analyticsResponse] = await Promise.allSettled([
         getEventParticipants(eventId),
         getEventAnalytics(eventId)
       ]);
-
-      // Handle participants response
       if (participantsResponse.status === 'fulfilled') {
         const participantsData = participantsResponse.value;
         if (Array.isArray(participantsData)) {
@@ -35,8 +32,6 @@ export const useEventParticipants = (eventId) => {
         console.error('Failed to fetch participants:', participantsResponse.reason);
         setParticipants([]);
       }
-
-      // Handle analytics response
       if (analyticsResponse.status === 'fulfilled') {
         const analyticsData = analyticsResponse.value;
         if (analyticsData.success && analyticsData.data) {
@@ -47,7 +42,6 @@ export const useEventParticipants = (eventId) => {
       } else {
         console.error('Failed to fetch analytics:', analyticsResponse.reason);
       }
-
     } catch (err) {
       console.error('Error fetching event data:', err);
       setError(err.message);
@@ -58,7 +52,14 @@ export const useEventParticipants = (eventId) => {
 
   useEffect(() => {
     fetchParticipants();
-  }, [eventId]);
+    if (options.autoRefresh) {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(fetchParticipants, options.refreshInterval || 60000);
+      return () => clearInterval(intervalRef.current);
+    }
+    // Clean up interval if not using autoRefresh
+    return () => intervalRef.current && clearInterval(intervalRef.current);
+  }, [eventId, options.autoRefresh, options.refreshInterval]);
 
   const participantStats = {
     total: participants.length,
