@@ -37,13 +37,13 @@ const EventsManagement = () => {
       // Load events
       let eventsData = [];
       try {
-        eventsData = await getMyEvents();
+        const eventsResponse = await getMyEvents();
   // Events data: (console.log removed)
         
-        if (Array.isArray(eventsData)) {
-          eventsData = eventsData;
-        } else if (eventsData && eventsData.events) {
-          eventsData = eventsData.events;
+        if (Array.isArray(eventsResponse)) {
+          eventsData = eventsResponse;
+        } else if (eventsResponse && eventsResponse.events) {
+          eventsData = eventsResponse.events;
         } else {
           eventsData = [];
         }
@@ -221,7 +221,7 @@ const EventsManagement = () => {
       }
       
       // Call update API
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/events/${selectedEvent._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${selectedEvent._id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -253,7 +253,7 @@ const EventsManagement = () => {
     setLoading(true);
     try {
       const eventId = selectedEvent.id || selectedEvent._id;
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5001'}/api/hosts/events/${eventId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/hosts/events/${eventId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

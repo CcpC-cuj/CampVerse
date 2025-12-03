@@ -97,6 +97,23 @@ const AuthenticationSettings = () => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    try {
+      setLoading(true);
+      const response = await forgotPassword({ email: authStatus?.email });
+      if (response.message) {
+        setSuccess(response.message);
+        setShowForgotPassword(false);
+      } else {
+        setError(response.error || 'Failed to send reset link');
+      }
+    } catch {
+      setError('Failed to send reset link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendOtp = async () => {
     try {
       setLoading(true);
