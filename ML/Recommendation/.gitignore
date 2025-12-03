@@ -17,3 +17,5 @@ model/*.bak
 *.exe
 *.bin
 *.node
+
+venv/

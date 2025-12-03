@@ -1,0 +1,235 @@
+import React, { useState } from "react";
+import Layout from "../components/Layout";
+
+export default function SystemSettings() {
+  const [settings, setSettings] = useState({
+    maintenanceMode: false,
+    registrationEnabled: true,
+    eventCreationEnabled: true,
+    paidEventsEnabled: false, // Disabled due to payment system maintenance
+    certificateGenerationEnabled: true,
+    mlRecommendationsEnabled: true,
+    emailNotificationsEnabled: true,
+    maxEventsPerHost: 10,
+    maxParticipantsDefault: 100,
+    certificateExpiryDays: 365,
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  const handleToggle = (key) => {
+    setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleNumberChange = (key, value) => {
+    setSettings(prev => ({ ...prev, [key]: parseInt(value) || 0 }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    alert('Settings saved successfully!');
+    setSaving(false);
+  };
+
+  const SettingToggle = ({ label, description, settingKey, disabled = false }) => (
+    <div className={`flex items-center justify-between p-4 bg-gray-900/50 rounded-lg ${disabled ? 'opacity-60' : ''}`}>
+      <div>
+        <p className="text-white font-medium">{label}</p>
+        <p className="text-gray-400 text-sm">{description}</p>
+      </div>
+      <button
+        onClick={() => !disabled && handleToggle(settingKey)}
+        disabled={disabled}
+        className={`relative w-14 h-7 rounded-full transition-colors ${
+          settings[settingKey] ? 'bg-green-500' : 'bg-gray-600'
+        } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <div className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${
+          settings[settingKey] ? 'translate-x-8' : 'translate-x-1'
+        }`} />
+      </button>
+    </div>
+  );
+
+  return (
+    <Layout title="System Settings">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Warning Banner */}
+        <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <i className="ri-alert-line text-2xl text-yellow-400" />
+            <div>
+              <p className="text-yellow-300 font-semibold">Caution</p>
+              <p className="text-yellow-400/80 text-sm">
+                Changes to system settings may affect all users. Please ensure you understand the impact before making changes.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Platform Status */}
+        <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <i className="ri-toggle-line text-purple-400" />
+            Platform Status
+          </h3>
+          <div className="space-y-3">
+            <SettingToggle 
+              label="Maintenance Mode"
+              description="When enabled, only admins can access the platform"
+              settingKey="maintenanceMode"
+            />
+            <SettingToggle 
+              label="User Registration"
+              description="Allow new users to register on the platform"
+              settingKey="registrationEnabled"
+            />
+            <SettingToggle 
+              label="Event Creation"
+              description="Allow hosts to create new events"
+              settingKey="eventCreationEnabled"
+            />
+          </div>
+        </div>
+
+        {/* Feature Toggles */}
+        <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <i className="ri-settings-4-line text-purple-400" />
+            Feature Toggles
+          </h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-red-900/30 rounded-lg border border-red-500/30">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-medium">Paid Events</p>
+                  <span className="px-2 py-0.5 bg-red-500/30 text-red-300 rounded text-xs">Under Maintenance</span>
+                </div>
+                <p className="text-gray-400 text-sm">Payment gateway integration is being updated</p>
+              </div>
+              <button
+                disabled
+                className="relative w-14 h-7 rounded-full bg-gray-600 cursor-not-allowed opacity-60"
+              >
+                <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-white" />
+              </button>
+            </div>
+            <SettingToggle 
+              label="Certificate Generation"
+              description="Enable automatic certificate generation for events"
+              settingKey="certificateGenerationEnabled"
+            />
+            <SettingToggle 
+              label="ML Recommendations"
+              description="Enable AI-powered event recommendations"
+              settingKey="mlRecommendationsEnabled"
+            />
+            <SettingToggle 
+              label="Email Notifications"
+              description="Send email notifications for events and updates"
+              settingKey="emailNotificationsEnabled"
+            />
+          </div>
+        </div>
+
+        {/* Limits & Defaults */}
+        <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <i className="ri-numbers-line text-purple-400" />
+            Limits & Defaults
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-900/50 rounded-lg">
+              <label className="block text-sm text-gray-400 mb-2">Max Events Per Host</label>
+              <input
+                type="number"
+                value={settings.maxEventsPerHost}
+                onChange={(e) => handleNumberChange('maxEventsPerHost', e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <div className="p-4 bg-gray-900/50 rounded-lg">
+              <label className="block text-sm text-gray-400 mb-2">Default Max Participants</label>
+              <input
+                type="number"
+                value={settings.maxParticipantsDefault}
+                onChange={(e) => handleNumberChange('maxParticipantsDefault', e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+            <div className="p-4 bg-gray-900/50 rounded-lg">
+              <label className="block text-sm text-gray-400 mb-2">Certificate Valid (Days)</label>
+              <input
+                type="number"
+                value={settings.certificateExpiryDays}
+                onChange={(e) => handleNumberChange('certificateExpiryDays', e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Service Status */}
+        <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <i className="ri-server-line text-purple-400" />
+            Service Status
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
+              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div>
+                <p className="text-white text-sm font-medium">API Server</p>
+                <p className="text-green-400 text-xs">Online</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
+              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div>
+                <p className="text-white text-sm font-medium">Database</p>
+                <p className="text-green-400 text-xs">Online</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
+              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div>
+                <p className="text-white text-sm font-medium">ML Services</p>
+                <p className="text-green-400 text-xs">Online</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div>
+                <p className="text-white text-sm font-medium">Payment</p>
+                <p className="text-red-400 text-xs">Maintenance</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? (
+              <>
+                <i className="ri-loader-4-line animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <i className="ri-save-line" />
+                Save Settings
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </Layout>
+  );
+}

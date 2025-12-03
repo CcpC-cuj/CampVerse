@@ -12,3 +12,4 @@ Backend/config/supabase.env
 docs/PPT_IIC 3RD NEW_merged (1).pdf
 ML/chatbot/venv/
 ML/chatbot/__pycache__
+.config/

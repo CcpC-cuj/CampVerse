@@ -16,14 +16,21 @@ import ResetPassword from "./pages/ResetPassword";
 import EventDetailsPage from "./pages/PublicEventDetailsPage";
 import QRViewer from "./components/QRViewer";
 import "remixicon/fonts/remixicon.css";
-import HostRegistration from "./userdashboard/HostRegistration"; // ✅ ADDED
+import HostRegistration from "./userdashboard/HostRegistration";
 import { EventProvider } from "./userdashboard/EventContext";
 import VerifierDashboard from "./verifier/VerifierDashboard";
 import EventVerificationQueue from "./verifier/EventVerificationQueue";
 import CertificateReview from "./verifier/CertificateReview";
 import VerifierAnalytics from "./verifier/VerifierAnalytics";
 
-
+// ✅ Admin dashboard imports
+import {
+  AdminDashboard,
+  UserManagement,
+  InstitutionManagement,
+  PlatformAnalytics,
+  SystemSettings,
+} from "./admin";
 
 // ✅ Host dashboard module imports (updated)
 import {
@@ -277,6 +284,48 @@ function App() {
               element={
                 <ProtectedRoute>
                   <HostSettings />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ✅ Platform Admin Routes */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute requiredRoles={['platformAdmin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute requiredRoles={['platformAdmin']}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/institutions"
+              element={
+                <ProtectedRoute requiredRoles={['platformAdmin']}>
+                  <InstitutionManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <ProtectedRoute requiredRoles={['platformAdmin']}>
+                  <PlatformAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute requiredRoles={['platformAdmin']}>
+                  <SystemSettings />
                 </ProtectedRoute>
               }
             />

@@ -71,8 +71,9 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 				}
 				break;
 			case 4:
-				if (eventForm.isPaid && (!eventForm.fee || parseFloat(eventForm.fee) <= 0)) {
-					errors.fee = 'Valid registration fee is required for paid events';
+				// Paid events are currently disabled - system under update
+				if (eventForm.isPaid) {
+					errors.isPaid = 'Paid events are temporarily unavailable. Please create a free event.';
 				}
 				break;
 		}
@@ -475,7 +476,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 									/>
 									<span className="text-white">🆓 Free Event</span>
 								</label>
-								<label className="flex items-center cursor-pointer">
+								<label className="flex items-center cursor-pointer opacity-60">
 									<input 
 										type="radio" 
 										name="isPaid" 
@@ -488,19 +489,25 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								</label>
 							</div>
 							{eventForm.isPaid && (
-								<div className="mb-4">
-									<label className="block text-sm font-medium text-purple-300 mb-2">Registration Fee (₹) *</label>
-									<input 
-										type="number" 
-										name="fee" 
-										value={eventForm.fee} 
-										onChange={handleFormChange} 
-										min="1" 
-										step="0.01" 
-										placeholder="Enter amount" 
-										className={`w-full px-4 py-3 bg-transparent border rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 ${formErrors.fee ? 'border-red-500' : 'border-purple-500'}`}
-									/>
-									{formErrors.fee && <p className="text-red-400 text-sm mt-1">{formErrors.fee}</p>}
+								<div className="mb-4 bg-yellow-900/40 border border-yellow-500/50 rounded-lg p-4">
+									<div className="flex items-start gap-3">
+										<div className="flex-shrink-0 text-2xl">🚧</div>
+										<div className="flex-1">
+											<p className="text-sm text-yellow-300 mb-2 font-semibold">
+												Payment System Under Update
+											</p>
+											<p className="text-xs text-yellow-400 mb-3">
+												We're currently upgrading our payment infrastructure to provide a better experience. Paid events are temporarily unavailable. Please create a free event for now, and we'll notify you when paid events become available again.
+											</p>
+											<button 
+												type="button" 
+												onClick={() => setEventForm(prev => ({ ...prev, isPaid: false, fee: '' }))}
+												className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-500 transition-colors text-sm"
+											>
+												Switch to Free Event
+											</button>
+										</div>
+									</div>
 								</div>
 							)}
 						</div>

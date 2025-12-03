@@ -365,4 +365,27 @@ export async function getZeroResultSearches() {
   return res.json();
 }
 
+export async function getVerifierAnalytics() {
+  const res = await fetch(`${API_URL}/api/events/verifier-analytics`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Get personalized event recommendations
+export async function getEventRecommendations(limit = 6) {
+  const res = await fetch(`${API_URL}/api/recommendations/events?limit=${limit}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+// Get similar events based on an event
+export async function getSimilarEvents(eventId, limit = 4) {
+  const res = await fetch(`${API_URL}/api/recommendations/events/${eventId}/similar?limit=${limit}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
 

@@ -151,4 +151,4 @@ if __name__ == '__main__':
     print("Available endpoints:")
     print("- POST /recommend: Generate event recommendations")
     print("- GET /health: Health check")
-    app.run(host='0.0.0.0', port=7860, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=True)

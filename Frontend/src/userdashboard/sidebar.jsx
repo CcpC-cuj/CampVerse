@@ -39,13 +39,12 @@ const Sidebar = ({ onDiscoverClick }) => {
   };
   const profileUrl = getProfileUrl();
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";
-  // Check if user has verifier or host role
-  const isVerifier = Array.isArray(user?.roles)
-    ? user.roles.includes("verifier")
-    : user?.role === "verifier";
-  const isHost = Array.isArray(user?.roles)
-    ? user.roles.includes("host")
-    : user?.role === "host";
+  
+  // Role-based access checks
+  const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
+  const isVerifier = userRoles.includes("verifier");
+  const isHost = userRoles.includes("host");
+  const isPlatformAdmin = userRoles.includes("platformAdmin");
 
   return (
     <div className="h-screen w-64 flex flex-col bg-[#0b0f2b] border-r border-gray-800 text-white overflow-hidden">
@@ -87,8 +86,26 @@ const Sidebar = ({ onDiscoverClick }) => {
               </div>
             </div>
           </div>
+          {/* Role Badges */}
           <div className="mt-3 flex flex-wrap gap-1">
-            {(user?.interests || ["Tech", "Design", "Debate"]).slice(0,6).map((tag, idx) => (
+            {isPlatformAdmin && (
+              <span className="badge bg-red-500/30 text-red-300 text-xs px-2 py-0.5 rounded border border-red-500/50">
+                <i className="ri-admin-line mr-1"></i>Admin
+              </span>
+            )}
+            {isVerifier && (
+              <span className="badge bg-blue-500/30 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-500/50">
+                <i className="ri-shield-check-line mr-1"></i>Verifier
+              </span>
+            )}
+            {isHost && (
+              <span className="badge bg-green-500/30 text-green-300 text-xs px-2 py-0.5 rounded border border-green-500/50">
+                <i className="ri-mic-line mr-1"></i>Host
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {(user?.interests || []).slice(0,4).map((tag, idx) => (
               <span
                 key={idx}
                 className="badge bg-[#9b5de5]/20 text-[#d9c4ff] text-xs px-2 py-0.5 rounded"
@@ -102,35 +119,51 @@ const Sidebar = ({ onDiscoverClick }) => {
         <div className="py-2">
           <SidebarSection title="Main" />
           <SidebarLink icon="ri-dashboard-line" to="/dashboard" label="Dashboard" end />
-
-          {/* ✅ Changed: use onClick instead of route to scroll inside UserDashboard */}
           <SidebarLink
             icon="ri-compass-line"
             to="/dashboard/discover-events" 
             label="Discover Events"
             end
           />
+          
           <SidebarSection title="Events" />
           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+          
           <SidebarSection title="Community" />
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
           <SidebarLink icon="ri-medal-line" to="/achievements" label="Achievements" />
           <SidebarLink icon="ri-feedback-line" to="/feedback" label="Feedback" />
+          
           {/* Host Section: Only show if user is a host */}
           {isHost && (
             <>
-              <SidebarSection title="Host" />
+              <SidebarSection title="Host Panel" />
               <SidebarLink icon="ri-calendar-2-line" to="/host/manage-events" label="Manage Events" />
+              <SidebarLink icon="ri-bar-chart-grouped-line" to="/host/analytics" label="Host Analytics" />
+              <SidebarLink icon="ri-settings-4-line" to="/host/settings" label="Host Settings" />
             </>
           )}
+          
           {/* Verifier Section: Only show if user is a verifier */}
           {isVerifier && (
             <>
-              <SidebarSection title="Verifier" />
+              <SidebarSection title="Verifier Panel" />
               <SidebarLink icon="ri-shield-user-line" to="/verifier/dashboard" label="Verifier Dashboard" />
-              <SidebarLink icon="ri-list-check-2" to="/verifier/event-queue" label="Event Verification Queue" />
-              <SidebarLink icon="ri-file-check-line" to="/verifier/certificate-review" label="Certificate Review" />
+              <SidebarLink icon="ri-list-check-2" to="/verifier/event-queue" label="Event Queue" />
+              <SidebarLink icon="ri-file-certificate-line" to="/verifier/certificate-review" label="Certificate Review" />
               <SidebarLink icon="ri-bar-chart-box-line" to="/verifier/analytics" label="Verifier Analytics" />
+            </>
+          )}
+          
+          {/* Platform Admin Section: Only show if user is a platform admin */}
+          {isPlatformAdmin && (
+            <>
+              <SidebarSection title="Admin Panel" />
+              <SidebarLink icon="ri-admin-line" to="/admin/dashboard" label="Admin Dashboard" />
+              <SidebarLink icon="ri-user-settings-line" to="/admin/users" label="User Management" />
+              <SidebarLink icon="ri-building-4-line" to="/admin/institutions" label="Institutions" />
+              <SidebarLink icon="ri-line-chart-line" to="/admin/analytics" label="Platform Analytics" />
+              <SidebarLink icon="ri-tools-line" to="/admin/settings" label="System Settings" />
             </>
           )}
         </div>
