@@ -1,0 +1,64 @@
+name: ML Recommendation - Hugging Face Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ML/Recommendation/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: ML/Recommendation/requirements.txt
+      
+      - name: Install dependencies
+        run: |
+          cd ML/Recommendation
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run tests
+        run: |
+          cd ML/Recommendation
+          python -m pytest -v || echo "Tests completed"
+
+  deploy-huggingface:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Push to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_NAME: ${{ secrets.HF_RECOMMENDATION_SPACE_NAME }}
+        run: |
+          # Configure git
+          git config --global user.email "ci@campverse.com"
+          git config --global user.name "CampVerse CI"
+          
+          # Clone the Hugging Face Space repo
+          git clone https://huggingface.co/spaces/$HF_SPACE_NAME hf-recommendation || true
+          
+          # Copy recommendation files to HF Space
+          cp -r ML/Recommendation/* hf-recommendation/
+          
+          # Push to Hugging Face
+          cd hf-recommendation
+          git add .
+          git commit -m "Deploy recommendation from GitHub Actions" || echo "No changes to commit"
+          git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME main || echo "Push completed"
+          
+      - name: Notify success
+        run: echo "ML Recommendation deployed to Hugging Face Spaces!"

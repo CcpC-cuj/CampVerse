@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../userdashboard/sidebar";
-import NavBar from "../userdashboard/NavBar";
+import Layout from "../components/Layout";
 import { getPendingInstitutionVerifications, approveInstitutionVerificationAPI, rejectInstitutionVerificationAPI } from "../api/institution";
+import { listPendingHostRequests, approveHostRequest, rejectHostRequest } from "../api/user";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function VerifierDashboard() {
   const { user } = useAuth();
   const [pendingInstitutions, setPendingInstitutions] = useState([]);
-  // Removed unused pendingCertificates and eventCount
+  const [pendingHosts, setPendingHosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [activeTab, setActiveTab] = useState('institutions');
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const institutionsRes = await getPendingInstitutionVerifications();
-        setPendingInstitutions(Array.isArray(institutionsRes?.pendingInstitutions) ? institutionsRes.pendingInstitutions : []);
-
-  // Removed unused setters for certificates and events
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        // Handle error (could show a message)
-      }
-      setLoading(false);
-    }
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [institutionsRes, hostsRes] = await Promise.all([
+        getPendingInstitutionVerifications(),
+        listPendingHostRequests()
+      ]);
+      setPendingInstitutions(Array.isArray(institutionsRes?.pendingInstitutions) ? institutionsRes.pendingInstitutions : []);
+      setPendingHosts(Array.isArray(hostsRes?.pendingUsers) ? hostsRes.pendingUsers : (Array.isArray(hostsRes) ? hostsRes : []));
+    } catch (err) {
+      console.error('Error fetching data:', err);
+    }
+    setLoading(false);
+  };
 
   const handleInstitutionAction = async (institutionId, action) => {
     setActionLoading(institutionId);
@@ -40,9 +43,7 @@ export default function VerifierDashboard() {
       
       if (result.success || result.message) {
         alert(`Institution ${action}d successfully!`);
-        // Refresh the list
-        const institutionsRes = await getPendingInstitutionVerifications();
-        setPendingInstitutions(Array.isArray(institutionsRes?.pendingInstitutions) ? institutionsRes.pendingInstitutions : []);
+        fetchData();
       } else {
         alert(`Failed to ${action} institution: ` + (result.error || 'Unknown error'));
       }
@@ -53,64 +54,142 @@ export default function VerifierDashboard() {
     setActionLoading(null);
   };
 
+  const handleHostAction = async (userId, action) => {
+    setActionLoading(userId);
+    try {
+      let result;
+      if (action === 'approve') {
+        result = await approveHostRequest(userId, {});
+      } else if (action === 'reject') {
+        result = await rejectHostRequest(userId, { reason: 'Application rejected by verifier' });
+      }
+      
+      if (result.success || result.message) {
+        alert(`Host request ${action}d successfully!`);
+        fetchData();
+      } else {
+        alert(`Failed to ${action} host request: ` + (result.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} host request:`, error);
+      alert(`Failed to ${action} host request`);
+    }
+    setActionLoading(null);
+  };
+
   return (
-    <div className="h-screen bg-[#141a45] text-white font-poppins">
-      <div className="flex h-screen">
-        <Sidebar user={user} roles={user?.roles} activeRole="verifier" />
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <NavBar user={user} />
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="max-w-4xl mx-auto py-10 px-4">
-              <h2 className="text-3xl font-bold mb-8 text-white" style={{textShadow: "0 0 8px rgba(155, 93, 229, 0.35)"}}>
-                Verifier Dashboard
-              </h2>
-              <div className="bg-gray-800/60 rounded-xl p-8 border border-gray-700/40 mb-8">
-                <h3 className="text-2xl font-semibold mb-6 text-[#9b5de5]">Pending Institution Verifications</h3>
-                {loading ? (
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <i className="ri-loader-4-line animate-spin text-2xl text-[#9b5de5]" />
-                    <span>Loading institutions...</span>
+    <Layout title="Verifier Dashboard">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <i className="ri-building-line text-2xl text-blue-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{pendingInstitutions.length}</div>
+                <div className="text-sm text-gray-400">Pending Institutions</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <i className="ri-user-star-line text-2xl text-green-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{pendingHosts.length}</div>
+                <div className="text-sm text-gray-400">Pending Host Requests</div>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <i className="ri-shield-check-line text-2xl text-purple-400" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{pendingInstitutions.length + pendingHosts.length}</div>
+                <div className="text-sm text-gray-400">Total Pending</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-gray-700">
+          <button
+            onClick={() => setActiveTab('institutions')}
+            className={`px-6 py-3 font-medium transition-all ${
+              activeTab === 'institutions'
+                ? 'text-[#9b5de5] border-b-2 border-[#9b5de5]'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <i className="ri-building-line mr-2" />
+            Institutions ({pendingInstitutions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('hosts')}
+            className={`px-6 py-3 font-medium transition-all ${
+              activeTab === 'hosts'
+                ? 'text-[#9b5de5] border-b-2 border-[#9b5de5]'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <i className="ri-user-star-line mr-2" />
+            Host Requests ({pendingHosts.length})
+          </button>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <i className="ri-loader-4-line animate-spin text-4xl text-[#9b5de5]" />
+          </div>
+        ) : (
+          <>
+            {/* Institutions Tab */}
+            {activeTab === 'institutions' && (
+              <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+                <h3 className="text-xl font-semibold mb-6 text-white">Pending Institution Verifications</h3>
+                {pendingInstitutions.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <i className="ri-building-line text-5xl mb-4 block opacity-50" />
+                    <p>No institutions pending verification.</p>
                   </div>
-                ) : pendingInstitutions.length === 0 ? (
-                  <div className="text-gray-400 text-lg">No institutions pending verification.</div>
                 ) : (
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {pendingInstitutions.map(inst => (
-                      <div key={inst._id || inst.id} className="bg-[#141a45] rounded-lg p-6 border border-gray-700/40 shadow hover:shadow-[0_0_15px_rgba(155,93,229,0.25)] transition-all">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-10 h-10 rounded-full bg-[#9b5de5]/20 flex items-center justify-center text-[#9b5de5] font-bold text-xl">
+                      <div key={inst._id || inst.id} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full bg-[#9b5de5]/20 flex items-center justify-center text-[#9b5de5] font-bold text-xl">
                             {inst.name?.charAt(0) || "I"}
                           </div>
-                          <div>
-                            <h4 className="text-lg font-semibold text-white mb-1">{inst.name}</h4>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-white">{inst.name}</h4>
                             <div className="text-xs text-gray-400">{inst.email}</div>
                           </div>
                         </div>
-                        <div className="mb-2 text-sm text-gray-300">
-                          <span className="font-medium">Domain:</span> {inst.domain || "Unknown"}
+                        <div className="space-y-1 text-sm text-gray-300 mb-4">
+                          <div><span className="text-gray-500">Domain:</span> {inst.domain || "N/A"}</div>
+                          <div><span className="text-gray-500">Location:</span> {inst.location || "N/A"}</div>
                         </div>
-                        <div className="mb-2 text-sm text-gray-300">
-                          <span className="font-medium">Location:</span> {inst.location || "TBD"}
-                        </div>
-                        {inst.description && (
-                          <div className="mb-2 text-sm text-gray-400">
-                            <span className="font-medium">Description:</span> {inst.description}
-                          </div>
-                        )}
-                        <div className="flex gap-2 mt-4">
+                        <div className="flex gap-2">
                           <button 
                             onClick={() => handleInstitutionAction(inst._id || inst.id, 'approve')}
                             disabled={actionLoading === (inst._id || inst.id)}
-                            className="flex-1 bg-[#28a745] hover:bg-[#218838] text-white px-4 py-2 rounded-lg font-medium transition-all"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (inst._id || inst.id) ? "Processing..." : "Approve"}
+                            {actionLoading === (inst._id || inst.id) ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
                           </button>
                           <button 
                             onClick={() => handleInstitutionAction(inst._id || inst.id, 'reject')}
                             disabled={actionLoading === (inst._id || inst.id)}
-                            className="flex-1 bg-[#dc3545] hover:bg-[#c82333] text-white px-4 py-2 rounded-lg font-medium transition-all"
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (inst._id || inst.id) ? "Processing..." : "Reject"}
+                            {actionLoading === (inst._id || inst.id) ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
                           </button>
                         </div>
                       </div>
@@ -118,10 +197,66 @@ export default function VerifierDashboard() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
+            )}
+
+            {/* Host Requests Tab */}
+            {activeTab === 'hosts' && (
+              <div className="bg-gray-800/60 rounded-xl p-6 border border-gray-700/40">
+                <h3 className="text-xl font-semibold mb-6 text-white">Pending Host Requests</h3>
+                {pendingHosts.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <i className="ri-user-star-line text-5xl mb-4 block opacity-50" />
+                    <p>No host requests pending verification.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {pendingHosts.map(hostUser => (
+                      <div key={hostUser._id || hostUser.id} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                            {hostUser.profilePhoto ? (
+                              <img src={hostUser.profilePhoto} alt="" className="w-12 h-12 rounded-full object-cover" />
+                            ) : (
+                              <span className="text-green-400 font-bold text-xl">{hostUser.name?.charAt(0) || "H"}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-white">{hostUser.name}</h4>
+                            <div className="text-xs text-gray-400">{hostUser.email}</div>
+                          </div>
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-300 mb-4">
+                          <div><span className="text-gray-500">Phone:</span> {hostUser.phone || "N/A"}</div>
+                          <div><span className="text-gray-500">Institution:</span> {hostUser.institutionId?.name || hostUser.institution || "N/A"}</div>
+                          {hostUser.hostEligibilityStatus?.reason && (
+                            <div><span className="text-gray-500">Reason:</span> {hostUser.hostEligibilityStatus.reason}</div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleHostAction(hostUser._id || hostUser.id, 'approve')}
+                            disabled={actionLoading === (hostUser._id || hostUser.id)}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                          >
+                            {actionLoading === (hostUser._id || hostUser.id) ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
+                          </button>
+                          <button 
+                            onClick={() => handleHostAction(hostUser._id || hostUser.id, 'reject')}
+                            disabled={actionLoading === (hostUser._id || hostUser.id)}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
+                          >
+                            {actionLoading === (hostUser._id || hostUser.id) ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </div>
+    </Layout>
   );
 }

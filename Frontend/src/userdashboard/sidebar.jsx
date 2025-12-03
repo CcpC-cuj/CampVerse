@@ -140,7 +140,6 @@ const Sidebar = ({ onDiscoverClick }) => {
               <SidebarSection title="Host Panel" />
               <SidebarLink icon="ri-calendar-2-line" to="/host/manage-events" label="Manage Events" />
               <SidebarLink icon="ri-bar-chart-grouped-line" to="/host/analytics" label="Host Analytics" />
-              <SidebarLink icon="ri-settings-4-line" to="/host/settings" label="Host Settings" />
             </>
           )}
           

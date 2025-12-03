@@ -107,6 +107,9 @@ const CertificateManagementModal = ({ event, onClose }) => {
     window.location.href = `/host/events/${event._id}/certificates`;
   };
 
+  // Check if certificates are enabled for this event
+  const isCertificateEnabled = event?.features?.certificateEnabled || event?.certificateEnabled;
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
@@ -359,22 +362,29 @@ const CertificateManagementModal = ({ event, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-700 flex justify-between items-center">
-          <button
-            onClick={handleGenerateCertificates}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Generate Certificates
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
-          >
-            Close
-          </button>
+        <div className="p-6 border-t border-gray-700 flex flex-col gap-3">
+          {!isCertificateEnabled && (
+            <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 text-yellow-300 text-sm">
+              <strong>Note:</strong> Certificates are not enabled for this event. Click "Manage Certificates" to enable and configure them first.
+            </div>
+          )}
+          <div className="flex justify-between items-center">
+            <button
+              onClick={handleGenerateCertificates}
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {isCertificateEnabled ? 'Generate Certificates' : 'Manage Certificates'}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

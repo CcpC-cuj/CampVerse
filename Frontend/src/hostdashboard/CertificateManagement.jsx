@@ -44,6 +44,41 @@ import {
   FileUpload,
 } from '@mui/icons-material';
 
+// Predefined certificate templates from cloud storage
+const CERTIFICATE_TEMPLATES = [
+  {
+    id: 'classic-blue',
+    name: 'Classic Blue',
+    preview: '/templates/classic-blue-preview.png',
+    url: 'https://storage.campverse.com/templates/classic-blue.png',
+    type: 'participation'
+  },
+  {
+    id: 'modern-purple',
+    name: 'Modern Purple',
+    preview: '/templates/modern-purple-preview.png',
+    url: 'https://storage.campverse.com/templates/modern-purple.png',
+    type: 'participation'
+  },
+  {
+    id: 'elegant-gold',
+    name: 'Elegant Gold',
+    preview: '/templates/elegant-gold-preview.png',
+    url: 'https://storage.campverse.com/templates/elegant-gold.png',
+    type: 'achievement'
+  },
+  {
+    id: 'minimal-dark',
+    name: 'Minimal Dark',
+    preview: '/templates/minimal-dark-preview.png',
+    url: 'https://storage.campverse.com/templates/minimal-dark.png',
+    type: 'participation'
+  }
+];
+
+// CampVerse logo URL (always used on right side)
+const CAMPVERSE_LOGO_URL = '/logo.png';
+
 const CertificateManagement = ({ eventId }) => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +91,10 @@ const CertificateManagement = ({ eventId }) => {
   const [awardText, setAwardText] = useState('');
   const [leftSignatory, setLeftSignatory] = useState({ name: '', title: '' });
   const [rightSignatory, setRightSignatory] = useState({ name: '', title: '' });
+  
+  // Template selection
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   
   // Upload states
   const [templateFile, setTemplateFile] = useState(null);
@@ -436,7 +475,7 @@ const CertificateManagement = ({ eventId }) => {
                 <Card variant="outlined">
                   <CardContent>
                     <Typography variant="h4" color="warning.main">
-                      {certificateStatus.totalAttended - certificateStatus.certificatesGenerated}
+                      {(certificateStatus.totalAttended || 0) - (certificateStatus.certificatesGenerated || 0)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Pending
@@ -628,25 +667,47 @@ const CertificateManagement = ({ eventId }) => {
               Upload all required files for certificate generation. Supported formats: PNG, JPG, JPEG
             </Typography>
 
+            {/* Template Selection */}
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Certificate Template (PNG/JPG)
+                Certificate Template
               </Typography>
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                onChange={(e) => setTemplateFile(e.target.files[0])}
-              />
-              {templateFile && (
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setTemplateGalleryOpen(true)}
+                  startIcon={<Preview />}
+                >
+                  Choose from Templates
+                </Button>
+                <Typography variant="body2" color="text.secondary">or</Typography>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={(e) => {
+                    setTemplateFile(e.target.files[0]);
+                    setSelectedTemplate(null);
+                  }}
+                />
+              </Box>
+              {selectedTemplate && (
+                <Chip 
+                  label={`Selected: ${selectedTemplate.name}`} 
+                  color="primary" 
+                  onDelete={() => setSelectedTemplate(null)}
+                  sx={{ mb: 1 }}
+                />
+              )}
+              {templateFile && !selectedTemplate && (
                 <Typography variant="caption" color="success.main">
-                  ✓ {templateFile.name}
+                  ✓ Custom: {templateFile.name}
                 </Typography>
               )}
             </Box>
 
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Left Logo (PNG recommended)
+                Left Logo (Your Organization - PNG recommended)
               </Typography>
               <input
                 type="file"
@@ -660,20 +721,16 @@ const CertificateManagement = ({ eventId }) => {
               )}
             </Box>
 
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Right Logo (PNG recommended)
+                Right Logo (CampVerse) - Auto-applied
               </Typography>
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                onChange={(e) => setRightLogoFile(e.target.files[0])}
-              />
-              {rightLogoFile && (
-                <Typography variant="caption" color="success.main">
-                  ✓ {rightLogoFile.name}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <img src={CAMPVERSE_LOGO_URL} alt="CampVerse" style={{ height: 40 }} />
+                <Typography variant="caption" color="text.secondary">
+                  CampVerse logo will be automatically applied to the right side of all certificates.
                 </Typography>
-              )}
+              </Box>
             </Box>
 
             <Box sx={{ mb: 3 }}>
@@ -711,8 +768,107 @@ const CertificateManagement = ({ eventId }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUploadAssets} variant="contained" disabled={!templateFile}>
+          <Button onClick={handleUploadAssets} variant="contained" disabled={!templateFile && !selectedTemplate}>
             Upload Assets
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Template Gallery Dialog */}
+      <Dialog open={templateGalleryOpen} onClose={() => setTemplateGalleryOpen(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Preview />
+            Choose Certificate Template
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Select a pre-designed template for your certificates. The CampVerse logo will be automatically applied on the right side.
+            </Typography>
+            
+            <Grid container spacing={3}>
+              {CERTIFICATE_TEMPLATES.map((template) => (
+                <Grid item xs={12} sm={6} md={3} key={template.id}>
+                  <Card 
+                    sx={{ 
+                      cursor: 'pointer',
+                      border: selectedTemplate?.id === template.id ? '2px solid #9b5de5' : '1px solid #e0e0e0',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 3
+                      }
+                    }}
+                    onClick={() => {
+                      setSelectedTemplate(template);
+                      setTemplateFile(null);
+                    }}
+                  >
+                    <Box sx={{ 
+                      height: 180, 
+                      bgcolor: 'grey.200', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      position: 'relative'
+                    }}>
+                      <img 
+                        src={template.preview} 
+                        alt={template.name}
+                        style={{ 
+                          maxWidth: '100%', 
+                          maxHeight: '100%', 
+                          objectFit: 'contain' 
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = '<div style="text-align:center;padding:20px;color:#666;">Preview Not Available</div>';
+                        }}
+                      />
+                      {selectedTemplate?.id === template.id && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: 8, 
+                          right: 8,
+                          bgcolor: '#9b5de5',
+                          borderRadius: '50%',
+                          width: 28,
+                          height: 28,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <CheckCircle sx={{ color: 'white', fontSize: 20 }} />
+                        </Box>
+                      )}
+                    </Box>
+                    <CardContent sx={{ p: 2 }}>
+                      <Typography variant="subtitle1" fontWeight="medium">
+                        {template.name}
+                      </Typography>
+                      <Chip 
+                        label={template.type} 
+                        size="small" 
+                        sx={{ mt: 1, fontSize: '0.7rem' }}
+                        color={template.type === 'achievement' ? 'warning' : 'primary'}
+                      />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTemplateGalleryOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={() => setTemplateGalleryOpen(false)} 
+            variant="contained"
+            disabled={!selectedTemplate}
+          >
+            Use Selected Template
           </Button>
         </DialogActions>
       </Dialog>
