@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
+import { useModal } from "../components/Modal";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
+// Helper to format location object
+const formatLocation = (location) => {
+  if (!location) return null;
+  if (typeof location === 'string') return location;
+  if (typeof location === 'object') {
+    const parts = [location.city, location.state, location.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : null;
+  }
+  return null;
+};
+
 export default function InstitutionManagement() {
+  const { showSuccess, showError, showPrompt } = useModal();
   const [institutions, setInstitutions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -22,7 +35,7 @@ export default function InstitutionManagement() {
       });
       const data = await res.json();
       setInstitutions(Array.isArray(data?.institutions) ? data.institutions : Array.isArray(data) ? data : []);
-    } catch (err) {
+    } catch {
       setInstitutions([]);
     }
     setLoading(false);
@@ -40,19 +53,24 @@ export default function InstitutionManagement() {
         }
       });
       if (res.ok) {
-        alert('Institution approved successfully!');
+        await showSuccess('Institution approved successfully!');
         fetchInstitutions();
       } else {
-        alert('Failed to approve institution');
+        await showError('Failed to approve institution');
       }
-    } catch (err) {
-      alert('Error approving institution');
+    } catch {
+      await showError('Error approving institution');
     }
     setActionLoading(null);
   };
 
   const handleReject = async (institutionId) => {
-    const reason = prompt('Reason for rejection:');
+    const reason = await showPrompt('Please provide a reason for rejection:', {
+      title: 'Reject Institution',
+      placeholder: 'Enter rejection reason...',
+      confirmText: 'Reject',
+      variant: 'danger'
+    });
     if (!reason) return;
 
     setActionLoading(institutionId);
@@ -67,13 +85,13 @@ export default function InstitutionManagement() {
         body: JSON.stringify({ reason })
       });
       if (res.ok) {
-        alert('Institution rejected');
+        await showSuccess('Institution rejected');
         fetchInstitutions();
       } else {
-        alert('Failed to reject institution');
+        await showError('Failed to reject institution');
       }
-    } catch (err) {
-      alert('Error rejecting institution');
+    } catch {
+      await showError('Error rejecting institution');
     }
     setActionLoading(null);
   };
@@ -187,10 +205,10 @@ export default function InstitutionManagement() {
                         <span>{inst.domain}</span>
                       </div>
                     )}
-                    {inst.location && (
+                    {formatLocation(inst.location) && (
                       <div className="flex items-center gap-2 text-gray-300">
                         <i className="ri-map-pin-line text-gray-500" />
-                        <span>{inst.location}</span>
+                        <span>{formatLocation(inst.location)}</span>
                       </div>
                     )}
                     {inst.description && (

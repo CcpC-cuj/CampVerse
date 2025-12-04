@@ -30,6 +30,7 @@ export async function verifyOtp({ email, otp }) {
   const data = await res.json();
   if (data.token) {
     localStorage.setItem('token', data.token);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
@@ -44,6 +45,7 @@ export async function login({ email, password }) {
   const data = await res.json();
   if (data.token) {
     localStorage.setItem('token', data.token);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
@@ -59,6 +61,7 @@ export async function googleSignIn({ token }) {
   const data = await res.json();
   if (data.token) {
     localStorage.setItem('token', data.token);
+    if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;

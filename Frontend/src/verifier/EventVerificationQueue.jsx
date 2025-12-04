@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { listEvents, verifyEvent, rejectEvent } from "../api/events";
+import { useModal } from "../components/Modal";
 
 export default function EventVerificationQueue() {
+  const { showSuccess, showError, showPrompt } = useModal();
   const [pendingEvents, setPendingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -29,27 +31,36 @@ export default function EventVerificationQueue() {
       if (action === 'verify') {
         result = await verifyEvent(eventId);
         if (result.success !== false) {
-          alert('Event verified successfully!');
+          await showSuccess('Event verified successfully!');
           const res = await listEvents({ status: "pending" });
           const events = res?.data?.events || [];
           setPendingEvents(Array.isArray(events) ? events : []);
         } else {
-          alert('Failed to verify event: ' + (result.error || 'Unknown error'));
+          await showError('Failed to verify event: ' + (result.error || 'Unknown error'));
         }
       } else if (action === 'reject') {
-        const reason = prompt('Please provide a reason for rejection (optional):');
+        const reason = await showPrompt('Please provide a reason for rejection (optional):', {
+          title: 'Reject Event',
+          placeholder: 'Enter rejection reason...',
+          confirmText: 'Reject',
+          variant: 'danger'
+        });
+        if (reason === null) {
+          setActionLoading(null);
+          return;
+        }
         result = await rejectEvent(eventId, reason);
         if (result.success !== false) {
-          alert('Event rejected successfully!');
+          await showSuccess('Event rejected successfully!');
           const res = await listEvents({ status: "pending" });
           const events = res?.data?.events || [];
           setPendingEvents(Array.isArray(events) ? events : []);
         } else {
-          alert('Failed to reject event: ' + (result.error || 'Unknown error'));
+          await showError('Failed to reject event: ' + (result.error || 'Unknown error'));
         }
       }
     } catch {
-      alert(`Failed to ${action} event`);
+      await showError(`Failed to ${action} event`);
     }
     setActionLoading(null);
   };

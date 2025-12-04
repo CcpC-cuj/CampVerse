@@ -2,6 +2,7 @@ import { CreateEventForm } from "./hostdashboard";
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ModalProvider } from "./components/Modal";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Import pages
@@ -85,19 +86,20 @@ const OAuthDetector = () => {
 function App() {
   return (
     <AuthProvider>
-      <EventProvider>
-        <Router>
-          <OAuthDetector />
-          <Routes>
-            {/* Test route for event creation */}
-            <Route path="/test-create-event" element={<CreateEventForm />} />
-            <Route path="/" element={<Landing />} />
-            <Route
-              path="/dashboard/*"
-              element={
-                <ProtectedRoute>
-                  <UserDashboard />
-                </ProtectedRoute>
+      <ModalProvider>
+        <EventProvider>
+          <Router>
+            <OAuthDetector />
+            <Routes>
+              {/* Test route for event creation */}
+              <Route path="/test-create-event" element={<CreateEventForm />} />
+              <Route path="/" element={<Landing />} />
+              <Route
+                path="/dashboard/*"
+                element={
+                  <ProtectedRoute>
+                    <UserDashboard />
+                  </ProtectedRoute>
               }
             />
             <Route
@@ -343,6 +345,7 @@ function App() {
           </Routes>
         </Router>
       </EventProvider>
+      </ModalProvider>
     </AuthProvider>
   );
 }

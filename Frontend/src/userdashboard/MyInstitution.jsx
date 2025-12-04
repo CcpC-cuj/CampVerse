@@ -10,6 +10,121 @@ import {
 } from "../api/institution";
 import GradientCircularProgress from "../components/GradientCircularProgress";
 
+// Member Profile Modal Component
+const MemberProfileModal = ({ member, onClose, isCurrentUser }) => {
+  if (!member) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-gray-800/95 border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl transform transition-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          <i className="ri-close-line text-2xl"></i>
+        </button>
+
+        {/* Profile header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="relative">
+            <img
+              src={member.profilePic || "/default-avatar.png"}
+              alt={member.name}
+              className="w-24 h-24 rounded-full object-cover border-4 border-[#9b5de5]/30"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = "/default-avatar.png";
+              }}
+            />
+            {isCurrentUser && (
+              <span className="absolute -bottom-1 -right-1 bg-[#9b5de5] text-white text-xs px-2 py-0.5 rounded-full">
+                You
+              </span>
+            )}
+          </div>
+          <h2 className="text-xl font-bold text-white mt-4">{member.name}</h2>
+          
+          {/* Roles */}
+          {member.roles?.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+              {member.roles.map((role) => (
+                <span
+                  key={role}
+                  className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full capitalize"
+                >
+                  {role}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bio */}
+        {member.bio && (
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">About</h3>
+            <p className="text-gray-300 text-sm">{member.bio}</p>
+          </div>
+        )}
+
+        {/* Interests */}
+        {member.interests?.length > 0 && (
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-400 mb-2">Interests</h3>
+            <div className="flex flex-wrap gap-2">
+              {member.interests.map((interest, idx) => (
+                <span
+                  key={idx}
+                  className="text-sm bg-[#9b5de5]/20 text-[#9b5de5] px-3 py-1 rounded-full"
+                >
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No additional info message */}
+        {!member.bio && !member.interests?.length && (
+          <div className="text-center text-gray-500 py-4">
+            <i className="ri-user-smile-line text-3xl mb-2 block"></i>
+            <p className="text-sm">No additional information available</p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg transition-colors"
+          >
+            Close
+          </button>
+          {!isCurrentUser && (
+            <button
+              className="flex-1 bg-[#9b5de5] hover:bg-[#8c4be1] text-white py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+              onClick={() => {
+                // Future: Add connect/message functionality
+                onClose();
+              }}
+            >
+              <i className="ri-user-add-line"></i>
+              Connect
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MyInstitution = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,6 +137,8 @@ const MyInstitution = () => {
   const [eventFilter, setEventFilter] = useState("upcoming");
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+
 
   const institutionId = user?.institutionId;
 
@@ -405,10 +522,11 @@ const MyInstitution = () => {
                   {members.map((member) => (
                     <div
                       key={member._id}
-                      className={`bg-gray-800/60 border rounded-xl p-4 ${
+                      onClick={() => setSelectedMember(member)}
+                      className={`bg-gray-800/60 border rounded-xl p-4 cursor-pointer hover:bg-gray-800/80 transition-all ${
                         member.isCurrentUser
-                          ? "border-[#9b5de5]/50"
-                          : "border-gray-700"
+                          ? "border-[#9b5de5]/50 hover:border-[#9b5de5]"
+                          : "border-gray-700 hover:border-gray-600"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -416,6 +534,10 @@ const MyInstitution = () => {
                           src={member.profilePic || "/default-avatar.png"}
                           alt={member.name}
                           className="w-12 h-12 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/default-avatar.png";
+                          }}
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -437,6 +559,8 @@ const MyInstitution = () => {
                             ))}
                           </div>
                         </div>
+                        {/* Arrow indicator */}
+                        <i className="ri-arrow-right-s-line text-gray-500"></i>
                       </div>
                       {member.interests?.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-3">
@@ -458,6 +582,15 @@ const MyInstitution = () => {
           )}
         </div>
       </div>
+
+      {/* Member Profile Modal */}
+      {selectedMember && (
+        <MemberProfileModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          isCurrentUser={selectedMember.isCurrentUser}
+        />
+      )}
     </div>
   );
 };

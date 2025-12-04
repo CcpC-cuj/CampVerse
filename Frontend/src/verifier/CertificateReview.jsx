@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import { getCertificateDashboard } from "../api/certificates";
+import { useModal } from "../components/Modal";
 
 export default function CertificateReview() {
+  const { showSuccess, showError, showPrompt } = useModal();
   const [pendingCertificates, setPendingCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -19,7 +21,7 @@ export default function CertificateReview() {
       const certs = Array.isArray(res?.data?.certificates) ? res.data.certificates : 
                     Array.isArray(res?.certificates) ? res.certificates : [];
       setPendingCertificates(certs);
-    } catch (err) {
+    } catch {
       setPendingCertificates([]);
     }
     setLoading(false);
@@ -35,19 +37,24 @@ export default function CertificateReview() {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        alert('Certificate approved successfully!');
+        await showSuccess('Certificate approved successfully!');
         fetchPendingCertificates();
       } else {
-        alert('Failed to approve certificate');
+        await showError('Failed to approve certificate');
       }
-    } catch (err) {
-      alert('Error approving certificate');
+    } catch {
+      await showError('Error approving certificate');
     }
     setActionLoading(null);
   };
 
   const handleRejectCertificate = async (certId) => {
-    const reason = prompt('Please provide a reason for rejection:');
+    const reason = await showPrompt('Please provide a reason for rejection:', {
+      title: 'Reject Certificate',
+      placeholder: 'Enter rejection reason...',
+      confirmText: 'Reject',
+      variant: 'danger'
+    });
     if (!reason) return;
     
     setActionLoading(certId);
@@ -62,13 +69,13 @@ export default function CertificateReview() {
         body: JSON.stringify({ reason })
       });
       if (res.ok) {
-        alert('Certificate rejected successfully!');
+        await showSuccess('Certificate rejected successfully!');
         fetchPendingCertificates();
       } else {
-        alert('Failed to reject certificate');
+        await showError('Failed to reject certificate');
       }
-    } catch (err) {
-      alert('Error rejecting certificate');
+    } catch {
+      await showError('Error rejecting certificate');
     }
     setActionLoading(null);
   };

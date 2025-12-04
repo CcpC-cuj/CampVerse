@@ -810,20 +810,35 @@ async function verifyOtp(req, res) {
         await user.save();
       }
       await redisClient.del(email);
-      const token = jwt.sign(
-        { id: user._id, roles: user.roles, name: user.name },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-          issuer: "campverse",
-          audience: "campverse-users",
-        },
-      );
-      return res.json({
-        message: "OTP verified, logged in.",
-        token,
-        user: sanitizeUser(user),
-      });
+      
+      // Use new token service for access + refresh tokens
+      try {
+        const { generateTokenPair } = require('../Services/tokenService');
+        const tokens = await generateTokenPair(user, req, 'email');
+        return res.json({
+          message: "OTP verified, logged in.",
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresIn: tokens.expiresIn,
+          user: sanitizeUser(user),
+        });
+      } catch (tokenError) {
+        // Fallback to old token generation
+        const token = jwt.sign(
+          { id: user._id, roles: user.roles, name: user.name },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "1h",
+            issuer: "campverse",
+            audience: "campverse-users",
+          },
+        );
+        return res.json({
+          message: "OTP verified, logged in.",
+          token,
+          user: sanitizeUser(user),
+        });
+      }
     }
 
     // New user registration - no automatic institution creation
@@ -847,20 +862,34 @@ async function verifyOtp(req, res) {
     await user.save();
     await redisClient.del(email);
 
-    const token = jwt.sign(
-      { id: user._id, roles: user.roles, name: user.name },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-        issuer: "campverse",
-        audience: "campverse-users",
-      },
-    );
-    return res.status(201).json({
-      message: "Registration successful, logged in.",
-      token,
-      user: sanitizeUser(user),
-    });
+    // Use new token service for access + refresh tokens
+    try {
+      const { generateTokenPair } = require('../Services/tokenService');
+      const tokens = await generateTokenPair(user, req, 'email');
+      return res.status(201).json({
+        message: "Registration successful, logged in.",
+        token: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+        user: sanitizeUser(user),
+      });
+    } catch (tokenError) {
+      // Fallback to old token generation
+      const token = jwt.sign(
+        { id: user._id, roles: user.roles, name: user.name },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
+      );
+      return res.status(201).json({
+        message: "Registration successful, logged in.",
+        token,
+        user: sanitizeUser(user),
+      });
+    }
   } catch (err) {
     logger.error("Verify OTP error:", err);
     return res

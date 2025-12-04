@@ -816,7 +816,7 @@ async function getInstitutionMembers(req, res) {
     const members = await User.find({ 
       institutionId: new mongoose.Types.ObjectId(institutionId)
     })
-      .select('name email profilePic roles interests createdAt')
+      .select('name email profilePhoto roles interests createdAt bio')
       .sort({ name: 1 })
       .skip(skip)
       .limit(limit)
@@ -827,10 +827,12 @@ async function getInstitutionMembers(req, res) {
     });
 
     // Don't include current user's email in the list for privacy
+    // Map profilePhoto to profilePic for frontend compatibility
     const sanitizedMembers = members.map(m => ({
       _id: m._id,
       name: m.name,
-      profilePic: m.profilePic,
+      profilePic: m.profilePhoto, // Map to profilePic for frontend
+      bio: m.bio,
       roles: m.roles?.filter(r => r !== 'user') || [], // Only show special roles
       interests: m.interests?.slice(0, 3) || [],
       isCurrentUser: m._id.toString() === currentUserId
