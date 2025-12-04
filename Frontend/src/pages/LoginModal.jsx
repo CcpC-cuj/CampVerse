@@ -91,7 +91,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white">Welcome Back</h2>
-          <p className="text-sm text-purple-300">Server under maintenance.<br />Please Continue with Google to log in.</p>
+          <p className="text-sm text-purple-300">Log in to your account</p>
         </div>
 
         {error && (
@@ -114,10 +114,9 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
             type="email"
             name="email"
             placeholder="College Email"
-            disabled
             value={formData.email}
             onChange={handleInputChange}
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed"
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
             required
           />
 
@@ -126,15 +125,14 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
-              disabled
               value={formData.password}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-60 cursor-not-allowed"
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
             />
             <span
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 opacity-60 cursor-not-allowed"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-pointer hover:text-white"
             >
               {showPassword ? "Hide" : "Show"}
             </span>
@@ -142,8 +140,8 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
 
           <button
             type="submit"
-            disabled
-            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Logging in...' : 'Log In'}
           </button>
@@ -151,8 +149,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
               <div className="flex justify-end mt-2">
                 <button
                   type="button"
-                  disabled
-                  className="text-purple-400 text-sm underline opacity-60 cursor-not-allowed"
+                  className="text-purple-400 text-sm underline hover:text-white"
                   onClick={typeof onForgotPassword === 'function' ? onForgotPassword : undefined}
                 >
                   Forgot Password?

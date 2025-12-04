@@ -3,7 +3,7 @@ services:
     build:
       context: ./Frontend
       args:
-        - VITE_GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
+        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
     ports:
       - "3000:80"
     depends_on:
@@ -21,20 +21,17 @@ services:
     environment:
       - MONGO_URI=mongodb://mongo:27017/campverse
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=48hJ9dKf
-      # - EMAIL_USER=imkkrish05@gmail.com
-      # - EMAIL_PASSWORD=znbafaztvcqjkskd
+      - JWT_SECRET=${JWT_SECRET}
       - ML_CERTIFICATE_API_URL=https://ml-certificate-api.example.com
-      - ML_API_KEY=your_ml_api_key_here
+      - ML_API_KEY=${ML_API_KEY}
       - ML_API_URL=http://ml-recommendation:5002
       - ML_RECOMMENDATION_ENABLED=true
       - ML_SERVICE_URL=http://ml-certificate:8000
-      - GOOGLE_CLIENT_ID=198659637864-5cuoj02gsl3iusq3hu46l5ckl19qq8hv.apps.googleusercontent.com
-      - FRONTEND_URL=http://localhost:3000
-      # Alternative email service (uncomment if Gmail doesn't work)
-      - EMAIL_USER=krish.hansdiha@gmail.com
-      - EMAIL_PASSWORD=zeyf wiyznnuhpacu
-      - JWT_SECRET=your_jwt_secret_key_here_make_it_very_secure_and_long
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
       
       # Storage Configuration
       # Development: Firebase (for GitHub)

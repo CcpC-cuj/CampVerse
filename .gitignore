@@ -8,9 +8,9 @@ Backend/credentials/
 # Sensitive configuration files
 Backend/config/supabase.env
 *.env
+!.env.example
 **/supabase.env
 docs/PPT_IIC 3RD NEW_merged (1).pdf
 ML/chatbot/venv/
 ML/chatbot/__pycache__
 .config/
-.env.example
