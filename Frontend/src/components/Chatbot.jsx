@@ -16,7 +16,7 @@ const Chatbot = () => {
 		}
 	}, [messages, open]);
 
-	const CHATBOT_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8000/chatbot";
+	const CHATBOT_URL = import.meta.env.VITE_CHATBOT_URL || "https://imkrish-chatbot.hf.space/chatbot";
 	const sendMessage = async (e) => {
 		e.preventDefault();
 		if (!input.trim()) return;
