@@ -373,10 +373,12 @@ async function getPendingInstitutionVerifications(req, res) {
 async function getInstitutionAnalytics(req, res) {
   try {
     const institutionId = req.params.id;
-    const studentCount = await User.countDocuments({ institutionId });
-    const eventCount = await Event.countDocuments({ institutionId });
+    const instObjectId = new mongoose.Types.ObjectId(institutionId);
+    const studentCount = await User.countDocuments({ institutionId: instObjectId });
+    const eventCount = await Event.countDocuments({ institutionId: instObjectId });
     res.json({ studentCount, eventCount });
   } catch (err) {
+    logger.error('Error fetching institution analytics:', err);
     res.status(500).json({ error: 'Error fetching analytics.' });
   }
 }
