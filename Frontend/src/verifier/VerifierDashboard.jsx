@@ -227,7 +227,20 @@ export default function VerifierDashboard() {
                         </div>
                         <div className="space-y-1 text-sm text-gray-300 mb-4">
                           <div><span className="text-gray-500">Phone:</span> {hostUser.phone || "N/A"}</div>
-                          <div><span className="text-gray-500">Institution:</span> {typeof hostUser.institutionId === 'object' ? (hostUser.institutionId?.name || "N/A") : (typeof hostUser.institution === 'object' ? (hostUser.institution?.name || "N/A") : (hostUser.institution || "N/A"))}</div>
+                          <div><span className="text-gray-500">Institution:</span> {
+                            (() => {
+                              if (hostUser.institutionId && typeof hostUser.institutionId === 'object' && hostUser.institutionId.name) {
+                                return hostUser.institutionId.name;
+                              }
+                              if (hostUser.institution && typeof hostUser.institution === 'string') {
+                                return hostUser.institution;
+                              }
+                              if (hostUser.institution && typeof hostUser.institution === 'object' && hostUser.institution.name) {
+                                return hostUser.institution.name;
+                              }
+                              return "N/A";
+                            })()
+                          }</div>
                           {hostUser.hostEligibilityStatus?.reason && typeof hostUser.hostEligibilityStatus.reason === 'string' && (
                             <div><span className="text-gray-500">Reason:</span> {hostUser.hostEligibilityStatus.reason}</div>
                           )}
