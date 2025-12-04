@@ -29,7 +29,6 @@ const HostSettings = () => {
     pushNotifications: true,
     eventUpdates: true,
     participantMessages: true,
-  // ...existing code...
     marketingEmails: false,
     weeklyReports: true,
     reminderNotifications: true

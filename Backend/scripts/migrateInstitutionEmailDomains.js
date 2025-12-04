@@ -3,17 +3,17 @@ const Institution = require('../Models/Institution');
 
 async function migrateInstitutionEmailDomains() {
   try {
-  // ...existing code...
+    console.log('Starting institution email domains migration...');
 
     // Connect to MongoDB
     await mongoose.connect(
       process.env.MONGO_URI || 'mongodb://localhost:27017/campverse',
     );
-    // ...existing code...
+    console.log('Connected to MongoDB');
 
     // Find all institutions
     const institutions = await Institution.find({});
-    // ...existing code...
+    console.log(`Found ${institutions.length} institutions`);
 
     // Group by email domain to find duplicates
     const domainGroups = {};
@@ -27,26 +27,26 @@ async function migrateInstitutionEmailDomains() {
 
     // Process duplicates
     let duplicatesFound = 0;
-    for (const [, insts] of Object.entries(domainGroups)) {
+    for (const [domain, insts] of Object.entries(domainGroups)) {
       if (insts.length > 1) {
         duplicatesFound++;
-        // ...existing code...
+        console.log(`Found ${insts.length} institutions with domain: ${domain}`);
 
         // Keep the first one, mark others for deletion
         const [keep, ...remove] = insts;
-        // ...existing code...
+        console.log(`Keeping: ${keep.name} (${keep._id})`);
 
         // Update users to reference the kept institution
         const User = require('../Models/User');
         for (const removeInst of remove) {
-          // ...existing code...
+          console.log(`Removing: ${removeInst.name} (${removeInst._id})`);
 
           // Update users that reference the removed institution
           await User.updateMany(
             { institutionId: removeInst._id },
             { institutionId: keep._id },
           );
-          // ...existing code...
+          console.log(`Updated users from ${removeInst._id} to ${keep._id}`);
 
           // Delete the duplicate institution
           await Institution.findByIdAndDelete(removeInst._id);
@@ -55,9 +55,9 @@ async function migrateInstitutionEmailDomains() {
     }
 
     if (duplicatesFound === 0) {
-      // ...existing code...
+      console.log('No duplicate institutions found');
     } else {
-      // ...existing code...
+      console.log(`Processed ${duplicatesFound} duplicate domain groups`);
     }
 
     // Verify no duplicates remain
@@ -68,18 +68,18 @@ async function migrateInstitutionEmailDomains() {
     const uniqueDomains = new Set(remainingDomains);
 
     if (remainingDomains.length === uniqueDomains.size) {
-      // ...existing code...
+      console.log('Migration complete - no duplicates remain');
     } else {
-      // ...existing code...
+      console.log('Warning: Some duplicates may still exist');
     }
 
-  // ...existing code...
+    console.log('Migration finished successfully');
   } catch (error) {
     console.error('Migration failed:', error);
     process.exit(1);
   } finally {
     await mongoose.disconnect();
-  // ...existing code...
+    console.log('Disconnected from MongoDB');
   }
 }
 
