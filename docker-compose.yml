@@ -79,7 +79,7 @@ services:
       start_period: 15s
     restart: unless-stopped
 
-  # Chatbot microservice (DISABLED - not needed for testing)
+  # Chatbot microservice with Gemini AI integration
   chatbot:
     build:
       context: ./ML/chatbot
@@ -89,6 +89,7 @@ services:
       - "7860:7860"
     environment:
       - BACKEND_URL=http://backend:5001
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - LOG_LEVEL=INFO
     volumes:
       - ./ML/chatbot:/app
