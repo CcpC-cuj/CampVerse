@@ -9,7 +9,7 @@ require('dotenv').config();
 const { unifiedStorageService, getProviderInfo, healthCheck } = require('../Services/driveService');
 
 async function testStorageService() {
-  // ...existing code...
+  console.log('Starting storage service tests...');
   
   try {
     // Test 1: Get provider info
@@ -37,7 +37,8 @@ async function testStorageService() {
     
     
   } catch (error) {
-    // ...existing code...
+    console.error('Storage service test failed:', error);
+    throw error;
   }
 }
 

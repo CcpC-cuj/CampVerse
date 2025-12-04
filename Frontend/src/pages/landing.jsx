@@ -56,7 +56,8 @@ const Landing = () => {
             const response = await googleSignIn({ token: oauthToken });
             
             if (response.token) {
-              login(response.token, response.user);
+              // Pass refresh token if available
+              login(response.token, response.user, response.refreshToken);
               // Clear the hash and redirect
               window.location.hash = '';
               navigate('/dashboard');
@@ -159,16 +160,18 @@ const Landing = () => {
             try {
               const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
               if (res.token && res.user) {
-                  // Update AuthContext state
-                  login(res.token, res.user);
+                  // Update AuthContext state with refresh token
+                  login(res.token, res.user, res.refreshToken);
                   setShowOtp(false);
                   // Use navigate instead of window.location.href for better routing
                   navigate('/dashboard');
                 } else {
-                  // ...existing code...
+                  // OTP verification failed
+                  throw new Error(res.error || 'OTP verification failed');
                 }
             } catch (err) {
-              // ...existing code...
+              console.error('OTP verification error:', err);
+              throw err; // Re-throw to let OtpModal handle the error display
             }
           }}
           onResendOtp={async () => {
@@ -177,10 +180,11 @@ const Landing = () => {
               if (res.message) {
                   // The timer reset is handled inside OtpModal via setTimer(30)
                 } else {
-                  // ...existing code...
+                  throw new Error(res.error || 'Failed to resend OTP');
                 }
             } catch (err) {
-              // ...existing code...
+              console.error('Resend OTP error:', err);
+              throw err; // Re-throw to let OtpModal handle the error display
             }
           }}
         />

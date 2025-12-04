@@ -194,7 +194,7 @@ const HostEventsDashboard = () => {
 
       // Validate required organizer fields
       if (!organizer.name || !organizer.type) {
-  // ...existing code...
+        alert('Organization name and type are required');
         setLoading(false);
         return;
       }
@@ -260,14 +260,14 @@ const HostEventsDashboard = () => {
         setShowCreateModal(false);
         resetForm();
         loadEvents(); // Reload events
-  // ...existing code...
+        // Event created successfully
       } else {
         console.error('Create event response:', response);
-  // ...existing code...
+        alert(response.error || 'Failed to create event');
       }
     } catch (err) {
       console.error('Error creating event:', err);
-  // ...existing code...
+      alert('Error creating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -306,13 +306,13 @@ const HostEventsDashboard = () => {
       
       // Validate required fields
       if (!eventForm.title.trim()) {
-  // ...existing code...
+        alert('Event title is required');
         setLoading(false);
         return;
       }
       
       if (!eventForm.date) {
-  // ...existing code...
+        alert('Event date is required');
         setLoading(false);
         return;
       }
@@ -321,7 +321,7 @@ const HostEventsDashboard = () => {
       const startDate = new Date(eventForm.date);
       const now = new Date();
       if (startDate <= now && !editingEvent._id) {
-  // ...existing code...
+        alert('Event start date must be in the future');
         setLoading(false);
         return;
       }
@@ -330,7 +330,7 @@ const HostEventsDashboard = () => {
       if (eventForm.endDate) {
         const endDate = new Date(eventForm.endDate);
         if (endDate <= startDate) {
-          // ...existing code...
+          alert('End date must be after start date');
           setLoading(false);
           return;
         }
@@ -371,13 +371,13 @@ const HostEventsDashboard = () => {
         setEditingEvent(null);
         resetForm();
         loadEvents();
-  // ...existing code...
+        // Event updated successfully
       } else {
-  // ...existing code...
+        alert(response.error || 'Failed to update event');
       }
     } catch (err) {
       console.error('Error updating event:', err);
-  // ...existing code...
+      alert('Error updating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -394,13 +394,13 @@ const HostEventsDashboard = () => {
       
       if (response.success) {
         loadEvents();
-  // ...existing code...
+        // Event deleted successfully
       } else {
-  // ...existing code...
+        alert(response.error || 'Failed to delete event');
       }
     } catch (err) {
       console.error('Error deleting event:', err);
-  // ...existing code...
+      alert('Error deleting event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

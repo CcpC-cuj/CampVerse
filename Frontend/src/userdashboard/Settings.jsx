@@ -13,6 +13,8 @@ import {
 } from '../api';
 import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
 import NavBar from './NavBar';
+import LoginHistory from './LoginHistory';
+import ActiveSessions from './ActiveSessions';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -67,6 +69,10 @@ const Settings = () => {
 
   // ✅ ADDED: local state to control the host modal
   const [showHostModal, setShowHostModal] = useState(false);
+  
+  // Security modals state
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
+  const [showActiveSessions, setShowActiveSessions] = useState(false);
 
   // Reset scroll position when component mounts and disable scroll restoration
   useEffect(() => {
@@ -1311,7 +1317,10 @@ const handleSaveProfile = async () => {
                         <h4 className="font-medium">Login History</h4>
                         <p className="text-sm text-gray-400">View recent login activity</p>
                       </div>
-                      <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
+                      <button 
+                        onClick={() => setShowLoginHistory(true)}
+                        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button"
+                      >
                         View History
                       </button>
                     </div>
@@ -1321,7 +1330,10 @@ const handleSaveProfile = async () => {
                         <h4 className="font-medium">Active Sessions</h4>
                         <p className="text-sm text-gray-400">Manage your active sessions</p>
                       </div>
-                      <button className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button">
+                      <button 
+                        onClick={() => setShowActiveSessions(true)}
+                        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button"
+                      >
                         Manage Sessions
                       </button>
                     </div>
@@ -1360,6 +1372,16 @@ const handleSaveProfile = async () => {
         defaultEmail={user?.email || ''}
       />
       {/* ✅ /ADDED */}
+
+      {/* Login History Modal */}
+      {showLoginHistory && (
+        <LoginHistory onClose={() => setShowLoginHistory(false)} />
+      )}
+
+      {/* Active Sessions Modal */}
+      {showActiveSessions && (
+        <ActiveSessions onClose={() => setShowActiveSessions(false)} />
+      )}
 
     </div>
   );

@@ -196,7 +196,7 @@ const DetailedEventCard = ({ event, onEdit, onDelete, onViewParticipants, onView
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(`${window.location.origin}/events/${event._id}`);
-                    // ...existing code...
+                    // Copy successful - could add a toast notification here
                     setShowDropdown(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800 flex items-center gap-2"
