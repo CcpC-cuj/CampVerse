@@ -130,8 +130,7 @@ const Sidebar = ({ onDiscoverClick }) => {
           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
           
           <SidebarSection title="Community" />
-          <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
-          <SidebarLink icon="ri-medal-line" to="/achievements" label="Achievements" />
+          <SidebarLink icon="ri-building-2-line" to="/my-institution" label="My Institution" />
           <SidebarLink icon="ri-feedback-line" to="/feedback" label="Feedback" />
           
           {/* Host Section: Only show if user is a host */}

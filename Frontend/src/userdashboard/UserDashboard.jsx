@@ -136,7 +136,7 @@ const UserDashboard = () => {
               { icon: 'ri-calendar-check-fill', color: 'blue', label: 'Upcoming Events', count: (stats?.upcomingEvents ?? 0) },
               { icon: 'ri-time-fill', color: 'green', label: 'Waitlisted', count: (stats?.totalWaitlisted ?? 0) },
               { icon: 'ri-medal-fill', color: 'yellow', label: 'Achievements', count: (stats?.achievements ?? 0) },
-              { icon: 'ri-building-2-fill', color: 'purple', label: 'My Colleges', count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
+              { icon: 'ri-building-2-fill', color: 'purple', label: 'My Institution', count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
             ].map((stat, i) => (
               <div key={i} className="bg-gray-800/60 rounded-lg p-4 flex items-center border border-gray-700/40 hover:border-[#9b5de5]/30">
                 <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
