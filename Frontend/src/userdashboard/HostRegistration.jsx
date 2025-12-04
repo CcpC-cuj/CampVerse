@@ -96,9 +96,12 @@ const HostRegistration = () => {
     }
   };
 
-  // Only show confirmation if status is 'pending', 'approved', or 'rejected'
+  // Show confirmation for pending or approved status only
+  // Rejected users can re-apply, so they should see the form
   const hostStatus = user?.hostEligibilityStatus?.status;
-  if (success || hostStatus === 'pending' || hostStatus === 'approved' || hostStatus === 'rejected') {
+  const rejectionRemarks = user?.hostEligibilityStatus?.remarks;
+  
+  if (success || hostStatus === 'pending') {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
         <div className="w-64 bg-gray-900 h-full hidden sm:block">
@@ -106,12 +109,12 @@ const HostRegistration = () => {
         </div>
         <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex items-center justify-center">
           <div className="max-w-2xl w-full bg-gray-800/60 border border-gray-700 rounded-xl p-8 text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-checkbox-circle-line text-green-400 text-4xl"></i>
+            <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ri-time-line text-yellow-400 text-4xl"></i>
             </div>
-            <h2 className="text-2xl font-bold mb-3">Host Request Submitted!</h2>
+            <h2 className="text-2xl font-bold mb-3">Host Request Pending</h2>
             <p className="text-gray-300 mb-4">
-              Your request to become a host has been submitted successfully. Our team will review your application and notify you via email once it's approved.
+              Your request to become a host is being reviewed. Our team will notify you via email once it's approved.
             </p>
             <button
               onClick={() => navigate("/dashboard")}
@@ -124,6 +127,36 @@ const HostRegistration = () => {
       </div>
     );
   }
+
+  if (hostStatus === 'approved') {
+    return (
+      <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+        <div className="w-64 bg-gray-900 h-full hidden sm:block">
+          <Sidebar />
+        </div>
+        <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex items-center justify-center">
+          <div className="max-w-2xl w-full bg-gray-800/60 border border-gray-700 rounded-xl p-8 text-center">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i className="ri-checkbox-circle-line text-green-400 text-4xl"></i>
+            </div>
+            <h2 className="text-2xl font-bold mb-3">You're Already a Host!</h2>
+            <p className="text-gray-300 mb-4">
+              Your host request has been approved. You can now create and manage events.
+            </p>
+            <button
+              onClick={() => navigate("/host/manage-events")}
+              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-lg transition-colors"
+            >
+              Go to Host Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show rejection notice if previously rejected (but allow re-apply)
+  const showRejectionNotice = hostStatus === 'rejected';
 
   return (
     <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
@@ -146,6 +179,25 @@ const HostRegistration = () => {
             </button>
           </div>
 
+          {/* Show rejection notice if previously rejected */}
+          {showRejectionNotice && (
+            <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <i className="ri-error-warning-line text-orange-400 text-xl mt-0.5"></i>
+                <div>
+                  <h3 className="text-orange-300 font-semibold mb-1">Previous Request Rejected</h3>
+                  <p className="text-gray-300 text-sm">
+                    Your previous host request was rejected.
+                    {rejectionRemarks && <span className="block mt-1"><strong>Reason:</strong> {rejectionRemarks}</span>}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    You can submit a new request below with updated documents.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-4 text-red-300 text-sm">
               {error}
@@ -154,7 +206,9 @@ const HostRegistration = () => {
 
           <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6">
             <p className="text-gray-300 mb-6">
-              To become a host on CampVerse, please upload the required verification documents. Your information will be reviewed by our team before approval.
+              {showRejectionNotice 
+                ? 'Please address the issues mentioned above and upload updated verification documents to re-apply.'
+                : 'To become a host on CampVerse, please upload the required verification documents. Your information will be reviewed by our team before approval.'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
