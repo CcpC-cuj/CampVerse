@@ -34,7 +34,11 @@ const Chatbot = () => {
 			const data = await res.json();
 			setMessages((msgs) => [
 				...msgs,
-				{ from: "bot", text: data.answer || data.error || "Sorry, I couldn't understand that." }
+				{ 
+					from: "bot", 
+					text: data.answer || data.error || "Sorry, I couldn't understand that.",
+					aiEnhanced: data.ai_enhanced || false
+				}
 			]);
 		} catch (err) {
 			console.error('Chatbot error:', err);
@@ -84,13 +88,29 @@ const Chatbot = () => {
 									>
 										{msg.text.split('\n').map((line, idx) => (
 											<React.Fragment key={idx}>
-												{line}
+												{/* Handle markdown bold **text** */}
+												{line.split(/(\*\*[^*]+\*\*)/).map((part, partIdx) => {
+													if (part.startsWith('**') && part.endsWith('**')) {
+														return <strong key={partIdx}>{part.slice(2, -2)}</strong>;
+													}
+													return part;
+												})}
 												{idx < msg.text.split('\n').length - 1 && <br />}
 											</React.Fragment>
 										))}
+										{msg.aiEnhanced && (
+											<span className="block mt-1 text-xs text-purple-500">✨ AI Enhanced</span>
+										)}
 									</div>
 								</div>
 							))}
+							{loading && (
+								<div className="flex justify-start">
+									<div className="px-4 py-2 rounded-lg bg-white text-gray-500 border border-gray-200 rounded-bl-none text-sm">
+										<span className="animate-pulse">Thinking...</span>
+									</div>
+								</div>
+							)}
 							<div ref={chatEndRef} />
 						</div>
 						<form className="flex items-center border-t border-gray-200 bg-white px-3 py-2" onSubmit={sendMessage}>

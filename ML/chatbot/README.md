@@ -10,8 +10,15 @@ pinned: false
 ---
 # CampVerse Chatbot Microservice
 
-## Quick Start for New Users
+## Features
 
+- **Gemini AI Integration**: Enhanced NLP understanding using Google's Gemini API
+- **Intent Classification**: Smart detection of user intents (event search, greetings, help, etc.)
+- **Semantic Event Search**: Find events using natural language queries
+- **FAQ Support**: Answer common questions about the platform
+- **Real-time Chat**: WebSocket support for live conversations
+
+## Quick Start for New Users
 
 If you're new and want to run this chatbot microservice, you can choose either Docker or Python. Both methods are described below:
 
@@ -31,11 +38,18 @@ If you're new and want to run this chatbot microservice, you can choose either D
   pip install -r requirements.txt
   ```
 
-3. **Start the Backend Service**
+3. **Set Environment Variables**
    ```bash
-   export BACKEND_URL=http://localhost:5001  # Set backend URL
+   export BACKEND_URL=http://localhost:5001  # Backend API URL
+   export GEMINI_API_KEY=your_gemini_api_key  # For enhanced NLP (optional)
+   ```
+
+4. **Start the Backend Service**
+   ```bash
    uvicorn app:app_socket --host 0.0.0.0 --port 8000
-   ```4. **Test with CLI Chat Client**
+   ```
+
+5. **Test with CLI Chat Client**
   Open a new terminal and run:
   ```bash
   python cli_chat.py

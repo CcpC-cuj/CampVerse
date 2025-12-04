@@ -12,6 +12,7 @@ import os
 # Import custom services
 from event_service import EventService
 from intent_classifier import IntentClassifier
+from gemini_service import get_gemini_service, GeminiService
 
 # --- Logging setup ---
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,13 @@ try:
     # If BACKEND_URL is not set, try Render, then fallback to localhost
     event_service = EventService(backend_url, model)
     intent_classifier = IntentClassifier()
+    
+    # Initialize Gemini service for enhanced NLP
+    gemini_service = get_gemini_service()
+    if gemini_service.is_available():
+        logger.info("✅ Gemini AI service is available for enhanced NLP")
+    else:
+        logger.warning("⚠️ Gemini AI not available, using fallback intent classifier")
     
     # Fetch events on startup
     event_service.fetch_events()
@@ -62,18 +70,64 @@ async def chatbot(req: QuestionRequest, request: Request):
         logger.warning("Question too long.")
         return {"error": "Question too long."}
     try:
-        # Classify intent
+        # Try Gemini for enhanced understanding first
+        if gemini_service.is_available():
+            intent, confidence, entities = gemini_service.classify_intent(question)
+            logger.info(f"Gemini Intent: {intent} (confidence: {confidence}), entities: {entities}")
+            
+            # Quick responses for simple intents
+            quick_response = gemini_service.get_contextual_response(intent)
+            if quick_response:
+                return {
+                    "question": question,
+                    "answer": quick_response,
+                    "intent": intent,
+                    "ai_enhanced": True
+                }
+            
+            # Event search with enhanced understanding
+            if intent in ['event_search', 'event_details']:
+                # Enhance search query using extracted entities
+                search_query = gemini_service.enhance_search_query(question, entities)
+                events = event_service.search_events(search_query, top_k=5)
+                
+                # Generate natural response using Gemini
+                response = gemini_service.generate_response(
+                    question, intent, entities, events
+                )
+                if not response:
+                    response = event_service.format_event_response(events)
+                
+                return {
+                    "question": question,
+                    "answer": response,
+                    "intent": intent,
+                    "events": events,
+                    "ai_enhanced": True
+                }
+            
+            # For other intents, generate contextual response
+            response = gemini_service.generate_response(question, intent, entities)
+            if response:
+                return {
+                    "question": question,
+                    "answer": response,
+                    "intent": intent,
+                    "ai_enhanced": True
+                }
+        
+        # Fallback to original intent classifier
         intent, confidence = intent_classifier.classify(question)
-        logger.info(f"Intent: {intent} (confidence: {confidence})")
+        logger.info(f"Fallback Intent: {intent} (confidence: {confidence})")
         
         # Handle specific intents
         if intent in ['greeting', 'farewell', 'thanks', 'help', 'host_help']:
             response = intent_classifier.get_response_for_intent(intent)
-            logger.info(f"Response for {intent}: {repr(response)}")  # Debug log
             return {
                 "question": question,
                 "answer": response,
-                "intent": intent
+                "intent": intent,
+                "ai_enhanced": False
             }
         
         # Handle event search
@@ -84,7 +138,8 @@ async def chatbot(req: QuestionRequest, request: Request):
                 "question": question,
                 "answer": response,
                 "intent": intent,
-                "events": events
+                "events": events,
+                "ai_enhanced": False
             }
         
         # Default: FAQ search
@@ -94,11 +149,12 @@ async def chatbot(req: QuestionRequest, request: Request):
         best_match_index = indices[0][0]
         retrieved_answer = df.iloc[best_match_index]['answer']
         retrieved_question = df.iloc[best_match_index]['question']
-        logger.info(f"Answered question: {question} -> {retrieved_question}")
+        logger.info(f"FAQ match: {question} -> {retrieved_question}")
         return {
             "question": retrieved_question,
             "answer": retrieved_answer,
-            "intent": intent
+            "intent": intent,
+            "ai_enhanced": False
         }
     except Exception as e:
         logger.error(f"Error processing question: {e}")

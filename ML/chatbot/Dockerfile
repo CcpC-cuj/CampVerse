@@ -7,6 +7,10 @@ RUN useradd -m -u 1000 user
 USER user
 ENV PATH="/home/user/.local/bin:$PATH"
 
+# Environment variables (set via HF Spaces secrets or docker-compose)
+ENV GEMINI_API_KEY=""
+ENV BACKEND_URL=""
+
 WORKDIR /app
 
 COPY --chown=user ./requirements.txt requirements.txt
