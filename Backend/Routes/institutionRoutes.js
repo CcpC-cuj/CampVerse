@@ -12,6 +12,8 @@ const {
   getInstitutionDashboard,
   searchInstitutions,
   requestNewInstitution,
+  getInstitutionMembers,
+  getInstitutionEvents,
 } = require('../Controller/institution');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 
@@ -712,5 +714,66 @@ router.get('/:id/analytics', authenticateToken, getInstitutionAnalytics);
  *       403: { description: Forbidden }
  */
 router.get('/:id/dashboard', authenticateToken, getInstitutionDashboard);
+
+/**
+ * @swagger
+ * /api/institutions/{id}/members:
+ *   get:
+ *     summary: Get institution members
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200: { description: Institution members }
+ *       403: { description: Forbidden }
+ */
+router.get('/:id/members', authenticateToken, getInstitutionMembers);
+
+/**
+ * @swagger
+ * /api/institutions/{id}/events:
+ *   get:
+ *     summary: Get institution events
+ *     tags: [Institution]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: string
+ *           enum: [all, upcoming, past]
+ *     responses:
+ *       200: { description: Institution events }
+ *       403: { description: Forbidden }
+ */
+router.get('/:id/events', authenticateToken, getInstitutionEvents);
 
 module.exports = router;

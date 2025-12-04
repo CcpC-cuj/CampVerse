@@ -780,6 +780,130 @@ async function requestNewInstitution(req, res) {
   }
 }
 
+// Get institution members (students from same institution)
+async function getInstitutionMembers(req, res) {
+  try {
+    const institutionId = req.params.id;
+    const currentUserId = req.user?.id;
+    
+    // Check if user belongs to this institution or is admin
+    const isAdmin = req.user?.roles?.includes('platformAdmin');
+    const userInstitutionId = req.user?.institutionId?.toString();
+    
+    if (!isAdmin && userInstitutionId !== institutionId) {
+      return res.status(403).json({ 
+        error: 'You can only view members from your own institution.' 
+      });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const members = await User.find({ 
+      institutionId: new mongoose.Types.ObjectId(institutionId)
+    })
+      .select('name email profilePic roles interests createdAt')
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalCount = await User.countDocuments({ 
+      institutionId: new mongoose.Types.ObjectId(institutionId) 
+    });
+
+    // Don't include current user's email in the list for privacy
+    const sanitizedMembers = members.map(m => ({
+      _id: m._id,
+      name: m.name,
+      profilePic: m.profilePic,
+      roles: m.roles?.filter(r => r !== 'user') || [], // Only show special roles
+      interests: m.interests?.slice(0, 3) || [],
+      isCurrentUser: m._id.toString() === currentUserId
+    }));
+
+    res.json({
+      members: sanitizedMembers,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (err) {
+    logger.error('Error fetching institution members:', err);
+    res.status(500).json({ error: 'Error fetching institution members.' });
+  }
+}
+
+// Get events at institution
+async function getInstitutionEvents(req, res) {
+  try {
+    const institutionId = req.params.id;
+    const currentUserId = req.user?.id;
+    
+    // Check if user belongs to this institution or is admin
+    const isAdmin = req.user?.roles?.includes('platformAdmin');
+    const userInstitutionId = req.user?.institutionId?.toString();
+    
+    if (!isAdmin && userInstitutionId !== institutionId) {
+      return res.status(403).json({ 
+        error: 'You can only view events from your own institution.' 
+      });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const filter = req.query.filter || 'all'; // all, upcoming, past
+
+    const now = new Date();
+    let dateFilter = {};
+    
+    if (filter === 'upcoming') {
+      dateFilter = { date: { $gte: now } };
+    } else if (filter === 'past') {
+      dateFilter = { date: { $lt: now } };
+    }
+
+    const events = await Event.find({ 
+      institutionId: new mongoose.Types.ObjectId(institutionId),
+      verificationStatus: 'approved',
+      ...dateFilter
+    })
+      .select('title description date location type registrations maxParticipants hostUserId posterImage')
+      .populate('hostUserId', 'name profilePic')
+      .sort({ date: filter === 'past' ? -1 : 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalCount = await Event.countDocuments({ 
+      institutionId: new mongoose.Types.ObjectId(institutionId),
+      verificationStatus: 'approved',
+      ...dateFilter
+    });
+
+    // Add registration status for current user
+    const eventsWithStatus = events.map(e => ({
+      ...e,
+      registrationCount: e.registrations?.length || 0,
+      isRegistered: e.registrations?.some(r => r.userId?.toString() === currentUserId) || false,
+      isFull: (e.registrations?.length || 0) >= (e.maxParticipants || Infinity),
+      isUpcoming: new Date(e.date) >= now
+    }));
+
+    res.json({
+      events: eventsWithStatus,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit)
+    });
+  } catch (err) {
+    logger.error('Error fetching institution events:', err);
+    res.status(500).json({ error: 'Error fetching institution events.' });
+  }
+}
+
 module.exports = {
   createInstitution,
   getInstitutions,
@@ -795,4 +919,6 @@ module.exports = {
   approvePublicDashboard,
   searchInstitutions,
   requestNewInstitution,
+  getInstitutionMembers,
+  getInstitutionEvents,
 };

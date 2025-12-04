@@ -78,3 +78,17 @@ export async function getInstitutionDashboard(id) {
   });
   return res.json();
 }
+
+export async function getInstitutionMembers(id, page = 1, limit = 20) {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/members?page=${page}&limit=${limit}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
+
+export async function getInstitutionEvents(id, page = 1, limit = 10, filter = 'all') {
+  const res = await fetch(`${API_URL}/api/institutions/${id}/events?page=${page}&limit=${limit}&filter=${filter}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  return res.json();
+}
