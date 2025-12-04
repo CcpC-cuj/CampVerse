@@ -142,6 +142,10 @@ const OnboardingModal = ({ visible, onComplete }) => {
           setError('Name and phone are required');
           return;
         }
+        if (profile.phone.length !== 10 || !/^\d{10}$/.test(profile.phone)) {
+          setError('Phone number must be exactly 10 digits');
+          return;
+        }
         const res = await updateMe({
           name: profile.name,
           phone: profile.phone,
@@ -193,7 +197,14 @@ const OnboardingModal = ({ visible, onComplete }) => {
     }
   };
 
-  const back = () => setStep((s) => Math.max(1, s - 1));
+  const back = () => {
+    if (step === 3 && existingPhotoUrl && !photoFile) {
+      // Skip step 2 when going back if photo already exists
+      setStep(1);
+    } else {
+      setStep((s) => Math.max(1, s - 1));
+    }
+  };
 
   if (!visible) return null;
 
@@ -209,8 +220,23 @@ const OnboardingModal = ({ visible, onComplete }) => {
               <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.name} onChange={(e)=>setProfile({...profile,name:e.target.value})} />
             </div>
             <div>
-              <label className="text-sm text-slate-300">Phone</label>
-              <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={profile.phone} onChange={(e)=>setProfile({...profile,phone:e.target.value})} />
+              <label className="text-sm text-slate-300">Phone (10 digits)</label>
+              <input 
+                type="tel" 
+                inputMode="numeric"
+                pattern="[0-9]{10}"
+                maxLength={10}
+                className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" 
+                value={profile.phone} 
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  setProfile({...profile, phone: value});
+                }} 
+                placeholder="Enter 10 digit phone number"
+              />
+              {profile.phone && profile.phone.length !== 10 && (
+                <p className="text-xs text-red-400 mt-1">Phone number must be exactly 10 digits</p>
+              )}
             </div>
             <div>
               <label className="text-sm text-slate-300">Gender</label>

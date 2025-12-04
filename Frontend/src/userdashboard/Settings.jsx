@@ -374,6 +374,13 @@ useEffect(() => {
   // };
 
 const handleSaveProfile = async () => {
+  // Validate phone number
+  if (phone && (phone.length !== 10 || !/^\d{10}$/.test(phone))) {
+    setProfileMessage('Phone number must be exactly 10 digits');
+    setTimeout(() => setProfileMessage(''), 3000);
+    return;
+  }
+  
   setProfileSaving(true);
   setProfileMessage('Saving...');
   try {
@@ -642,14 +649,24 @@ const handleSaveProfile = async () => {
                           ref={phoneInputRef}
                           value={phone}
                           readOnly={editingField !== 'phone'}
-                          onChange={(e) => setPhone(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setPhone(value);
+                          }}
                           onKeyPress={handleKeyPress}
+                          maxLength={10}
+                          inputMode="numeric"
+                          pattern="[0-9]{10}"
+                          placeholder="Enter 10 digit phone number"
                           className={`w-full p-2 rounded bg-gray-900 border ${
                             editingField !== 'phone'
                               ? 'border-gray-800 text-gray-500 cursor-not-allowed'
                               : 'border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]'
                           }`}
                         />
+                        {editingField === 'phone' && phone && phone.length !== 10 && (
+                          <p className="text-xs text-red-400 mt-1">Phone number must be exactly 10 digits</p>
+                        )}
                       </div>
 
                       <div>
