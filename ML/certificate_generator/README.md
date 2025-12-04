@@ -1,3 +1,13 @@
+---
+title: Certificate Generator
+emoji: 🏆
+colorFrom: blue
+colorTo: green
+sdk: docker
+sdk_version: "1.0"
+app_file: api_main.py
+pinned: false
+---
 # Certificate Generator API
 
 A FastAPI-based service for generating professional certificates with customizable templates, logos, signatures, and text.
