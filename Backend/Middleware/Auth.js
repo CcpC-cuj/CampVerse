@@ -71,6 +71,20 @@ async function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'Invalid token payload.' });
       }
 
+      // Check if session is blacklisted (for immediate logout when session is revoked)
+      if (user.sessionId) {
+        try {
+          if (redisClient && redisClient.isOpen) {
+            const sessionBlacklisted = await redisClient.get(`campverse:session:blacklist:${user.sessionId}`);
+            if (sessionBlacklisted) {
+              return res.status(401).json({ error: 'Session has been terminated.' });
+            }
+          }
+        } catch (redisError) {
+          logger.error('Redis session blacklist check failed:', redisError);
+        }
+      }
+
       // Validate user still exists in database and is active
       try {
         const User = require('../Models/User');

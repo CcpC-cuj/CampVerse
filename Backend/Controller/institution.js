@@ -4,6 +4,7 @@ const User = require('../Models/User');
 const Event = require('../Models/Event');
 const { notifyInstitutionRequest, notifyInstitutionStatusUpdate } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
+const { cacheService } = require('../Services/cacheService');
 
 // Create a new institution (admin only)
 async function createInstitution(req, res) {
@@ -159,6 +160,11 @@ async function approveInstitutionVerification(req, res) {
 
     await institution.save();
 
+    // Invalidate cache so verifier/admin dashboard shows updated data
+    await cacheService.invalidateInstitutionVerification(institution._id);
+    await cacheService.invalidateVerifierCache();
+    await cacheService.invalidateAdminCache();
+
     // Update all users with this institution to verified status
     await User.updateMany(
       { institutionId: institution._id },
@@ -274,6 +280,11 @@ async function rejectInstitutionVerification(req, res) {
     });
 
     await institution.save();
+
+    // Invalidate cache so verifier/admin dashboard shows updated data
+    await cacheService.invalidateInstitutionVerification(institution._id);
+    await cacheService.invalidateVerifierCache();
+    await cacheService.invalidateAdminCache();
 
     // Update users with this institution to rejected status
     await User.updateMany(

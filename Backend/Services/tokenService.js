@@ -4,6 +4,7 @@ const Session = require('../Models/Session');
 const LoginHistory = require('../Models/LoginHistory');
 const { getDeviceInfo } = require('./deviceInfoService');
 const { logger } = require('../Middleware/errorHandler');
+const { cacheService } = require('./cacheService');
 
 /**
  * Token Service
@@ -18,15 +19,17 @@ const REFRESH_TOKEN_EXPIRY_DAYS = 7; // 7 days for refresh token
 /**
  * Generate access token (short-lived)
  * @param {Object} user - User object with id, roles, name
+ * @param {string} sessionId - Session ID to include in token for blacklist checking
  * @returns {string} JWT access token
  */
-function generateAccessToken(user) {
+function generateAccessToken(user, sessionId = null) {
   return jwt.sign(
     {
       id: user._id || user.id,
       roles: user.roles || ['user'],
       name: user.name,
       email: user.email,
+      sessionId: sessionId, // Include sessionId for session-based revocation
       type: 'access'
     },
     process.env.JWT_SECRET,
@@ -51,15 +54,15 @@ async function generateTokenPair(user, req, authMethod = 'email') {
     // Get device info
     const deviceInfo = await getDeviceInfo(req);
     
-    // Generate access token
-    const accessToken = generateAccessToken(user);
-    
-    // Create session with refresh token
+    // Create session with refresh token first to get session ID
     const { session, refreshToken } = await Session.createSession(
       user._id || user.id,
       deviceInfo,
       REFRESH_TOKEN_EXPIRY_DAYS
     );
+    
+    // Generate access token with session ID for revocation checking
+    const accessToken = generateAccessToken(user, session._id.toString());
     
     // Log successful login
     await LoginHistory.logAttempt({
@@ -107,8 +110,8 @@ async function refreshAccessToken(refreshToken, req) {
       return { success: false, error: 'User not found' };
     }
     
-    // Generate new access token
-    const accessToken = generateAccessToken(user);
+    // Generate new access token with session ID for revocation checking
+    const accessToken = generateAccessToken(user, session._id.toString());
     
     // Update session last activity
     await session.touch();
@@ -144,6 +147,7 @@ async function refreshAccessToken(refreshToken, req) {
 
 /**
  * Revoke a specific session (logout from one device)
+ * Also blacklists associated access tokens to force immediate logout
  * @param {string} sessionId - Session ID to revoke
  * @param {string} userId - User ID for verification
  * @returns {boolean} Success status
@@ -156,6 +160,14 @@ async function revokeSession(sessionId, userId) {
     }
     
     await session.revoke('logout');
+    
+    // Blacklist all tokens for this session to force immediate logout
+    // Store session ID in blacklist with 15 min TTL (same as access token expiry)
+    await cacheService.set(`session:blacklist:${sessionId}`, true, 15 * 60);
+    
+    // Also invalidate user's cache to reflect session changes
+    await cacheService.invalidateUser(userId);
+    
     return { success: true };
   } catch (error) {
     logger.error('Session revocation failed:', error);
@@ -165,18 +177,34 @@ async function revokeSession(sessionId, userId) {
 
 /**
  * Revoke all sessions for user (logout everywhere)
+ * Also blacklists all associated access tokens to force immediate logout
  * @param {string} userId - User ID
  * @param {string} currentSessionId - Optional: keep current session active
  * @returns {Object} Result with count of revoked sessions
  */
 async function revokeAllSessions(userId, currentSessionId = null) {
   try {
+    // Get all active sessions before revoking to blacklist them
+    const activeSessions = await Session.find({ 
+      userId, 
+      isActive: true,
+      ...(currentSessionId ? { _id: { $ne: currentSessionId } } : {})
+    });
+    
     let result;
     if (currentSessionId) {
       result = await Session.revokeAllExcept(userId, currentSessionId, 'security');
     } else {
       result = await Session.revokeAll(userId, 'logout');
     }
+    
+    // Blacklist all revoked sessions to force immediate logout
+    for (const session of activeSessions) {
+      await cacheService.set(`session:blacklist:${session._id}`, true, 15 * 60);
+    }
+    
+    // Invalidate user's cache to reflect session changes
+    await cacheService.invalidateUser(userId);
     
     return { success: true, revokedCount: result.modifiedCount };
   } catch (error) {

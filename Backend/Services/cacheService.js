@@ -244,6 +244,49 @@ class CacheService {
   }
 
   /**
+   * Invalidate verifier-related cache (pending verifications, etc.)
+   */
+  async invalidateVerifierCache() {
+    await this.delPattern('verifier:*');
+    await this.delPattern('pending:*');
+    await this.delPattern('verification:*');
+    await this.delPattern('institutions:pending:*');
+    await this.delPattern('certificates:pending:*');
+  }
+
+  /**
+   * Invalidate admin-related cache
+   */
+  async invalidateAdminCache() {
+    await this.delPattern('admin:*');
+    await this.delPattern('platform:*');
+    await this.delPattern('users:*');
+    await this.delPattern('institutions:*');
+    await this.delPattern('analytics:*');
+  }
+
+  /**
+   * Invalidate certificate verification cache
+   */
+  async invalidateCertificateVerification(eventId) {
+    await this.delPattern(`event:${eventId}:*`);
+    await this.delPattern('certificates:pending:*');
+    await this.delPattern('verification:certificates:*');
+    await this.delPattern('verifier:*');
+  }
+
+  /**
+   * Invalidate institution verification cache
+   */
+  async invalidateInstitutionVerification(institutionId) {
+    await this.delPattern(`institution:${institutionId}:*`);
+    await this.delPattern('institutions:pending:*');
+    await this.delPattern('verification:institutions:*');
+    await this.delPattern('verifier:*');
+    await this.delPattern('institutions:*');
+  }
+
+  /**
    * Health check
    */
   async healthCheck() {

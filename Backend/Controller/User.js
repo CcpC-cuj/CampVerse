@@ -51,6 +51,7 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 const crypto = require('crypto');
+const { cacheService } = require('../Services/cacheService');
 
 // const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // not used directly
 
@@ -1257,6 +1258,11 @@ async function grantHostAccess(req, res) {
 
     await user.save();
 
+    // Invalidate cache so admin dashboard shows updated data
+    await cacheService.invalidateUser(user._id);
+    await cacheService.invalidateAdminCache();
+    await cacheService.invalidateVerifierCache();
+
     // Notify user about host access granted
     await notifyHostStatusUpdate(
       user._id,
@@ -1294,6 +1300,11 @@ async function grantVerifierAccess(req, res) {
     };
 
     await user.save();
+
+    // Invalidate cache so admin dashboard shows updated data
+    await cacheService.invalidateUser(user._id);
+    await cacheService.invalidateAdminCache();
+    await cacheService.invalidateVerifierCache();
 
     return res.json({
       message: "Verifier access granted.",
@@ -1482,6 +1493,11 @@ async function approveHostRequest(req, res) {
     if (!user.roles.includes("host")) user.roles.push("host");
     await user.save();
 
+    // Invalidate cache so verifier dashboard shows updated data
+    await cacheService.invalidateUser(user._id);
+    await cacheService.invalidateVerifierCache();
+    await cacheService.invalidateAdminCache();
+
     // Notify user about host request approval
     await notifyHostStatusUpdate(
       user._id,
@@ -1529,6 +1545,11 @@ async function rejectHostRequest(req, res) {
     user.canHost = false;
     user.roles = user.roles.filter((r) => r !== "host");
     await user.save();
+
+    // Invalidate cache so verifier dashboard shows updated data
+    await cacheService.invalidateUser(user._id);
+    await cacheService.invalidateVerifierCache();
+    await cacheService.invalidateAdminCache();
 
     // Notify user about host request rejection
     await notifyHostStatusUpdate(

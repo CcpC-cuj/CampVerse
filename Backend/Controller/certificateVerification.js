@@ -2,6 +2,7 @@ const Event = require('../Models/Event');
 const User = require('../Models/User');
 const { notifyUser } = require('../Services/notification');
 const { logger } = require('../Middleware/errorHandler');
+const { cacheService } = require('../Services/cacheService');
 
 /**
  * Get all pending certificate verifications
@@ -217,6 +218,10 @@ async function approveCertificateConfig(req, res) {
 
     await event.save();
 
+    // Invalidate cache so verifier dashboard shows updated data
+    await cacheService.invalidateCertificateVerification(eventId);
+    await cacheService.invalidateVerifierCache();
+
     // Notify host
     const host = event.hostUserId;
     if (host) {
@@ -311,6 +316,10 @@ async function rejectCertificateConfig(req, res) {
     }
 
     await event.save();
+
+    // Invalidate cache so verifier dashboard shows updated data
+    await cacheService.invalidateCertificateVerification(eventId);
+    await cacheService.invalidateVerifierCache();
 
     // Notify host with detailed feedback
     const host = event.hostUserId;

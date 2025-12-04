@@ -21,6 +21,7 @@ const MyInstitution = () => {
   const [activeTab, setActiveTab] = useState("events");
   const [eventFilter, setEventFilter] = useState("upcoming");
   const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const institutionId = user?.institutionId;
 
@@ -74,25 +75,47 @@ const MyInstitution = () => {
   if (!institutionId) {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
-        <div className="w-64 bg-gray-900 h-full hidden sm:block">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 sm:translate-x-0`}>
           <Sidebar />
         </div>
-        <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex items-center justify-center">
-          <div className="max-w-lg w-full bg-gray-800/60 border border-gray-700 rounded-xl p-8 text-center">
-            <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i className="ri-building-2-line text-purple-400 text-4xl"></i>
-            </div>
-            <h2 className="text-2xl font-bold mb-3">No Institution Linked</h2>
-            <p className="text-gray-300 mb-6">
-              You haven't linked your account to an institution yet. Link your institution to see events and connect with other students from your college.
-            </p>
+        <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex flex-col">
+          {/* Mobile Header with Hamburger */}
+          <div className="sm:hidden flex items-center justify-between mb-4">
             <button
-              onClick={() => navigate("/settings")}
-              className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-lg transition-colors"
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg bg-gray-800/60 text-white hover:bg-gray-700 transition-colors"
             >
-              <i className="ri-link mr-2"></i>
-              Link Institution
+              <i className="ri-menu-line text-xl"></i>
             </button>
+            <h1 className="text-lg font-bold">My Institution</h1>
+            <div className="w-10"></div>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="max-w-lg w-full bg-gray-800/60 border border-gray-700 rounded-xl p-8 text-center">
+              <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="ri-building-2-line text-purple-400 text-4xl"></i>
+              </div>
+              <h2 className="text-2xl font-bold mb-3">No Institution Linked</h2>
+              <p className="text-gray-300 mb-6">
+                You haven't linked your account to an institution yet. Link your institution to see events and connect with other students from your college.
+              </p>
+              <button
+                onClick={() => navigate("/settings")}
+                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                <i className="ri-link mr-2"></i>
+                Link Institution
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -102,7 +125,16 @@ const MyInstitution = () => {
   if (loading) {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
-        <div className="w-64 bg-gray-900 h-full hidden sm:block">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 sm:translate-x-0`}>
           <Sidebar />
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -115,13 +147,35 @@ const MyInstitution = () => {
   if (error) {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
-        <div className="w-64 bg-gray-900 h-full hidden sm:block">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 sm:translate-x-0`}>
           <Sidebar />
         </div>
-        <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex items-center justify-center">
-          <div className="text-center text-red-400">
-            <i className="ri-error-warning-line text-4xl mb-2"></i>
-            <p>{error}</p>
+        <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6 flex flex-col">
+          {/* Mobile Header with Hamburger */}
+          <div className="sm:hidden flex items-center justify-between mb-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg bg-gray-800/60 text-white hover:bg-gray-700 transition-colors"
+            >
+              <i className="ri-menu-line text-xl"></i>
+            </button>
+            <h1 className="text-lg font-bold">My Institution</h1>
+            <div className="w-10"></div>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-red-400">
+              <i className="ri-error-warning-line text-4xl mb-2"></i>
+              <p>{error}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -130,13 +184,33 @@ const MyInstitution = () => {
 
   return (
     <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-gray-900 h-full hidden sm:block">
+      <div className={`fixed sm:static top-0 left-0 h-full w-64 bg-gray-900 z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 sm:translate-x-0`}>
         <Sidebar />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto bg-[#141a45] p-4 sm:p-6">
+        {/* Mobile Header with Hamburger */}
+        <div className="sm:hidden flex items-center justify-between mb-4">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg bg-gray-800/60 text-white hover:bg-gray-700 transition-colors"
+          >
+            <i className="ri-menu-line text-xl"></i>
+          </button>
+          <h1 className="text-lg font-bold">My Institution</h1>
+          <div className="w-10"></div>
+        </div>
+
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 mb-6">

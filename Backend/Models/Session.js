@@ -117,9 +117,25 @@ sessionSchema.methods.touch = async function() {
 };
 
 // Static method: Create new session with refresh token
+// Handles duplicate sessions for same device - replaces existing session
 sessionSchema.statics.createSession = async function(userId, deviceInfo, expiresInDays = 7) {
   const refreshToken = crypto.randomBytes(64).toString('hex');
   const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  
+  // Check for existing active session from same device
+  // Match by device + browser + OS combination to identify same device
+  const existingSession = await this.findOne({
+    userId,
+    isActive: true,
+    device: deviceInfo.device || 'Unknown Device',
+    browser: deviceInfo.browser || 'Unknown Browser',
+    os: deviceInfo.os || 'Unknown OS'
+  });
+  
+  // If same device already has a session, revoke it first
+  if (existingSession) {
+    await existingSession.revoke('manual');
+  }
   
   const session = await this.create({
     userId,

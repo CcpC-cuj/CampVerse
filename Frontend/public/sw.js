@@ -7,16 +7,38 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // Only handle http and https requests (ignore chrome-extension://, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+  
+  // Skip caching for API calls to ensure fresh data
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.open('campverse-v1').then(cache => {
       return cache.match(event.request).then(response => {
         return response || fetch(event.request).then(networkResponse => {
+          // Only cache successful GET requests with valid URLs
           if (event.request.method === 'GET' && networkResponse.ok) {
-            cache.put(event.request, networkResponse.clone());
+            try {
+              cache.put(event.request, networkResponse.clone());
+            } catch (e) {
+              // Silently ignore cache errors for unsupported requests
+              console.warn('Cache put failed:', e.message);
+            }
           }
           return networkResponse;
         });
       });
+    }).catch(() => {
+      // Return fetch directly if cache fails
+      return fetch(event.request);
     })
   );
 });
