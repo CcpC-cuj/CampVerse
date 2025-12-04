@@ -60,6 +60,7 @@ async function notifyHostRequest(userId, userName, userEmail) {
         'host_request',
         `New host request from ${userName} (${userEmail})`,
         { userId, userName, userEmail },
+        '/verifier/dashboard' // Link to verifier dashboard to review host requests
       );
     }
 
@@ -122,6 +123,7 @@ async function notifyInstitutionRequest({
         'institution_request',
         `New institution verification request: ${institutionName} (${type}) by ${requesterName}`,
         { requesterId, requesterName, requesterEmail, institutionName, type },
+        '/verifier/dashboard' // Link to verifier dashboard to review institution requests
       );
     }
     

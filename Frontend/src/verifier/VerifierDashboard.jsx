@@ -227,8 +227,8 @@ export default function VerifierDashboard() {
                         </div>
                         <div className="space-y-1 text-sm text-gray-300 mb-4">
                           <div><span className="text-gray-500">Phone:</span> {hostUser.phone || "N/A"}</div>
-                          <div><span className="text-gray-500">Institution:</span> {hostUser.institutionId?.name || hostUser.institution || "N/A"}</div>
-                          {hostUser.hostEligibilityStatus?.reason && (
+                          <div><span className="text-gray-500">Institution:</span> {typeof hostUser.institutionId === 'object' ? (hostUser.institutionId?.name || "N/A") : (typeof hostUser.institution === 'object' ? (hostUser.institution?.name || "N/A") : (hostUser.institution || "N/A"))}</div>
+                          {hostUser.hostEligibilityStatus?.reason && typeof hostUser.hostEligibilityStatus.reason === 'string' && (
                             <div><span className="text-gray-500">Reason:</span> {hostUser.hostEligibilityStatus.reason}</div>
                           )}
                         </div>
