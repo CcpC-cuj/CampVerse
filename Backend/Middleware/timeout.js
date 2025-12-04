@@ -92,6 +92,9 @@ function smartTimeout(req, res, next) {
   } else if (req.method === 'POST' && (req.url.includes('/login') || req.url.includes('/register'))) {
     timeout = 5000; // 5 seconds for auth
     message = 'Authentication timeout';
+  } else if (req.method === 'POST' && (req.url.includes('/forgot-password') || req.url.includes('/reset-password'))) {
+    timeout = 60000; // 60 seconds for password reset emails (email sending can be slow)
+    message = 'Password reset timeout';
   }
 
   // Apply the determined timeout
