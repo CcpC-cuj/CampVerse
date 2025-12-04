@@ -73,7 +73,7 @@ const timeoutConfigs = {
  * Smart timeout middleware that adjusts based on request type
  */
 function smartTimeout(req, res, next) {
-  let timeout = 15000; // default
+  let timeout = 30000; // default
   let message = 'Request timeout';
 
   // Determine timeout based on request characteristics
@@ -90,10 +90,10 @@ function smartTimeout(req, res, next) {
     timeout = 10000; // 10 seconds for search
     message = 'Search timeout';
   } else if (req.method === 'POST' && (req.url.includes('/login') || req.url.includes('/register'))) {
-    timeout = 5000; // 5 seconds for auth
+    timeout = 180000; // 3 minutes for auth (account for slow network/server)
     message = 'Authentication timeout';
   } else if (req.method === 'POST' && (req.url.includes('/forgot-password') || req.url.includes('/reset-password'))) {
-    timeout = 60000; // 60 seconds for password reset emails (email sending can be slow)
+    timeout = 180000; // 3 minutes for password reset emails (email sending can be slow)
     message = 'Password reset timeout';
   }
 

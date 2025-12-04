@@ -43,6 +43,10 @@ describe('Utility Functions Unit Tests', () => {
       expect(validatePassword('Password123!')).toBe(true);
       expect(validatePassword('MyPass1@')).toBe(true);
       expect(validatePassword('Secure123$')).toBe(true);
+      expect(validatePassword('#B2ec402ac')).toBe(true); // # is now allowed
+      expect(validatePassword('Test123#hash')).toBe(true); // # special char
+      expect(validatePassword('MyPass1()')).toBe(true); // parentheses allowed
+      expect(validatePassword('Secure1-test')).toBe(true); // hyphen allowed
 
       // Weak passwords
       expect(validatePassword('pass')).toBe(false); // too short

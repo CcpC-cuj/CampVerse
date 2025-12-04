@@ -161,7 +161,11 @@ docker-compose logs frontend
 
 ## 🔐 Google OAuth & Academic Email Enforcement
 - Google login uses the OAuth **access token** to fetch user info from Google.
-- Only academic emails (`.ac.in`, `.edu.in`, or `.edu`) are allowed for Google login.
+- Only academic emails are allowed for Google login. Supported formats:
+  - `.ac.in`, `.edu.in` (Indian academic)
+  - `.edu` (US/international academic)
+  - `.edu.co.in`, `.edu.pk`, etc. (academic domains with country TLDs)
+  - Any domain containing `.edu.` or `.ac.` followed by TLD
 - If a non-academic email is used, the user will see an error and a Logout/Back button in the UI.
 - All debug logs have been removed from production code; only errors are logged.
 

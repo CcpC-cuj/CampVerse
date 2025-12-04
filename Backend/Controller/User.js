@@ -55,9 +55,38 @@ const { cacheService } = require('../Services/cacheService');
 
 // const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // not used directly
 
-// Academic email domain check (.ac.in or .edu.in, flexible for subdomains)
-const isAcademicEmail = (email) =>
-  /@[\w.-]+\.(ac|edu)\.in$/i.test(email) || /@[\w.-]+\.edu$/i.test(email);
+// Academic email domain check - supports:
+// - .ac.in, .edu.in (Indian academic)
+// - .edu.co.in (like tulas.edu.co.in)
+// - .edu (US/international academic)
+// - Specific allowed domains (like cuchd.in)
+// NOTE: Does NOT allow arbitrary .in domains or .pk domains
+const ALLOWED_SPECIFIC_DOMAINS = [
+  'cuchd.in', // Chandigarh University
+];
+
+const isAcademicEmail = (email) => {
+  const emailLower = email.toLowerCase();
+  const domain = emailLower.split('@')[1];
+  
+  // Check if domain is in the explicitly allowed list
+  if (domain && ALLOWED_SPECIFIC_DOMAINS.some(allowed => domain === allowed || domain.endsWith('.' + allowed))) {
+    return true;
+  }
+  
+  // Match common academic patterns:
+  // 1. Ends with .ac.in or .edu.in
+  // 2. Ends with .edu (like .edu)
+  // 3. Contains .edu. followed by .in or other specific TLDs (like .edu.co.in)
+  // 4. Contains .ac. followed by .in or other specific TLDs (like .ac.uk)
+  // NOTE: We specifically check for academic TLD patterns, not arbitrary domains
+  return (
+    /@[\w.-]+\.(ac|edu)\.in$/i.test(emailLower) ||
+    /@[\w.-]+\.edu$/i.test(emailLower) ||
+    /@[\w.-]+\.edu\.(co\.in|in|uk|au|nz|za|sg|my|hk|bd)$/i.test(emailLower) ||
+    /@[\w.-]+\.ac\.(in|uk|au|nz|za|sg|my|hk|bd|jp|kr)$/i.test(emailLower)
+  );
+};
 
 function extractDomain(email) {
   return email.split('@')[1].toLowerCase();
@@ -233,7 +262,7 @@ async function googleSignIn(req, res) {
           .status(400)
           .json({
             error:
-              "Only academic emails (.ac.in, .edu.in, or .edu) are allowed.",
+              "Only academic emails (.ac.in, .edu.in, .edu, .edu.co.in, etc.) are allowed.",
             forceLogout: true,
           });
       }
@@ -684,7 +713,7 @@ async function register(req, res) {
       return res
         .status(400)
         .json({
-          error: "Only academic emails (.ac.in, .edu.in, or .edu) are allowed.",
+          error: "Only academic emails (.ac.in, .edu.in, .edu, .edu.co.in, etc.) are allowed.",
         });
     }
 

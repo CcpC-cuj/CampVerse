@@ -63,7 +63,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
           setForceLogout(true);
         }
         if (response.error.includes("academic emails")) {
-          setError("Please use your institute email (ending with .ac.in or .edu.in) to sign in.");
+          setError("Please use your institute email (ending with .ac.in, .edu.in, .edu, .edu.co.in, etc.) to sign in.");
         } else {
           setError(response.error);
         }
