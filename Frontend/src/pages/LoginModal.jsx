@@ -30,15 +30,15 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       const response = await login(formData);
       
       if (response.token) {
-        authLogin(response.token, response.user);
+        authLogin(response.token, response.user, response.refreshToken);
         onClose();
         // No redirect: stay on current page so event view updates with authentication
       } else {
-  // ...existing code...
+        setError(response.error || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
-  // ...existing code...
+      setError('Login failed: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +55,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       const response = await googleSignIn({ token });
 
       if (response.token) {
-        authLogin(response.token, response.user);
+        authLogin(response.token, response.user, response.refreshToken);
         onClose();
         // No redirect: stay on current page so event view updates with authentication
       } else if (response.error) {

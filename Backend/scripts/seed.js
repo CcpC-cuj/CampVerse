@@ -70,7 +70,7 @@ async function seed() {
     verificationStatus: 'approved',
   });
 
-  // ...existing code...
+  console.log('Seed data created successfully');
   process.exit(0);
 }
 

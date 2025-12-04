@@ -159,22 +159,40 @@ async function googleSignIn(req, res) {
       }
       user.lastLogin = new Date();
       await user.save();
-      const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles, name: user.name },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-          issuer: "campverse",
-          audience: "campverse-users",
-        },
-      );
-      logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
       
-      return res.json({
-        message: "Google login successful (mock)",
-        token: jwtToken,
-        user: sanitizeUser(user),
-      });
+      // Use new token service for access + refresh tokens
+      try {
+        const { generateTokenPair } = require('../Services/tokenService');
+        const tokens = await generateTokenPair(user, req, 'google');
+        
+        logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
+        
+        return res.json({
+          message: "Google login successful (mock)",
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresIn: tokens.expiresIn,
+          user: sanitizeUser(user),
+        });
+      } catch (tokenError) {
+        // Fallback to old token generation
+        const jwtToken = jwt.sign(
+          { id: user._id, roles: user.roles, name: user.name },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "1h",
+            issuer: "campverse",
+            audience: "campverse-users",
+          },
+        );
+        logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
+        
+        return res.json({
+          message: "Google login successful (mock)",
+          token: jwtToken,
+          user: sanitizeUser(user),
+        });
+      }
     }
 
     // Real Google OAuth implementation
@@ -261,26 +279,49 @@ async function googleSignIn(req, res) {
       }
       user.lastLogin = new Date();
       await user.save();
-      const jwtToken = jwt.sign(
-        { id: user._id, roles: user.roles, name: user.name },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "1h",
-          issuer: "campverse",
-          audience: "campverse-users",
-        },
-      );
       
-      logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
-      
-      return res.json({
-        message: "Google login successful",
-        token: jwtToken,
-        user: sanitizeUser(user),
-      });
+      // Use new token service for access + refresh tokens
+      try {
+        const { generateTokenPair } = require('../Services/tokenService');
+        const tokens = await generateTokenPair(user, req, 'google');
+        
+        logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
+        
+        return res.json({
+          message: "Google login successful",
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          expiresIn: tokens.expiresIn,
+          user: sanitizeUser(user),
+        });
+      } catch (tokenError) {
+        // Fallback to old token generation
+        const jwtToken = jwt.sign(
+          { id: user._id, roles: user.roles, name: user.name },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "1h",
+            issuer: "campverse",
+            audience: "campverse-users",
+          },
+        );
+        
+        logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
+        
+        return res.json({
+          message: "Google login successful",
+          token: jwtToken,
+          user: sanitizeUser(user),
+        });
+      }
     } catch (googleError) {
       logger.error("Google token verification failed:", { error: googleError.message, timestamp: new Date().toISOString() });
       logger.error("Google token verification failed:", googleError);
+      // Log failed attempt
+      try {
+        const { logFailedLogin } = require('../Services/tokenService');
+        await logFailedLogin(null, 'oauth_error', req, 'google');
+      } catch (e) { /* ignore */ }
       return res.status(401).json({ error: "Invalid Google token." });
     }
   } catch (err) {
@@ -835,29 +876,56 @@ async function login(req, res) {
       return res.status(400).json({ error: "Email and password required." });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ error: "User not found." });
+    if (!user) {
+      // Log failed attempt (unknown user)
+      try {
+        const { logFailedLogin } = require('../Services/tokenService');
+        await logFailedLogin(null, 'invalid_email', req, 'email');
+      } catch (e) { /* ignore logging errors */ }
+      return res.status(400).json({ error: "User not found." });
+    }
 
     const validPass = await bcrypt.compare(password, user.passwordHash);
-    if (!validPass)
+    if (!validPass) {
+      // Log failed attempt
+      try {
+        const { logFailedLogin } = require('../Services/tokenService');
+        await logFailedLogin(user._id, 'invalid_password', req, 'email');
+      } catch (e) { /* ignore logging errors */ }
       return res.status(400).json({ error: "Incorrect password." });
+    }
 
     user.lastLogin = new Date();
     await user.save();
 
-    const token = jwt.sign(
-      { id: user._id, roles: user.roles, name: user.name },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-        issuer: "campverse",
-        audience: "campverse-users",
-      },
-    );
-
-    return res.json({
-      token,
-      user: sanitizeUser(user),
-    });
+    // Use new token service for access + refresh tokens
+    try {
+      const { generateTokenPair } = require('../Services/tokenService');
+      const tokens = await generateTokenPair(user, req, 'email');
+      
+      return res.json({
+        token: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+        user: sanitizeUser(user),
+      });
+    } catch (tokenError) {
+      // Fallback to old token generation if new service fails
+      logger.error("Token service error, using fallback:", tokenError);
+      const token = jwt.sign(
+        { id: user._id, roles: user.roles, name: user.name },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "1h",
+          issuer: "campverse",
+          audience: "campverse-users",
+        },
+      );
+      return res.json({
+        token,
+        user: sanitizeUser(user),
+      });
+    }
   } catch (err) {
     logger.error("Login error:", err);
     return res.status(500).json({ error: "Server error during login." });

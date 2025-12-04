@@ -51,7 +51,7 @@ const ShareButton = ({ event, title, description }) => {
       setShowCopy(false);
       setOpen(false);
     }).catch(err => {
-      // ...existing code...
+      console.error('Failed to copy link:', err);
     });
   };
 

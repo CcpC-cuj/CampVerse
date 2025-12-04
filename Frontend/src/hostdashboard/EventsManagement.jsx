@@ -237,11 +237,11 @@ const EventsManagement = () => {
       } else {
         const errorData = await response.json();
         console.error('Update failed:', errorData);
-        // ...existing code...
+        alert(errorData.message || 'Failed to update event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
-      // ...existing code...
+      alert('Error updating event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -275,7 +275,7 @@ const EventsManagement = () => {
   setSelectedEvent(null);
     } catch (error) {
       console.error('Error deleting event:', error);
-      // ...existing code...
+      alert('Error deleting event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

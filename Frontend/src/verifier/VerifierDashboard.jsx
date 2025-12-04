@@ -9,16 +9,16 @@ function DetailModal({ isOpen, onClose, title, children }) {
   if (!isOpen) return null;
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#1a2150] rounded-2xl border border-gray-700/50 w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-gray-700/50">
-          <h3 className="text-xl font-bold text-white">{title}</h3>
+      <div className="relative bg-[#1a2150] rounded-t-2xl sm:rounded-2xl border border-gray-700/50 w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-700/50">
+          <h3 className="text-lg sm:text-xl font-bold text-white">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors">
             <i className="ri-close-line text-xl text-gray-400" />
           </button>
         </div>
-        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="overflow-y-auto max-h-[calc(95vh-70px)] sm:max-h-[calc(90vh-80px)]">
           {children}
         </div>
       </div>
@@ -271,56 +271,57 @@ export default function VerifierDashboard() {
 
   return (
     <Layout title="Verifier Dashboard">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <i className="ri-building-line text-3xl text-blue-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl p-4 sm:p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                <i className="ri-building-line text-2xl sm:text-3xl text-blue-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold text-white">{pendingInstitutions.length}</div>
-                <div className="text-sm text-gray-400">Pending Institutions</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">{pendingInstitutions.length}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Pending Institutions</div>
               </div>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-6 border border-green-500/20 hover:border-green-500/40 transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-green-500/20 flex items-center justify-center">
-                <i className="ri-user-star-line text-3xl text-green-400" />
+          <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-4 sm:p-6 border border-green-500/20 hover:border-green-500/40 transition-all">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-green-500/20 flex items-center justify-center shrink-0">
+                <i className="ri-user-star-line text-2xl sm:text-3xl text-green-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold text-white">{pendingHosts.length}</div>
-                <div className="text-sm text-gray-400">Pending Host Requests</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">{pendingHosts.length}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Pending Host Requests</div>
               </div>
             </div>
           </div>
-          <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <i className="ri-shield-check-line text-3xl text-purple-400" />
+          <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl p-4 sm:p-6 border border-purple-500/20 hover:border-purple-500/40 transition-all sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                <i className="ri-shield-check-line text-2xl sm:text-3xl text-purple-400" />
               </div>
               <div>
-                <div className="text-3xl font-bold text-white">{pendingInstitutions.length + pendingHosts.length}</div>
-                <div className="text-sm text-gray-400">Total Pending</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">{pendingInstitutions.length + pendingHosts.length}</div>
+                <div className="text-xs sm:text-sm text-gray-400">Total Pending</div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-800/40 p-1 rounded-xl w-fit">
+        {/* Tabs - Full width on mobile */}
+        <div className="flex gap-1 bg-gray-800/40 p-1 rounded-xl w-full sm:w-fit overflow-x-auto">
           <button
             onClick={() => setActiveTab('institutions')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap ${
               activeTab === 'institutions'
                 ? 'bg-[#9b5de5] text-white shadow-lg'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
             }`}
           >
             <i className="ri-building-line" />
-            Institutions
+            <span className="hidden xs:inline">Institutions</span>
+            <span className="xs:hidden">Inst.</span>
             {pendingInstitutions.length > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'institutions' ? 'bg-white/20' : 'bg-blue-500/30 text-blue-300'}`}>
                 {pendingInstitutions.length}
@@ -329,14 +330,15 @@ export default function VerifierDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('hosts')}
-            className={`px-6 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 text-sm sm:text-base whitespace-nowrap ${
               activeTab === 'hosts'
                 ? 'bg-[#9b5de5] text-white shadow-lg'
                 : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
             }`}
           >
             <i className="ri-user-star-line" />
-            Host Requests
+            <span className="hidden xs:inline">Host Requests</span>
+            <span className="xs:hidden">Hosts</span>
             {pendingHosts.length > 0 && (
               <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'hosts' ? 'bg-white/20' : 'bg-green-500/30 text-green-300'}`}>
                 {pendingHosts.length}
@@ -359,13 +361,13 @@ export default function VerifierDashboard() {
             {activeTab === 'institutions' && (
               <div className="space-y-4">
                 {pendingInstitutions.length === 0 ? (
-                  <div className="bg-gray-800/40 rounded-xl p-12 text-center border border-gray-700/40">
-                    <i className="ri-building-line text-6xl text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No Pending Institutions</h3>
-                    <p className="text-gray-400">All institution verification requests have been processed.</p>
+                  <div className="bg-gray-800/40 rounded-xl p-8 sm:p-12 text-center border border-gray-700/40">
+                    <i className="ri-building-line text-5xl sm:text-6xl text-gray-600 mb-4" />
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">No Pending Institutions</h3>
+                    <p className="text-sm sm:text-base text-gray-400">All institution verification requests have been processed.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
                     {pendingInstitutions.map(inst => {
                       const instId = String(inst._id || inst.id || '');
                       const instName = typeof inst.name === 'string' ? inst.name : 'Unknown Institution';
@@ -449,13 +451,13 @@ export default function VerifierDashboard() {
             {activeTab === 'hosts' && (
               <div className="space-y-4">
                 {pendingHosts.length === 0 ? (
-                  <div className="bg-gray-800/40 rounded-xl p-12 text-center border border-gray-700/40">
-                    <i className="ri-user-star-line text-6xl text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No Pending Host Requests</h3>
-                    <p className="text-gray-400">All host applications have been processed.</p>
+                  <div className="bg-gray-800/40 rounded-xl p-8 sm:p-12 text-center border border-gray-700/40">
+                    <i className="ri-user-star-line text-5xl sm:text-6xl text-gray-600 mb-4" />
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">No Pending Host Requests</h3>
+                    <p className="text-sm sm:text-base text-gray-400">All host applications have been processed.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2">
                     {pendingHosts.map(hostUser => {
                       const hostId = String(hostUser._id || hostUser.id || '');
                       const hostName = typeof hostUser.name === 'string' ? hostUser.name : 'Unknown';

@@ -516,6 +516,7 @@ app.get('/api/cors-test', (req, res) => {
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/auth', require('./Routes/authRoutes'));
 app.use('/api/hosts', hostRoutes);
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/events', eventRoutes);

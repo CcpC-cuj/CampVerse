@@ -37,7 +37,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
 
   useEffect(() => {
     if (event) {
-  // ...existing code...
+      // Initialize form with event data
       
       // Extract contact info from event or organizer
       let contactEmail = '';
@@ -138,7 +138,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
     
     // Validate required fields
     if (!eventForm.title || !eventForm.description || !eventForm.date || !eventForm.location || !eventForm.contactEmail || !eventForm.contactPhone) {
-  // ...existing code...
+      alert('Please fill in all required fields');
       return;
     }
     
