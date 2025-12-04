@@ -16,28 +16,29 @@ const Chatbot = () => {
 		}
 	}, [messages, open]);
 
+	const CHATBOT_URL = import.meta.env.VITE_CHATBOT_URL || "http://localhost:8000/chatbot";
 	const sendMessage = async (e) => {
-	e.preventDefault();
-	if (!input.trim()) return;
-	const userMsg = { from: "user", text: input };
-	setMessages((msgs) => [...msgs, userMsg]);
-	setInput("");
-	setLoading(true);
-	try {
-		// Call backend API
-		const res = await fetch("http://localhost:8000/chatbot", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ question: input })
-		});
-		const data = await res.json();
-		setMessages((msgs) => [
-			...msgs,
-			{ from: "bot", text: data.answer || data.error || "Sorry, I couldn't understand that." }
-		]);
-	} catch (err) {
-		console.error('Chatbot error:', err);
-		setMessages((msgs) => [
+		e.preventDefault();
+		if (!input.trim()) return;
+		const userMsg = { from: "user", text: input };
+		setMessages((msgs) => [...msgs, userMsg]);
+		setInput("");
+		setLoading(true);
+		try {
+			// Call backend API
+			const res = await fetch(CHATBOT_URL, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ question: input })
+			});
+			const data = await res.json();
+			setMessages((msgs) => [
+				...msgs,
+				{ from: "bot", text: data.answer || data.error || "Sorry, I couldn't understand that." }
+			]);
+		} catch (err) {
+			console.error('Chatbot error:', err);
+			setMessages((msgs) => [
 			...msgs,
 			{ from: "bot", text: "Network error. Please try again." }
 		]);
