@@ -96,9 +96,12 @@ const HostRegistration = () => {
     }
   };
 
-  // Only show confirmation if status is 'pending', 'approved', or 'rejected'
+  // Only show confirmation if status is 'pending' or 'approved'
+  // Rejected users can re-apply, so they should see the form
   const hostStatus = user?.hostEligibilityStatus?.status;
-  if (success || hostStatus === 'pending' || hostStatus === 'approved' || hostStatus === 'rejected') {
+  const rejectionRemarks = user?.hostEligibilityStatus?.remarks;
+  
+  if (success || hostStatus === 'pending' || hostStatus === 'approved') {
     return (
       <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
         <div className="w-64 bg-gray-900 h-full hidden sm:block">
@@ -109,9 +112,13 @@ const HostRegistration = () => {
             <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <i className="ri-checkbox-circle-line text-green-400 text-4xl"></i>
             </div>
-            <h2 className="text-2xl font-bold mb-3">Host Request Submitted!</h2>
+            <h2 className="text-2xl font-bold mb-3">
+              {hostStatus === 'approved' ? 'You are already a Host!' : 'Host Request Submitted!'}
+            </h2>
             <p className="text-gray-300 mb-4">
-              Your request to become a host has been submitted successfully. Our team will review your application and notify you via email once it's approved.
+              {hostStatus === 'approved' 
+                ? 'Your host request has been approved. You can now create and manage events.'
+                : 'Your request to become a host has been submitted successfully. Our team will review your application and notify you via email once it\'s approved.'}
             </p>
             <button
               onClick={() => navigate("/dashboard")}
@@ -124,6 +131,9 @@ const HostRegistration = () => {
       </div>
     );
   }
+
+  // Show rejection notice with re-apply option
+  const showRejectionNotice = hostStatus === 'rejected';
 
   return (
     <div className="min-h-screen h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
@@ -146,6 +156,25 @@ const HostRegistration = () => {
             </button>
           </div>
 
+          {/* Show rejection notice if previously rejected */}
+          {showRejectionNotice && (
+            <div className="bg-orange-900/20 border border-orange-500/30 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <i className="ri-error-warning-line text-orange-400 text-xl mt-0.5"></i>
+                <div>
+                  <h3 className="text-orange-300 font-semibold mb-1">Previous Request Rejected</h3>
+                  <p className="text-gray-300 text-sm">
+                    Your previous host request was rejected. 
+                    {rejectionRemarks && <span className="block mt-1"><strong>Reason:</strong> {rejectionRemarks}</span>}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    You can submit a new request below with updated documents.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-4 text-red-300 text-sm">
               {error}
@@ -154,7 +183,9 @@ const HostRegistration = () => {
 
           <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6">
             <p className="text-gray-300 mb-6">
-              To become a host on CampVerse, please upload the required verification documents. Your information will be reviewed by our team before approval.
+              {showRejectionNotice 
+                ? 'Please address the issues mentioned above and upload updated verification documents.'
+                : 'To become a host on CampVerse, please upload the required verification documents. Your information will be reviewed by our team before approval.'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">

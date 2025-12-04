@@ -12,6 +12,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 import Events from "./userdashboard/Events";
 import HelpCenter from "./userdashboard/HelpCenter";
 import Feedback from "./userdashboard/Feedback";
+import MyInstitution from "./userdashboard/MyInstitution";
 import ResetPassword from "./pages/ResetPassword";
 import EventDetailsPage from "./pages/PublicEventDetailsPage";
 import QRViewer from "./components/QRViewer";
@@ -160,6 +161,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Feedback />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-institution"
+              element={
+                <ProtectedRoute>
+                  <MyInstitution />
                 </ProtectedRoute>
               }
             />

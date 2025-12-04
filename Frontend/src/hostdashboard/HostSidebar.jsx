@@ -94,7 +94,7 @@ const HostSidebar = () => {
           <SidebarLink icon="ri-award-line" to="/host/certificates" label="Certificates" />
           
           <SidebarSection title="Community" />
-          <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Colleges" />
+          <SidebarLink icon="ri-building-2-line" to="/my-institution" label="My Institution" />
           <SidebarLink icon="ri-feedback-line" to="/feedback" label="Feedback" />
         </div>
       </div>
