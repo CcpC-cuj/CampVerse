@@ -50,13 +50,13 @@ jobs:
           # Clone the Hugging Face Space repo with authentication
           git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/certificate-generator hf-certificate-generator
           
-          # Copy certificate generator files to HF Space
-          cp -r ML/certificate_generator/* hf-certificate-generator/
+          # Copy only non-binary files to HF Space
+          rsync -av --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.pdf' --exclude='*.ttf' --exclude='*.ico' --exclude='*.pyc' --exclude='uploads/' --exclude='fonts/' --exclude='generated_certificates/' --exclude='Certificates/' ML/certificate_generator/ hf-certificate-generator/
           
           # Push to Hugging Face
           cd hf-certificate-generator
           git add .
-          git commit -m "Deploy certificate generator from GitHub Actions" || echo "No changes to commit"
+          git commit -m "Deploy certificate generator from GitHub Actions (no binaries)" || echo "No changes to commit"
           git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/certificate-generator main || echo "Push completed"
           
       - name: Notify success
