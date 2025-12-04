@@ -42,14 +42,13 @@ jobs:
       - name: Push to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_NAME: ${{ secrets.HF_RECOMMENDATION_SPACE_NAME }}
         run: |
           # Configure git
           git config --global user.email "ci@campverse.com"
           git config --global user.name "CampVerse CI"
           
-          # Clone the Hugging Face Space repo
-          git clone https://huggingface.co/spaces/$HF_SPACE_NAME hf-recommendation || true
+          # Clone the Hugging Face Space repo with authentication
+          git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/event-recomendation hf-recommendation
           
           # Copy recommendation files to HF Space
           cp -r ML/Recommendation/* hf-recommendation/
@@ -58,7 +57,7 @@ jobs:
           cd hf-recommendation
           git add .
           git commit -m "Deploy recommendation from GitHub Actions" || echo "No changes to commit"
-          git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME main || echo "Push completed"
+          git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/event-recomendation main || echo "Push completed"
           
       - name: Notify success
         run: echo "ML Recommendation deployed to Hugging Face Spaces!"

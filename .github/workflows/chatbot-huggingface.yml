@@ -42,14 +42,13 @@ jobs:
       - name: Push to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_SPACE_NAME: ${{ secrets.HF_CHATBOT_SPACE_NAME }}
         run: |
           # Configure git
           git config --global user.email "ci@campverse.com"
           git config --global user.name "CampVerse CI"
           
-          # Clone the Hugging Face Space repo
-          git clone https://huggingface.co/spaces/$HF_SPACE_NAME hf-chatbot || true
+          # Clone the Hugging Face Space repo with authentication
+          git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/chatbot hf-chatbot
           
           # Copy chatbot files to HF Space
           cp -r ML/chatbot/* hf-chatbot/
@@ -58,7 +57,7 @@ jobs:
           cd hf-chatbot
           git add .
           git commit -m "Deploy chatbot from GitHub Actions" || echo "No changes to commit"
-          git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_NAME main || echo "Push completed"
+          git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/chatbot main || echo "Push completed"
           
       - name: Notify success
         run: echo "Chatbot deployed to Hugging Face Spaces!"
