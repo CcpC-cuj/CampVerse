@@ -56,10 +56,11 @@ export async function approveInstitutionVerificationAPI(id, payload = {}) {
   return res.json();
 }
 
-export async function rejectInstitutionVerificationAPI(id) {
+export async function rejectInstitutionVerificationAPI(id, payload = {}) {
   const res = await fetch(`${API_URL}/api/institutions/${id}/reject-verification`, {
     method: 'POST',
-    headers: { ...getAuthHeaders() },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify(payload),
   });
   return res.json();
 }
