@@ -108,53 +108,43 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Maintenance message and disabled form */}
+        <div className="space-y-4">
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg text-center mb-2">
+            <strong>Server under maintenance:</strong> Email/password login is temporarily unavailable.<br />
+            Please use Google login to sign in.
+          </div>
           <input
             type="email"
             name="email"
             placeholder="College Email"
             value={formData.email}
-            onChange={handleInputChange}
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            required
+            disabled
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
           />
-
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
               value={formData.password}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
+              disabled
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
             />
             <span
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-pointer hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-not-allowed"
             >
               {showPassword ? "Hide" : "Show"}
             </span>
           </div>
-
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 opacity-50 cursor-not-allowed"
           >
-            {isLoading ? 'Logging in...' : 'Log In'}
+            Server under maintenance
           </button>
-        </form>
-              <div className="flex justify-end mt-2">
-                <button
-                  type="button"
-                  className="text-purple-400 text-sm underline hover:text-white"
-                  onClick={typeof onForgotPassword === 'function' ? onForgotPassword : undefined}
-                >
-                  Forgot Password?
-                </button>
-              </div>
+        </div>
 
         {/* Or divider */}
         <div className="flex items-center my-4">
