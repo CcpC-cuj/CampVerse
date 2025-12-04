@@ -161,39 +161,57 @@ export default function VerifierDashboard() {
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
-                    {pendingInstitutions.map(inst => (
-                      <div key={inst._id || inst.id} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
+                    {pendingInstitutions.map(inst => {
+                      const instId = String(inst._id || inst.id || '');
+                      const instName = typeof inst.name === 'string' ? inst.name : 'Unknown Institution';
+                      const instEmailDomain = typeof inst.emailDomain === 'string' ? inst.emailDomain : (typeof inst.email === 'string' ? inst.email : '');
+                      const instDomain = typeof inst.emailDomain === 'string' ? inst.emailDomain : (typeof inst.domain === 'string' ? inst.domain : 'N/A');
+                      
+                      // Safely get location
+                      let instLocation = 'N/A';
+                      if (inst.location) {
+                        if (typeof inst.location === 'string') {
+                          instLocation = inst.location;
+                        } else if (typeof inst.location === 'object') {
+                          const parts = [inst.location.city, inst.location.state, inst.location.country].filter(p => typeof p === 'string' && p);
+                          instLocation = parts.length > 0 ? parts.join(', ') : 'N/A';
+                        }
+                      }
+                      
+                      return (
+                      <div key={instId} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-12 h-12 rounded-full bg-[#9b5de5]/20 flex items-center justify-center text-[#9b5de5] font-bold text-xl">
-                            {inst.name?.charAt(0) || "I"}
+                            {instName.charAt(0) || "I"}
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white">{inst.name}</h4>
-                            <div className="text-xs text-gray-400">{inst.email}</div>
+                            <h4 className="text-lg font-semibold text-white">{instName}</h4>
+                            <div className="text-xs text-gray-400">{instEmailDomain}</div>
                           </div>
                         </div>
                         <div className="space-y-1 text-sm text-gray-300 mb-4">
-                          <div><span className="text-gray-500">Domain:</span> {inst.domain || "N/A"}</div>
-                          <div><span className="text-gray-500">Location:</span> {inst.location || "N/A"}</div>
+                          <div><span className="text-gray-500">Domain:</span> {instDomain}</div>
+                          <div><span className="text-gray-500">Location:</span> {instLocation}</div>
                         </div>
                         <div className="flex gap-2">
                           <button 
-                            onClick={() => handleInstitutionAction(inst._id || inst.id, 'approve')}
-                            disabled={actionLoading === (inst._id || inst.id)}
+                            onClick={() => handleInstitutionAction(instId, 'approve')}
+                            disabled={actionLoading === instId}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (inst._id || inst.id) ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
+                            {actionLoading === instId ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
                           </button>
                           <button 
-                            onClick={() => handleInstitutionAction(inst._id || inst.id, 'reject')}
-                            disabled={actionLoading === (inst._id || inst.id)}
+                            onClick={() => handleInstitutionAction(instId, 'reject')}
+                            disabled={actionLoading === instId}
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (inst._id || inst.id) ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
+                            {actionLoading === instId ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -210,59 +228,68 @@ export default function VerifierDashboard() {
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2">
-                    {pendingHosts.map(hostUser => (
-                      <div key={hostUser._id || hostUser.id} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
+                    {pendingHosts.map(hostUser => {
+                      const hostId = String(hostUser._id || hostUser.id || '');
+                      const hostName = typeof hostUser.name === 'string' ? hostUser.name : 'Unknown';
+                      const hostEmail = typeof hostUser.email === 'string' ? hostUser.email : '';
+                      const hostPhone = typeof hostUser.phone === 'string' ? hostUser.phone : 'N/A';
+                      
+                      // Safely get institution name
+                      let institutionName = 'N/A';
+                      if (hostUser.institutionId && typeof hostUser.institutionId === 'object' && typeof hostUser.institutionId.name === 'string') {
+                        institutionName = hostUser.institutionId.name;
+                      } else if (typeof hostUser.institution === 'string') {
+                        institutionName = hostUser.institution;
+                      } else if (hostUser.institution && typeof hostUser.institution === 'object' && typeof hostUser.institution.name === 'string') {
+                        institutionName = hostUser.institution.name;
+                      }
+                      
+                      // Safely get reason
+                      const reason = hostUser.hostEligibilityStatus && typeof hostUser.hostEligibilityStatus.reason === 'string' 
+                        ? hostUser.hostEligibilityStatus.reason 
+                        : null;
+                      
+                      return (
+                      <div key={hostId} className="bg-[#141a45] rounded-lg p-5 border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all">
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
                             {hostUser.profilePhoto ? (
                               <img src={hostUser.profilePhoto} alt="" className="w-12 h-12 rounded-full object-cover" />
                             ) : (
-                              <span className="text-green-400 font-bold text-xl">{hostUser.name?.charAt(0) || "H"}</span>
+                              <span className="text-green-400 font-bold text-xl">{hostName.charAt(0) || "H"}</span>
                             )}
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-white">{hostUser.name}</h4>
-                            <div className="text-xs text-gray-400">{hostUser.email}</div>
+                            <h4 className="text-lg font-semibold text-white">{hostName}</h4>
+                            <div className="text-xs text-gray-400">{hostEmail}</div>
                           </div>
                         </div>
                         <div className="space-y-1 text-sm text-gray-300 mb-4">
-                          <div><span className="text-gray-500">Phone:</span> {hostUser.phone || "N/A"}</div>
-                          <div><span className="text-gray-500">Institution:</span> {
-                            (() => {
-                              if (hostUser.institutionId && typeof hostUser.institutionId === 'object' && hostUser.institutionId.name) {
-                                return hostUser.institutionId.name;
-                              }
-                              if (hostUser.institution && typeof hostUser.institution === 'string') {
-                                return hostUser.institution;
-                              }
-                              if (hostUser.institution && typeof hostUser.institution === 'object' && hostUser.institution.name) {
-                                return hostUser.institution.name;
-                              }
-                              return "N/A";
-                            })()
-                          }</div>
-                          {hostUser.hostEligibilityStatus?.reason && typeof hostUser.hostEligibilityStatus.reason === 'string' && (
-                            <div><span className="text-gray-500">Reason:</span> {hostUser.hostEligibilityStatus.reason}</div>
+                          <div><span className="text-gray-500">Phone:</span> {hostPhone}</div>
+                          <div><span className="text-gray-500">Institution:</span> {institutionName}</div>
+                          {reason && (
+                            <div><span className="text-gray-500">Reason:</span> {reason}</div>
                           )}
                         </div>
                         <div className="flex gap-2">
                           <button 
-                            onClick={() => handleHostAction(hostUser._id || hostUser.id, 'approve')}
-                            disabled={actionLoading === (hostUser._id || hostUser.id)}
+                            onClick={() => handleHostAction(hostId, 'approve')}
+                            disabled={actionLoading === hostId}
                             className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (hostUser._id || hostUser.id) ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
+                            {actionLoading === hostId ? <i className="ri-loader-4-line animate-spin" /> : "Approve"}
                           </button>
                           <button 
-                            onClick={() => handleHostAction(hostUser._id || hostUser.id, 'reject')}
-                            disabled={actionLoading === (hostUser._id || hostUser.id)}
+                            onClick={() => handleHostAction(hostId, 'reject')}
+                            disabled={actionLoading === hostId}
                             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
                           >
-                            {actionLoading === (hostUser._id || hostUser.id) ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
+                            {actionLoading === hostId ? <i className="ri-loader-4-line animate-spin" /> : "Reject"}
                           </button>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

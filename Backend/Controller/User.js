@@ -1493,7 +1493,9 @@ async function listPendingHostRequests(req, res) {
     }
     const pendingUsers = await User.find({
       "hostEligibilityStatus.status": "pending",
-    }).select("-passwordHash");
+    })
+      .select("-passwordHash")
+      .populate("institutionId", "name isVerified");
     return res.json(pendingUsers);
   } catch (err) {
     logger.error("ListPendingHostRequests error:", err);
