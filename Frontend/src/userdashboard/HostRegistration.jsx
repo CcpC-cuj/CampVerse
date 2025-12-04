@@ -89,7 +89,6 @@ const HostRegistration = () => {
         navigate("/dashboard");
       }, 2000);
     } catch (err) {
-      console.error("Host request error:", err);
       setError(err.message || "Failed to submit host request. Please try again.");
     } finally {
       setLoading(false);

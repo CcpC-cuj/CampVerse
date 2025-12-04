@@ -101,7 +101,7 @@ export default function VerifierDashboard() {
       setPendingInstitutions(Array.isArray(institutionsRes?.pendingInstitutions) ? institutionsRes.pendingInstitutions : []);
       setPendingHosts(Array.isArray(hostsRes?.pendingUsers) ? hostsRes.pendingUsers : (Array.isArray(hostsRes) ? hostsRes : []));
     } catch (err) {
-      console.error('Error fetching data:', err);
+      // Failed to fetch data - silently ignore
     }
     setLoading(false);
   };
@@ -154,7 +154,6 @@ export default function VerifierDashboard() {
         alert('Failed to approve: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Failed to approve institution:', error);
       alert('Failed to approve institution');
     }
     setActionLoading(null);
@@ -176,7 +175,6 @@ export default function VerifierDashboard() {
         alert('Failed to reject: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Failed to reject institution:', error);
       alert('Failed to reject institution');
     }
     setActionLoading(null);
@@ -206,7 +204,6 @@ export default function VerifierDashboard() {
         alert('Failed to approve: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Failed to approve host request:', error);
       alert('Failed to approve host request');
     }
     setActionLoading(null);
@@ -228,7 +225,6 @@ export default function VerifierDashboard() {
         alert('Failed to reject: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      console.error('Failed to reject host request:', error);
       alert('Failed to reject host request');
     }
     setActionLoading(null);

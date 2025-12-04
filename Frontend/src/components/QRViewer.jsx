@@ -59,7 +59,6 @@ const QRViewer = () => {
         }
       }
     } catch (err) {
-      console.error('❌ Error loading QR code:', err);
       setError('Failed to load QR code. Please check your internet connection.');
     } finally {
       setLoading(false);
@@ -151,7 +150,6 @@ const QRViewer = () => {
         }
       }
     } catch (err) {
-      console.error('Error regenerating QR code:', err);
       alert('Failed to regenerate QR code. Please try again.');
     } finally {
       setRegenerating(false);

@@ -57,7 +57,6 @@ const MyInstitution = () => {
         setEvents(eventsData?.events || []);
         setAnalytics(analyticsData || {});
       } catch (err) {
-        console.error("Error fetching institution data:", err);
         setError("Failed to load institution data");
       } finally {
         setLoading(false);

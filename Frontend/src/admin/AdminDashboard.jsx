@@ -27,7 +27,7 @@ export default function AdminDashboard() {
         { type: 'certificate_issued', message: '50 certificates issued for AI Workshop', time: '3 hours ago', icon: 'ri-award-line', color: 'purple' },
       ]);
     } catch (err) {
-      console.error('Error fetching dashboard data:', err);
+      // Failed to fetch dashboard data - silently ignore
     }
     setLoading(false);
   };

@@ -25,7 +25,6 @@ export default function UserManagement() {
       const data = await res.json();
       setUsers(Array.isArray(data?.users) ? data.users : Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching users:', err);
       setUsers([]);
     }
     setLoading(false);
@@ -50,7 +49,6 @@ export default function UserManagement() {
         alert('Failed to update user roles');
       }
     } catch (err) {
-      console.error('Error updating roles:', err);
       alert('Error updating user roles');
     }
   };

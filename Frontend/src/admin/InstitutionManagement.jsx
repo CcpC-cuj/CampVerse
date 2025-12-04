@@ -23,7 +23,6 @@ export default function InstitutionManagement() {
       const data = await res.json();
       setInstitutions(Array.isArray(data?.institutions) ? data.institutions : Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching institutions:', err);
       setInstitutions([]);
     }
     setLoading(false);
@@ -47,7 +46,6 @@ export default function InstitutionManagement() {
         alert('Failed to approve institution');
       }
     } catch (err) {
-      console.error('Error approving institution:', err);
       alert('Error approving institution');
     }
     setActionLoading(null);
@@ -75,7 +73,6 @@ export default function InstitutionManagement() {
         alert('Failed to reject institution');
       }
     } catch (err) {
-      console.error('Error rejecting institution:', err);
       alert('Error rejecting institution');
     }
     setActionLoading(null);

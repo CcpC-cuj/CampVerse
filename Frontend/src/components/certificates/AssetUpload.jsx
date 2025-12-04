@@ -187,7 +187,6 @@ const AssetUpload = ({ eventId, onUploadComplete, existingAssets }) => {
         onUploadComplete(uploadResults);
       }
     } catch (err) {
-      console.error('Error uploading assets:', err);
       setError(err.message || 'Failed to upload assets. Please try again.');
     } finally {
       setUploading(false);

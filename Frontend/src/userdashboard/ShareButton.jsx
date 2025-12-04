@@ -10,11 +10,6 @@ const ShareButton = ({ event, title, description }) => {
   const eventTitle = title || event?.title || "Check out this event!";
   const eventDesc = description || event?.description || "";
   
-  // Add warning if eventId is missing
-  if (!eventId) {
-    console.warn('ShareButton: No eventId found. Falling back to current URL. Pass event object with _id or id.');
-  }
-  
   // Generate shareable URL - use event-specific URL if available
   const baseUrl = window.location.origin;
   const url = eventId ? `${baseUrl}/events/${eventId}` : window.location.href;
@@ -37,7 +32,7 @@ const ShareButton = ({ event, title, description }) => {
         setOpen(false);
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error("Native share failed:", err);
+          // Native share failed - silently ignore
         }
       }
     } else {
@@ -50,8 +45,8 @@ const ShareButton = ({ event, title, description }) => {
     navigator.clipboard.writeText(url).then(() => {
       setShowCopy(false);
       setOpen(false);
-    }).catch(err => {
-      console.error('Failed to copy link:', err);
+    }).catch(() => {
+      // Failed to copy link - silently ignore
     });
   };
 

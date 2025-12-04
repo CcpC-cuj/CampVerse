@@ -28,14 +28,11 @@ const ParticipantsModal = ({ event, onClose }) => {
         setParticipants(response.data);
       } else if (response.success && response.data && !Array.isArray(response.data)) {
         // If data is a single object, wrap it in an array
-        console.warn('Unexpected participants response format - single object:', response.data);
         setParticipants([]);
       } else {
-        console.warn('Unexpected participants response format:', response);
         setParticipants([]);
       }
     } catch (err) {
-      console.error('Failed to fetch participants:', err);
       setError('Failed to load participants');
       setParticipants([]);
     } finally {

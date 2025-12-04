@@ -53,14 +53,12 @@ export const AuthProvider = ({ children }) => {
     
     const storedRefreshToken = getRefreshToken();
     if (!storedRefreshToken) {
-      console.log('No refresh token available');
       return null;
     }
 
     isRefreshingRef.current = true;
     
     try {
-      console.log('Refreshing access token...');
       const result = await refreshAccessToken(storedRefreshToken);
       
       if (result.success && result.accessToken) {
@@ -70,15 +68,12 @@ export const AuthProvider = ({ children }) => {
           setUserState(result.user);
         }
         setLastRefresh(Date.now());
-        console.log('Token refreshed successfully');
         return result.accessToken;
       }
       return null;
     } catch (error) {
-      console.error('Token refresh failed:', error);
       // If refresh fails, logout user
       if (error.response?.status === 401) {
-        console.log('Refresh token expired, logging out...');
         logout();
       }
       return null;
@@ -98,7 +93,6 @@ export const AuthProvider = ({ children }) => {
     const refreshTime = Math.max(timeUntilExpiry - TOKEN_REFRESH_BUFFER, 0);
 
     if (refreshTime > 0) {
-      console.log(`Scheduling token refresh in ${Math.round(refreshTime / 1000)}s`);
       refreshTimeoutRef.current = setTimeout(async () => {
         const newToken = await refreshToken();
         if (newToken) {
@@ -117,7 +111,6 @@ export const AuthProvider = ({ children }) => {
       if (token && userData) {
         if (isTokenExpired(token)) {
           // Token expired, try to refresh
-          console.log('Access token expired, attempting refresh...');
           const newToken = await refreshToken();
           if (newToken) {
             setUserState(userData);
@@ -173,7 +166,6 @@ export const AuthProvider = ({ children }) => {
         setLastRefresh(Date.now());
       }
     } catch (error) {
-      console.error('Silent refresh failed:', error);
       // If unauthorized, try to refresh token
       if (error.response?.status === 401) {
         await refreshToken();
@@ -224,7 +216,7 @@ export const AuthProvider = ({ children }) => {
         setLastRefresh(Date.now());
       }
     } catch (error) {
-      console.error('Failed to refresh user data:', error);
+      // Failed to refresh user data - silently ignore
     }
   };
 

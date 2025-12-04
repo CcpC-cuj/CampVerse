@@ -21,7 +21,7 @@ export default function ActiveSessions({ onClose }) {
       const response = await getActiveSessions();
       setSessions(response.sessions || []);
     } catch (error) {
-      console.error('Failed to load sessions:', error);
+      // Failed to load sessions - silently ignore
     }
     setLoading(false);
   };
@@ -36,7 +36,6 @@ export default function ActiveSessions({ onClose }) {
       await revokeSession(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
     } catch (error) {
-      console.error('Failed to revoke session:', error);
       alert('Failed to end session. Please try again.');
     }
     setActionLoading(null);
@@ -49,7 +48,6 @@ export default function ActiveSessions({ onClose }) {
       await loadSessions();
       setShowConfirmAll(false);
     } catch (error) {
-      console.error('Failed to revoke all sessions:', error);
       alert('Failed to end sessions. Please try again.');
     }
     setActionLoading(null);

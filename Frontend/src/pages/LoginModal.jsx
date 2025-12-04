@@ -37,7 +37,6 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
         setError(response.error || 'Login failed. Please try again.');
       }
     } catch (error) {
-      console.error('Login error:', error);
       setError('Login failed: ' + (error.message || 'Unknown error'));
     } finally {
       setIsLoading(false);

@@ -22,7 +22,6 @@ const NotificationBell = () => {
       const data = await getNotifications(10); // Get latest 10 notifications
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
       setNotifications([]);
     } finally {
       if (!silent) {
@@ -73,24 +72,21 @@ const NotificationBell = () => {
 
       // Authenticate with token to join user room
       socketRef.current.on('connect', () => {
-        console.log('Socket.IO connected for notifications');
         socketRef.current.emit('authenticate', token);
       });
 
       socketRef.current.on('authenticated', (data) => {
-        console.log('Socket.IO authenticated:', data);
+        // Socket authenticated
       });
 
       // Listen for new notifications
       socketRef.current.on('notification', (newNotification) => {
-        console.log('🔔 New notification received:', newNotification);
         setNotifications(prev => [newNotification, ...prev].slice(0, 10));
         setAnimatedIds(prev => [newNotification._id, ...prev].slice(0, 10));
         showBrowserNotification(newNotification);
         
         // If host status update notification, refresh user data to update UI
         if (newNotification.type === 'host_status_update') {
-          console.log('Host status updated, refreshing user data...');
           refreshUserSilently();
         }
       });
@@ -103,11 +99,11 @@ const NotificationBell = () => {
       });
 
       socketRef.current.on('disconnect', () => {
-        console.log('Socket.IO disconnected');
+        // Socket disconnected
       });
 
       socketRef.current.on('connect_error', (error) => {
-        console.error('Socket.IO connection error:', error);
+        // Connection error - silently handle
       });
     }
 
@@ -169,7 +165,7 @@ const NotificationBell = () => {
         window.location.href = notification.link;
       }
     } catch (error) {
-      console.error('Failed to handle notification click:', error);
+      // Failed to handle notification click - silently ignore
     }
   };
 

@@ -66,7 +66,7 @@ const HostSettings = () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
-      console.error("Save failed:", error);
+      // Save failed - silently ignore
     } finally {
       setLoading(false);
     }

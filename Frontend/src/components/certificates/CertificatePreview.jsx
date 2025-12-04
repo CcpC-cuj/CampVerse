@@ -50,7 +50,6 @@ const CertificatePreview = ({ eventId, eventTitle, certificateSettings, onSaveSe
 
       setSuccess('Preview generated successfully!');
     } catch (err) {
-      console.error('Error generating preview:', err);
       setError('Failed to generate preview. Please try again.');
     } finally {
       setLoading(false);
@@ -91,7 +90,6 @@ const CertificatePreview = ({ eventId, eventTitle, certificateSettings, onSaveSe
         onSaveSettings({ awardText, certificateType });
       }
     } catch (err) {
-      console.error('Error saving settings:', err);
       setError(err.message || 'Failed to save settings. Please try again.');
     } finally {
       setLoading(false);

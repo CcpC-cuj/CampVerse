@@ -107,7 +107,6 @@ const VerificationStatus = ({ eventId, certificateSettings, onSubmitForVerificat
         onRefresh();
       }
     } catch (err) {
-      console.error('Error submitting for verification:', err);
       setError(err.message || 'Failed to submit for verification. Please try again.');
     } finally {
       setLoading(false);

@@ -25,25 +25,18 @@ export const useEventParticipants = (eventId, options = {}) => {
         } else if (participantsData.success && participantsData.data) {
           setParticipants(participantsData.data);
         } else {
-          console.warn('Unexpected participants response format:', participantsData);
           setParticipants([]);
         }
       } else {
-        console.error('Failed to fetch participants:', participantsResponse.reason);
         setParticipants([]);
       }
       if (analyticsResponse.status === 'fulfilled') {
         const analyticsData = analyticsResponse.value;
         if (analyticsData.success && analyticsData.data) {
           setAnalytics(analyticsData.data);
-        } else {
-          console.warn('Unexpected analytics response format:', analyticsData);
         }
-      } else {
-        console.error('Failed to fetch analytics:', analyticsResponse.reason);
       }
     } catch (err) {
-      console.error('Error fetching event data:', err);
       setError(err.message);
     } finally {
       setLoading(false);

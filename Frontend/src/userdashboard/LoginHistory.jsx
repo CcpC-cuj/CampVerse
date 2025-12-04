@@ -32,7 +32,7 @@ export default function LoginHistory({ onClose }) {
       setHistory(historyRes.history || []);
       setStats(statsRes.stats || null);
     } catch (error) {
-      console.error('Failed to load login history:', error);
+      // Failed to load login history - silently ignore
     }
     setLoading(false);
   };

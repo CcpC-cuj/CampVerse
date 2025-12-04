@@ -154,7 +154,7 @@ const CertificateManagement = ({ eventId }) => {
       setCertificateStatus(response.data);
       setParticipants(response.data.participants || []);
     } catch (err) {
-      console.error('Failed to fetch certificate status:', err);
+      // Failed to fetch certificate status - silently ignore
     }
   };
 

@@ -54,7 +54,6 @@ const SignupModal = ({
         setError(response.error || "Registration failed");
       }
     } catch (err) {
-      console.error("Registration error:", err);
       setError("Registration failed: " + err.message);
     } finally {
       setIsLoading(false);
@@ -72,7 +71,6 @@ const SignupModal = ({
       await getGoogleToken();
       // No redirect: stay on current page so event view updates with authentication
     } catch (err) {
-      console.error("Google OAuth initiation error:", err);
       setError("Failed to initiate Google sign-in. Please try again.");
     } finally {
       setIsLoading(false);

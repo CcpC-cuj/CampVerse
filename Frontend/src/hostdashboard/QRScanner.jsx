@@ -30,8 +30,8 @@ const QRScanner = () => {
     // Cleanup scanner on unmount
     return () => {
       if (html5QrCodeScannerRef.current) {
-        html5QrCodeScannerRef.current.clear().catch(err => {
-          console.error('Error clearing scanner:', err);
+        html5QrCodeScannerRef.current.clear().catch(() => {
+          // Error clearing scanner - silently ignore
         });
       }
     };
@@ -65,7 +65,6 @@ const QRScanner = () => {
         navigate('/host/manage-events');
       }
     } catch (err) {
-      console.error('Error loading event:', err);
       alert('Failed to load event details');
     } finally {
       setLoading(false);
@@ -96,7 +95,7 @@ const QRScanner = () => {
         });
       }
     } catch (err) {
-      console.error('Error loading scan history:', err);
+      // Failed to load scan history - silently ignore
     }
   };
 
@@ -128,7 +127,7 @@ const QRScanner = () => {
             await html5QrCodeScannerRef.current.pause(true);
           }
         } catch (err) {
-          console.log('Scanner pause info:', err.message);
+          // Scanner pause info - silently ignore
         }
         
         await handleScan(decodedText);
@@ -140,7 +139,7 @@ const QRScanner = () => {
               html5QrCodeScannerRef.current.resume();
             }
           } catch (err) {
-            console.log('Scanner resume info:', err.message);
+            // Scanner resume info - silently ignore
           }
         }, 2000);
       },
@@ -153,8 +152,8 @@ const QRScanner = () => {
 
   const stopScanner = () => {
     if (html5QrCodeScannerRef.current) {
-      html5QrCodeScannerRef.current.clear().catch(err => {
-        console.error('Error clearing scanner:', err);
+      html5QrCodeScannerRef.current.clear().catch(() => {
+        // Error clearing scanner - silently ignore
       });
       html5QrCodeScannerRef.current = null;
     }
@@ -172,16 +171,9 @@ const QRScanner = () => {
       return;
     }
 
-    console.log('🔍 QR Scan Debug:', { 
-      eventId, 
-      qrToken: qrToken.substring(0, 10) + '...', 
-      qrTokenLength: qrToken.length 
-    });
-
     try {
       const token = localStorage.getItem('token');
       const payload = { eventId, qrToken };
-      console.log('📤 Sending to backend:', payload);
       
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/scan`,
@@ -218,7 +210,6 @@ const QRScanner = () => {
         playErrorSound();
       }
     } catch (err) {
-      console.error('Error scanning QR code:', err);
       setScanResult({
         success: false,
         message: 'Failed to scan QR code. Please try again.',

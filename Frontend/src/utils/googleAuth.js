@@ -65,7 +65,6 @@ export const getGoogleToken = () => {
 // Initialize Google Sign-In button
 export const initializeGoogleSignIn = (buttonId, onSuccess, onError) => {
   if (!window.google) {
-    console.error('Google Identity Services not loaded');
     return;
   }
 

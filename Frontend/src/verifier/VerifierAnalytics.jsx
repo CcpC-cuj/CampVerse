@@ -18,7 +18,6 @@ export default function VerifierAnalytics() {
         setPlatformAnalytics(platformRes?.data || platformRes || null);
         setVerifierStats(verifierRes?.data || verifierRes || null);
       } catch (err) {
-        console.error('Error fetching analytics:', err);
         setPlatformAnalytics(null);
         setVerifierStats(null);
       }

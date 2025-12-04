@@ -82,7 +82,6 @@ const Feedback = () => {
         setRating(0);
       }
     } catch (err) {
-      console.error('Feedback submission error:', err);
       setFeedback("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);

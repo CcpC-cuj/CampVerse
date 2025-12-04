@@ -125,7 +125,7 @@ const HostTeamControl = () => {
       setShowInviteModal(false);
       setInviteForm({ email: "", role: "member", message: "" });
     } catch (error) {
-      console.error("Invite failed:", error);
+      // Invite failed - silently ignore
     } finally {
       setLoading(false);
     }

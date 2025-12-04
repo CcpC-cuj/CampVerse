@@ -61,7 +61,7 @@ const DiscoverEvents = () => {
         setRecommendations(transformedRecs);
       }
     } catch (err) {
-      console.error('Error fetching recommendations:', err);
+      // Failed to fetch recommendations - silently ignore
     }
   };
 
@@ -130,7 +130,6 @@ const DiscoverEvents = () => {
         setEvents([]);
       }
     } catch (err) {
-      console.error('Error fetching events:', err);
       setError('Failed to load events. Please try again.');
       setEvents([]);
     } finally {
@@ -155,7 +154,6 @@ const DiscoverEvents = () => {
         setTimeout(() => setSuccessMsg(""), 3000);
       }
     } catch (err) {
-      console.error('RSVP error:', err);
       setSuccessMsg("RSVP failed. Please try again.");
       setTimeout(() => setSuccessMsg(""), 3000);
     }

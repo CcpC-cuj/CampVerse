@@ -64,7 +64,6 @@ const EventDetailsPage = () => {
         setError('Event not found');
       }
     } catch (err) {
-      console.error('❌ Error loading event:', err);
       setError('Failed to load event');
     } finally {
       setLoading(false);
@@ -73,36 +72,23 @@ const EventDetailsPage = () => {
 
   const fetchQrCode = async (forceFresh = false) => {
     if (!user) {
-      console.log('❌ Cannot fetch QR: User not logged in');
       return;
     }
     
     try {
       setQrCodeLoading(true);
-      console.log('🎫 Fetching QR code for event:', id);
       
       // Add cache-busting if forcing fresh fetch
       const cacheBuster = forceFresh ? `?t=${Date.now()}` : '';
       const response = await getMyEventQrCode(id, cacheBuster);
       
-      console.log('🎫 QR API Raw Response:', response);
-      console.log('🎫 QR API Response:', {
-        success: response.success,
-        hasQrCode: !!response.qrCode,
-        hasImage: !!response.qrCode?.image,
-        error: response.error || response.message
-      });
-      
       if (response.success && response.qrCode && response.qrCode.image) {
-        console.log('✅ QR code loaded successfully');
         setQrCodeImage(response.qrCode.image);
       } else {
         // If QR fetch fails, don't show old cached QR
-        console.warn('⚠️ QR code not available:', response.error || response.message || 'Unknown error');
         setQrCodeImage(null);
       }
     } catch (err) {
-      console.error('❌ Error loading QR code:', err);
       setQrCodeImage(null);
       // Don't show error to user - QR code might be expired or used
     } finally {
@@ -154,7 +140,6 @@ const EventDetailsPage = () => {
         }
       }
     } catch (err) {
-      console.error('❌ RSVP error:', err);
       // Reload event even on error to ensure sync
       await loadEvent();
       setRsvpError("RSVP failed. Please try again.");
@@ -195,7 +180,6 @@ const EventDetailsPage = () => {
         setRsvpError(response.message || response.error || "Failed to cancel RSVP. Please try again.");
       }
     } catch (err) {
-      console.error('❌ Cancel RSVP error:', err);
       // Reload event even on error to ensure sync
       await loadEvent();
       setRsvpError("Failed to cancel RSVP. Please try again.");

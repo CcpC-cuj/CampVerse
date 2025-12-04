@@ -43,7 +43,6 @@ const Events = () => {
         setQrCodeImage(response.qrCode.image);
       }
     } catch (err) {
-      console.error('❌ Error loading QR code:', err);
       // Don't show error to user - QR code might be expired or used
     } finally {
       setQrCodeLoading(false);
@@ -61,7 +60,7 @@ const Events = () => {
         setUserRsvps(rsvpedEventIds);
       }
     } catch (err) {
-      console.error('Error loading user RSVP status:', err);
+      // Failed to load RSVP status - silently ignore
     }
   };
 
@@ -95,7 +94,6 @@ const Events = () => {
       setEvents(newEvents);
       setUserRsvps(rsvpSet);
     } catch (err) {
-      console.error("Error loading events:", err);
       setError("Failed to load events");
     } finally {
       setLoading(false);
@@ -128,7 +126,6 @@ const Events = () => {
         await loadUserEvents();
       }
     } catch (err) {
-      console.error("Error with RSVP:", err);
       // Reload events to ensure consistency
       await loadUserEvents();
     }

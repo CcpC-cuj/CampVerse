@@ -15,7 +15,6 @@ const RecentNotifications = () => {
       const data = await getNotifications(20);
       setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Failed to load notifications:', error);
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -39,17 +38,15 @@ const RecentNotifications = () => {
 
       // Authenticate with token to join user room
       socketRef.current.on('connect', () => {
-        console.log('Socket.IO connected for RecentNotifications');
         socketRef.current.emit('authenticate', token);
       });
 
-      socketRef.current.on('authenticated', (data) => {
-        console.log('Socket.IO authenticated for RecentNotifications:', data);
+      socketRef.current.on('authenticated', () => {
+        // Socket authenticated successfully
       });
 
       // Listen for new notifications
       socketRef.current.on('notification', (newNotification) => {
-        console.log('New notification received:', newNotification);
         setNotifications(prev => [newNotification, ...prev].slice(0, 20));
       });
 
@@ -66,11 +63,11 @@ const RecentNotifications = () => {
       });
 
       socketRef.current.on('disconnect', () => {
-        console.log('Socket.IO disconnected');
+        // Socket disconnected
       });
 
-      socketRef.current.on('connect_error', (error) => {
-        console.error('Socket.IO connection error:', error);
+      socketRef.current.on('connect_error', () => {
+        // Socket connection error - will auto-retry
       });
     }
 
@@ -86,7 +83,7 @@ const RecentNotifications = () => {
       await markAllNotificationsAsRead();
       load();
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      // Failed to mark all as read - silently ignore
     }
   };
 
@@ -95,7 +92,7 @@ const RecentNotifications = () => {
       await markNotificationAsRead(notificationId);
       load();
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      // Failed to mark notification as read - silently ignore
     }
   };
 

@@ -81,7 +81,6 @@ const HostEventsDashboard = () => {
         response = await getMyEvents();
   // getMyEvents response: (console.log removed)
       } catch (hostError) {
-        console.error('Host API failed:', hostError);
         // Fallback: try the general events API and filter by host
         try {
           const { listEvents } = await import('../api/events');
@@ -99,7 +98,6 @@ const HostEventsDashboard = () => {
             response = { success: false, error: hostError.message };
           }
         } catch (fallbackError) {
-          console.error('Fallback API also failed:', fallbackError);
           response = { success: false, error: hostError.message };
         }
       }
@@ -112,14 +110,12 @@ const HostEventsDashboard = () => {
         // Handle wrapped response format
         setEvents(response.data.events || response.data || []);
       } else if (response && response.error) {
-        console.error('API Error:', response.error);
         setError(`Failed to load events: ${response.error}`);
         setEvents([]);
       } else {
         setEvents([]);
       }
     } catch (err) {
-      console.error('Error loading events:', err);
       setError('Failed to load events');
     } finally {
       setLoading(false);
@@ -262,11 +258,9 @@ const HostEventsDashboard = () => {
         loadEvents(); // Reload events
         // Event created successfully
       } else {
-        console.error('Create event response:', response);
         alert(response.error || 'Failed to create event');
       }
     } catch (err) {
-      console.error('Error creating event:', err);
       alert('Error creating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -376,7 +370,6 @@ const HostEventsDashboard = () => {
         alert(response.error || 'Failed to update event');
       }
     } catch (err) {
-      console.error('Error updating event:', err);
       alert('Error updating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -399,7 +392,6 @@ const HostEventsDashboard = () => {
         alert(response.error || 'Failed to delete event');
       }
     } catch (err) {
-      console.error('Error deleting event:', err);
       alert('Error deleting event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);

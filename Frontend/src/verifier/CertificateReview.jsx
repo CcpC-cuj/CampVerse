@@ -20,7 +20,6 @@ export default function CertificateReview() {
                     Array.isArray(res?.certificates) ? res.certificates : [];
       setPendingCertificates(certs);
     } catch (err) {
-      console.error('Error fetching certificates:', err);
       setPendingCertificates([]);
     }
     setLoading(false);
@@ -42,7 +41,6 @@ export default function CertificateReview() {
         alert('Failed to approve certificate');
       }
     } catch (err) {
-      console.error('Error approving certificate:', err);
       alert('Error approving certificate');
     }
     setActionLoading(null);
@@ -70,7 +68,6 @@ export default function CertificateReview() {
         alert('Failed to reject certificate');
       }
     } catch (err) {
-      console.error('Error rejecting certificate:', err);
       alert('Error rejecting certificate');
     }
     setActionLoading(null);

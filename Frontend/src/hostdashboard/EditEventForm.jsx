@@ -191,8 +191,6 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
           const userResult = await findUserByEmail(email);
           if (userResult.userId) {
             await nominateCoHost({ eventId: event._id, userId: userResult.userId });
-          } else {
-            console.warn(`Could not find user with email: ${email}`);
           }
         });
       }

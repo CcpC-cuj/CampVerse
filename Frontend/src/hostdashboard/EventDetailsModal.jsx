@@ -22,7 +22,6 @@ const EventDetailsModal = ({ event, onClose }) => {
         setEventDetails(response.data);
       }
     } catch (err) {
-      console.error('Error loading event details:', err);
       setError('Failed to load event details');
     } finally {
       setLoading(false);

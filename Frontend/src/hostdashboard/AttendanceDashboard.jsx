@@ -85,7 +85,7 @@ const AttendanceDashboard = () => {
         setRecentScans(attendanceData.attendees?.slice(-10).reverse() || []);
       }
     } catch (err) {
-      console.error('Error loading dashboard data:', err);
+      // Failed to load dashboard data - silently ignore
     } finally {
       setLoading(false);
     }

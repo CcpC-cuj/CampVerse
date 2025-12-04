@@ -29,7 +29,6 @@ export async function refreshAccessToken(refreshToken) {
     const response = await authAxios.post('/refresh', { refreshToken });
     return response.data;
   } catch (error) {
-    console.error('Token refresh failed:', error);
     throw error;
   }
 }
@@ -43,7 +42,6 @@ export async function getActiveSessions() {
     const response = await authAxios.get('/sessions');
     return response.data;
   } catch (error) {
-    console.error('Failed to get sessions:', error);
     throw error;
   }
 }
@@ -58,7 +56,6 @@ export async function revokeSession(sessionId) {
     const response = await authAxios.delete(`/sessions/${sessionId}`);
     return response.data;
   } catch (error) {
-    console.error('Failed to revoke session:', error);
     throw error;
   }
 }
@@ -73,7 +70,6 @@ export async function revokeAllSessions(keepCurrent = false) {
     const response = await authAxios.delete(`/sessions?keepCurrent=${keepCurrent}`);
     return response.data;
   } catch (error) {
-    console.error('Failed to revoke all sessions:', error);
     throw error;
   }
 }
@@ -93,7 +89,6 @@ export async function getLoginHistory(options = {}) {
     const response = await authAxios.get(`/login-history?${params.toString()}`);
     return response.data;
   } catch (error) {
-    console.error('Failed to get login history:', error);
     throw error;
   }
 }
@@ -108,7 +103,6 @@ export async function getLoginStats(days = 30) {
     const response = await authAxios.get(`/login-stats?days=${days}`);
     return response.data;
   } catch (error) {
-    console.error('Failed to get login stats:', error);
     throw error;
   }
 }
@@ -122,7 +116,6 @@ export async function checkSecurityStatus() {
     const response = await authAxios.get('/security-check');
     return response.data;
   } catch (error) {
-    console.error('Security check failed:', error);
     throw error;
   }
 }

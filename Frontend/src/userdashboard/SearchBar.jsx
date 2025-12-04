@@ -29,7 +29,6 @@ const SearchBar = ({ placeholder, value, onChange, onResults }) => {
 
         onResults?.(events);
       } catch (err) {
-        console.error("Search failed:", err);
         setMessage("Something went wrong.");
       } finally {
         setLoading(false);

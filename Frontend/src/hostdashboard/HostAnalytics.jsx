@@ -97,7 +97,6 @@ const HostAnalytics = () => {
 
       setAnalytics(analyticsData);
     } catch (err) {
-      console.error('Error fetching analytics:', err);
       // Set empty analytics on error
       setAnalytics({
         overview: { totalEvents: 0, totalParticipants: 0, totalRevenue: "₹0", avgRating: 0, completionRate: "0%", growthRate: "0%" },

@@ -74,7 +74,6 @@ const BulkAttendance = () => {
         setParticipants(participantsList);
       }
     } catch (err) {
-      console.error('Error loading data:', err);
       alert('Failed to load event data');
     } finally {
       setLoading(false);
@@ -144,7 +143,6 @@ const BulkAttendance = () => {
         alert(`❌ ${data.message || data.error || 'Failed to mark attendance'}`);
       }
     } catch (err) {
-      console.error('Error marking bulk attendance:', err);
       alert('Failed to mark attendance. Please try again.');
     } finally {
       setBulkLoading(false);

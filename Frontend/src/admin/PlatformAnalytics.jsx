@@ -25,7 +25,7 @@ export default function PlatformAnalytics() {
       setGrowthData(growthRes?.data || growthRes || null);
       setSearchData(searchRes?.data || searchRes || null);
     } catch (err) {
-      console.error('Error fetching analytics:', err);
+      // Failed to fetch analytics - silently ignore
     }
     setLoading(false);
   };

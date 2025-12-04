@@ -33,7 +33,6 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
         setQrCodeImage(response.qrCode.image);
       }
     } catch (err) {
-      console.error('❌ Error loading QR code:', err);
       // Don't show error to user - QR code might be expired or used
     } finally {
       setQrCodeLoading(false);
@@ -49,7 +48,6 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
         setRsvped(response.data.userRegistration ? true : false);
       }
     } catch (err) {
-      console.error('Error loading event details:', err);
       setError('Failed to load event details');
     } finally {
       setLoading(false);
@@ -85,7 +83,6 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
         setError(response.message || response.error || 'RSVP action failed');
       }
     } catch (err) {
-      console.error('RSVP error:', err);
       setError('RSVP action failed. Please try again.');
     } finally {
       setLoading(false);

@@ -83,12 +83,8 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 
 	const nextStep = (e) => {
 		if (e) e.preventDefault(); // Prevent any form submission
-		console.log('Current step:', currentStep, 'Form data:', eventForm);
 		if (validateStep(currentStep)) {
-			console.log('Validation passed, moving to next step');
 			setCurrentStep(prev => Math.min(prev + 1, 4));
-		} else {
-			console.log('Validation failed:', formErrors);
 		}
 	};
 
@@ -159,7 +155,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		
 		// Only allow submission on step 4
 		if (currentStep !== 4) {
-			console.log('Form submission prevented - not on step 4. Current step:', currentStep);
 			return;
 		}
 		
@@ -224,12 +219,10 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 							const userResult = await findUserByEmail(email);
 							if (userResult.userId) {
 								await nominateCoHost({ eventId: response.event._id, userId: userResult.userId });
-							} else {
-								console.warn(`Could not find user with email: ${email}`);
 							}
 						}
 					} catch (cohostErr) {
-						console.warn('Error nominating co-hosts:', cohostErr);
+						// Error nominating co-hosts - silently ignore
 					}
 				}
 				
@@ -242,7 +235,6 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			}
 		} catch (err) {
 			// Handle network or unexpected errors
-			console.error('Error creating event:', err);
 			const errorMessage = err?.response?.data?.error || err?.message || 'An unexpected error occurred. Please try again.';
 			alert(errorMessage);
 		} finally {

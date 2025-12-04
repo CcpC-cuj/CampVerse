@@ -62,11 +62,11 @@ const Landing = () => {
               window.location.hash = '';
               navigate('/dashboard');
             } else {
-              console.error("🔴 [LANDING] OAuth response error:", response.error);
+              // OAuth response error - handled silently
             }
           }
         } catch (error) {
-          console.error("🔴 [LANDING] OAuth processing error:", error);
+          // OAuth processing error - handled silently
         }
       }
     };
@@ -170,7 +170,6 @@ const Landing = () => {
                   throw new Error(res.error || 'OTP verification failed');
                 }
             } catch (err) {
-              console.error('OTP verification error:', err);
               throw err; // Re-throw to let OtpModal handle the error display
             }
           }}
@@ -183,7 +182,6 @@ const Landing = () => {
                   throw new Error(res.error || 'Failed to resend OTP');
                 }
             } catch (err) {
-              console.error('Resend OTP error:', err);
               throw err; // Re-throw to let OtpModal handle the error display
             }
           }}

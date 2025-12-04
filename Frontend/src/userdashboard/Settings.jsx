@@ -162,7 +162,7 @@ const [institution, setInstitution] = useState(user?.institution || null);
           }
         }
       } catch (err) {
-        console.error('Failed to fetch institution:', err);
+        // Failed to fetch institution - silently ignore
       }
     })();
     return () => { mounted = false; };

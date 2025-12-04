@@ -38,10 +38,9 @@ const Chatbot = () => {
 					from: "bot", 
 					text: data.answer || data.error || "Sorry, I couldn't understand that.",
 					aiEnhanced: data.ai_enhanced || false
-				}
-			]);
+			}
+		]);
 		} catch (err) {
-			console.error('Chatbot error:', err);
 			setMessages((msgs) => [
 			...msgs,
 			{ from: "bot", text: "Network error. Please try again." }

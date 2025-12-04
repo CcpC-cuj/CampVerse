@@ -48,7 +48,6 @@ const EventsManagement = () => {
           eventsData = [];
         }
       } catch (eventsError) {
-        console.error("Events API failed:", eventsError);
         // Check if it's a 403 or role-related error
         if (eventsError.message?.includes('403') || eventsError.message?.includes('Forbidden')) {
           setError("You don't have host permissions. Please complete your host registration first.");
@@ -79,7 +78,6 @@ const EventsManagement = () => {
       setEvents(transformedEvents);
       
     } catch (error) {
-      console.error("Error loading events:", error);
       setError("Failed to load events data");
       setEvents([]);
     } finally {
@@ -236,11 +234,9 @@ const EventsManagement = () => {
         loadEventsData();
       } else {
         const errorData = await response.json();
-        console.error('Update failed:', errorData);
         alert(errorData.message || 'Failed to update event');
       }
     } catch (error) {
-      console.error('Error updating event:', error);
       alert('Error updating event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
@@ -274,7 +270,6 @@ const EventsManagement = () => {
   setShowDeleteModal(false);
   setSelectedEvent(null);
     } catch (error) {
-      console.error('Error deleting event:', error);
       alert('Error deleting event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);

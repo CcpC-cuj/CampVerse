@@ -30,7 +30,6 @@ self.addEventListener('fetch', event => {
               cache.put(event.request, networkResponse.clone());
             } catch (e) {
               // Silently ignore cache errors for unsupported requests
-              console.warn('Cache put failed:', e.message);
             }
           }
           return networkResponse;

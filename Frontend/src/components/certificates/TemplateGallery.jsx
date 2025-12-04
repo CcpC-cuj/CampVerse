@@ -41,7 +41,6 @@ const TemplateGallery = ({ eventId, onTemplateSelect, selectedTemplateId }) => {
       setTemplates(data.templates || []);
       setError(null);
     } catch (err) {
-      console.error('Error fetching templates:', err);
       setError('Failed to load templates. Please try again.');
       
       // Mock data for development
