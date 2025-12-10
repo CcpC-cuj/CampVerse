@@ -620,18 +620,18 @@ router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
 // Verifier analytics (verification stats)
 router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
-// Platform insights (global stats)
+// Platform insights (global stats) - accessible by verifier and platformAdmin
 router.get(
   '/platform-insights',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['platformAdmin', 'verifier']),
   getPlatformInsights,
 );
-// Search analytics (admin only)
+// Search analytics (accessible by verifier and platformAdmin)
 router.get(
   '/search-analytics',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['platformAdmin', 'verifier']),
   getSearchAnalytics,
 );
 
@@ -647,18 +647,18 @@ router.get(
   authenticateToken,
   getUserActivityTimeline,
 );
-// Platform growth trends (admin only)
+// Platform growth trends (accessible by verifier and platformAdmin)
 router.get(
   '/admin/growth-trends',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['platformAdmin', 'verifier']),
   getGrowthTrends,
 );
-// Zero-result searches (admin only)
+// Zero-result searches (accessible by verifier and platformAdmin)
 router.get(
   '/admin/zero-result-searches',
   authenticateToken,
-  requireRole('platformAdmin'),
+  requireRole(['platformAdmin', 'verifier']),
   getZeroResultSearches,
 );
 

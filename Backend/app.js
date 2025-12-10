@@ -30,6 +30,7 @@ const { securityMiddleware, setRedisClient } = require('./Middleware/security');
 const { cacheService } = require('./Services/cacheService');
 const { memoryManager } = require('./Utils/memoryManager');
 const SocketService = require('./Services/socketService');
+const cookieParser = require('cookie-parser');
 
 // Generate correlation ID for request tracking
 function generateCorrelationId() {
@@ -43,6 +44,7 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: [
+      'https://campverse.vercel.app',     // Production Vercel frontend
       'https://campverse-alqa.onrender.com',
       'https://campverse-26hm.onrender.com',
       'http://localhost:3000',
@@ -81,11 +83,12 @@ const allowedOrigins = (() => {
   const port = process.env.PORT || 5001;
   const isRenderPort = port == 10000;
   const isProduction = environment === 'production' || isRender || isRenderPort;
-  
+
   logger.info(`Environment: ${environment}, Render: ${!!isRender}, Port: ${port}, Production: ${isProduction}`);
-  
+
   if (isProduction || isRenderPort) {
     const origins = [
+      'https://campverse.vercel.app',       // CRITICAL: Vercel frontend
       'https://campverse-alqa.onrender.com',
       'https://campverse-26hm.onrender.com'
     ];
@@ -94,7 +97,7 @@ const allowedOrigins = (() => {
     logger.info(`Production CORS origins: ${origins.join(', ')}`);
     return origins;
   }
-  
+
   const devOrigins = [
     'http://localhost:3000',
     'http://localhost:5173',
@@ -109,10 +112,10 @@ const allowedOrigins = (() => {
 // ABSOLUTE FIRST: Priority CORS handler - MUST handle ALL requests with origins
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   logger.info(`🔍 CORS CHECK: ${req.method} ${req.url} from origin: ${origin || 'no-origin'}`);
   logger.info(`🔍 Allowed origins: ${allowedOrigins.join(', ')}`);
-  
+
   // Always set CORS headers for allowed origins OR no-origin requests
   if (!origin || allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
@@ -129,16 +132,20 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-  
+
   // Handle preflight requests immediately
   if (req.method === 'OPTIONS') {
     logger.info(`🔄 Handling OPTIONS preflight for: ${origin}`);
     res.status(204).end();
     return;
   }
-  
+
   next();
 });
+
+// CRITICAL: Parse cookies BEFORE any routes that need them
+// This is required for HttpOnly cookie-based refresh token
+app.use(cookieParser());
 
 // Initialize services
 (async () => {
@@ -205,6 +212,22 @@ const strictLimiter = rateLimit({
   }
 });
 
+// Relaxed rate limiter for recommendation engine (higher limits to avoid blocking legitimate requests)
+const recommendationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5000, // Allow 5000 requests per 15 minutes (5x the general limit)
+  message: { error: 'Too many recommendation requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting for authenticated users (optional - can be removed for stricter control)
+  skip: (req) => {
+    return req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
+  },
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many recommendation requests, please try again later.' });
+  }
+});
+
 // Apply rate limiters to different route types
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/login', authLimiter);
@@ -218,7 +241,7 @@ app.use('/api/events', apiLimiter);
 app.use('/api/hosts', hostLimiter);
 app.use('/api/certificates', apiLimiter);
 app.use('/api/institutions', apiLimiter);
-app.use('/api/recommendations', apiLimiter);
+app.use('/api/recommendations', recommendationLimiter); // Relaxed limits for recommendation engine
 app.use('/api/feedback', apiLimiter);
 app.use('/api/support', apiLimiter);
 
@@ -286,19 +309,19 @@ app.use(helmet({
 app.use((req, res, next) => {
   // Remove sensitive headers
   res.removeHeader('X-Powered-By');
-  
+
   // Add custom security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-  
+
   // Add request ID for tracking
   if (!req.correlationId) {
     req.correlationId = generateCorrelationId();
   }
-  
+
   next();
 });
 
@@ -320,10 +343,10 @@ app.use(express.json({ limit: '1mb' }));
 // Handle JSON parsing errors
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
       error: 'Invalid JSON format',
-      message: err.message 
+      message: err.message
     });
   }
   next(err);
@@ -364,7 +387,7 @@ redisClient.on('reconnecting', () => {
   try {
     await redisClient.connect();
     logger.info('Redis connected');
-    
+
     // Set up security middleware after Redis is connected
     setRedisClient(redisClient);
     const securityStack = securityMiddleware({
@@ -381,10 +404,10 @@ redisClient.on('reconnecting', () => {
       securityRateLimitWindowMs: 15 * 60 * 1000,
       securityRateLimitMax: 10
     });
-    
+
     securityStack.forEach(middleware => app.use(middleware));
     logger.info('Security middleware initialized');
-    
+
   } catch (err) {
     logger.error('Redis connection failed:', err);
     logger.warn('Continuing without Redis - some features may be limited');
@@ -457,7 +480,7 @@ app.get('/health', async (req, res) => {
       const memUsage = process.memoryUsage();
       const totalMemory = require('os').totalmem();
       const memoryPercentage = memUsage.rss / totalMemory;
-      
+
       if (memoryPercentage < 0.8) {
         healthStatus.services.memory = 'healthy';
       } else if (memoryPercentage < 0.9) {
@@ -535,7 +558,7 @@ setSocketIO(io);
 // Socket.IO event handlers
 io.on('connection', (socket) => {
   logger.info(`New socket connection: ${socket.id}`);
-  
+
   // Authentication event - join user room for notifications
   socket.on('authenticate', (token) => {
     try {
@@ -550,7 +573,7 @@ io.on('connection', (socket) => {
       socket.emit('authenticated', { success: false, error: 'Invalid token' });
     }
   });
-  
+
   // API proxy events - bypass CORS by routing through WebSocket
   socket.on('api:users:google-signin', async (data) => {
     try {
@@ -558,7 +581,7 @@ io.on('connection', (socket) => {
       // Create mock req/res objects for the controller
       const mockReq = { body: data };
       const mockRes = {
-        status: (code) => ({ 
+        status: (code) => ({
           json: (result) => socket.emit('api:users:google-signin:response', { status: code, data: result })
         }),
         json: (result) => socket.emit('api:users:google-signin:response', { status: 200, data: result })
@@ -569,36 +592,36 @@ io.on('connection', (socket) => {
       socket.emit('api:users:google-signin:response', { status: 500, error: error.message });
     }
   });
-  
+
   // Generic API proxy
   socket.on('api:request', async (data) => {
     try {
       const { method, endpoint } = data;
       logger.info(`Socket API request: ${method} ${endpoint}`);
-      
+
       // Route the request internally without CORS restrictions
       // This is a simplified proxy - you'd expand this for full API coverage
-      socket.emit('api:response', { 
+      socket.emit('api:response', {
         requestId: data.requestId,
-        status: 200, 
+        status: 200,
         data: { message: 'Socket API proxy working!', endpoint, method }
       });
     } catch (error) {
       logger.error('Socket API proxy error:', error);
-      socket.emit('api:response', { 
+      socket.emit('api:response', {
         requestId: data.requestId,
-        status: 500, 
-        error: error.message 
+        status: 500,
+        error: error.message
       });
     }
   });
-  
+
   // Real-time notifications
   socket.on('join:notifications', (userId) => {
     socket.join(`user:${userId}`);
     logger.info(`Socket ${socket.id} joined notifications for user ${userId}`);
   });
-  
+
   // Disconnect handler
   socket.on('disconnect', () => {
     logger.info(`Socket disconnected: ${socket.id}`);
@@ -617,17 +640,17 @@ const mongoOptions = {
   serverSelectionTimeoutMS: 5000, // How long to try selecting a server
   socketTimeoutMS: 45000, // How long to wait for a response
   connectTimeoutMS: 10000, // How long to wait for initial connection
-  
+
   // Retry settings
   retryWrites: true,
   retryReads: true,
-  
+
   // Buffer settings
   bufferCommands: false, // Disable mongoose buffering
-  
+
   // Heartbeat settings
   heartbeatFrequencyMS: 10000, // Heartbeat every 10 seconds
-  
+
   // Other settings
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -638,12 +661,12 @@ mongoose
   .connect(process.env.MONGO_URI, mongoOptions)
   .then(() => {
     logger.info('MongoDB connected with connection pooling');
-    
+
     // Log connection pool events
     mongoose.connection.on('connected', () => {
       logger.info('MongoDB connection established');
     });
-    
+
     mongoose.connection.on('error', (err) => {
       logger.error('MongoDB connection error:', err);
       // Don't exit immediately, try to reconnect
@@ -654,15 +677,15 @@ mongoose
         });
       }, 5000);
     });
-    
+
     mongoose.connection.on('disconnected', () => {
       logger.warn('MongoDB disconnected');
     });
-    
+
     // Initialize QR Code cleanup cron job
     const { runCleanup } = require('./Services/qrCleanupService');
     const cron = require('node-cron');
-    
+
     // Run QR cleanup every hour
     cron.schedule('0 * * * *', async () => {
       logger.info('[Cron] Starting hourly QR code cleanup...');
@@ -673,9 +696,9 @@ mongoose
         logger.error('[Cron] QR cleanup failed:', err);
       }
     });
-    
+
     logger.info('QR code cleanup cron job scheduled (runs hourly)');
-    
+
     // Graceful shutdown
     process.on('SIGINT', async () => {
       logger.info('Received SIGINT, closing MongoDB connection...');
@@ -688,18 +711,18 @@ mongoose
         process.exit(1);
       }
     });
-    
+
     const PORT = process.env.PORT || 5001;
     const server = httpServer.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server is running on port ${PORT}`);
       logger.info('Socket.IO server is ready for WebSocket connections');
     });
-    
+
     // Server timeout configuration
     server.timeout = 30000; // 30 seconds
     server.keepAliveTimeout = 65000; // 65 seconds
     server.headersTimeout = 66000; // 66 seconds
-    
+
     // Graceful server shutdown
     process.on('SIGTERM', () => {
       logger.info('Received SIGTERM, shutting down gracefully...');

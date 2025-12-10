@@ -11,28 +11,64 @@ const {
   checkSuspiciousActivity
 } = require('../Services/tokenService');
 
+// Cookie configuration for cross-origin requests (Vercel -> Render)
+const REFRESH_TOKEN_COOKIE_OPTIONS = {
+  httpOnly: true,      // Prevents JavaScript access (XSS protection)
+  secure: true,        // CRITICAL: Must be true for HTTPS (Render/Vercel)
+  sameSite: 'none',    // CRITICAL: Must be 'none' for cross-origin cookies
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  path: '/',           // Cookie available for all paths
+};
+
+/**
+ * Helper to set refresh token as HttpOnly cookie
+ */
+function setRefreshTokenCookie(res, refreshToken) {
+  res.cookie('refreshToken', refreshToken, REFRESH_TOKEN_COOKIE_OPTIONS);
+}
+
+/**
+ * Helper to clear refresh token cookie
+ */
+function clearRefreshTokenCookie(res) {
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    path: '/',
+  });
+}
+
 /**
  * @route POST /api/auth/refresh
- * @desc Refresh access token using refresh token
- * @access Public (requires valid refresh token in body)
+ * @desc Refresh access token using refresh token from HttpOnly cookie
+ * @access Public (requires valid refresh token in cookie)
  */
 router.post('/refresh', async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    
+    // Get refresh token from HttpOnly cookie (browser sends it automatically)
+    const refreshToken = req.cookies?.refreshToken;
+
     if (!refreshToken) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Refresh token is required' 
+      return res.status(401).json({
+        success: false,
+        error: 'No refresh token found. Please login again.'
       });
     }
-    
+
     const result = await refreshAccessToken(refreshToken, req);
-    
+
     if (!result.success) {
+      // Clear invalid cookie
+      clearRefreshTokenCookie(res);
       return res.status(401).json(result);
     }
-    
+
+    // If token rotation provides a new refresh token, update the cookie
+    if (result.newRefreshToken) {
+      setRefreshTokenCookie(res, result.newRefreshToken);
+    }
+
     return res.json({
       success: true,
       accessToken: result.accessToken,
@@ -41,9 +77,46 @@ router.post('/refresh', async (req, res) => {
     });
   } catch (error) {
     console.error('Token refresh error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Token refresh failed' 
+    clearRefreshTokenCookie(res);
+    return res.status(500).json({
+      success: false,
+      error: 'Token refresh failed'
+    });
+  }
+});
+
+/**
+ * @route POST /api/auth/logout
+ * @desc Logout user and clear refresh token cookie
+ * @access Private
+ */
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    // Clear the refresh token cookie
+    clearRefreshTokenCookie(res);
+
+    // Optionally revoke the session on the server
+    const refreshToken = req.cookies?.refreshToken;
+    if (refreshToken && req.user?.sessionId) {
+      try {
+        await revokeSession(req.user.sessionId, req.user.id);
+      } catch (e) {
+        // Continue even if session revocation fails
+        console.error('Session revocation error:', e);
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Still clear the cookie even on error
+    clearRefreshTokenCookie(res);
+    return res.status(500).json({
+      success: false,
+      error: 'Logout failed'
     });
   }
 });
@@ -56,12 +129,7 @@ router.post('/refresh', async (req, res) => {
 router.get('/sessions', authenticateToken, async (req, res) => {
   try {
     const sessions = await getActiveSessions(req.user.id);
-    
-    // Mark current session
-    const currentToken = req.token;
-    // Note: We can't directly compare tokens since refresh tokens are hashed
-    // Instead, we could pass session ID in the token or use other methods
-    
+
     return res.json({
       success: true,
       sessions,
@@ -69,9 +137,9 @@ router.get('/sessions', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Get sessions error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to get sessions' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get sessions'
     });
   }
 });
@@ -84,22 +152,22 @@ router.get('/sessions', authenticateToken, async (req, res) => {
 router.delete('/sessions/:sessionId', authenticateToken, async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
     const result = await revokeSession(sessionId, req.user.id);
-    
+
     if (!result.success) {
       return res.status(404).json(result);
     }
-    
+
     return res.json({
       success: true,
       message: 'Session revoked successfully'
     });
   } catch (error) {
     console.error('Revoke session error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to revoke session' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to revoke session'
     });
   }
 });
@@ -113,9 +181,14 @@ router.delete('/sessions', authenticateToken, async (req, res) => {
   try {
     const { keepCurrent } = req.query;
     const currentSessionId = keepCurrent === 'true' ? req.sessionId : null;
-    
+
     const result = await revokeAllSessions(req.user.id, currentSessionId);
-    
+
+    // If not keeping current session, clear the cookie too
+    if (!currentSessionId) {
+      clearRefreshTokenCookie(res);
+    }
+
     return res.json({
       success: true,
       message: `Revoked ${result.revokedCount} session(s)`,
@@ -123,9 +196,9 @@ router.delete('/sessions', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Revoke all sessions error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to revoke sessions' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to revoke sessions'
     });
   }
 });
@@ -138,13 +211,13 @@ router.delete('/sessions', authenticateToken, async (req, res) => {
 router.get('/login-history', authenticateToken, async (req, res) => {
   try {
     const { limit = 50, skip = 0, status } = req.query;
-    
+
     const history = await getLoginHistory(req.user.id, {
       limit: parseInt(limit),
       skip: parseInt(skip),
       status: status || null
     });
-    
+
     return res.json({
       success: true,
       history,
@@ -152,9 +225,9 @@ router.get('/login-history', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Get login history error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to get login history' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get login history'
     });
   }
 });
@@ -167,18 +240,18 @@ router.get('/login-history', authenticateToken, async (req, res) => {
 router.get('/login-stats', authenticateToken, async (req, res) => {
   try {
     const { days = 30 } = req.query;
-    
+
     const stats = await getLoginStats(req.user.id, parseInt(days));
-    
+
     return res.json({
       success: true,
       stats
     });
   } catch (error) {
     console.error('Get login stats error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to get login stats' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to get login stats'
     });
   }
 });
@@ -191,18 +264,22 @@ router.get('/login-stats', authenticateToken, async (req, res) => {
 router.get('/security-check', authenticateToken, async (req, res) => {
   try {
     const report = await checkSuspiciousActivity(req.user.id);
-    
+
     return res.json({
       success: true,
       ...report
     });
   } catch (error) {
     console.error('Security check error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      error: 'Failed to check security status' 
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to check security status'
     });
   }
 });
 
+// Export cookie helpers for use in User controller
 module.exports = router;
+module.exports.setRefreshTokenCookie = setRefreshTokenCookie;
+module.exports.clearRefreshTokenCookie = clearRefreshTokenCookie;
+module.exports.REFRESH_TOKEN_COOKIE_OPTIONS = REFRESH_TOKEN_COOKIE_OPTIONS;

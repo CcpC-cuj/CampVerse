@@ -53,6 +53,9 @@ const logger = winston.createLogger({
 const crypto = require('crypto');
 const { cacheService } = require('../Services/cacheService');
 
+// Import cookie helper for setting refresh token
+const { setRefreshTokenCookie, REFRESH_TOKEN_COOKIE_OPTIONS } = require('../Routes/authRoutes');
+
 // const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // not used directly
 
 // Academic email domain check - supports:
@@ -68,12 +71,12 @@ const ALLOWED_SPECIFIC_DOMAINS = [
 const isAcademicEmail = (email) => {
   const emailLower = email.toLowerCase();
   const domain = emailLower.split('@')[1];
-  
+
   // Check if domain is in the explicitly allowed list
   if (domain && ALLOWED_SPECIFIC_DOMAINS.some(allowed => domain === allowed || domain.endsWith('.' + allowed))) {
     return true;
   }
-  
+
   // Match common academic patterns:
   // 1. Ends with .ac.in or .edu.in
   // 2. Ends with .edu (like .edu)
@@ -189,18 +192,20 @@ async function googleSignIn(req, res) {
       }
       user.lastLogin = new Date();
       await user.save();
-      
+
       // Use new token service for access + refresh tokens
       try {
         const { generateTokenPair } = require('../Services/tokenService');
         const tokens = await generateTokenPair(user, req, 'google');
-        
+
         logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
-        
+
+        // Set refresh token as HttpOnly cookie
+        setRefreshTokenCookie(res, tokens.refreshToken);
+
         return res.json({
           message: "Google login successful (mock)",
           token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
           expiresIn: tokens.expiresIn,
           user: sanitizeUser(user),
         });
@@ -216,7 +221,7 @@ async function googleSignIn(req, res) {
           },
         );
         logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
-        
+
         return res.json({
           message: "Google login successful (mock)",
           token: jwtToken,
@@ -309,18 +314,20 @@ async function googleSignIn(req, res) {
       }
       user.lastLogin = new Date();
       await user.save();
-      
+
       // Use new token service for access + refresh tokens
       try {
         const { generateTokenPair } = require('../Services/tokenService');
         const tokens = await generateTokenPair(user, req, 'google');
-        
+
         logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
-        
+
+        // Set refresh token as HttpOnly cookie
+        setRefreshTokenCookie(res, tokens.refreshToken);
+
         return res.json({
           message: "Google login successful",
           token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
           expiresIn: tokens.expiresIn,
           user: sanitizeUser(user),
         });
@@ -335,9 +342,9 @@ async function googleSignIn(req, res) {
             audience: "campverse-users",
           },
         );
-        
+
         logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
-        
+
         return res.json({
           message: "Google login successful",
           token: jwtToken,
@@ -839,15 +846,18 @@ async function verifyOtp(req, res) {
         await user.save();
       }
       await redisClient.del(email);
-      
+
       // Use new token service for access + refresh tokens
       try {
         const { generateTokenPair } = require('../Services/tokenService');
         const tokens = await generateTokenPair(user, req, 'email');
+
+        // Set refresh token as HttpOnly cookie
+        setRefreshTokenCookie(res, tokens.refreshToken);
+
         return res.json({
           message: "OTP verified, logged in.",
           token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
           expiresIn: tokens.expiresIn,
           user: sanitizeUser(user),
         });
@@ -895,10 +905,13 @@ async function verifyOtp(req, res) {
     try {
       const { generateTokenPair } = require('../Services/tokenService');
       const tokens = await generateTokenPair(user, req, 'email');
+
+      // Set refresh token as HttpOnly cookie
+      setRefreshTokenCookie(res, tokens.refreshToken);
+
       return res.status(201).json({
         message: "Registration successful, logged in.",
         token: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
         user: sanitizeUser(user),
       });
@@ -961,10 +974,12 @@ async function login(req, res) {
     try {
       const { generateTokenPair } = require('../Services/tokenService');
       const tokens = await generateTokenPair(user, req, 'email');
-      
+
+      // Set refresh token as HttpOnly cookie
+      setRefreshTokenCookie(res, tokens.refreshToken);
+
       return res.json({
         token: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
         user: sanitizeUser(user),
       });
@@ -1159,7 +1174,7 @@ async function getDashboard(req, res) {
         select: 'name email profilePicture'
       }
     });
-    
+
     const registeredEvents = participationLogs.filter(
       (log) => log.status === "registered",
     ).length;
@@ -1237,9 +1252,9 @@ async function getDashboard(req, res) {
         (Date.now() - user.createdAt) / (1000 * 60 * 60 * 24),
       ), // days since account creation
     };
-    
-    return res.json({ 
-      user, 
+
+    return res.json({
+      user,
       stats,
       events: registeredEventsWithDetails // Include registered events in dashboard response
     });
@@ -1401,7 +1416,7 @@ async function requestHostAccess(req, res) {
     const maxSize = 2 * 1024 * 1024; // 2MB
     let idCardPhotoUrl = "";
     let eventPermissionUrl = "";
-    
+
     if (req.files && req.files.idCardPhoto && req.files.idCardPhoto[0]) {
       const file = req.files.idCardPhoto[0];
       if (!allowedTypes.includes(file.mimetype)) {
@@ -1410,7 +1425,7 @@ async function requestHostAccess(req, res) {
       if (file.size > maxSize) {
         return res.status(400).json({ error: "ID card photo too large (max 2MB)." });
       }
-      
+
       // Upload based on STORAGE_PROVIDER setting
       try {
         if (storageProvider === 'firebase') {
@@ -1460,7 +1475,7 @@ async function requestHostAccess(req, res) {
       if (file.size > maxSize) {
         return res.status(400).json({ error: "Event permission file too large (max 2MB)." });
       }
-      
+
       // Upload based on STORAGE_PROVIDER setting
       try {
         if (storageProvider === 'firebase') {
@@ -1884,13 +1899,13 @@ async function logout(req, res) {
       const decoded = jwt.decode(token);
       const exp = decoded.exp || Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
       const ttl = exp - Math.floor(Date.now() / 1000);
-      
+
       if (ttl > 0) {
         await redisClient.setEx(`blacklist:${token}`, ttl, 'revoked');
         logger.info(`Token blacklisted for user ${req.user.id}`);
       }
     }
-    
+
     res.json({ message: 'Logged out successfully.' });
   } catch (error) {
     logger.error('Logout error:', error);
