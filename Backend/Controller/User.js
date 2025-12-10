@@ -53,8 +53,8 @@ const logger = winston.createLogger({
 const crypto = require('crypto');
 const { cacheService } = require('../Services/cacheService');
 
-// Import cookie helper for setting refresh token
-const { setRefreshTokenCookie, getRefreshTokenCookieOptions } = require('../Routes/authRoutes');
+// Import cookie helper for setting refresh token (separate module to avoid circular deps)
+const { setRefreshTokenCookie } = require('../Utils/cookieUtils');
 
 // const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // not used directly
 
