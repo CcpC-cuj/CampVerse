@@ -31,6 +31,7 @@ const { cacheService } = require('./Services/cacheService');
 const { memoryManager } = require('./Utils/memoryManager');
 const SocketService = require('./Services/socketService');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');  // CRITICAL: Import cors for cookie support
 
 // Generate correlation ID for request tracking
 function generateCorrelationId() {
@@ -76,72 +77,46 @@ app.use((req, res, next) => {
 // Trust Render/Proxy to get correct client IPs for rate limiting and security
 app.set('trust proxy', 1);
 
-// CRITICAL: Move allowedOrigins definition to the very top
-const allowedOrigins = (() => {
-  const environment = process.env.NODE_ENV || 'development';
-  const isRender = process.env.RENDER || process.env.RENDER_SERVICE_ID || process.env.RENDER_EXTERNAL_URL;
-  const port = process.env.PORT || 5001;
-  const isRenderPort = port == 10000;
-  const isProduction = environment === 'production' || isRender || isRenderPort;
+// CRITICAL: Define allowed origins for CORS
+// Frontend: https://campverse-alqa.onrender.com
+// Backend: https://campverse-26hm.onrender.com
+const allowedOrigins = [
+  'https://campverse-alqa.onrender.com',  // Production Render frontend
+  'https://campverse-26hm.onrender.com',  // Production Render backend (for same-origin)
+  'https://campverse.vercel.app',         // Vercel frontend (if used)
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
+];
 
-  logger.info(`Environment: ${environment}, Render: ${!!isRender}, Port: ${port}, Production: ${isProduction}`);
+// Add any environment-specific origins
+if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
-  if (isProduction || isRenderPort) {
-    const origins = [
-      'https://campverse.vercel.app',       // CRITICAL: Vercel frontend
-      'https://campverse-alqa.onrender.com',
-      'https://campverse-26hm.onrender.com'
-    ];
-    if (process.env.FRONTEND_URL) origins.push(process.env.FRONTEND_URL);
-    if (process.env.BACKEND_URL) origins.push(process.env.BACKEND_URL);
-    logger.info(`Production CORS origins: ${origins.join(', ')}`);
-    return origins;
-  }
+logger.info(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
 
-  const devOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
-  ];
-  logger.info(`Development CORS origins: ${devOrigins.join(', ')}`);
-  return devOrigins;
-})();
-
-// ABSOLUTE FIRST: Priority CORS handler - MUST handle ALL requests with origins
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  logger.info(`🔍 CORS CHECK: ${req.method} ${req.url} from origin: ${origin || 'no-origin'}`);
-  logger.info(`🔍 Allowed origins: ${allowedOrigins.join(', ')}`);
-
-  // Always set CORS headers for allowed origins OR no-origin requests
-  if (!origin || allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    logger.info(`✅ CORS headers set for: ${origin || 'no-origin'}`);
-  } else {
-    logger.warn(`❌ CORS BLOCKED: ${origin} not in allowed origins`);
-    // Still set basic headers to help with debugging
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Correlation-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-
-  // Handle preflight requests immediately
-  if (req.method === 'OPTIONS') {
-    logger.info(`🔄 Handling OPTIONS preflight for: ${origin}`);
-    res.status(204).end();
-    return;
-  }
-
-  next();
-});
+// CRITICAL: Use cors middleware with credentials support for cookies
+// This MUST come before cookieParser and routes
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(null, true); // Still allow for debugging, change to callback(new Error('Not allowed')) to block
+    }
+  },
+  credentials: true,  // CRITICAL: Required for cookies to pass cross-origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Correlation-ID'],
+  maxAge: 86400 // Cache preflight for 24 hours
+}));
 
 // CRITICAL: Parse cookies BEFORE any routes that need them
 // This is required for HttpOnly cookie-based refresh token

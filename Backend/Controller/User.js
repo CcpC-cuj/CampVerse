@@ -54,7 +54,7 @@ const crypto = require('crypto');
 const { cacheService } = require('../Services/cacheService');
 
 // Import cookie helper for setting refresh token
-const { setRefreshTokenCookie, REFRESH_TOKEN_COOKIE_OPTIONS } = require('../Routes/authRoutes');
+const { setRefreshTokenCookie, getRefreshTokenCookieOptions } = require('../Routes/authRoutes');
 
 // const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID; // not used directly
 

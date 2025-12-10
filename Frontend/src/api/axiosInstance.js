@@ -60,16 +60,23 @@ api.interceptors.response.use(
       // Don't try to refresh if this is already a refresh request
       if (originalRequest.url?.includes('/auth/refresh')) {
         // Refresh token is invalid or expired, logout user
-        console.log('Refresh token invalid, logging out...');
+        console.log('[Auth] Refresh token invalid, logging out...');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // Note: Cookie will be cleared by server on next request or stays expired
         window.location.href = '/';
+        return Promise.reject(error);
+      }
+
+      // Don't try to refresh for login/register endpoints
+      if (originalRequest.url?.includes('/login') || 
+          originalRequest.url?.includes('/register') ||
+          originalRequest.url?.includes('/google-signin')) {
         return Promise.reject(error);
       }
 
       if (isRefreshing) {
         // If already refreshing, queue this request
+        console.log('[Auth] Already refreshing, queuing request...');
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -84,12 +91,14 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log('[Auth] Access token expired, attempting refresh...');
+        
         // Call refresh endpoint - browser automatically sends the HttpOnly cookie
         // No need to manually include the refresh token!
         const response = await axios.post(
           `${API_URL}/api/auth/refresh`,
           {}, // Empty body - refresh token comes from cookie
-          {
+          { 
             withCredentials: true, // CRITICAL: Include cookies in this request
             headers: { 'Content-Type': 'application/json' }
           }
@@ -97,7 +106,9 @@ api.interceptors.response.use(
 
         if (response.data.success && response.data.accessToken) {
           const { accessToken, user } = response.data;
-
+          
+          console.log('[Auth] Token refresh successful!');
+          
           // Update stored access token
           localStorage.setItem('token', accessToken);
           if (user) {
@@ -105,23 +116,25 @@ api.interceptors.response.use(
           }
           // Note: New refresh token (if any) is automatically set as cookie by server
 
-          // Update authorization header
+          // Update authorization header for future requests
           api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
+          // Process queued requests
           processQueue(null, accessToken);
+          
+          // Retry the original failed request
           return api(originalRequest);
         } else {
           throw new Error('Refresh failed - no access token in response');
         }
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
+        console.error('[Auth] Token refresh failed:', refreshError.message);
         processQueue(refreshError, null);
-
+        
         // Clear auth and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // Note: Cookie will be cleared by server or stays expired
         window.location.href = '/';
         return Promise.reject(refreshError);
       } finally {
@@ -139,10 +152,11 @@ api.interceptors.response.use(
  */
 export const logout = async () => {
   try {
-    // Call server logout to clear the cookie
+    // Call server logout to clear the HttpOnly cookie
     await api.post('/api/auth/logout');
+    console.log('[Auth] Logged out successfully');
   } catch (error) {
-    console.error('Logout API error:', error);
+    console.error('[Auth] Logout API error:', error);
   } finally {
     // Always clear local storage
     localStorage.removeItem('token');
