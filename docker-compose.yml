@@ -26,7 +26,7 @@ services:
       - ML_API_KEY=${ML_API_KEY}
       - ML_API_URL=http://ml-recommendation:5002
       - ML_RECOMMENDATION_ENABLED=true
-      - ML_SERVICE_URL=http://ml-certificate:8000
+      - ML_SERVICE_URL=http://ml-certificate:7860
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
@@ -62,14 +62,14 @@ services:
       dockerfile: Dockerfile
     container_name: ml-certificate-service
     ports:
-      - "8000:8000"
+      - "8000:7860"
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=INFO
     networks:
       - campverse
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7860/health"]
       interval: 30s
       timeout: 10s
       retries: 3

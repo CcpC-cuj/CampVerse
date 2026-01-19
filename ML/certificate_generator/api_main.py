@@ -11,6 +11,10 @@ from datetime import datetime
 import io
 import json
 import requests
+import zipfile
+import base64
+import gradio as gr
+from ui import demo
 
 app = FastAPI(
     title="Certificate Generator API",
@@ -26,6 +30,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount Gradio UI
+app = gr.mount_gradio_app(app, demo, path="/ui")
 
 # Health check endpoint
 @app.get("/health", tags=["Health"])
@@ -183,6 +190,22 @@ class BatchGenerateRequest(BaseModel):
     certificateType: str = Field(..., description="Type of certificate (participation/achievement)")
     participants: List[ParticipantInfo] = Field(..., description="List of participants to generate certificates for")
 
+class BackendCertificateRequest(BaseModel):
+    userName: str
+    userEmail: str
+    eventTitle: str
+    templateUrl: Optional[str] = None # Direct URL to template in cloud
+    logoUrl: Optional[str] = None     # Host logo URL
+    leftSignatureUrl: Optional[str] = None
+    rightSignatureUrl: Optional[str] = None
+    leftSignatoryName: Optional[str] = None
+    leftSignatoryTitle: Optional[str] = None
+    rightSignatoryName: Optional[str] = None
+    rightSignatoryTitle: Optional[str] = None
+    awardText: Optional[str] = "{name} has successfully participated in {event_name}"
+    certificateType: str = "participant"
+    qrCode: Optional[str] = None # Base64 QR code
+
 # Helper functions
 def load_font(font_name: str, size: int):
     """Load a font with fallback to default"""
@@ -224,7 +247,7 @@ def add_logo(certificate, logo_filename: str, position: dict, max_fraction: floa
         print(f"Warning: could not add logo '{logo_filename}' ({e})")
 
 def add_signature(certificate, sig_config: dict, font, draw, max_width: int = 300, max_height: int = 150):
-    """Add signature image and text to certificate"""
+    """Add signature image and text to certificate (legacy config-based)"""
     sig_path = os.path.join(UPLOAD_DIR, sig_config['filename'])
     try:
         if os.path.exists(sig_path):
@@ -252,6 +275,35 @@ def add_signature(certificate, sig_config: dict, font, draw, max_width: int = 30
             print(f"Added signature '{sig_config['filename']}' at ({pos_x}, {pos_y})")
     except Exception as e:
         print(f"Warning: could not add signature '{sig_config['filename']}' ({e})")
+
+def add_signature_from_path(certificate, sig_path: str, image_pos: dict, 
+                            sig_name: str, sig_title: str, text_pos: dict,
+                            font, color: str, draw, max_width: int = 300, max_height: int = 150):
+    """Add signature image and text to certificate from a downloaded file path."""
+    try:
+        if os.path.exists(sig_path):
+            sig_image = Image.open(sig_path).convert("RGBA")
+            
+            sw, sh = sig_image.size
+            scale = min(max_width / sw if sw else 1.0,
+                       max_height / sh if sh else 1.0,
+                       1.0)
+            new_size = (max(1, int(sw * scale)), max(1, int(sh * scale)))
+            if new_size != sig_image.size:
+                sig_image = sig_image.resize(new_size, Image.LANCZOS)
+            
+            pos_x = max(0, min(image_pos['x'], certificate.width - sig_image.width))
+            pos_y = max(0, min(image_pos['y'], certificate.height - sig_image.height))
+            
+            certificate.paste(sig_image, (pos_x, pos_y), sig_image)
+            
+            # Add name and title
+            draw.text((text_pos['x'], text_pos['y']), sig_name, fill=color, font=font)
+            draw.text((text_pos['x'], text_pos['y'] + 40), sig_title, fill=color, font=font)
+            
+            print(f"Added signature at ({pos_x}, {pos_y})")
+    except Exception as e:
+        print(f"Warning: could not add signature from {sig_path}: {e}")
 
 def wrap_text(text: str, font, max_width: int):
     """Wrap text to fit within max_width"""
@@ -899,6 +951,70 @@ async def generate_certificates(request: GenerateRequest):
     except Exception as e:
         raise HTTPException(500, f"Error generating certificates: {str(e)}")
 
+@app.post("/preview", tags=["Generation"])
+async def preview_certificate():
+    """
+    Generate a preview image (PNG) using current configuration and a sample name.
+    Useful for frontend live preview.
+    """
+    config = load_config()
+    template_file = f"template_{config['certificate_type']}.png"
+    template_path = os.path.join(TEMPLATES_DIR, template_file)
+    
+    if not os.path.exists(template_path):
+        raise HTTPException(404, "Template not found. Please upload it first.")
+    
+    try:
+        certificate = Image.open(template_path).copy()
+        draw = ImageDraw.Draw(certificate)
+        
+        name = "Sample Name"
+        name_font = load_font(config['name_settings']['font_path'], config['name_settings']['font_size'])
+        award_font = load_font(config['award_text_settings']['font_path'], config['award_text_settings']['font_size'])
+        sig_font = load_font(config['award_text_settings']['font_path'], config['left_signatory']['font_size'])
+        
+        draw.text((config['name_settings']['position']['x'], config['name_settings']['position']['y']), 
+                  name, fill=config['name_settings']['color'], font=name_font)
+        
+        award_lines = wrap_text(config['award_text_settings']['text'], award_font, config['award_text_settings']['max_width'])
+        y_offset = 0
+        for line in award_lines:
+            draw.text((config['award_text_settings']['position']['x'], config['award_text_settings']['position']['y'] + y_offset),
+                      line, fill=config['award_text_settings']['color'], font=award_font)
+            y_offset += config['award_text_settings']['font_size'] + 10
+        
+        add_logo(certificate, config['left_logo']['filename'], config['left_logo']['position'], config['left_logo']['max_fraction'])
+        add_logo(certificate, config['right_logo']['filename'], config['right_logo']['position'], config['right_logo']['max_fraction'])
+        add_signature(certificate, config['left_signatory'], sig_font, draw)
+        add_signature(certificate, config['right_signatory'], sig_font, draw)
+        
+        # Save to buffer
+        img_byte_arr = io.BytesIO()
+        certificate.convert('RGB').save(img_byte_arr, format='JPEG', quality=85)
+        img_byte_arr.seek(0)
+        
+        return Response(content=img_byte_arr.getvalue(), media_type="image/jpeg")
+    except Exception as e:
+        raise HTTPException(500, f"Error generating preview: {str(e)}")
+
+@app.post("/generate-zip", tags=["Generation"])
+async def generate_zip(request: GenerateRequest):
+    """
+    Generate certificates and return them as a single ZIP file.
+    """
+    gen_result = await generate_certificates(request)
+    if not gen_result.get("files"):
+        raise HTTPException(500, "Failed to generate certificates")
+    
+    zip_filename = f"certificates_{datetime.now().strftime('%Y%md_%H%M%S')}.zip"
+    zip_path = os.path.join(OUTPUT_DIR, zip_filename)
+    
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for f in gen_result["files"]:
+            zipf.write(os.path.join(OUTPUT_DIR, f), f)
+            
+    return FileResponse(zip_path, filename=zip_filename, media_type="application/zip")
+
 @app.post("/batch-generate", tags=["Generation"])
 async def batch_generate_certificates(request: BatchGenerateRequest):
     """
@@ -988,15 +1104,17 @@ async def batch_generate_certificates(request: BatchGenerateRequest):
                 certificate = Image.open(template_path).copy()
                 draw = ImageDraw.Draw(certificate)
                 
-                # Add participant name (centered at specific position)
+                # 1. Fill Text Placeholders
+                award_text = request.awardText.replace("{name}", participant.name).replace("{event_name}", request.eventTitle)
+
+                # 2. Add Name (Centered)
                 name_bbox = name_font.getbbox(participant.name)
                 name_width = name_bbox[2] - name_bbox[0]
                 name_x = (certificate.width - name_width) // 2
                 draw.text((name_x, 596), participant.name, fill="black", font=name_font)
                 
-                # Add award text with event title (centered)
-                full_award_text = f"{request.awardText} {request.eventTitle}"
-                award_lines = wrap_text(full_award_text, award_font, 1000)
+                # 3. Add Processed Award Text (Centered)
+                award_lines = wrap_text(award_text, award_font, 1000)
                 y_offset = 0
                 for line in award_lines:
                     line_bbox = award_font.getbbox(line)
@@ -1005,40 +1123,48 @@ async def batch_generate_certificates(request: BatchGenerateRequest):
                     draw.text((line_x, 720 + y_offset), line, fill="black", font=award_font)
                     y_offset += 55
                 
-                # Add org logo (center top)
+                # 4. Add Org Logo (Center Top)
                 org_logo = Image.open(org_logo_path).convert("RGBA")
-                logo_scale = min(200 / org_logo.width if org_logo.width else 1.0,
-                                200 / org_logo.height if org_logo.height else 1.0, 1.0)
-                org_logo = org_logo.resize(
-                    (int(org_logo.width * logo_scale), int(org_logo.height * logo_scale)),
-                    Image.LANCZOS
-                )
+                logo_scale = min(200 / org_logo.width if org_logo.width else 1.0, 200 / org_logo.height if org_logo.height else 1.0, 1.0)
+                org_logo = org_logo.resize((int(org_logo.width * logo_scale), int(org_logo.height * logo_scale)), Image.LANCZOS)
                 logo_x = (certificate.width - org_logo.width) // 2
                 certificate.paste(org_logo, (logo_x, 170), org_logo)
+
+                # 5. FIXED Add CampVerse logo (Right Side)
+                fixed_logo_path = os.path.join(BASE_DIR, "logo.png")
+                if os.path.exists(fixed_logo_path):
+                    fixed_logo = Image.open(fixed_logo_path).convert("RGBA")
+                    f_logo_scale = min(200 / fixed_logo.width, 200 / fixed_logo.height, 1.0)
+                    fixed_logo = fixed_logo.resize((int(fixed_logo.width * f_logo_scale), int(fixed_logo.height * f_logo_scale)), Image.LANCZOS)
+                    certificate.paste(fixed_logo, (1400, 170), fixed_logo)
+
+                # 6. Add QR Code if present (Bottom Right)
+                if hasattr(request, 'qrCode') and request.qrCode:
+                    try:
+                        qr_data = request.qrCode.split(",")[-1]
+                        qr_bytes = base64.b64decode(qr_data)
+                        qr_img = Image.open(io.BytesIO(qr_bytes)).convert("RGBA")
+                        qr_img = qr_img.resize((150, 150), Image.LANCZOS)
+                        certificate.paste(qr_img, (1450, 1150), qr_img)
+                    except Exception as e:
+                        print(f"Warning: Failed to add QR code: {e}")
                 
-                # Add left signature
+                # 7. Add Signatories
                 left_sig = Image.open(left_sig_path).convert("RGBA")
-                sig_scale = min(300 / left_sig.width if left_sig.width else 1.0,
-                               150 / left_sig.height if left_sig.height else 1.0, 1.0)
-                left_sig = left_sig.resize(
-                    (int(left_sig.width * sig_scale), int(left_sig.height * sig_scale)),
-                    Image.LANCZOS
-                )
+                sig_scale = min(300 / left_sig.width if left_sig.width else 1.0, 150 / left_sig.height if left_sig.height else 1.0, 1.0)
+                left_sig = left_sig.resize((int(left_sig.width * sig_scale), int(left_sig.height * sig_scale)), Image.LANCZOS)
                 certificate.paste(left_sig, (400, 1100), left_sig)
                 draw.text((400, 1270), request.leftSignature.name, fill="black", font=sig_font)
                 draw.text((400, 1310), request.leftSignature.title, fill="black", font=sig_font)
                 
                 # Add right signature
                 right_sig = Image.open(right_sig_path).convert("RGBA")
-                right_sig = right_sig.resize(
-                    (int(right_sig.width * sig_scale), int(right_sig.height * sig_scale)),
-                    Image.LANCZOS
-                )
+                right_sig = right_sig.resize((int(right_sig.width * sig_scale), int(right_sig.height * sig_scale)), Image.LANCZOS)
                 certificate.paste(right_sig, (1200, 1100), right_sig)
                 draw.text((1200, 1270), request.rightSignature.name, fill="black", font=sig_font)
                 draw.text((1200, 1310), request.rightSignature.title, fill="black", font=sig_font)
                 
-                # Save certificate as PDF
+                # 7. Save certificate as PDF
                 safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in participant.name)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"{safe_name}_{timestamp}.pdf"
@@ -1046,15 +1172,11 @@ async def batch_generate_certificates(request: BatchGenerateRequest):
                 
                 certificate.convert('RGB').save(output_path)
                 
-                # Note: In a real implementation, you would upload to Firebase here
-                # For now, we'll return local download URLs
-                # TODO: Integrate with firebaseStorageService to upload PDFs
-                
                 generated_certificates.append({
                     "userId": participant.userId,
                     "name": participant.name,
                     "email": participant.email,
-                    "url": f"/download/{filename}",  # This should be cloud URL in production
+                    "url": f"/download/{filename}",
                     "filename": filename
                 })
                 
@@ -1079,12 +1201,155 @@ async def batch_generate_certificates(request: BatchGenerateRequest):
             "totalGenerated": len(generated_certificates),
             "certificates": generated_certificates
         }
-        
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(500, f"Error in batch generation: {str(e)}")
 
+@app.post("/generate-certificate", tags=["Generation"])
+async def generate_single_certificate(request: BackendCertificateRequest):
+    """
+    Generate a certificate using cloud assets and variable placeholders.
+    """
+    try:
+        # Create unique batch ID for this request
+        request_id = str(uuid.uuid4())
+        temp_dir = os.path.join(UPLOAD_DIR, f"request_{request_id}")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        # 1. Fetch Template (with cache and validation)
+        template_url = request.templateUrl or (
+            "https://raw.githubusercontent.com/Imkkrish/CampVerse/main/ML/certificate_generator/templates/template_participation.png"
+            if request.certificateType == "participant" else 
+            "https://raw.githubusercontent.com/Imkkrish/CampVerse/main/ML/certificate_generator/templates/template_achievement.png"
+        )
+        template_path = os.path.join(temp_dir, "template.png")
+        download_file(template_url, template_path)
+
+        # 2. Add Fixed CampVerse Logo
+        fixed_logo_path = os.path.join(BASE_DIR, "logo.png")
+        
+        # 3. Process Text
+        award_text = request.awardText.replace("{name}", request.userName).replace("{event_name}", request.eventTitle)
+        
+        # Load Certificate
+        certificate = Image.open(template_path).copy()
+        draw = ImageDraw.Draw(certificate)
+        
+        # Fonts
+        name_font = load_font("DancingScript-Regular.ttf", 85)
+        award_font = load_font("times.ttf", 45)
+        sig_font = load_font("times.ttf", 35)
+
+        # Add Name
+        name_bbox = name_font.getbbox(request.userName)
+        name_width = name_bbox[2] - name_bbox[0]
+        name_x = (certificate.width - name_width) // 2
+        draw.text((name_x, 596), request.userName, fill="black", font=name_font)
+
+        # Add Award Text
+        award_lines = wrap_text(award_text, award_font, 1000)
+        y_offset = 0
+        for line in award_lines:
+            lb = award_font.getbbox(line)
+            lw = lb[2] - lb[0]
+            lx = (certificate.width - lw) // 2
+            draw.text((lx, 720 + y_offset), line, fill="black", font=award_font)
+            y_offset += 55
+
+        # 4. QR Code integration (Production Hardening)
+        if request.qrCode:
+            try:
+                qr_data = request.qrCode.split(",")[-1]
+                qr_bytes = base64.b64decode(qr_data)
+                qr_img = Image.open(io.BytesIO(qr_bytes)).convert("RGBA")
+                qr_img = qr_img.resize((150, 150), Image.LANCZOS)
+                certificate.paste(qr_img, (1450, 1150), qr_img)
+            except Exception as e:
+                print(f"QR Error: {e}")
+
+        # 5. Add Host Logo
+        if request.logoUrl:
+            host_logo_path = os.path.join(temp_dir, "host_logo.png")
+            download_file(request.logoUrl, host_logo_path)
+            add_logo(certificate, host_logo_path, {"x": 200, "y": 170}, 0.18, temp_dir)
+
+        # 6. Add Fixed Platform Logo
+        if os.path.exists(fixed_logo_path):
+            add_logo(certificate, fixed_logo_path, {"x": 1400, "y": 170}, 0.18, BASE_DIR)
+
+        # 7. Add Signatories using the corrected function
+        if request.leftSignatureUrl:
+            sig_p = os.path.join(temp_dir, "sig_left.png")
+            download_file(request.leftSignatureUrl, sig_p)
+            add_signature_from_path(
+                certificate, sig_p, 
+                {"x": 400, "y": 1100},  # image position
+                request.leftSignatoryName or "", 
+                request.leftSignatoryTitle or "",
+                {"x": 400, "y": 1270},  # text position
+                sig_font, "black", draw
+            )
+
+        if request.rightSignatureUrl:
+            sig_p = os.path.join(temp_dir, "sig_right.png")
+            download_file(request.rightSignatureUrl, sig_p)
+            add_signature_from_path(
+                certificate, sig_p, 
+                {"x": 1200, "y": 1100},  # image position
+                request.rightSignatoryName or "", 
+                request.rightSignatoryTitle or "",
+                {"x": 1200, "y": 1270},  # text position
+                sig_font, "black", draw
+            )
+
+        # Save and Cleanup
+        safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in request.userName)
+        filename = f"{safe_name}_{request_id}.pdf"
+        output_path = os.path.join(OUTPUT_DIR, filename)
+        certificate.convert('RGB').save(output_path)
+        
+        shutil.rmtree(temp_dir)
+
+        return {
+            "success": True,
+            "requestId": request_id,
+            "certificateURL": f"/download/{filename}",
+            "generationStatus": "generated"
+        }
+
+    except Exception as e:
+        if 'temp_dir' in locals() and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        raise HTTPException(500, f"Error: {str(e)}")
+
+# Asset cache to prevent redundant downloads
+ASSET_CACHE = {}
+
+def download_file(url, target_path):
+    """
+    Download a file with simple memory caching and SSRF protection.
+    """
+    # Simple SSRF Protection: Restrict to trusted domains/protocols if needed
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(400, "Invalid URL protocol")
+    
+    # Check cache
+    if url in ASSET_CACHE:
+        with open(target_path, 'wb') as f:
+            f.write(ASSET_CACHE[url])
+        return
+
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        
+        # Store in cache
+        if len(response.content) < 5 * 1024 * 1024:  # Cache only files < 5MB
+            ASSET_CACHE[url] = response.content
+            
+        with open(target_path, 'wb') as f:
+            f.write(response.content)
+    except Exception as e:
+        raise HTTPException(500, f"Failed to fetch asset from {url}: {str(e)}")
 @app.post("/batch-validate", tags=["Generation"])
 async def batch_validate_certificate_generation(request: BatchGenerateRequest):
     """
@@ -1257,39 +1522,62 @@ async def render_single_certificate(request: dict):
             draw.text((line_x, 720 + y_offset), line, fill="black", font=award_font)
             y_offset += 55
         
-        # Add org logo (center top)
+        # Process placeholders
+        participant_data = request.get("participant", {})
+        award_text = request.get("awardText", "").replace("{name}", participant_data.get("name", "")).replace("{event_name}", request.get("eventTitle", ""))
+
+        # 1. Load template and draw context
+        certificate = Image.open(template_path).copy()
+        draw = ImageDraw.Draw(certificate)
+
+        # 2. Fonts
+        name_font = load_font("DancingScript-Regular.ttf", 85)
+        award_font = load_font("times.ttf", 45)
+        sig_font = load_font("times.ttf", 35)
+
+        # 3. Add Name (Centered)
+        p_name = participant_data.get("name", "Participant")
+        name_bbox = name_font.getbbox(p_name)
+        name_width = name_bbox[2] - name_bbox[0]
+        name_x = (certificate.width - name_width) // 2
+        draw.text((name_x, 596), p_name, fill="black", font=name_font)
+
+        # 4. Add Processed Award Text (Centered)
+        award_lines = wrap_text(award_text, award_font, 1000)
+        y_off = 0
+        for line in award_lines:
+            lb = award_font.getbbox(line)
+            lw = lb[2] - lb[0]
+            lx = (certificate.width - lw) // 2
+            draw.text((lx, 720 + y_off), line, fill="black", font=award_font)
+            y_off += 55
+
+        # 5. Add Logos (Host + CampVerse)
         org_logo = Image.open(org_logo_path).convert("RGBA")
-        logo_scale = min(200 / org_logo.width if org_logo.width else 1.0,
-                        200 / org_logo.height if org_logo.height else 1.0, 1.0)
-        org_logo = org_logo.resize(
-            (int(org_logo.width * logo_scale), int(org_logo.height * logo_scale)),
-            Image.LANCZOS
-        )
-        logo_x = (certificate.width - org_logo.width) // 2
-        certificate.paste(org_logo, (logo_x, 170), org_logo)
-        
-        # Add left signature
-        left_sig = Image.open(left_sig_path).convert("RGBA")
-        sig_scale = min(300 / left_sig.width if left_sig.width else 1.0,
-                       150 / left_sig.height if left_sig.height else 1.0, 1.0)
-        left_sig = left_sig.resize(
-            (int(left_sig.width * sig_scale), int(left_sig.height * sig_scale)),
-            Image.LANCZOS
-        )
-        certificate.paste(left_sig, (400, 1100), left_sig)
+        lscale = min(200 / org_logo.width, 200 / org_logo.height, 1.0)
+        org_logo = org_logo.resize((int(org_logo.width * lscale), int(org_logo.height * lscale)), Image.LANCZOS)
+        certificate.paste(org_logo, ((certificate.width - org_logo.width) // 2, 170), org_logo)
+
+        fixed_logo_path = os.path.join(BASE_DIR, "logo.png")
+        if os.path.exists(fixed_logo_path):
+            fixed_logo = Image.open(fixed_logo_path).convert("RGBA")
+            fscale = min(200 / fixed_logo.width, 200 / fixed_logo.height, 1.0)
+            fixed_logo = fixed_logo.resize((int(fixed_logo.width * fscale), int(fixed_logo.height * fscale)), Image.LANCZOS)
+            certificate.paste(fixed_logo, (1400, 170), fixed_logo)
+
+        # 6. Add Signatories
+        l_sig = Image.open(left_sig_path).convert("RGBA")
+        s_scale = min(300 / l_sig.width, 150 / l_sig.height, 1.0)
+        l_sig = l_sig.resize((int(l_sig.width * s_scale), int(l_sig.height * s_scale)), Image.LANCZOS)
+        certificate.paste(l_sig, (400, 1100), l_sig)
         draw.text((400, 1270), request["leftSignature"]["name"], fill="black", font=sig_font)
         draw.text((400, 1310), request["leftSignature"]["title"], fill="black", font=sig_font)
         
-        # Add right signature
-        right_sig = Image.open(right_sig_path).convert("RGBA")
-        right_sig = right_sig.resize(
-            (int(right_sig.width * sig_scale), int(right_sig.height * sig_scale)),
-            Image.LANCZOS
-        )
-        certificate.paste(right_sig, (1200, 1100), right_sig)
+        r_sig = Image.open(right_sig_path).convert("RGBA")
+        r_sig = r_sig.resize((int(r_sig.width * s_scale), int(r_sig.height * s_scale)), Image.LANCZOS)
+        certificate.paste(r_sig, (1200, 1100), r_sig)
         draw.text((1200, 1270), request["rightSignature"]["name"], fill="black", font=sig_font)
         draw.text((1200, 1310), request["rightSignature"]["title"], fill="black", font=sig_font)
-        
         # Convert to RGB and save as PDF in memory
         pdf_buffer = io.BytesIO()
         certificate.convert('RGB').save(pdf_buffer, format='PDF')
@@ -1450,9 +1738,10 @@ if __name__ == "__main__":
     print("Certificate Generator API")
     print("=" * 70)
     print("\nStarting server...")
-    print("API Documentation: http://localhost:8000/docs")
-    print("API Root: http://localhost:8000/")
+    print("API Documentation: http://localhost:7860/docs")
+    print("API Root: http://localhost:7860/")
+    print("Gradio UI: http://localhost:7860/ui")
     print("\nDefault Configuration Loaded")
     print("You can customize settings via /config/* endpoints or use defaults")
     print("=" * 70)
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=7860)

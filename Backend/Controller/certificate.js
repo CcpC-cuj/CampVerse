@@ -18,6 +18,12 @@ const ML_API_CONFIG = {
     Authorization: `Bearer ${process.env.ML_API_KEY || ''}`,
   },
 };
+const PREDEFINED_TEMPLATES = {
+  'classic-blue': 'https://storage.campverse.com/templates/classic-blue.png',
+  'modern-purple': 'https://storage.campverse.com/templates/modern-purple.png',
+  'elegant-gold': 'https://storage.campverse.com/templates/elegant-gold.png',
+  'minimal-dark': 'https://storage.campverse.com/templates/minimal-dark.png',
+};
 
 /**
  * Generate certificate data for ML API
@@ -45,29 +51,24 @@ async function prepareCertificateData(userId, eventId, certificateType) {
     const qrCode = await QRCode.toDataURL(qrData);
 
     // Prepare certificate data for ML API
+    const settings = event.certificateSettings || {};
+    const assets = settings.uploadedAssets || {};
+
     const certificateData = {
       userName: user.name,
       userEmail: user.email,
       eventTitle: event.title,
-      eventDescription: event.description,
-      eventDate: event.date,
-      eventLocation: event.location || 'Online',
-      organizerName: event.hostUserId ? event.hostUserId.name : event.organizer,
-      institutionName: user.institutionId
-        ? user.institutionId.name
-        : 'Unknown Institution',
+      templateUrl: assets.templateUrl || PREDEFINED_TEMPLATES[settings.selectedTemplateId] || null,
+      logoUrl: assets.organizationLogo || null,
+      leftSignatureUrl: assets.leftSignature || null,
+      rightSignatureUrl: assets.rightSignature || null,
+      leftSignatoryName: settings.leftSignatory?.name || '',
+      leftSignatoryTitle: settings.leftSignatory?.title || '',
+      rightSignatoryName: settings.rightSignatory?.name || '',
+      rightSignatoryTitle: settings.rightSignatory?.title || '',
+      awardText: settings.awardText || '{name} has successfully participated in {event_name}',
       certificateType,
-      userSkills: user.skills || [],
-      eventTags: event.tags || [],
-      attendanceDate: participationLog.attendanceTimestamp,
       qrCode,
-      // Additional metadata for ML processing
-      // No duration for single-date events
-      eventDuration: 0,
-      userInterests: user.interests || [],
-      eventType: event.type,
-      isPaid: event.isPaid,
-      price: event.price,
     };
 
     return certificateData;

@@ -211,7 +211,12 @@ async function approveCertificateConfig(req, res) {
       });
     }
 
-    // Update verification status
+    // Update verification status and potentially the template
+    const { selectedTemplateId } = req.body;
+    if (selectedTemplateId) {
+      event.certificateSettings.selectedTemplateId = selectedTemplateId;
+    }
+    
     event.certificateSettings.verificationStatus = 'approved';
     event.certificateSettings.verifiedBy = verifierId;
     event.certificateSettings.verifiedAt = new Date();
