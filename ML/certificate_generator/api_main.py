@@ -1321,35 +1321,46 @@ async def generate_single_certificate(request: BackendCertificateRequest):
             shutil.rmtree(temp_dir)
         raise HTTPException(500, f"Error: {str(e)}")
 
-# Asset cache to prevent redundant downloads
+# Asset cache with expiry to prevent memory leaks
 ASSET_CACHE = {}
+CACHE_EXPIRY_SECONDS = 3600  # 1 hour
+MAX_CACHE_ENTRIES = 100
 
 def download_file(url, target_path):
     """
-    Download a file with simple memory caching and SSRF protection.
+    Download a file with time-limited memory caching and SSRF protection.
     """
-    # Simple SSRF Protection: Restrict to trusted domains/protocols if needed
+    import time
+    current_time = time.time()
+    
+    # Simple SSRF Protection: Restrict to trusted domains/protocols
     if not url.startswith(("http://", "https://")):
         raise HTTPException(400, "Invalid URL protocol")
     
-    # Check cache
+    # Check cache (with expiry)
     if url in ASSET_CACHE:
-        with open(target_path, 'wb') as f:
-            f.write(ASSET_CACHE[url])
-        return
+        cached_data, cached_time = ASSET_CACHE[url]
+        if current_time - cached_time < CACHE_EXPIRY_SECONDS:
+            with open(target_path, 'wb') as f:
+                f.write(cached_data)
+            return
+        else:
+            # Expired, remove from cache
+            del ASSET_CACHE[url]
 
     try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         
-        # Store in cache
-        if len(response.content) < 5 * 1024 * 1024:  # Cache only files < 5MB
-            ASSET_CACHE[url] = response.content
+        # Store in cache with timestamp (limit size and file size)
+        if len(response.content) < 5 * 1024 * 1024 and len(ASSET_CACHE) < MAX_CACHE_ENTRIES:
+            ASSET_CACHE[url] = (response.content, current_time)
             
         with open(target_path, 'wb') as f:
             f.write(response.content)
     except Exception as e:
         raise HTTPException(500, f"Failed to fetch asset from {url}: {str(e)}")
+
 @app.post("/batch-validate", tags=["Generation"])
 async def batch_validate_certificate_generation(request: BatchGenerateRequest):
     """

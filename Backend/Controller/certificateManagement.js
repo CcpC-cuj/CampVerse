@@ -22,6 +22,7 @@ async function updateCertificateSettings(req, res) {
       awardText,
       leftSignatory,
       rightSignatory,
+      selectedTemplateId, // Template ID assigned by Admin/Verifier
     } = req.body;
 
     // Find event and verify host permission
@@ -50,7 +51,7 @@ async function updateCertificateSettings(req, res) {
     if (certificateType) {
       event.certificateSettings.certificateType = certificateType;
     }
-    if (awardText) {
+    if (awardText !== undefined) {
       event.certificateSettings.awardText = awardText;
     }
     if (leftSignatory) {
@@ -58,6 +59,9 @@ async function updateCertificateSettings(req, res) {
     }
     if (rightSignatory) {
       event.certificateSettings.rightSignatory = rightSignatory;
+    }
+    if (selectedTemplateId) {
+      event.certificateSettings.selectedTemplateId = selectedTemplateId;
     }
 
     await event.save();
@@ -636,9 +640,20 @@ async function renderCertificate(req, res) {
 
     // Get certificate settings
     const certificateSettings = event.certificateSettings;
-    if (!certificateSettings?.assets) {
+    const uploadedAssets = certificateSettings?.uploadedAssets || {};
+    
+    // Template can come from upload OR predefined selection
+    const PREDEFINED_TEMPLATES = {
+      'classic-blue': 'https://storage.campverse.com/templates/classic-blue.png',
+      'modern-purple': 'https://storage.campverse.com/templates/modern-purple.png',
+      'elegant-gold': 'https://storage.campverse.com/templates/elegant-gold.png',
+      'minimal-dark': 'https://storage.campverse.com/templates/minimal-dark.png',
+    };
+    const templateUrl = uploadedAssets.templateUrl || PREDEFINED_TEMPLATES[certificateSettings?.selectedTemplateId];
+    
+    if (!templateUrl) {
       return res.status(500).json({
-        error: 'Certificate configuration not found.',
+        error: 'Certificate template not configured.',
       });
     }
 
@@ -646,17 +661,17 @@ async function renderCertificate(req, res) {
     const renderRequest = {
       eventId: eventId,
       eventTitle: event.title,
-      templateUrl: certificateSettings.assets.templateUrl,
-      orgLogoUrl: certificateSettings.assets.orgLogoUrl,
+      templateUrl: templateUrl,
+      orgLogoUrl: uploadedAssets.organizationLogo,
       leftSignature: {
-        url: certificateSettings.leftSignatory.signatureUrl,
-        name: certificateSettings.leftSignatory.name,
-        title: certificateSettings.leftSignatory.title,
+        url: uploadedAssets.leftSignature,
+        name: certificateSettings.leftSignatory?.name || '',
+        title: certificateSettings.leftSignatory?.title || '',
       },
       rightSignature: {
-        url: certificateSettings.rightSignatory.signatureUrl,
-        name: certificateSettings.rightSignatory.name,
-        title: certificateSettings.rightSignatory.title,
+        url: uploadedAssets.rightSignature,
+        name: certificateSettings.rightSignatory?.name || '',
+        title: certificateSettings.rightSignatory?.title || '',
       },
       awardText: certificateSettings.awardText || 'For successfully participating in',
       certificateType: certificateSettings.certificateType || 'participation',

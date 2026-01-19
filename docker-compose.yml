@@ -36,16 +36,20 @@ services:
       # Storage Configuration
       # Development: Firebase (for GitHub)
       # Production: Supabase (set via Render environment variables)
-      - STORAGE_PROVIDER=firebase
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-firebase}
       
-      # Firebase Storage (Development only - hardcoded values)
-      - FIREBASE_STORAGE_BUCKET=ccpccuj.appspot.com
+      # Firebase Storage (Development only)
+      - FIREBASE_STORAGE_BUCKET=${FIREBASE_STORAGE_BUCKET:-ccpccuj.appspot.com}
       - FIREBASE_KEY_FILE=/usr/src/app/credentials/service-account.json
     depends_on:
-      - mongo
-      - redis
-      - ml-recommendation
-      - ml-certificate
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ml-recommendation:
+        condition: service_healthy
+      ml-certificate:
+        condition: service_healthy
     networks:
       - campverse
     healthcheck:
@@ -130,6 +134,12 @@ services:
       - mongo_data:/data/db
     networks:
       - campverse
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7
@@ -137,6 +147,12 @@ services:
       - "6379:6379"
     networks:
       - campverse
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   mongo_data:

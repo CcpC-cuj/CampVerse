@@ -1,0 +1,100 @@
+# Docker Compose Production Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+#
+# This file overrides development settings for production deployment
+
+services:
+  frontend:
+    build:
+      context: ./Frontend
+      args:
+        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
+        - VITE_API_URL=${VITE_API_URL}
+        - NODE_ENV=production
+    environment:
+      - NODE_ENV=production
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  backend:
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-supabase}
+      # Supabase credentials for production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - SUPABASE_BUCKET_NAME=${SUPABASE_BUCKET_NAME:-campverse}
+      # Email service
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+    # Remove volume mounts in production (use built image)
+    volumes: []
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  ml-certificate:
+    environment:
+      - LOG_LEVEL=WARNING
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+
+  chatbot:
+    environment:
+      - LOG_LEVEL=WARNING
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes: []  # Remove development volume mounts
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  ml-recommendation:
+    environment:
+      - FLASK_ENV=production
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  mongo:
+    # Use managed MongoDB Atlas in production instead
+    # This is just for reference if running self-hosted
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+
+  redis:
+    # Use managed Redis in production instead (Upstash, Redis Cloud, etc.)
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M

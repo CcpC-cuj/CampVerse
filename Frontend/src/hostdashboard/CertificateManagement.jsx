@@ -404,7 +404,7 @@ const CertificateManagement = ({ eventId }) => {
                 startIcon={<Preview />}
                 variant="outlined"
                 color="secondary"
-                onClick={() => window.open('http://localhost:8000/ui', '_blank')}
+                onClick={() => window.open(import.meta.env.VITE_CERTIFICATE_DESIGNER_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/certificate-designer`, '_blank')}
               >
                 Designer Tool
               </Button>
