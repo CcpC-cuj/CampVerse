@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axiosInstance';
-import axios from 'axios';
+
 import {
   Box,
   Button,
@@ -263,12 +263,11 @@ const CertificateManagement = ({ eventId }) => {
         formData.append('assetType', 'signature');
         formData.append('signature_type', 'left');
         
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/upload-assets`,
+        await api.post(
+          `/api/certificate-management/events/${eventId}/upload-assets`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
             },
           }
@@ -281,12 +280,11 @@ const CertificateManagement = ({ eventId }) => {
         formData.append('assetType', 'signature');
         formData.append('signature_type', 'right');
         
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/upload-assets`,
+        await api.post(
+          `/api/certificate-management/events/${eventId}/upload-assets`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
             },
           }

@@ -106,13 +106,14 @@ api.interceptors.response.use(
           `${API_URL}/api/auth/refresh`,
           {},
           { 
-            withCredentials: true,
-            headers: { 'Content-Type': 'application/json' }
+            withCredentials: true // Browser sends HttpOnly cookie automatically
           }
         );
 
         if (response.data.success && response.data.accessToken) {
-          const { accessToken, user } = response.data;
+          // Fix: Ensure we extract user correctly, handling potential nested structures
+          const accessToken = response.data.accessToken;
+          const user = response.data.user || response.data.data?.user;
           
           console.log('[Auth] Token refresh successful!');
           

@@ -147,7 +147,7 @@ app.use(smartTimeout);
 // Host-specific rate limiter (same as events)
 const hostLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100000, // limit each IP to 1000 requests per windowMs
+  max: 2000, // Increased from 1000 to 2000
   message: { error: 'Too many host API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -157,7 +157,7 @@ const hostLimiter = rateLimit({
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // limit each IP to 500 requests per windowMs
+  max: 100, // Reduced window impact, sufficient for normal use
   message: { error: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -169,7 +169,7 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
+  max: 5000, // Increased from 1000 to 5000
   message: { error: 'Too many API requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -180,7 +180,7 @@ const apiLimiter = rateLimit({
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
+  max: 200, // Maintain strictness but ensure usability
   message: { error: 'Too many requests to this endpoint, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -192,7 +192,7 @@ const strictLimiter = rateLimit({
 // Relaxed rate limiter for recommendation engine (higher limits to avoid blocking legitimate requests)
 const recommendationLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5000, // Allow 5000 requests per 15 minutes (5x the general limit)
+  max: 10000, // Increased from 5000 to 10000
   message: { error: 'Too many recommendation requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,

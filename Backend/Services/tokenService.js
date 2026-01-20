@@ -13,8 +13,8 @@ const { cacheService } = require('./cacheService');
  */
 
 // Token configuration
-const ACCESS_TOKEN_EXPIRY = '15m';  // 15 minutes for access token
-const REFRESH_TOKEN_EXPIRY_DAYS = 7; // 7 days for refresh token
+const ACCESS_TOKEN_EXPIRY = '1h';  // 1 hour for access token (Extended from 15m)
+const REFRESH_TOKEN_EXPIRY_DAYS = 30; // 30 days for refresh token (Extended from 7d)
 
 /**
  * Generate access token (short-lived)
@@ -77,7 +77,7 @@ async function generateTokenPair(user, req, authMethod = 'email') {
       accessToken,
       refreshToken,
       session,
-      expiresIn: 15 * 60 // 15 minutes in seconds
+      expiresIn: 60 * 60 // 1 hour in seconds
     };
   } catch (error) {
     logger.error('Token generation failed:', error);
@@ -137,7 +137,7 @@ async function refreshAccessToken(refreshToken, req) {
         isVerified: user.isVerified,
         profilePhoto: user.profilePhoto
       },
-      expiresIn: 15 * 60
+      expiresIn: 60 * 60
     };
   } catch (error) {
     logger.error('Token refresh failed:', error);

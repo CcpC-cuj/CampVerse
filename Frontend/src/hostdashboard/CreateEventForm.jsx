@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { createEventWithFiles, nominateCoHost } from "../api/events";
-import { findUserByEmail } from "../api/users";
+import { findUserByEmail } from "../api/user";
 
 const CreateEventForm = ({ onSuccess, onClose }) => {
 	const { user } = useAuth();
@@ -128,9 +128,9 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			setIsValidatingCohost(true);
 			setCohostValidationMsg({ type: 'info', text: 'Looking up user...' });
 			
-			const response = await api.get(`/users/find-by-email?email=${cohostInput.trim()}`);
-			if (response.data.success) {
-				const user = response.data.user;
+			const response = await findUserByEmail(cohostInput.trim());
+			if (response.success) {
+				const user = response.user;
 				setEventForm(prev => ({
 					...prev,
 					cohosts: [...prev.cohosts, user.email]
@@ -139,7 +139,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 				setCohostValidationMsg({ type: 'success', text: `Added ${user.name}` });
 				setTimeout(() => setCohostValidationMsg({ type: '', text: '' }), 3000);
 			} else {
-				const errorMsg = response.data.error || 'User not found in CampVerse';
+				const errorMsg = response.error || 'User not found in CampVerse';
 				setCohostValidationMsg({ type: 'error', text: errorMsg });
 			}
 		} catch (error) {
