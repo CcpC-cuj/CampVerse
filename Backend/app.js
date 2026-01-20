@@ -209,18 +209,19 @@ const recommendationLimiter = rateLimit({
 app.use('/api/users/register', authLimiter);
 app.use('/api/users/login', authLimiter);
 app.use('/api/users/google-signin', authLimiter);
+app.use('/api/users/link-google', authLimiter);
 app.use('/api/users/verify', authLimiter);
 app.use('/api/users/forgot-password', strictLimiter);
 app.use('/api/users/reset-password', strictLimiter);
 
 // Apply general API rate limiting
-app.use('/api/events', apiLimiter);
-app.use('/api/hosts', hostLimiter);
-app.use('/api/certificates', apiLimiter);
-app.use('/api/institutions', apiLimiter);
+// app.use('/api/events', apiLimiter); // Removed as per user request
+// app.use('/api/hosts', hostLimiter); // Removed as per user request
+// app.use('/api/certificates', apiLimiter); // Removed as per user request
+// app.use('/api/institutions', apiLimiter); // Removed as per user request
 app.use('/api/recommendations', recommendationLimiter); // Relaxed limits for recommendation engine
 app.use('/api/feedback', apiLimiter);
-app.use('/api/support', apiLimiter);
+// app.use('/api/support', apiLimiter); // Removed as per user request
 
 // Apply strict rate limiting to sensitive operations
 app.use('/api/users/:id/grant-host', strictLimiter);
@@ -374,7 +375,7 @@ redisClient.on('reconnecting', () => {
       enableNoSqlInjectionProtection: true,
       enableXssProtection: true,
       enableSecurityLogging: true,
-      enableSecurityRateLimit: true,
+      enableSecurityRateLimit: false,
       maxRequestSize: '2mb',
       bruteForceMaxAttempts: 5,
       bruteForceWindowMs: 15 * 60 * 1000,
