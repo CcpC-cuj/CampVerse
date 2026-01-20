@@ -19,6 +19,11 @@ function setRedisClient(client) {
 function bruteForceProtection(maxAttempts = 5, windowMs = 15 * 60 * 1000) {
   return async (req, res, next) => {
     try {
+      // Bypass for privileged roles
+      if (req.user && (req.user.role === 'admin' || req.user.role === 'verifier' || req.user.role === 'host' || req.user.roles?.includes('verifier') || req.user.roles?.includes('platformAdmin'))) {
+        return next();
+      }
+
       const identifier = req.ip || req.connection.remoteAddress;
       const endpoint = req.originalUrl;
       const key = `bruteforce:${identifier}:${endpoint}`;
@@ -311,6 +316,11 @@ function securityLogging(req, res, next) {
 function securityRateLimit(windowMs = 15 * 60 * 1000, max = 5) {
   return async (req, res, next) => {
     try {
+      // Bypass for privileged roles
+      if (req.user && (req.user.role === 'admin' || req.user.role === 'verifier' || req.user.role === 'host' || req.user.roles?.includes('verifier') || req.user.roles?.includes('platformAdmin'))) {
+        return next();
+      }
+
       const identifier = req.ip || req.connection.remoteAddress;
       const endpoint = req.originalUrl;
       const key = `security:${identifier}:${endpoint}`;

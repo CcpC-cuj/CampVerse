@@ -1065,9 +1065,16 @@ async function scanQr(req, res) {
 }
 
 // Event analytics (host/co-host only)
+// Event analytics (host/co-host only)
 async function getEventAnalytics(req, res) {
   try {
     const eventId = req.params.id;
+    
+    // Validate Event ID
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+       return res.status(400).json({ error: 'Invalid Event ID' });
+    }
+
     const pipeline = [
       { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
       {
@@ -1095,7 +1102,7 @@ async function getEventAnalytics(req, res) {
                 as: 'user'
               }
             },
-            { $unwind: '$user' },
+            { $unwind: { path: '$user', preserveNullAndEmptyArrays: false } },
             {
               $facet: {
                 "gender": [
@@ -1118,7 +1125,7 @@ async function getEventAnalytics(req, res) {
                   },
                   { $group: { _id: "$institutionName", count: { $sum: 1 } } },
                   { $sort: { count: -1 } },
-                  { $limit: 5 } // Top 5 institutions
+                  { $limit: 5 }
                 ]
               }
             }
@@ -1128,9 +1135,24 @@ async function getEventAnalytics(req, res) {
     ];
 
     const result = await EventParticipationLog.aggregate(pipeline);
-    const stats = result[0]?.stats[0] || {};
-    // Extract demographics from nested facet structure
-    const demog = result[0]?.demographics[0] || { gender: [], institution: [] };
+    
+    // Safety check for empty results (should technically always be 1 doc with facets)
+    if (!result || result.length === 0) {
+       return res.json({
+         totalRegistered: 0,
+         totalAttended: 0,
+         totalWaitlisted: 0,
+         totalPaid: 0,
+         totalFree: 0,
+         paymentSuccess: 0,
+         paymentPending: 0,
+         attendanceRate: 0,
+         demographics: { gender: [], institution: [] }
+       });
+    }
+
+    const stats = result[0].stats && result[0].stats.length > 0 ? result[0].stats[0] : {};
+    const demog = result[0].demographics && result[0].demographics.length > 0 ? result[0].demographics[0] : { gender: [], institution: [] };
 
     res.json({
       totalRegistered: stats.totalRegistered || 0,
@@ -1149,7 +1171,8 @@ async function getEventAnalytics(req, res) {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching analytics.' });
+    logger.error('Error in getEventAnalytics:', err);
+    res.status(500).json({ error: 'Error fetching analytics.', details: err.message });
   }
 }
 

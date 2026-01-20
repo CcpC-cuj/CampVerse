@@ -1186,6 +1186,8 @@ router.post(
   logout,
 );
 
+router.get('/find-by-email', authenticateToken, findUserByEmail);
+
 // Only admin can delete any user
 router.delete(
   '/:id',
@@ -1318,6 +1320,6 @@ router.patch(
   updateUserById,
 );
 
-router.get('/find-by-email', authenticateToken, findUserByEmail);
+
 
 module.exports = router;
