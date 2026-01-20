@@ -69,6 +69,7 @@ services:
   ml-recommendation:
     environment:
       - FLASK_ENV=production
+      - PORT=5002
     restart: always
     deploy:
       resources:

@@ -118,6 +118,7 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_APP=server.py
+      - PORT=5002
     networks:
       - campverse
     healthcheck:
