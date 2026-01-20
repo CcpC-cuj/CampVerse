@@ -258,24 +258,32 @@ const AttendanceDashboard = () => {
                   className="bg-purple-900/30 border border-purple-500/30 rounded-lg p-4 hover:border-purple-400 transition-all animate-fade-in"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">✓</span>
+                      <div className="flex items-center gap-4 min-w-0 flex-1">
+                        {typeof scan.userId === 'object' && scan.userId?.profilePhoto ? (
+                          <img 
+                            src={scan.userId.profilePhoto} 
+                            alt="Profile" 
+                            className="w-12 h-12 rounded-full object-cover border-2 border-green-500/50"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-2xl text-green-400">✓</span>
+                          </div>
+                        )}
+                        <div className="min-w-0 pr-2">
+                          <h4 className="text-white font-semibold text-lg truncate">
+                            {typeof scan.userId === 'object' && scan.userId?.name 
+                              ? scan.userId.name 
+                              : scan.userName || scan.name || 'Unknown User'}
+                          </h4>
+                          <p className="text-purple-300 text-sm truncate">
+                            {typeof scan.userId === 'object' && scan.userId?.email 
+                              ? scan.userId.email 
+                              : scan.userEmail || scan.email || 'N/A'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-white font-semibold text-lg">
-                          {typeof scan.userId === 'object' && scan.userId?.name 
-                            ? scan.userId.name 
-                            : scan.userName || scan.name || 'Unknown User'}
-                        </h4>
-                        <p className="text-purple-300 text-sm">
-                          {typeof scan.userId === 'object' && scan.userId?.email 
-                            ? scan.userId.email 
-                            : scan.userEmail || scan.email || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <div className="text-green-400 font-semibold text-sm">Checked In</div>
                       <div className="text-purple-300 text-xs mt-1">
                         {formatTime(scan.scanTime)}

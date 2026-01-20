@@ -27,6 +27,7 @@ import VerifierDashboard from "./verifier/VerifierDashboard";
 import EventVerificationQueue from "./verifier/EventVerificationQueue";
 import CertificateReview from "./verifier/CertificateReview";
 import VerifierAnalytics from "./verifier/VerifierAnalytics";
+import AcceptNomination from "./pages/AcceptNomination";
 
 // ✅ Admin dashboard imports
 import {
@@ -183,7 +184,9 @@ function App() {
                     }
                   />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/oauth-callback" element={<OAuthCallback />} />
+                  <Route path="/accept-nomination" element={<AcceptNomination />} />
                   
                   {/* Event details route */}
                   <Route path="/events/:id" element={<EventDetailsPage />} />

@@ -899,6 +899,7 @@ async function getParticipants(req, res) {
         name: user?.name,
         email: user?.email,
         phone: user?.phone,
+        profilePhoto: user?.profilePhoto,
         paymentType: log.paymentType,
         paymentStatus: log.paymentStatus,
         status: log.status,
@@ -1563,7 +1564,7 @@ async function getAttendance(req, res) {
     const allParticipants = await EventParticipationLog.find({
       eventId: id,
       status: 'registered'
-    }).populate('userId', 'name email');
+    }).populate('userId', 'name email profilePhoto');
 
     // Get attended participants (those who scanned QR)
     const attendedParticipants = await EventParticipationLog.find({

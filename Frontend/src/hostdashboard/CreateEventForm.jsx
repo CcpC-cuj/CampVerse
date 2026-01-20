@@ -109,15 +109,11 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 				...prev,
 				[parent]: { ...prev[parent], [child]: value }
 			}));
-		} else {
-			if (name === 'cohostInput') {
+		} else if (name === 'cohostInput') {
 			setCohostInput(value);
-			// Optional: Clear validation when typing
 			if (cohostValidationMsg.text) setCohostValidationMsg({ type: '', text: '' });
-			return;
-		}
-		setEventForm(prev => ({ ...prev, [name]: value }));
-			}
+		} else {
+			setEventForm(prev => ({ ...prev, [name]: value }));
 		}
 	};
 

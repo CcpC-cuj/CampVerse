@@ -232,17 +232,25 @@ const ParticipantsModal = ({ event, onClose }) => {
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 bg-[#9b5de5] rounded-full flex items-center justify-center">
-                              <span className="text-white font-semibold">
-                                {userName.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-white">
+                          <div className="flex items-center gap-3 mb-2 min-w-0">
+                            {participant.profilePhoto ? (
+                              <img 
+                                src={participant.profilePhoto} 
+                                alt={userName} 
+                                className="w-10 h-10 rounded-full object-cover border border-gray-600"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-[#9b5de5] rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-semibold">
+                                  {userName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <h4 className={`font-medium ${participant.status === 'waitlisted' ? 'text-red-400' : 'text-white'} truncate`}>
                                 {userName}
                               </h4>
-                              <p className="text-sm text-gray-400">{userEmail}</p>
+                              <p className="text-sm text-gray-400 truncate">{userEmail}</p>
                             </div>
                           </div>
                           
@@ -264,7 +272,7 @@ const ParticipantsModal = ({ event, onClose }) => {
                             {participant.status || 'Unknown'}
                           </span>
                           
-                          {participant.paymentStatus && (
+                          {participant.paymentStatus && participant.paymentType !== 'free' && (
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(participant.paymentStatus)}`}>
                               {participant.paymentType === 'paid' ? `Paid (${participant.paymentStatus})` : 'Free'}
                             </span>
