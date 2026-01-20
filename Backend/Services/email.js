@@ -26,14 +26,19 @@ try {
 }
 
 // Determine which email provider to use
-const useResend = Boolean(
-  resend &&
-    process.env.RESEND_API_KEY &&
-    (process.env.RENDER || process.env.NODE_ENV === 'production')
-);
+// Only use Resend if it's actually initialized with an API key
+const useResend = Boolean(resend && process.env.RESEND_API_KEY);
+
+logger.info('Email service initialized:', {
+  provider: useResend ? 'Resend (HTTP API)' : 'Nodemailer (SMTP)',
+  hasResendKey: !!process.env.RESEND_API_KEY,
+  hasEmailUser: !!process.env.EMAIL_USER,
+  hasEmailPassword: !!process.env.EMAIL_PASSWORD
+});
 
 /**
- * Create Nodemailer transporter for local development
+ * Create Nodemailer transporter for SMTP
+ * Used when Resend is not configured
  */
 function createEmailTransporter() {
   return nodemailer.createTransport({
