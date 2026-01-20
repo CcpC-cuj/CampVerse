@@ -2,7 +2,7 @@ import os
 import sys
 import argparse
 import json
-from huggingface_hub import HfApi, create_repo
+from huggingface_hub import HfApi, create_repo, get_token
 
 def sync_secrets(api, repo_id, secrets_dict):
     """Sync secrets to Hugging Face Spaces."""
@@ -20,18 +20,28 @@ def sync_secrets(api, repo_id, secrets_dict):
 def main():
     parser = argparse.ArgumentParser(description="Deploy and sync secrets to Hugging Face Spaces")
     parser.add_argument("--repo_id", required=True, help="Space ID (e.g., username/space-name)")
-    parser.add_argument("--token", required=True, help="Hugging Face Write Token")
+    parser.add_argument("--token", help="Hugging Face Write Token")
     parser.add_argument("--secrets_json", help="JSON string of secrets")
     parser.add_argument("--env_file", help="Path to .env file to sync from")
     
     args = parser.parse_args()
-    api = HfApi(token=args.token)
+    
+    # Try to get token from prompt, then environment, then cache
+    token = args.token
+    if not token or token == "not-needed-if-logged-in":
+        token = get_token()
+    
+    if not token:
+        print("❌ No Hugging Face token found. Please run 'huggingface-cli login' or provide --token.")
+        sys.exit(1)
+
+    api = HfApi(token=token)
 
     # 1. Ensure Space exists
     try:
         create_repo(
             repo_id=args.repo_id, 
-            token=args.token, 
+            token=token, 
             repo_type="space", 
             space_sdk="docker", 
             private=False,
