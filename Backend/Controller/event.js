@@ -953,9 +953,9 @@ async function scanQr(req, res) {
       });
     }
     
-    // Find participation log - check both legacy qrToken and new qrCode.token
+    // Find participation log first by token
+    // This allows us to give better error messages (e.g. "Ticket is for a different event")
     const log = await EventParticipationLog.findOne({ 
-      eventId, 
       $or: [
         { qrToken },
         { 'qrCode.token': qrToken }
@@ -969,13 +969,23 @@ async function scanQr(req, res) {
         message: 'QR code not found or invalid'
       });
     }
+
+    // Verify event ID matches
+    if (log.eventId.toString() !== eventId) {
+      const ticketEvent = await Event.findById(log.eventId).select('title');
+      return res.status(400).json({
+        success: false,
+        error: 'Event mismatch.',
+        message: `This ticket is for a different event: "${ticketEvent ? ticketEvent.title : 'Unknown Event'}". Please scan a ticket for the current event.`
+      });
+    }
     
     // Check if QR code is already used (enhanced system)
     if (log.qrCode && log.qrCode.isUsed) {
       return res.status(409).json({ 
         success: false,
         error: 'QR code has already been used.',
-        message: 'This QR code has already been scanned'
+        message: `This QR code has already been scanned by ${log.qrCode.usedBy ? 'a host' : 'unknown'} on ${new Date(log.qrCode.usedAt).toLocaleString()}`
       });
     }
     
@@ -993,7 +1003,7 @@ async function scanQr(req, res) {
       return res.status(409).json({ 
         success: false,
         error: 'Attendance already marked for this user.',
-        message: 'Attendance has already been marked'
+        message: `Attendance has already been marked for this user at ${new Date(log.attendanceTimestamp).toLocaleTimeString()}`
       });
     }
     

@@ -29,23 +29,35 @@ const EventDetailsModal = ({ event, onClose }) => {
   };
 
   const formatDate = (dateString) => {
-    const d = new Date(dateString);
-    const year = d.getUTCFullYear();
-    const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
-    const day = d.getUTCDate();
-    let hours = d.getUTCHours();
-    const minutes = d.getUTCMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
-    const formattedMinutes = minutes.toString().padStart(2, '0');
+    if (!dateString) return 'Date to be announced';
     
-    return `${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
+    try {
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return 'Invalid Date';
+      
+      const year = d.getUTCFullYear();
+      const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+      const day = d.getUTCDate();
+      let hours = d.getUTCHours();
+      const minutes = d.getUTCMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const formattedMinutes = minutes.toString().padStart(2, '0');
+      
+      return `${month} ${day}, ${year} at ${hours}:${formattedMinutes} ${ampm}`;
+    } catch (e) {
+      return 'Invalid Date';
+    }
   };
 
   const getEventStatus = () => {
+    if (!eventDetails || !eventDetails.date) return 'upcoming';
+    
     const now = new Date();
     const eventDate = new Date(eventDetails.date);
     const endDate = eventDetails.endDate ? new Date(eventDetails.endDate) : eventDate;
+    
+    if (isNaN(eventDate.getTime())) return 'upcoming';
     
     if (now < eventDate) return 'upcoming';
     if (now > endDate) return 'past';

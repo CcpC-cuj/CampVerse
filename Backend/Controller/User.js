@@ -2249,6 +2249,19 @@ async function findUserByEmail(req, res) {
   }
 }
 
+// Get all users (admin only)
+async function getAllUsers(req, res) {
+  try {
+    const users = await User.find()
+      .select('-passwordHash')
+      .sort({ createdAt: -1 });
+    return res.json({ users });
+  } catch (err) {
+    logger.error('GetAllUsers error:', err);
+    return res.status(500).json({ error: 'Server error fetching users.' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -2256,6 +2269,7 @@ module.exports = {
   updatePreferences,
   getMe,
   updateMe,
+  getAllUsers,
   getUserById,
   updateUserById,
   deleteUser,

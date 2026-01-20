@@ -38,6 +38,7 @@ const {
   deleteMe,
   unlinkGoogleAccount,
   findUserByEmail,
+  getAllUsers,
 } = require('../Controller/User');
 
 const {
@@ -1229,6 +1230,31 @@ router.post(
   authenticateToken,
   requireRole('platformAdmin'),
   grantVerifierAccess,
+);
+
+/**
+ * @swagger
+ * /api/users/all:
+ *   get:
+ *     summary: Get all users (admin only)
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Server error
+ */
+router.get(
+  '/all',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  getAllUsers,
 );
 
 /**
