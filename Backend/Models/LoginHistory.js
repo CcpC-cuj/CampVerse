@@ -9,7 +9,7 @@ const loginHistorySchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true
+    index: false
   },
   
   // Login Status
@@ -17,7 +17,7 @@ const loginHistorySchema = new mongoose.Schema({
     type: String,
     enum: ['success', 'failed'],
     required: true,
-    index: true
+    index: false
   },
   
   // Failure reason (if failed)
@@ -90,7 +90,7 @@ const loginHistorySchema = new mongoose.Schema({
   timestamp: {
     type: Date,
     default: Date.now,
-    index: true
+    index: false
   }
 }, {
   timestamps: false // We use our own timestamp field

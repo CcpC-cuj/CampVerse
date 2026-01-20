@@ -11,7 +11,7 @@ const sessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    index: true
+    index: false
   },
   
   // Refresh token (hashed for security)
@@ -55,14 +55,14 @@ const sessionSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
-    index: true
+    index: false
   },
   
   // Timestamps
   createdAt: {
     type: Date,
     default: Date.now,
-    index: true
+    index: false
   },
   lastActivity: {
     type: Date,
@@ -71,7 +71,7 @@ const sessionSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: true
+    index: false
   },
   
   // Revocation info
@@ -94,7 +94,6 @@ const sessionSchema = new mongoose.Schema({
 // Indexes for efficient queries
 sessionSchema.index({ userId: 1, isActive: 1 });
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index - auto-delete expired sessions
-sessionSchema.index({ refreshToken: 1 });
 
 // Instance method: Check if session is valid
 sessionSchema.methods.isValid = function() {
