@@ -1,9 +1,9 @@
 /**
  * Email Service
- * Supports both Resend (for Render.com/production) and Nodemailer (for local development)
- *
- * Resend is used in production because Render.com's free tier blocks SMTP ports.
- * Resend uses HTTP API which works without SMTP access.
+ * Supports multiple providers:
+ * 1. Brevo HTTP API (recommended for Hugging Face - uses port 443)
+ * 2. Resend HTTP API (alternative)
+ * 3. Nodemailer/Gmail SMTP (local development only - port 587 blocked on HF)
  */
 const dotenv = require('dotenv');
 dotenv.config();
@@ -22,15 +22,18 @@ try {
     logger.info('Resend email service initialized');
   }
 } catch (err) {
-  logger.warn('Resend module not installed, falling back to Nodemailer only');
+  logger.warn('Resend module not installed, falling back to other providers');
 }
 
-// Determine which email provider to use
-// Only use Resend if it's actually initialized with an API key
-const useResend = Boolean(resend && process.env.RESEND_API_KEY);
+// Determine which email provider to use (priority order)
+const useBrevo = Boolean(process.env.BREVO_API_KEY);
+const useResend = Boolean(resend && process.env.RESEND_API_KEY && !useBrevo);
+
+const provider = useBrevo ? 'Brevo (HTTP API)' : useResend ? 'Resend (HTTP API)' : 'Nodemailer (SMTP)';
 
 logger.info('Email service initialized:', {
-  provider: useResend ? 'Resend (HTTP API)' : 'Nodemailer (SMTP)',
+  provider,
+  hasBrevoKey: !!process.env.BREVO_API_KEY,
   hasResendKey: !!process.env.RESEND_API_KEY,
   hasEmailUser: !!process.env.EMAIL_USER,
   hasEmailPassword: !!process.env.EMAIL_PASSWORD
@@ -38,7 +41,7 @@ logger.info('Email service initialized:', {
 
 /**
  * Create Nodemailer transporter for SMTP
- * Used when Resend is not configured
+ * Used when no HTTP API is configured (local development only)
  */
 function createEmailTransporter() {
   return nodemailer.createTransport({
@@ -51,16 +54,53 @@ function createEmailTransporter() {
 }
 
 /**
+ * Send email via Brevo HTTP API
+ * Works on Hugging Face (uses port 443)
+ */
+async function sendViaBrevo({ to, subject, html, text }) {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': process.env.BREVO_API_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: {
+        name: 'CampVerse',
+        email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'noreply@campverse.com'
+      },
+      to: [{ email: Array.isArray(to) ? to[0] : to }],
+      subject,
+      htmlContent: html,
+      textContent: text
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Brevo API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
+  }
+
+  const result = await response.json();
+  return result;
+}
+
+/**
  * Universal email sending function
- * Uses Resend in production (Render.com), Nodemailer in development
+ * Priority: Brevo > Resend > Nodemailer
  */
 async function sendEmail({ to, subject, html, text }) {
   try {
-    if (useResend) {
-      // Use Resend HTTP API (works on Render.com without SMTP)
+    if (useBrevo) {
+      // Use Brevo HTTP API (works on Hugging Face)
+      const result = await sendViaBrevo({ to, subject, html, text });
+      logger.info('Email sent via Brevo:', { messageId: result?.messageId, to });
+      return true;
+    } else if (useResend) {
+      // Use Resend HTTP API
       const result = await resend.emails.send({
-        from:
-          process.env.RESEND_FROM_EMAIL || 'CampVerse <noreply@campverse.com>',
+        from: process.env.RESEND_FROM_EMAIL || 'CampVerse <onboarding@resend.dev>',
         to: Array.isArray(to) ? to : [to],
         subject,
         html,
@@ -69,7 +109,7 @@ async function sendEmail({ to, subject, html, text }) {
       logger.info('Email sent via Resend:', { id: result?.data?.id, to });
       return true;
     } else {
-      // Use Nodemailer (local development)
+      // Use Nodemailer (local development only - SMTP blocked on HF)
       const transporter = createEmailTransporter();
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -84,12 +124,13 @@ async function sendEmail({ to, subject, html, text }) {
   } catch (error) {
     logger.error('Email sending failed:', {
       error: error.message,
-      provider: useResend ? 'Resend' : 'Nodemailer',
+      provider: useBrevo ? 'Brevo' : useResend ? 'Resend' : 'Nodemailer',
       to,
     });
     return false;
   }
 }
+
 
 /**
  * Send OTP email for verification
