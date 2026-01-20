@@ -81,9 +81,11 @@ app.set('trust proxy', 1);
 // Frontend: https://campverse-alqa.onrender.com
 // Backend: https://campverse-26hm.onrender.com
 const allowedOrigins = [
-  'https://campverse-alqa.onrender.com',  // Production Render frontend
-  'https://campverse-26hm.onrender.com',  // Production Render backend (for same-origin)
-  'https://campverse.vercel.app',         // Vercel frontend (if used)
+  'https://camp-verse-three.vercel.app',  // New Vercel frontend
+  'https://imkrish-campverse-backend.hf.space', // New HF backend Space
+  'https://campverse-alqa.onrender.com',  // Old Production Render frontend
+  'https://campverse-26hm.onrender.com',  // Old Production Render backend
+  'https://campverse.vercel.app',         // Other Vercel frontend
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',

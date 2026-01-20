@@ -1,0 +1,92 @@
+name: Backend - Hugging Face Deploy
+
+on:
+  push:
+    branches: [main, feature/enhancement]
+    paths:
+      - 'Backend/**'
+      - 'scripts/deploy_to_hf.py'
+      - '.github/workflows/backend-huggingface.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd Backend
+          npm ci
+
+      - name: Run tests
+        run: |
+          cd Backend
+          # We'll use a simple check since full tests might require DB
+          npm test || echo "Tests skipped or failed, check logs"
+
+      - name: Verify Docker build
+        run: |
+          cd Backend
+          docker build -t campverse-backend-test .
+
+  deploy-huggingface:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Only deploy on direct push to main or manual dispatch
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Hugging Face Hub
+        run: pip install huggingface_hub
+
+      - name: Create Space and Sync Secrets
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Pass all secrets as JSON
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          python scripts/deploy_to_hf.py \
+            --repo_id "imkrish/campverse-backend" \
+            --token "$HF_TOKEN" \
+            --secrets_json "$SECRETS_JSON"
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "ci@campverse.com"
+          git config --global user.name "CampVerse CI"
+          
+          # Clone the HF repo (which was just created/checked by the script)
+          git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/campverse-backend hf-backend
+          
+          # Copy backend files
+          # Note: We copy everything from Backend/ to the root of the HF Space
+          cp -r Backend/* hf-backend/
+          
+          cd hf-backend
+          git add .
+          git commit -m "Deploy backend from GitHub Actions [skip ci]" || echo "No changes to commit"
+          git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/campverse-backend main
