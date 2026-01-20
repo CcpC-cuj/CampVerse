@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage -->
+  <url>
+    <loc>https://campverse.com/</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Public Event Listings -->
+  <url>
+    <loc>https://campverse.com/events</loc>
+    <lastmod>2026-01-20</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Help Center (public) -->
+  <url>
+    <loc>https://campverse.com/help</loc>
+    <lastmod>2026-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Password Reset (public) -->
+  <url>
+    <loc>https://campverse.com/reset-password</loc>
+    <lastmod>2026-01-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  
+  <!-- 
+    Note: Dynamic event pages (/events/:id) should be added programmatically.
+    In production, consider generating sitemap dynamically via backend API.
+    
+    Protected routes like /dashboard, /admin, /host are intentionally excluded
+    as they require authentication and shouldn't be indexed.
+  -->
+</urlset>

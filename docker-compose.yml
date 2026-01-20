@@ -95,7 +95,8 @@ services:
     volumes:
       - ./ML/chatbot:/app
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - campverse
     healthcheck:
@@ -103,8 +104,9 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 15s
+    restart: unless-stopped
 
-  # ML Recommendation Service (Microservice)
   # ML Recommendation Service (Microservice)
   ml-recommendation:
     build:

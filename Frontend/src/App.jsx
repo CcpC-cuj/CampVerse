@@ -4,6 +4,9 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from
 import { AuthProvider } from "./contexts/AuthContext";
 import { ModalProvider } from "./components/Modal";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ErrorBoundary from "./components/ErrorBoundary";
+import NotFound from "./pages/NotFound";
+import { ToastProvider } from "./components/Toast";
 
 // Import pages
 import Landing from "./pages/landing";
@@ -85,14 +88,18 @@ const OAuthDetector = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <ModalProvider>
-        <EventProvider>
-          <Router>
-            <OAuthDetector />
-            <Routes>
-              {/* Test route for event creation */}
-              <Route path="/test-create-event" element={<CreateEventForm />} />
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <ModalProvider>
+            <EventProvider>
+              <Router>
+                <OAuthDetector />
+              <Routes>
+              {/* Development-only test route */}
+              {import.meta.env.DEV && (
+                <Route path="/test-create-event" element={<CreateEventForm />} />
+              )}
               <Route path="/" element={<Landing />} />
               <Route
                 path="/dashboard/*"
@@ -341,12 +348,15 @@ function App() {
               }
             />
 
-            <Route path="*" element={<Landing />} />
+            {/* 404 Not Found - catch all unmatched routes */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
       </EventProvider>
       </ModalProvider>
     </AuthProvider>
+    </ToastProvider>
+    </ErrorBoundary>
   );
 }
 

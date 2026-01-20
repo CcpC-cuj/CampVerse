@@ -132,7 +132,7 @@ const FaqCta = () => {
               your next creative challenge, CampVerse connects you with endless
               possibilities.
             </p>
-            <div className="grid md:grid-cols-3 gap-8 mb-12 text-white">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12 text-white">
               {[
                 {
                   icon: "ri-rocket-line",
