@@ -8,6 +8,7 @@ const {
   regenerateCertificates,
   bulkUploadParticipants,
   renderCertificate,
+  submitCertificateConfig,
 } = require('../Controller/certificateManagement');
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const upload = require('../Middleware/upload');
@@ -73,6 +74,13 @@ router.patch(
   authenticateToken,
   requireRole('host'),
   updateCertificateSettings
+);
+
+router.post(
+  '/events/:eventId/submit',
+  authenticateToken,
+  requireRole('host'),
+  submitCertificateConfig
 );
 
 /**

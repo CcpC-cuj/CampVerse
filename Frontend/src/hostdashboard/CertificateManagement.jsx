@@ -92,9 +92,12 @@ const CertificateManagement = ({ eventId }) => {
   const [leftSignatory, setLeftSignatory] = useState({ name: '', title: '' });
   const [rightSignatory, setRightSignatory] = useState({ name: '', title: '' });
   
-  // Template selection
+  // Verification Status
+  const [verificationStatus, setVerificationStatus] = useState('not_configured');
+  const [rejectionReason, setRejectionReason] = useState('');
+  
+  // Selected Template (Assigned by Admin)
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   
   // Upload states
   const [templateFile, setTemplateFile] = useState(null);
@@ -134,6 +137,14 @@ const CertificateManagement = ({ eventId }) => {
         setAwardText(eventData.certificateSettings.awardText || '');
         setLeftSignatory(eventData.certificateSettings.leftSignatory || { name: '', title: '' });
         setRightSignatory(eventData.certificateSettings.rightSignatory || { name: '', title: '' });
+        setVerificationStatus(eventData.certificateSettings.verificationStatus || 'not_configured');
+        setRejectionReason(eventData.certificateSettings.rejectionReason || '');
+        
+        // Find selected template from gallery if ID exists
+        if (eventData.certificateSettings.selectedTemplateId) {
+          const template = CERTIFICATE_TEMPLATES.find(t => t.id === eventData.certificateSettings.selectedTemplateId);
+          setSelectedTemplate(template);
+        }
       }
       
       setLoading(false);
@@ -172,6 +183,7 @@ const CertificateManagement = ({ eventId }) => {
           awardText,
           leftSignatory,
           rightSignatory,
+          selectedTemplateId: selectedTemplate?.id,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -181,6 +193,21 @@ const CertificateManagement = ({ eventId }) => {
       fetchEventDetails();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update settings');
+    }
+  };
+
+  const handleSubmitForVerification = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/submit`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSuccess('Submitted for verification!');
+      fetchEventDetails();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to submit for verification');
     }
   };
 
@@ -372,13 +399,23 @@ const CertificateManagement = ({ eventId }) => {
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6">Certificate Settings</Typography>
-            <Button
-              startIcon={<Settings />}
-              variant="outlined"
-              onClick={() => setSettingsDialogOpen(true)}
-            >
-              Configure
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                startIcon={<Preview />}
+                variant="outlined"
+                color="secondary"
+                onClick={() => window.open(import.meta.env.VITE_CERTIFICATE_DESIGNER_URL || `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/certificate-designer`, '_blank')}
+              >
+                Designer Tool
+              </Button>
+              <Button
+                startIcon={<Settings />}
+                variant="outlined"
+                onClick={() => setSettingsDialogOpen(true)}
+              >
+                Configure
+              </Button>
+            </Box>
           </Box>
 
           <FormControlLabel
@@ -397,22 +434,41 @@ const CertificateManagement = ({ eventId }) => {
           <Divider sx={{ my: 2 }} />
 
           <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4}>
               <Typography variant="body2" color="text.secondary">
-                Certificate Type: <strong>{certificateType}</strong>
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" color="text.secondary">
-                Status:{' '}
-                {certificateEnabled ? (
-                  <Chip label="Enabled" color="success" size="small" />
-                ) : (
-                  <Chip label="Disabled" color="default" size="small" />
-                )}
+                Config Status: {' '}
+                <Chip 
+                  label={verificationStatus.toUpperCase()} 
+                  color={
+                    verificationStatus === 'approved' ? 'success' : 
+                    verificationStatus === 'pending' ? 'warning' : 
+                    verificationStatus === 'rejected' ? 'error' : 'default'
+                  } 
+                  size="small" 
+                />
               </Typography>
             </Grid>
           </Grid>
+          
+          {verificationStatus === 'rejected' && rejectionReason && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              <strong>Rejected:</strong> {rejectionReason}
+            </Alert>
+          )}
+
+          {certificateEnabled && verificationStatus !== 'approved' && (
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleSubmitForVerification}
+                disabled={verificationStatus === 'pending'}
+                startIcon={<Refresh />}
+              >
+                {verificationStatus === 'pending' ? 'Pending Approval' : 'Submit for Verification'}
+              </Button>
+            </Box>
+          )}
         </CardContent>
       </Card>
 
@@ -485,12 +541,12 @@ const CertificateManagement = ({ eventId }) => {
               </Grid>
             </Grid>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
               <Button
                 variant="contained"
                 startIcon={<FileUpload />}
                 onClick={handleGenerateCertificates}
-                disabled={generationProgress || certificateStatus.certificatesGenerated === certificateStatus.totalAttended}
+                disabled={generationProgress || verificationStatus !== 'approved' || certificateStatus.certificatesGenerated === certificateStatus.totalAttended}
               >
                 Generate Certificates
               </Button>
@@ -498,10 +554,15 @@ const CertificateManagement = ({ eventId }) => {
                 variant="outlined"
                 startIcon={<Refresh />}
                 onClick={handleRegenerateCertificates}
-                disabled={generationProgress || certificateStatus.certificatesGenerated === 0}
+                disabled={generationProgress || verificationStatus !== 'approved' || certificateStatus.certificatesGenerated === 0}
               >
                 Regenerate All
               </Button>
+              {verificationStatus !== 'approved' && (
+                <Typography variant="caption" color="error">
+                  Generation locked until configuration is approved by verifier.
+                </Typography>
+              )}
             </Box>
 
             {generationProgress && <LinearProgress sx={{ mb: 2 }} />}
@@ -582,6 +643,15 @@ const CertificateManagement = ({ eventId }) => {
               </Select>
             </FormControl>
 
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom>Template</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedTemplate 
+                  ? `Assigned Template: ${selectedTemplate.name}` 
+                  : "Template will be assigned by a verifier/admin after submission."}
+              </Typography>
+            </Box>
+
             <TextField
               fullWidth
               label="Award Text"
@@ -589,7 +659,8 @@ const CertificateManagement = ({ eventId }) => {
               rows={3}
               value={awardText}
               onChange={(e) => setAwardText(e.target.value)}
-              placeholder="For outstanding participation in..."
+              placeholder="e.g. {name} has successfully participated in {event_name}"
+              helperText="Use {name} for participant name and {event_name} for the event title."
               sx={{ mb: 3 }}
             />
 

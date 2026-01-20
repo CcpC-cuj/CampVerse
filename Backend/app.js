@@ -81,9 +81,11 @@ app.set('trust proxy', 1);
 // Frontend: https://campverse-alqa.onrender.com
 // Backend: https://campverse-26hm.onrender.com
 const allowedOrigins = [
-  'https://campverse-alqa.onrender.com',  // Production Render frontend
-  'https://campverse-26hm.onrender.com',  // Production Render backend (for same-origin)
-  'https://campverse.vercel.app',         // Vercel frontend (if used)
+  'https://camp-verse-three.vercel.app',  // New Vercel frontend
+  'https://imkrish-campverse-backend.hf.space', // New HF backend Space
+  'https://campverse-alqa.onrender.com',  // Old Production Render frontend
+  'https://campverse-26hm.onrender.com',  // Old Production Render backend
+  'https://campverse.vercel.app',         // Other Vercel frontend
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',
@@ -525,6 +527,7 @@ app.use('/api', findUserRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));
 app.use('/api/support', require('./Routes/supportRoutes'));
+app.use('/api/admin', require('./Routes/adminTemplateRoutes')); // Admin template management
 
 // Initialize Socket.IO in notification service for real-time notifications
 const { setSocketIO } = require('./Services/notification');

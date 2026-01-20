@@ -22,6 +22,7 @@ async function updateCertificateSettings(req, res) {
       awardText,
       leftSignatory,
       rightSignatory,
+      selectedTemplateId, // Template ID assigned by Admin/Verifier
     } = req.body;
 
     // Find event and verify host permission
@@ -50,7 +51,7 @@ async function updateCertificateSettings(req, res) {
     if (certificateType) {
       event.certificateSettings.certificateType = certificateType;
     }
-    if (awardText) {
+    if (awardText !== undefined) {
       event.certificateSettings.awardText = awardText;
     }
     if (leftSignatory) {
@@ -58,6 +59,9 @@ async function updateCertificateSettings(req, res) {
     }
     if (rightSignatory) {
       event.certificateSettings.rightSignatory = rightSignatory;
+    }
+    if (selectedTemplateId) {
+      event.certificateSettings.selectedTemplateId = selectedTemplateId;
     }
 
     await event.save();
@@ -261,25 +265,36 @@ async function generateCertificates(req, res) {
     }
 
     // Check if certificate setup is approved
-    if (event.certificateSettings?.certificateVerification?.status !== 'approved') {
+    if (event.certificateSettings?.verificationStatus !== 'approved') {
       return res.status(400).json({
         error: 'Certificate setup must be approved by a verifier before generation.',
-        currentStatus: event.certificateSettings?.certificateVerification?.status || 'not submitted',
+        currentStatus: event.certificateSettings?.verificationStatus || 'not_configured',
       });
     }
 
-    // Check if required assets are uploaded
-    const assets = event.certificateSettings?.assets;
-    if (!assets?.templateUrl || !assets?.orgLogoUrl || 
-        !event.certificateSettings?.leftSignatory?.signatureUrl || 
-        !event.certificateSettings?.rightSignatory?.signatureUrl) {
+
+    // Check if required assets are uploaded - using uploadedAssets structure
+    const uploadedAssets = event.certificateSettings?.uploadedAssets || {};
+    const settings = event.certificateSettings || {};
+    
+    // Template can come from upload OR predefined selection
+    const PREDEFINED_TEMPLATES = {
+      'classic-blue': 'https://storage.campverse.com/templates/classic-blue.png',
+      'modern-purple': 'https://storage.campverse.com/templates/modern-purple.png',
+      'elegant-gold': 'https://storage.campverse.com/templates/elegant-gold.png',
+      'minimal-dark': 'https://storage.campverse.com/templates/minimal-dark.png',
+    };
+    const templateUrl = uploadedAssets.templateUrl || PREDEFINED_TEMPLATES[settings.selectedTemplateId];
+    
+    if (!templateUrl || !uploadedAssets.organizationLogo || 
+        !uploadedAssets.leftSignature || !uploadedAssets.rightSignature) {
       return res.status(400).json({
-        error: 'All required assets must be uploaded (template, organization logo, and both signatures).',
+        error: 'All required assets must be uploaded (template/selection, organization logo, and both signatures).',
         uploaded: {
-          template: !!assets?.templateUrl,
-          orgLogo: !!assets?.orgLogoUrl,
-          leftSignature: !!event.certificateSettings?.leftSignatory?.signatureUrl,
-          rightSignature: !!event.certificateSettings?.rightSignatory?.signatureUrl,
+          template: !!templateUrl,
+          orgLogo: !!uploadedAssets.organizationLogo,
+          leftSignature: !!uploadedAssets.leftSignature,
+          rightSignature: !!uploadedAssets.rightSignature,
         },
       });
     }
@@ -296,23 +311,23 @@ async function generateCertificates(req, res) {
       });
     }
 
-    // Prepare batch generation request
+    // Prepare batch generation request - use the corrected variables
     const certificateSettings = event.certificateSettings;
     
     const batchRequest = {
       eventId: eventId,
       eventTitle: event.title,
-      templateUrl: assets.templateUrl,
-      orgLogoUrl: assets.orgLogoUrl,
+      templateUrl: templateUrl, // Already resolved above with fallback
+      orgLogoUrl: uploadedAssets.organizationLogo,
       leftSignature: {
-        url: certificateSettings.leftSignatory.signatureUrl,
-        name: certificateSettings.leftSignatory.name,
-        title: certificateSettings.leftSignatory.title,
+        url: uploadedAssets.leftSignature,
+        name: certificateSettings.leftSignatory?.name || '',
+        title: certificateSettings.leftSignatory?.title || '',
       },
       rightSignature: {
-        url: certificateSettings.rightSignatory.signatureUrl,
-        name: certificateSettings.rightSignatory.name,
-        title: certificateSettings.rightSignatory.title,
+        url: uploadedAssets.rightSignature,
+        name: certificateSettings.rightSignatory?.name || '',
+        title: certificateSettings.rightSignatory?.title || '',
       },
       awardText: certificateSettings.awardText || 'For successfully participating in',
       certificateType: certificateSettings.certificateType || 'participation',
@@ -355,14 +370,15 @@ async function generateCertificates(req, res) {
         certificate = await Certificate.create({
           userId: log.userId._id,
           eventId: eventId,
-          generatedAt: new Date(),
+          type: certificateSettings.certificateType === 'achievement' ? 'winner' : 'participant', // REQUIRED field
           status: 'ready', // Status indicates certificate is ready to be rendered
+          issuedAt: new Date(),
           // NO certificateUrl - certificates are rendered on-demand
         });
       } else {
         // Update existing certificate
         certificate.status = 'ready';
-        certificate.generatedAt = new Date();
+        certificate.updatedAt = new Date();
         await certificate.save();
       }
 
@@ -371,7 +387,7 @@ async function generateCertificates(req, res) {
         userName: log.userId.name,
         email: log.userId.email,
         status: 'ready',
-        renderUrl: `/api/certificates/${eventId}/render/${log.userId._id}`, // On-demand render endpoint
+        renderUrl: `/api/certificate-management/events/${eventId}/render/${log.userId._id}`, // Correct path
       });
     }
 
@@ -624,9 +640,20 @@ async function renderCertificate(req, res) {
 
     // Get certificate settings
     const certificateSettings = event.certificateSettings;
-    if (!certificateSettings?.assets) {
+    const uploadedAssets = certificateSettings?.uploadedAssets || {};
+    
+    // Template can come from upload OR predefined selection
+    const PREDEFINED_TEMPLATES = {
+      'classic-blue': 'https://storage.campverse.com/templates/classic-blue.png',
+      'modern-purple': 'https://storage.campverse.com/templates/modern-purple.png',
+      'elegant-gold': 'https://storage.campverse.com/templates/elegant-gold.png',
+      'minimal-dark': 'https://storage.campverse.com/templates/minimal-dark.png',
+    };
+    const templateUrl = uploadedAssets.templateUrl || PREDEFINED_TEMPLATES[certificateSettings?.selectedTemplateId];
+    
+    if (!templateUrl) {
       return res.status(500).json({
-        error: 'Certificate configuration not found.',
+        error: 'Certificate template not configured.',
       });
     }
 
@@ -634,17 +661,17 @@ async function renderCertificate(req, res) {
     const renderRequest = {
       eventId: eventId,
       eventTitle: event.title,
-      templateUrl: certificateSettings.assets.templateUrl,
-      orgLogoUrl: certificateSettings.assets.orgLogoUrl,
+      templateUrl: templateUrl,
+      orgLogoUrl: uploadedAssets.organizationLogo,
       leftSignature: {
-        url: certificateSettings.leftSignatory.signatureUrl,
-        name: certificateSettings.leftSignatory.name,
-        title: certificateSettings.leftSignatory.title,
+        url: uploadedAssets.leftSignature,
+        name: certificateSettings.leftSignatory?.name || '',
+        title: certificateSettings.leftSignatory?.title || '',
       },
       rightSignature: {
-        url: certificateSettings.rightSignatory.signatureUrl,
-        name: certificateSettings.rightSignatory.name,
-        title: certificateSettings.rightSignatory.title,
+        url: uploadedAssets.rightSignature,
+        name: certificateSettings.rightSignatory?.name || '',
+        title: certificateSettings.rightSignatory?.title || '',
       },
       awardText: certificateSettings.awardText || 'For successfully participating in',
       certificateType: certificateSettings.certificateType || 'participation',
@@ -689,6 +716,59 @@ async function renderCertificate(req, res) {
   }
 }
 
+/**
+ * Submit certificate configuration for verification
+ */
+async function submitCertificateConfig(req, res) {
+  try {
+    const { eventId } = req.params;
+    const userId = req.user.id;
+
+    // Find event and verify host permission
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+
+    const isHost = event.hostUserId.toString() === userId;
+    if (!isHost) {
+      return res.status(403).json({
+        error: 'Only the event host can submit certificate configuration.',
+      });
+    }
+
+    // Check if certificates are enabled
+    if (!event.features?.certificateEnabled) {
+      return res.status(400).json({
+        error: 'Certificates are not enabled for this event.',
+      });
+    }
+
+    // Validate if basic settings exist
+    const settings = event.certificateSettings;
+    if (!settings?.awardText || !settings?.leftSignatory?.name || !settings?.rightSignatory?.name) {
+      return res.status(400).json({
+        error: 'Please configure Award Text and both Signatories before submitting.',
+      });
+    }
+
+    // Update status
+    event.certificateSettings.verificationStatus = 'pending';
+    event.certificateSettings.submittedBy = userId;
+    event.certificateSettings.submittedAt = new Date();
+
+    await event.save();
+
+    res.json({
+      message: 'Certificate configuration submitted for verification.',
+      verificationStatus: 'pending',
+    });
+  } catch (err) {
+    console.error('Error submitting certificate configuration:', err);
+    res.status(500).json({ error: 'Server error submitting configuration.' });
+  }
+}
+
 module.exports = {
   updateCertificateSettings,
   uploadCertificateAssets,
@@ -698,4 +778,5 @@ module.exports = {
   regenerateCertificates,
   bulkUploadParticipants,
   renderCertificate,
+  submitCertificateConfig,
 };

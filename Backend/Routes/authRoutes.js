@@ -28,12 +28,13 @@ router.post('/refresh', async (req, res) => {
     // Get refresh token from HttpOnly cookie (browser sends it automatically)
     const refreshToken = req.cookies?.refreshToken;
 
-    console.log('🔄 Refresh token request received');
-    console.log('🍪 Cookie present:', !!refreshToken);
-    console.log('🍪 All cookies:', Object.keys(req.cookies || {}));
+    logger.debug('Refresh token request received', { 
+      hasCookie: !!refreshToken, 
+      cookieKeys: Object.keys(req.cookies || {}) 
+    });
 
     if (!refreshToken) {
-      console.log('❌ No refresh token in cookies');
+      logger.warn('No refresh token in cookies');
       return res.status(401).json({
         success: false,
         error: 'No refresh token found. Please login again.'
@@ -43,13 +44,13 @@ router.post('/refresh', async (req, res) => {
     const result = await refreshAccessToken(refreshToken, req);
 
     if (!result.success) {
-      console.log('❌ Refresh failed:', result.error);
+      logger.warn('Token refresh failed:', { error: result.error });
       // Clear invalid cookie
       clearRefreshTokenCookie(res);
       return res.status(401).json(result);
     }
 
-    console.log('✅ Token refresh successful');
+    logger.info('Token refresh successful');
 
     // If token rotation provides a new refresh token, update the cookie
     if (result.newRefreshToken) {
@@ -63,7 +64,7 @@ router.post('/refresh', async (req, res) => {
       expiresIn: result.expiresIn
     });
   } catch (error) {
-    console.error('Token refresh error:', error);
+    logger.error('Token refresh error:', error);
     clearRefreshTokenCookie(res);
     return res.status(500).json({
       success: false,
@@ -88,11 +89,11 @@ router.post('/logout', authenticateToken, async (req, res) => {
         await revokeSession(req.user.sessionId, req.user.id);
       } catch (e) {
         // Continue even if session revocation fails
-        console.error('Session revocation error:', e);
+        logger.error('Session revocation error:', e);
       }
     }
 
-    console.log('✅ User logged out, cookie cleared');
+    logger.info('User logged out, cookie cleared');
 
     return res.json({
       success: true,

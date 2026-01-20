@@ -147,8 +147,9 @@ def health_check():
     })
 
 if __name__ == '__main__':
-    print("Starting ML Recommendation API server...")
+    port = int(os.environ.get('PORT', 8081))
+    print(f"Starting ML Recommendation API server on port {port}...")
     print("Available endpoints:")
     print("- POST /recommend: Generate event recommendations")
     print("- GET /health: Health check")
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)

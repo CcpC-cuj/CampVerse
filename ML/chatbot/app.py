@@ -230,4 +230,5 @@ async def user_question(sid, data):
 # --- For Uvicorn ---
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app_socket, port=8000)
+    port = int(os.environ.get('PORT', 8000))
+    uvicorn.run(app_socket, host="0.0.0.0", port=port)

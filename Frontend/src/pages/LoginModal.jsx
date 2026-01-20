@@ -30,7 +30,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       const response = await login(formData);
       
       if (response.token) {
-        authLogin(response.token, response.user, response.refreshToken);
+        authLogin(response.token, response.user);
         onClose();
         // No redirect: stay on current page so event view updates with authentication
       } else {
@@ -54,7 +54,7 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
       const response = await googleSignIn({ token });
 
       if (response.token) {
-        authLogin(response.token, response.user, response.refreshToken);
+        authLogin(response.token, response.user);
         onClose();
         // No redirect: stay on current page so event view updates with authentication
       } else if (response.error) {

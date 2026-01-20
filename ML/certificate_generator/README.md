@@ -6,8 +6,10 @@ colorTo: green
 sdk: docker
 sdk_version: "1.0"
 app_file: api_main.py
+app_port: 7860
 pinned: false
 ---
+
 # Certificate Generator API
 
 A FastAPI-based service for generating professional certificates with customizable templates, logos, signatures, and text.
@@ -32,6 +34,7 @@ A FastAPI-based service for generating professional certificates with customizab
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -39,6 +42,7 @@ pip install -r requirements.txt
 ## Directory Structure
 
 The API automatically creates the following directory structure:
+
 ```
 certificate_generator/
 ├── uploads/           # For logos and signatures
@@ -99,8 +103,9 @@ Default configuration is provided but can be customized via API endpoints.
 ## Usage Example
 
 1. Upload certificate template:
+
 ```bash
-curl -X POST "http://localhost:8000/upload-template" \
+curl -X POST "http://localhost:7860/upload-template" \
   -H "accept: application/json" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@template.png" \
@@ -108,8 +113,9 @@ curl -X POST "http://localhost:8000/upload-template" \
 ```
 
 2. Configure settings:
+
 ```bash
-curl -X POST "http://localhost:8000/config/award-text" \
+curl -X POST "http://localhost:7860/config/award-text" \
   -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d '{
@@ -121,8 +127,9 @@ curl -X POST "http://localhost:8000/config/award-text" \
 ```
 
 3. Generate certificates:
+
 ```bash
-curl -X POST "http://localhost:8000/generate" \
+curl -X POST "http://localhost:7860/generate" \
   -H "accept: application/json" \
   -H "Content-Type: application/json" \
   -d '{
@@ -133,17 +140,20 @@ curl -X POST "http://localhost:8000/generate" \
 ## Running the API
 
 Start the server:
+
 ```bash
 python api_main.py
 ```
 
 The API will be available at:
-- API Documentation: http://localhost:8000/docs
-- API Root: http://localhost:8000/
+
+- API Documentation: http://localhost:7860/docs
+- API Root: http://localhost:7860/
 
 ## Error Handling
 
 The API provides detailed error messages for:
+
 - Missing required files
 - Invalid file formats
 - Configuration errors

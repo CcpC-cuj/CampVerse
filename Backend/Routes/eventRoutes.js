@@ -99,6 +99,104 @@ router.get('/', async (req, res) => {
 // Advanced event search (filter, sort, paginate) - placed before '/:id' to avoid route collisions
 router.get('/search', authenticateToken, advancedEventSearch);
 
+// ============================================================================
+// ANALYTICS ROUTES - MUST be placed BEFORE '/:id' to avoid route collisions
+// ============================================================================
+
+// User analytics (participation stats)
+router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
+
+// Verifier analytics (verification stats)
+router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
+
+// Platform insights (global stats) - accessible by verifier and platformAdmin
+router.get(
+  '/platform-insights',
+  authenticateToken,
+  requireRole(['platformAdmin', 'verifier']),
+  getPlatformInsights,
+);
+
+// Search analytics (accessible by verifier and platformAdmin)
+router.get(
+  '/search-analytics',
+  authenticateToken,
+  requireRole(['platformAdmin', 'verifier']),
+  getSearchAnalytics,
+);
+
+// User activity timeline
+router.get(
+  '/user-activity/:userId',
+  authenticateToken,
+  getUserActivityTimeline,
+);
+
+// Platform growth trends (accessible by verifier and platformAdmin)
+router.get(
+  '/admin/growth-trends',
+  authenticateToken,
+  requireRole(['platformAdmin', 'verifier']),
+  getGrowthTrends,
+);
+
+// Zero-result searches (accessible by verifier and platformAdmin)
+router.get(
+  '/admin/zero-result-searches',
+  authenticateToken,
+  requireRole(['platformAdmin', 'verifier']),
+  getZeroResultSearches,
+);
+
+// Get user's registered events (MUST be before /:id)
+router.get('/user', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Get events user has registered for via EventParticipationLog
+    const EventParticipationLog = require('../Models/EventParticipationLog');
+    const participationLogs = await EventParticipationLog
+      .find({ userId })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'hostUserId',
+          select: 'name email profilePicture'
+        }
+      })
+      .sort({ registeredAt: -1 });
+    
+    // Extract events and add user-specific info
+    const events = participationLogs.map(log => ({
+      ...log.eventId.toObject(),
+      userRegistration: {
+        status: log.status,
+        registeredAt: log.registeredAt,
+        qrToken: log.qrToken
+      }
+    }));
+    
+    res.json({
+      success: true,
+      data: {
+        events,
+        total: events.length
+      }
+    });
+  } catch (err) {
+    logger.error('Error fetching user events:', err);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error fetching user events.',
+      message: 'Failed to load your events'
+    });
+  }
+});
+
+// ============================================================================
+// END STATIC ROUTES - Dynamic /:id routes below
+// ============================================================================
+
 /**
  * @swagger
  * /api/events:
@@ -615,96 +713,12 @@ router.post(
  */
 router.get('/:id/calendar-link', authenticateToken, getGoogleCalendarLink);
 
-// Advanced event search (filter, sort, paginate)
-// User analytics (participation stats)
-router.get('/user-analytics/:userId', authenticateToken, getUserAnalytics);
-// Verifier analytics (verification stats)
-router.get('/verifier-analytics', authenticateToken, requireRole('verifier'), getVerifierAnalytics);
-// Platform insights (global stats) - accessible by verifier and platformAdmin
-router.get(
-  '/platform-insights',
-  authenticateToken,
-  requireRole(['platformAdmin', 'verifier']),
-  getPlatformInsights,
-);
-// Search analytics (accessible by verifier and platformAdmin)
-router.get(
-  '/search-analytics',
-  authenticateToken,
-  requireRole(['platformAdmin', 'verifier']),
-  getSearchAnalytics,
-);
-
-// Advanced event analytics
+// Advanced event analytics (uses :id parameter, so it's fine here after /:id)
 router.get(
   '/:id/advanced-analytics',
   authenticateToken,
   getAdvancedEventAnalytics,
 );
-// User activity timeline
-router.get(
-  '/user-activity/:userId',
-  authenticateToken,
-  getUserActivityTimeline,
-);
-// Platform growth trends (accessible by verifier and platformAdmin)
-router.get(
-  '/admin/growth-trends',
-  authenticateToken,
-  requireRole(['platformAdmin', 'verifier']),
-  getGrowthTrends,
-);
-// Zero-result searches (accessible by verifier and platformAdmin)
-router.get(
-  '/admin/zero-result-searches',
-  authenticateToken,
-  requireRole(['platformAdmin', 'verifier']),
-  getZeroResultSearches,
-);
-
-// Get user's registered events
-router.get('/user', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    
-    // Get events user has registered for via EventParticipationLog
-    const participationLogs = await require('../Models/EventParticipationLog')
-      .find({ userId })
-      .populate({
-        path: 'eventId',
-        populate: {
-          path: 'hostUserId',
-          select: 'name email profilePicture'
-        }
-      })
-      .sort({ registeredAt: -1 });
-    
-    // Extract events and add user-specific info
-    const events = participationLogs.map(log => ({
-      ...log.eventId.toObject(),
-      userRegistration: {
-        status: log.status,
-        registeredAt: log.registeredAt,
-        qrToken: log.qrToken
-      }
-    }));
-    
-    res.json({
-      success: true,
-      data: {
-        events,
-        total: events.length
-      }
-    });
-  } catch (err) {
-    logger.error('Error fetching user events:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error fetching user events.',
-      message: 'Failed to load your events'
-    });
-  }
-});
 
 /**
  * @swagger

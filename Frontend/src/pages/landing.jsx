@@ -57,7 +57,7 @@ const Landing = () => {
             
             if (response.token) {
               // Pass refresh token if available
-              login(response.token, response.user, response.refreshToken);
+              login(response.token, response.user);
               // Clear the hash and redirect
               window.location.hash = '';
               navigate('/dashboard');
@@ -161,7 +161,7 @@ const Landing = () => {
               const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
               if (res.token && res.user) {
                   // Update AuthContext state with refresh token
-                  login(res.token, res.user, res.refreshToken);
+                  login(res.token, res.user);
                   setShowOtp(false);
                   // Use navigate instead of window.location.href for better routing
                   navigate('/dashboard');
