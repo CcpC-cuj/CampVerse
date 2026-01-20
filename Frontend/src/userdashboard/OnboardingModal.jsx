@@ -209,8 +209,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl p-6 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 overflow-y-auto" style={{ minHeight: '100dvh', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div className="w-full max-w-3xl bg-slate-900 border border-slate-700 rounded-2xl p-6 text-white my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <StepHeader step={step} total={totalSteps} />
         {error && <div className="mb-3 text-red-400">{error}</div>}
         {step === 1 && (
