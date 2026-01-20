@@ -15,11 +15,10 @@ FROM node:20-alpine AS production
 # Install curl for healthcheck
 RUN apk add --no-cache curl
 
-# Create non-root user (Hugging Face requires UID 1000)
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1000 -G nodejs
-
+# Hugging Face requires UID 1000, which is already the 'node' user in this image.
+# We'll just ensure the directories are owned by 'node'.
 WORKDIR /app
+
 
 # Copy only production dependencies
 COPY package*.json ./
@@ -27,10 +26,10 @@ RUN npm ci --only=production && \
     npm cache clean --force
 
 # Copy application code
-COPY --chown=nodejs:nodejs . .
+COPY --chown=node:node . .
 
 # Switch to non-root user
-USER nodejs
+USER node
 
 # Expose port (HF Spaces MUST listen on 7860)
 ENV PORT=7860
