@@ -146,8 +146,16 @@ def health_check():
         'model_loaded': similarity_matrix is not None
     })
 
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        'message': 'ML Recommendation API',
+        'version': '1.0.0',
+        'status': 'healthy'
+    })
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8081))
+    port = int(os.environ.get('PORT', 7860))
     print(f"Starting ML Recommendation API server on port {port}...")
     print("Available endpoints:")
     print("- POST /recommend: Generate event recommendations")

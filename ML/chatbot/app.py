@@ -57,6 +57,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {
+        "message": "CampVerse Chatbot API",
+        "status": "healthy",
+        "endpoints": {
+            "POST /chatbot": "Chat with the AI",
+            "GET /health": "Health check"
+        }
+    }
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
 class QuestionRequest(BaseModel):
     question: str
 

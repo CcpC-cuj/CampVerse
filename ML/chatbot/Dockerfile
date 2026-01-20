@@ -7,6 +7,7 @@ RUN useradd -m -u 1000 user
 USER user
 ENV PATH="/home/user/.local/bin:$PATH"
 
+ENV PORT=7860
 # Environment variables (set via HF Spaces secrets or docker-compose)
 ENV GEMINI_API_KEY=""
 ENV BACKEND_URL=""
