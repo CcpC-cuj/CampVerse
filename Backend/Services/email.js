@@ -308,26 +308,22 @@ async function sendSupportTicketUpdate(to, name, ticketData) {
 
 /**
  * Create email service for direct use
+ * Returns an object with sendMail method that routes through the appropriate provider
  */
 function createEmailService() {
-  if (useResend) {
-    return {
-      sendMail: async (options) => {
-        return sendEmail({
-          to: options.to,
-          subject: options.subject,
-          html: options.html,
-          text: options.text,
-        });
-      },
-    };
-  } else {
-    const transporter = createEmailTransporter();
-    return {
-      sendMail: (options) => transporter.sendMail(options),
-    };
-  }
+  // Always use the centralized sendEmail function which handles Brevo/Resend/Nodemailer
+  return {
+    sendMail: async (options) => {
+      return sendEmail({
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.text,
+      });
+    },
+  };
 }
+
 
 module.exports = {
   createEmailTransporter,
