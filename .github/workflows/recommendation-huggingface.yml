@@ -42,18 +42,23 @@ jobs:
       - name: Push to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
-          # Configure git
+          # 1. Sync secrets
+          python scripts/deploy_to_hf.py \
+            --repo_id "imkrish/event-recomendation" \
+            --token "$HF_TOKEN" \
+            --secrets_json "$SECRETS_JSON"
+          
+          # 2. Configure git
           git config --global user.email "ci@campverse.com"
           git config --global user.name "CampVerse CI"
           
-          # Clone the Hugging Face Space repo with authentication
+          # 3. Clone and copy
           git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/event-recomendation hf-recommendation
-          
-          # Copy recommendation files to HF Space
           cp -r ML/Recommendation/* hf-recommendation/
           
-          # Push to Hugging Face
+          # 4. Push to Hugging Face
           cd hf-recommendation
           git add .
           git commit -m "Deploy recommendation from GitHub Actions" || echo "No changes to commit"

@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ML/certificate_generator/**'
+      - "ML/certificate_generator/**"
   workflow_dispatch:
 
 jobs:
@@ -12,20 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-          cache: 'pip'
+          python-version: "3.10"
+          cache: "pip"
           cache-dependency-path: ML/certificate_generator/requirements.txt
-      
+
       - name: Install dependencies
         run: |
           cd ML/certificate_generator
           pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Run tests
         run: |
           cd ML/certificate_generator
@@ -35,29 +35,35 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Push to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
-          # Configure git
+          # 1. Sync secrets
+          python scripts/deploy_to_hf.py \
+            --repo_id "imkrish/certificate-generator" \
+            --token "$HF_TOKEN" \
+            --secrets_json "$SECRETS_JSON"
+
+          # 2. Configure git
           git config --global user.email "ci@campverse.com"
           git config --global user.name "CampVerse CI"
-          
-          # Clone the Hugging Face Space repo with authentication
+
+          # 3. Clone and copy
           git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/certificate-generator hf-certificate-generator
-          
-          # Copy only non-binary files to HF Space
+          # Copy files (excluding binaries as per original workflow)
           rsync -av --exclude='*.png' --exclude='*.jpg' --exclude='*.jpeg' --exclude='*.pdf' --exclude='*.ttf' --exclude='*.ico' --exclude='*.pyc' --exclude='uploads/' --exclude='fonts/' --exclude='generated_certificates/' --exclude='Certificates/' ML/certificate_generator/ hf-certificate-generator/
-          
-          # Push to Hugging Face
+
+          # 4. Push to Hugging Face
           cd hf-certificate-generator
           git add .
           git commit -m "Deploy certificate generator from GitHub Actions (no binaries)" || echo "No changes to commit"
           git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/certificate-generator main || echo "Push completed"
-          
+
       - name: Notify success
         run: echo "Certificate Generator deployed to Hugging Face Spaces!"

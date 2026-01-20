@@ -27,8 +27,8 @@ try:
     index.add(question_embeddings.cpu().numpy())
     
     # Initialize event service and intent classifier
-    backend_url = os.getenv('BACKEND_URL') or 'https://campverse-26hm.onrender.com' or 'http://localhost:5000'
-    # If BACKEND_URL is not set, try Render, then fallback to localhost
+    backend_url = os.getenv('BACKEND_URL') or 'https://imkrish-campverse-backend.hf.space'
+    # If BACKEND_URL is not set, fallback to the HF Backend Space
     event_service = EventService(backend_url, model)
     intent_classifier = IntentClassifier()
     
