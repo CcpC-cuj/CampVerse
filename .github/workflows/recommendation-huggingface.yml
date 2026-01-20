@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'ML/Recommendation/**'
+      - "ML/Recommendation/**"
   workflow_dispatch:
 
 jobs:
@@ -12,20 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
-          cache: 'pip'
+          python-version: "3.9"
+          cache: "pip"
           cache-dependency-path: ML/Recommendation/requirements.txt
-      
+
       - name: Install dependencies
         run: |
           cd ML/Recommendation
           pip install --upgrade pip
           pip install -r requirements.txt
-      
+
       - name: Run tests
         run: |
           cd ML/Recommendation
@@ -35,10 +35,18 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
+      - name: Install Hugging Face Hub
+        run: pip install huggingface_hub
+
       - name: Push to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -49,20 +57,20 @@ jobs:
             --repo_id "imkrish/event-recomendation" \
             --token "$HF_TOKEN" \
             --secrets_json "$SECRETS_JSON"
-          
+
           # 2. Configure git
           git config --global user.email "ci@campverse.com"
           git config --global user.name "CampVerse CI"
-          
+
           # 3. Clone and copy
           git clone https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/event-recomendation hf-recommendation
           cp -r ML/Recommendation/* hf-recommendation/
-          
+
           # 4. Push to Hugging Face
           cd hf-recommendation
           git add .
           git commit -m "Deploy recommendation from GitHub Actions" || echo "No changes to commit"
           git push https://imkrish:$HF_TOKEN@huggingface.co/spaces/imkrish/event-recomendation main || echo "Push completed"
-          
+
       - name: Notify success
         run: echo "ML Recommendation deployed to Hugging Face Spaces!"
