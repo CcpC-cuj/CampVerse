@@ -66,9 +66,9 @@ export default function UserManagement() {
       platformAdmin: 'bg-red-500/30 text-red-300 border-red-500/50',
       verifier: 'bg-blue-500/30 text-blue-300 border-blue-500/50',
       host: 'bg-green-500/30 text-green-300 border-green-500/50',
-      user: 'bg-gray-500/30 text-gray-300 border-gray-500/50'
+      student: 'bg-gray-500/30 text-gray-300 border-gray-500/50'
     };
-    return colors[role] || colors.user;
+    return colors[role] || colors.student;
   };
 
   return (
@@ -96,7 +96,7 @@ export default function UserManagement() {
               <option value="platformAdmin">Platform Admin</option>
               <option value="verifier">Verifier</option>
               <option value="host">Host</option>
-              <option value="user">User</option>
+              <option value="student">Student</option>
             </select>
             <button
               onClick={fetchUsers}
@@ -177,7 +177,7 @@ export default function UserManagement() {
                       <td className="px-6 py-4 text-gray-300">{user.email}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
-                          {(user.roles || ['user']).map(role => (
+                          {(user.roles || ['student']).map(role => (
                             <span key={role} className={`px-2 py-0.5 rounded text-xs border ${getRoleBadge(role)}`}>
                               {role}
                             </span>
@@ -234,7 +234,7 @@ export default function UserManagement() {
 
               <div className="space-y-3 mb-6">
                 <p className="text-sm text-gray-400 mb-2">Assign Roles:</p>
-                {['user', 'host', 'verifier', 'platformAdmin'].map(role => (
+                {['student', 'host', 'verifier', 'platformAdmin'].map(role => (
                   <label key={role} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg cursor-pointer hover:bg-gray-900">
                     <input
                       type="checkbox"

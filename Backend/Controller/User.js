@@ -2262,6 +2262,31 @@ async function getAllUsers(req, res) {
   }
 }
 
+// Update user roles (admin only)
+async function updateUserRoles(req, res) {
+  try {
+    const { roles } = req.body;
+    if (!roles || !Array.isArray(roles)) {
+      return res.status(400).json({ error: 'Roles must be an array.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { roles },
+      { new: true }
+    ).select('-passwordHash');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    return res.json({ message: 'User roles updated.', user });
+  } catch (err) {
+    logger.error('UpdateUserRoles error:', err);
+    return res.status(500).json({ error: 'Server error updating user roles.' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -2272,6 +2297,7 @@ module.exports = {
   getAllUsers,
   getUserById,
   updateUserById,
+  updateUserRoles,
   deleteUser,
   getUserCertificates,
   getUserAchievements,

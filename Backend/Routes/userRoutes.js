@@ -39,6 +39,7 @@ const {
   unlinkGoogleAccount,
   findUserByEmail,
   getAllUsers,
+  updateUserRoles,
 } = require('../Controller/User');
 
 const {
@@ -1344,6 +1345,50 @@ router.patch(
   authenticateToken,
   requireSelfOrRole(['platformAdmin']),
   updateUserById,
+);
+
+/**
+ * @swagger
+ * /api/users/{id}/roles:
+ *   patch:
+ *     summary: Update user roles (admin only)
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               roles:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: User roles updated
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.patch(
+  '/:id/roles',
+  authenticateToken,
+  requireRole('platformAdmin'),
+  updateUserRoles,
 );
 
 
