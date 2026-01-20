@@ -1,7 +1,7 @@
 // User-related API functions and helpers
 // All fetch calls include credentials: 'include' to support HttpOnly cookie-based refresh tokens
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
 
 export function getAuthHeaders() {
   const token = localStorage.getItem('token');

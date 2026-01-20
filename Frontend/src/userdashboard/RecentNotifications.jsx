@@ -25,7 +25,7 @@ const RecentNotifications = () => {
     load();
     
     // Connect to Socket.IO server for real-time updates
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
     const token = localStorage.getItem('token');
     
     if (token) {

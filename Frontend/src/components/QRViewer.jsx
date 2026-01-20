@@ -35,7 +35,7 @@ const QRViewer = () => {
       const token = localStorage.getItem('token');
       // Add cache-busting timestamp
       const cacheBuster = `?t=${Date.now()}`;
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/my-qr/${id}${cacheBuster}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/my-qr/${id}${cacheBuster}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -126,7 +126,7 @@ const QRViewer = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${id}/regenerate-qr`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${id}/regenerate-qr`,
         {
           method: 'POST',
           headers: {

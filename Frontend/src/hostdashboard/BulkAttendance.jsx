@@ -29,7 +29,7 @@ const BulkAttendance = () => {
 
       // Load event details
       const eventResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${eventId}`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,7 +52,7 @@ const BulkAttendance = () => {
 
       // Load participants
       const participantsResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${eventId}/participants`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/participants`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -120,7 +120,7 @@ const BulkAttendance = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${eventId}/bulk-attendance`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/bulk-attendance`,
         {
           method: 'POST',
           headers: {

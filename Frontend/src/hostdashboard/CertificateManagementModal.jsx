@@ -49,7 +49,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
 
       const token = localStorage.getItem('token');
       await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/certificate-management/events/${event._id}/upload-assets`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/certificate-management/events/${event._id}/upload-assets`,
         formData,
         {
           headers: {
@@ -80,7 +80,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
     try {
       const token = localStorage.getItem('token');
       await axios.patch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/certificate-management/events/${event._id}/settings`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/certificate-management/events/${event._id}/settings`,
         {
           certificateType,
           awardText,

@@ -43,7 +43,7 @@ const AttendanceDashboard = () => {
 
       // Load event details
       const eventResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${eventId}`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,7 +66,7 @@ const AttendanceDashboard = () => {
 
       // Load attendance data
       const attendanceResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${eventId}/attendance`,
+        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/attendance`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

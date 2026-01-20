@@ -35,7 +35,7 @@ const Sidebar = ({ onDiscoverClick }) => {
     // If already absolute (starts with http/https), use as is
     if (/^https?:\/\//.test(rawUrl)) return rawUrl;
     // Otherwise, prepend backend base URL (adjust as needed)
-    return `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/${rawUrl.replace(/^\/+/, '')}`;
+    return `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/${rawUrl.replace(/^\/+/, '')}`;
   };
   const profileUrl = getProfileUrl();
   const collegeText = (institutionName && institutionVerified) ? institutionName : "Under Approval";

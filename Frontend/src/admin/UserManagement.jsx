@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);

@@ -33,8 +33,8 @@ const TemplateGallery = ({ eventId, onTemplateSelect, selectedTemplateId }) => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API endpoint
-      const response = await fetch('http://localhost:8000/templates/list');
+      // Fetch templates from certificate generator API
+      const response = await fetch(`${import.meta.env.VITE_ML_CERTIFICATE_API_URL || 'https://imkrish-certificate-generator.hf.space'}/templates/list`);
       if (!response.ok) throw new Error('Failed to fetch templates');
       
       const data = await response.json();

@@ -219,7 +219,7 @@ const EventsManagement = () => {
       }
       
       // Call update API
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/events/${selectedEvent._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${selectedEvent._id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -249,7 +249,7 @@ const EventsManagement = () => {
     setLoading(true);
     try {
       const eventId = selectedEvent.id || selectedEvent._id;
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/hosts/events/${eventId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/hosts/events/${eventId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
