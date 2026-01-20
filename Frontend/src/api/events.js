@@ -262,4 +262,10 @@ export async function getSimilarEvents(eventId, limit = 4) {
   return response.data;
 }
 
+// Get Host Analytics
+export async function getHostAnalytics() {
+  const response = await api.get('/api/events/host/analytics');
+  return response.data;
+}
+
 

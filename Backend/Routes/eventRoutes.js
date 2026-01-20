@@ -20,6 +20,7 @@ const {
   getAttendance,
   bulkMarkAttendance,
   regenerateQR,
+  getHostAnalytics,
 } = require('../Controller/event');
 const {
   advancedEventSearch,
@@ -98,6 +99,9 @@ router.get('/', async (req, res) => {
 
 // Advanced event search (filter, sort, paginate) - placed before '/:id' to avoid route collisions
 router.get('/search', authenticateToken, advancedEventSearch);
+
+// Host Analytics Route
+router.get('/host/analytics', authenticateToken, getHostAnalytics);
 
 // ============================================================================
 // ANALYTICS ROUTES - MUST be placed BEFORE '/:id' to avoid route collisions

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import Layout from "../components/Layout";
 import { listEvents, verifyEvent, rejectEvent } from "../api/events";
 import { useModal } from "../components/Modal";
@@ -8,6 +9,15 @@ export default function EventVerificationQueue() {
   const [pendingEvents, setPendingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [searchParams] = useSearchParams();
+  const highlightedEventId = searchParams.get('eventId');
+  const eventRefs = useRef({});
+
+  useEffect(() => {
+    if (highlightedEventId && pendingEvents.length > 0 && eventRefs.current[highlightedEventId]) {
+      eventRefs.current[highlightedEventId].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedEventId, pendingEvents]);
 
   useEffect(() => {
     async function fetchPendingEvents() {
@@ -83,8 +93,37 @@ export default function EventVerificationQueue() {
           ) : (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
                     {pendingEvents.map(event => (
-                      <div key={event._id || event.id} className="bg-[#141a45] rounded-lg p-6 border border-gray-700/40 shadow hover:shadow-[0_0_15px_rgba(155,93,229,0.25)] transition-all">
-                        <h4 className="text-lg font-semibold text-white mb-4">{event.title || event.name}</h4>
+                      <div 
+                        key={event._id || event.id} 
+                        ref={el => eventRefs.current[event._id || event.id] = el}
+                        className={`bg-[#141a45] rounded-lg border shadow transition-all overflow-hidden ${
+                          highlightedEventId === (event._id || event.id) 
+                            ? 'border-[#9b5de5] ring-2 ring-[#9b5de5] shadow-[0_0_20px_rgba(155,93,229,0.4)]' 
+                            : 'border-gray-700/40 hover:shadow-[0_0_15px_rgba(155,93,229,0.25)]'
+                        }`}
+                      >
+                        {/* Banner & Logo */}
+                        <div className="h-32 bg-gray-900 relative">
+                          {event.bannerURL ? (
+                            <img src={event.bannerURL} alt="Banner" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-purple-900 to-indigo-900 flex items-center justify-center">
+                              <span className="text-4xl">📅</span>
+                            </div>
+                          )}
+                          <div className="absolute -bottom-8 left-6">
+                            {event.logoURL ? (
+                              <img src={event.logoURL} alt="Logo" className="w-16 h-16 rounded-full border-4 border-[#141a45] object-cover bg-gray-800" />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full border-4 border-[#141a45] bg-purple-700 flex items-center justify-center text-2xl">
+                                {event.title ? event.title.charAt(0).toUpperCase() : 'E'}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="p-6 pt-10">
+                          <h4 className="text-lg font-semibold text-white mb-4">{event.title || event.name}</h4>
                         <div className="grid grid-cols-2 gap-4 mb-4">
                           <div className="text-sm text-gray-300"><span className="font-medium">Type:</span> {event.type || "Not specified"}</div>
                           <div className="text-sm text-gray-300"><span className="font-medium">Audience:</span> {event.audienceType || "Public"}</div>
@@ -133,6 +172,7 @@ export default function EventVerificationQueue() {
                           <button onClick={() => handleEventVerification(event._id || event.id, 'reject')} disabled={actionLoading === (event._id || event.id)} className="flex-1 bg-[#dc3545] hover:bg-[#c82333] text-white px-4 py-2 rounded-lg font-medium transition-all">
                             {actionLoading === (event._id || event.id) ? "Processing..." : "Reject"}
                           </button>
+                        </div>
                         </div>
                       </div>
                     ))}

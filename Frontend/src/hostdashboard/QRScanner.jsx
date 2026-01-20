@@ -200,13 +200,22 @@ const QRScanner = () => {
         await loadScanHistory();
         // Play success sound (optional)
         playSuccessSound();
+      } else if (response.status === 409) {
+        setScanResult({
+          success: false,
+          isWarning: true,
+          message: data.message || 'Already checked in',
+          error: data.error,
+        });
+        // Play error sound (different sound?)
+        playErrorSound();
       } else {
         setScanResult({
           success: false,
           message: data.message || data.error || 'Failed to mark attendance',
           error: data.error,
         });
-        // Play error sound (optional)
+        // Play error sound
         playErrorSound();
       }
     } catch (err) {
@@ -373,20 +382,34 @@ const QRScanner = () => {
                 className={`mt-6 p-4 rounded-lg border ${
                   scanResult.success
                     ? 'bg-green-900/30 border-green-500'
-                    : 'bg-red-900/30 border-red-500'
+                    : scanResult.isWarning 
+                      ? 'bg-yellow-900/30 border-yellow-500'
+                      : 'bg-red-900/30 border-red-500'
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{scanResult.success ? '✅' : '❌'}</span>
+                  <span className="text-2xl">
+                    {scanResult.success ? '✅' : scanResult.isWarning ? '⚠️' : '❌'}
+                  </span>
                   <span
                     className={`font-semibold text-lg ${
-                      scanResult.success ? 'text-green-300' : 'text-red-300'
+                      scanResult.success 
+                        ? 'text-green-300' 
+                        : scanResult.isWarning 
+                          ? 'text-yellow-300' 
+                          : 'text-red-300'
                     }`}
                   >
-                    {scanResult.success ? 'Success!' : 'Failed'}
+                    {scanResult.success ? 'Success!' : scanResult.isWarning ? 'Notice' : 'Failed'}
                   </span>
                 </div>
-                <p className={scanResult.success ? 'text-green-200' : 'text-red-200'}>
+                <p className={
+                  scanResult.success 
+                    ? 'text-green-200' 
+                    : scanResult.isWarning 
+                      ? 'text-yellow-200' 
+                      : 'text-red-200'
+                }>
                   {scanResult.message}
                 </p>
                 {scanResult.user && (

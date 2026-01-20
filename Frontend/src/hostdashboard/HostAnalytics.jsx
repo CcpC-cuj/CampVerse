@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import Layout from "../components/Layout";
-import { listEvents } from "../api/events";
+import { getHostAnalytics } from "../api/events";
 
 const HostAnalytics = () => {
   const { user } = useAuth();
@@ -17,85 +17,51 @@ const HostAnalytics = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      // Fetch host's events
-      const eventsRes = await listEvents();
-      const allEvents = eventsRes?.data?.events || [];
+    try {
+      const data = await getHostAnalytics();
       
-      // Filter events hosted by current user
-      const hostEvents = allEvents.filter(event => 
-        event.hostUserId?._id === user?._id || 
-        event.hostUserId === user?._id ||
-        event.coHosts?.includes(user?._id)
-      );
+      // Transform demographics if necessary or map backend response to UI state
+      const totalParts = data.overview.totalParticipants || 0;
       
-      setEvents(hostEvents);
+      const departments = (data.demographics?.institution || []).map(inst => ({
+        name: inst._id || 'Unknown',
+        count: inst.count,
+        percentage: totalParts > 0 ? Math.round((inst.count / totalParts) * 100) : 0
+      }));
 
-      // Calculate analytics from real data
-      const totalParticipants = hostEvents.reduce((sum, e) => sum + (e.registrations?.length || e.participants || 0), 0);
-      const completedEvents = hostEvents.filter(e => e.status === 'completed').length;
-      const ongoingEvents = hostEvents.filter(e => e.status === 'ongoing').length;
-      const upcomingEvents = hostEvents.filter(e => e.status === 'upcoming').length;
+      // If backend doesn't return year distribution yet, we mock or omit
+      // Backend returns 'year' facet based on createdAt, let's map it roughly
+      const years = (data.demographics?.year || []).map(y => ({
+         name: y._id?.toString() || 'Unknown',
+         count: y.count
+      }));
       
-      // Calculate revenue (from paid events, but currently disabled)
-      const totalRevenue = hostEvents.reduce((sum, e) => {
-        if (e.isPaid && e.price) {
-          return sum + (e.price * (e.registrations?.length || 0));
-        }
-        return sum;
-      }, 0);
-
-      const analyticsData = {
-        overview: {
-          totalEvents: hostEvents.length,
-          totalParticipants: totalParticipants,
-          totalRevenue: totalRevenue > 0 ? `₹${totalRevenue.toLocaleString()}` : "₹0",
-          avgRating: 4.5, // Would come from feedback API
-          completionRate: hostEvents.length > 0 ? `${Math.round((completedEvents / hostEvents.length) * 100)}%` : "0%",
-          growthRate: "+12%" // Would be calculated from historical data
-        },
-        eventPerformance: hostEvents.slice(0, 5).map(event => ({
-          name: event.title,
-          participants: event.registrations?.length || event.participants || 0,
-          revenue: event.isPaid ? (event.price * (event.registrations?.length || 0)) : 0,
-          rating: 4.5,
-          status: event.status || 'upcoming'
-        })),
-        registrationTrends: {
-          labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
-          datasets: [
-            { label: "Registrations", data: [Math.floor(totalParticipants * 0.2), Math.floor(totalParticipants * 0.3), Math.floor(totalParticipants * 0.3), Math.floor(totalParticipants * 0.2)], color: "#9b5de5" },
-            { label: "Attended", data: [Math.floor(totalParticipants * 0.15), Math.floor(totalParticipants * 0.25), Math.floor(totalParticipants * 0.28), Math.floor(totalParticipants * 0.18)], color: "#10b981" }
-          ]
-        },
-        demographicData: {
-          departments: [
-            { name: "Technology", count: Math.floor(totalParticipants * 0.35), percentage: 35 },
-            { name: "Engineering", count: Math.floor(totalParticipants * 0.25), percentage: 25 },
-            { name: "Business", count: Math.floor(totalParticipants * 0.20), percentage: 20 },
-            { name: "Arts", count: Math.floor(totalParticipants * 0.12), percentage: 12 },
-            { name: "Others", count: Math.floor(totalParticipants * 0.08), percentage: 8 }
-          ],
-          yearDistribution: [
-            { name: "1st Year", count: Math.floor(totalParticipants * 0.28) },
-            { name: "2nd Year", count: Math.floor(totalParticipants * 0.32) },
-            { name: "3rd Year", count: Math.floor(totalParticipants * 0.25) },
-            { name: "4th Year", count: Math.floor(totalParticipants * 0.15) }
-          ]
-        },
-        recentActivity: hostEvents.slice(0, 4).map((event, idx) => ({
-          type: idx % 3 === 0 ? "registration" : idx % 3 === 1 ? "completion" : "feedback",
-          event: event.title,
-          user: "Participant",
-          timestamp: `${idx + 1} day${idx > 0 ? 's' : ''} ago`
-        })),
-        eventStats: {
-          completed: completedEvents,
-          ongoing: ongoingEvents,
-          upcoming: upcomingEvents
-        }
+      const formattedAnalytics = {
+          ...data,
+          overview: {
+             ...data.overview,
+             totalRevenue: typeof data.overview.totalRevenue === 'number' 
+               ? `₹${data.overview.totalRevenue.toLocaleString()}` 
+               : data.overview.totalRevenue || "₹0"
+          },
+          demographicData: {
+              departments: departments.length > 0 ? departments : [],
+              yearDistribution: years.length > 0 ? years : []
+          },
+          // Ensure arrays are present
+          registrationTrends: data.registrationTrends || { labels: [], datasets: [] }, // Backend didn't return this yet, keep empty or mock? 
+          // My backend implementation didn't calculate registrationTrends. 
+          // I should add a basic mock or ensure UI handles empty.
+          // Let's keep the mock data for trends for now or set to empty to avoid crash
+          registrationTrends: {
+             labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
+             datasets: [
+                { label: "Registrations", data: [0, 0, 0, 0], color: "#9b5de5" }
+             ]
+          }
       };
 
-      setAnalytics(analyticsData);
+      setAnalytics(formattedAnalytics);
     } catch (err) {
       // Set empty analytics on error
       setAnalytics({
