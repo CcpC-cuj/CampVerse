@@ -1,12 +1,6 @@
-// User-related API functions and helpers
-// All fetch calls include credentials: 'include' to support HttpOnly cookie-based refresh tokens
+import api from './axiosInstance';
 
 export const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
-
-export function getAuthHeaders() {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export function updateLocalUserIfPresent(data) {
   if (data && data.user) {
@@ -15,185 +9,116 @@ export function updateLocalUserIfPresent(data) {
 }
 
 export async function register({ name, email, phone, password }) {
-  const res = await fetch(`${API_URL}/api/users/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Required for HttpOnly cookie
-    body: JSON.stringify({ name, email, phone, password })
-  });
-  return res.json();
+  const response = await api.post('/api/users/register', { name, email, phone, password });
+  return response.data;
 }
 
 export async function verifyOtp({ email, otp }) {
-  const res = await fetch(`${API_URL}/api/users/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Required for HttpOnly cookie
-    body: JSON.stringify({ email, otp })
-  });
-  const data = await res.json();
+  const response = await api.post('/api/users/verify', { email, otp });
+  const data = response.data;
   if (data.token) {
     localStorage.setItem('token', data.token);
-    // Note: refreshToken is now sent as HttpOnly cookie by server, not in response body
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
 }
 
 export async function login({ email, password }) {
-  const res = await fetch(`${API_URL}/api/users/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Required for HttpOnly cookie
-    body: JSON.stringify({ email, password })
-  });
-  const data = await res.json();
+  const response = await api.post('/api/users/login', { email, password });
+  const data = response.data;
   if (data.token) {
     localStorage.setItem('token', data.token);
-    // Note: refreshToken is now sent as HttpOnly cookie by server, not in response body
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
 }
 
 export async function googleSignIn({ token }) {
-  const res = await fetch(`${API_URL}/api/users/google-signin`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include', // Required for HttpOnly cookie
-    body: JSON.stringify({ token })
-  });
-
-  const data = await res.json();
+  const response = await api.post('/api/users/google-signin', { token });
+  const data = response.data;
   if (data.token) {
     localStorage.setItem('token', data.token);
-    // Note: refreshToken is now sent as HttpOnly cookie by server, not in response body
     if (data.user) localStorage.setItem('user', JSON.stringify(data.user));
   }
   return data;
 }
 
 export async function linkGoogleAccount({ email, password, token }) {
-  const res = await fetch(`${API_URL}/api/users/link-google`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email, password, googleToken: token })
-  });
-  return res.json();
+  const response = await api.post('/api/users/link-google', { email, password, googleToken: token });
+  return response.data;
 }
 
 export async function unlinkGoogleAccount() {
-  const res = await fetch(`${API_URL}/api/users/unlink-google`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.post('/api/users/unlink-google');
+  return response.data;
 }
 
 export async function forgotPassword({ email }) {
-  const res = await fetch(`${API_URL}/api/users/forgot-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email })
-  });
-  return res.json();
+  const response = await api.post('/api/users/forgot-password', { email });
+  return response.data;
 }
 
 export async function getAuthStatus() {
-  const res = await fetch(`${API_URL}/api/users/auth-status`, {
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.get('/api/users/auth-status');
+  return response.data;
 }
 
 export async function setupPassword({ newPassword }) {
-  const res = await fetch(`${API_URL}/api/users/setup-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify({ newPassword })
-  });
-  return res.json();
+  const response = await api.post('/api/users/setup-password', { newPassword });
+  return response.data;
 }
 
 export async function changePassword({ currentPassword, newPassword }) {
-  const res = await fetch(`${API_URL}/api/users/change-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify({ currentPassword, newPassword })
-  });
-  return res.json();
+  const response = await api.post('/api/users/change-password', { currentPassword, newPassword });
+  return response.data;
 }
 
 export async function sendVerificationOtp() {
-  const res = await fetch(`${API_URL}/api/users/send-verification-otp`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.post('/api/users/send-verification-otp');
+  return response.data;
 }
 
 export async function verifyOtpForGoogleUser({ otp }) {
-  const res = await fetch(`${API_URL}/api/users/verify-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify({ otp })
-  });
-  return res.json();
+  const response = await api.post('/api/users/verify-otp', { otp });
+  return response.data;
 }
 
 export async function resendOtp({ email }) {
-  const res = await fetch(`${API_URL}/api/users/resend-otp`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ email })
-  });
-  return res.json();
+  const response = await api.post('/api/users/resend-otp', { email });
+  return response.data;
 }
 
 export async function getDashboard() {
-  const res = await fetch(`${API_URL}/api/users`, {
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  if (res.status === 401) {
-    return { error: 'unauthorized', message: 'Please log in again.' };
+  try {
+    const response = await api.get('/api/users');
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      return { error: 'unauthorized', message: 'Please log in again.' };
+    }
+    throw error;
   }
-  return res.json();
 }
 
 export async function getMe() {
-  const res = await fetch(`${API_URL}/api/users/me`, {
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  if (res.status === 401) {
-    return { error: 'unauthorized', message: 'Please log in again.' };
+  try {
+    const response = await api.get('/api/users/me');
+    const data = response.data;
+    if (data && !data.error) {
+      localStorage.setItem('user', JSON.stringify(data));
+    }
+    return data;
+  } catch (error) {
+    if (error.response?.status === 401) {
+      return { error: 'unauthorized', message: 'Please log in again.' };
+    }
+    throw error;
   }
-  const data = await res.json();
-  if (data && !data.error) {
-    // Update local storage with fresh user data
-    localStorage.setItem('user', JSON.stringify(data));
-  }
-  return data;
 }
 
 export async function updateMe(payload) {
-  const res = await fetch(`${API_URL}/api/users/me`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
+  const response = await api.patch('/api/users/me', payload);
+  const data = response.data;
   updateLocalUserIfPresent(data);
   return data;
 }
@@ -201,117 +126,77 @@ export async function updateMe(payload) {
 export async function uploadProfilePhoto(file) {
   const formData = new FormData();
   formData.append('photo', file);
-  const res = await fetch(`${API_URL}/api/users/me/profile-photo`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include',
-    body: formData
+  const response = await api.post('/api/users/me/profile-photo', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
-  const data = await res.json();
+  const data = response.data;
   updateLocalUserIfPresent(data);
   return data;
 }
 
 export async function deleteMyAccount() {
-  const res = await fetch(`${API_URL}/api/users/me/delete`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.post('/api/users/me/delete');
+  return response.data;
 }
 
 export async function resetPassword({ token, password }) {
-  const res = await fetch(`${API_URL}/api/users/reset-password`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ token, password })
-  });
-  return res.json();
+  const response = await api.post('/api/users/reset-password', { token, password });
+  return response.data;
 }
 
-// Missing user APIs that are implemented in backend
 export async function updatePreferences(payload) {
-  const res = await fetch(`${API_URL}/api/users/updatePreferences`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
+  const response = await api.post('/api/users/updatePreferences', payload);
+  const data = response.data;
   updateLocalUserIfPresent(data);
   return data;
 }
 
 export async function trackReferral(payload) {
-  const res = await fetch(`${API_URL}/api/users/track-referral`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+  const response = await api.post('/api/users/track-referral', payload);
+  return response.data;
 }
 
 export async function getUserBadges() {
-  const res = await fetch(`${API_URL}/api/users/badges`, {
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.get('/api/users/badges');
+  return response.data;
 }
 
 export async function requestHostAccess(formData) {
-  const res = await fetch(`${API_URL}/api/users/me/request-host`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include',
-    body: formData // FormData for multipart with idCardPhoto and eventPermission
+  const response = await api.post('/api/users/me/request-host', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
-  const data = await res.json();
+  const data = response.data;
   updateLocalUserIfPresent(data);
   return data;
 }
 
 export async function listPendingHostRequests() {
-  const res = await fetch(`${API_URL}/api/users/host-requests/pending`, {
-    headers: { ...getAuthHeaders() },
-    credentials: 'include'
-  });
-  return res.json();
+  const response = await api.get('/api/users/host-requests/pending');
+  return response.data;
 }
 
 export async function approveHostRequest(id, payload) {
-  const res = await fetch(`${API_URL}/api/users/host-requests/${id}/approve`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+  const response = await api.post(`/api/users/host-requests/${id}/approve`, payload);
+  return response.data;
 }
 
 export async function rejectHostRequest(id, payload) {
-  const res = await fetch(`${API_URL}/api/users/host-requests/${id}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    credentials: 'include',
-    body: JSON.stringify(payload)
-  });
-  return res.json();
+  const response = await api.post(`/api/users/host-requests/${id}/reject`, payload);
+  return response.data;
 }
 
 export async function logout() {
-  const res = await fetch(`${API_URL}/api/users/logout`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    credentials: 'include' // Required to include the refresh token cookie for server-side revocation
-  });
-  if (res.ok) {
-    // Clear local storage on successful logout
+  try {
+    const response = await api.post('/api/users/logout');
+    if (response.status === 200) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    return response.data;
+  } catch (error) {
+    // Force clear on error
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    throw error;
   }
-  return res.json();
 }

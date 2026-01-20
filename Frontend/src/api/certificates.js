@@ -1,122 +1,78 @@
-// Certificate-related APIs aligned with Backend/Routes/certificateRoutes.js
-import { API_URL, getAuthHeaders } from './user';
+import api from './axiosInstance';
 
 export async function generateCertificate(payload) {
-  const res = await fetch(`${API_URL}/api/certificates/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.post('/api/certificates/generate', payload);
+  return response.data;
 }
 
 export async function getMyCertificates() {
-  const res = await fetch(`${API_URL}/api/certificates/my`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/certificates/my');
+  return response.data;
 }
 
 export async function getCertificatesForUser(userId) {
-  const res = await fetch(`${API_URL}/api/certificates/user/${userId}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/certificates/user/${userId}`);
+  return response.data;
 }
 
 export async function getCertificateStats() {
-  const res = await fetch(`${API_URL}/api/certificates/stats`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/certificates/stats');
+  return response.data;
 }
 
 export async function getCertificateById(id) {
-  const res = await fetch(`${API_URL}/api/certificates/${id}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/certificates/${id}`);
+  return response.data;
 }
 
 export async function verifyCertificate(payload) {
-  const res = await fetch(`${API_URL}/api/certificates/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.post('/api/certificates/verify', payload);
+  return response.data;
 }
 
 export async function exportAttendedUsers(eventId) {
-  const res = await fetch(`${API_URL}/api/certificates/export-attended/${eventId}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/certificates/export-attended/${eventId}`);
+  return response.data;
 }
 
 export async function retryCertificateGeneration(certificateId) {
-  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/retry`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.post(`/api/certificates/${certificateId}/retry`);
+  return response.data;
 }
 
 export async function generateBatchCertificates(payload) {
-  const res = await fetch(`${API_URL}/api/certificates/generate-batch`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.post('/api/certificates/generate-batch', payload);
+  return response.data;
 }
 
 export async function getCertificateProgress(eventId) {
-  const res = await fetch(`${API_URL}/api/certificates/progress/${eventId}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/certificates/progress/${eventId}`);
+  return response.data;
 }
 
 export async function sendCertificateNotification(certificateId) {
-  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/notify`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.post(`/api/certificates/${certificateId}/notify`);
+  return response.data;
 }
 
 export async function getCertificateDashboard(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/api/certificates/dashboard${query ? `?${query}` : ''}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/certificates/dashboard', { params });
+  return response.data;
 }
 
 export async function bulkRetryFailedCertificates(eventId) {
-  const res = await fetch(`${API_URL}/api/certificates/${eventId}/bulk-retry`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.post(`/api/certificates/${eventId}/bulk-retry`);
+  return response.data;
 }
 
 export async function approveCertificate(certificateId) {
-  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/approve`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.post(`/api/certificates/${certificateId}/approve`);
+  return response.data;
 }
 
 export async function rejectCertificate(certificateId, reason = '') {
-  const res = await fetch(`${API_URL}/api/certificates/${certificateId}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify({ reason }),
-  });
-  return res.json();
+  const response = await api.post(`/api/certificates/${certificateId}/reject`, { reason });
+  return response.data;
 }
 
 

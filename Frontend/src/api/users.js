@@ -1,8 +1,6 @@
-import { getAuthHeaders, API_URL } from './user';
+import api from './axiosInstance';
 
 export async function findUserByEmail(email) {
-  const res = await fetch(`${API_URL}/api/find-user?email=${encodeURIComponent(email)}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/find-user', { params: { email } });
+  return response.data;
 }

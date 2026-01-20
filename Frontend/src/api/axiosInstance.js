@@ -55,16 +55,25 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle network errors or missing responses
+    if (!error.response) {
+      console.error('[Auth] Network error or server unreachable:', error.message);
+      return Promise.reject(error);
+    }
+
     // If error is 401 and we haven't already tried to refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Don't try to refresh if this is already a refresh request
-      if (originalRequest.url?.includes('/auth/refresh')) {
-        // Refresh token is invalid or expired, logout user
-        console.log('[Auth] Refresh token invalid, logging out...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/';
-        return Promise.reject(error);
+      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/users/me')) {
+        // If /me returns 401, we might be truly logged out or token is invalid
+        // But let's check if it's specifically the refresh endpoint
+        if (originalRequest.url?.includes('/auth/refresh')) {
+          console.log('[Auth] Refresh token invalid, logging out...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/';
+          return Promise.reject(error);
+        }
       }
 
       // Don't try to refresh for login/register endpoints
@@ -76,7 +85,6 @@ api.interceptors.response.use(
 
       if (isRefreshing) {
         // If already refreshing, queue this request
-        console.log('[Auth] Already refreshing, queuing request...');
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -94,12 +102,11 @@ api.interceptors.response.use(
         console.log('[Auth] Access token expired, attempting refresh...');
         
         // Call refresh endpoint - browser automatically sends the HttpOnly cookie
-        // No need to manually include the refresh token!
         const response = await axios.post(
           `${API_URL}/api/auth/refresh`,
-          {}, // Empty body - refresh token comes from cookie
+          {},
           { 
-            withCredentials: true, // CRITICAL: Include cookies in this request
+            withCredentials: true,
             headers: { 'Content-Type': 'application/json' }
           }
         );
@@ -114,7 +121,9 @@ api.interceptors.response.use(
           if (user) {
             localStorage.setItem('user', JSON.stringify(user));
           }
-          // Note: New refresh token (if any) is automatically set as cookie by server
+
+          // Trigger storage event to notify other tabs
+          window.dispatchEvent(new Event('storage'));
 
           // Update authorization header for future requests
           api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;

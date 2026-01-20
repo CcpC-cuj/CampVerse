@@ -1,42 +1,28 @@
-// Feedback-related APIs aligned with Backend/Routes/feedbackRoutes.js
-import { API_URL, getAuthHeaders } from './user';
+import api from './axiosInstance';
 
 export async function submitFeedback(formData) {
-  const res = await fetch(`${API_URL}/api/feedback`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    body: formData, // FormData for multipart/form-data with optional attachment
+  const response = await api.post('/api/feedback', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
-  return res.json();
+  return response.data;
 }
 
 export async function getMyFeedback() {
-  const res = await fetch(`${API_URL}/api/feedback/my`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/feedback/my');
+  return response.data;
 }
 
 export async function getAllFeedback(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/api/feedback/all${query ? `?${query}` : ''}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/feedback/all', { params });
+  return response.data;
 }
 
 export async function updateFeedbackStatus(id, payload) {
-  const res = await fetch(`${API_URL}/api/feedback/${id}/status`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.patch(`/api/feedback/${id}/status`, payload);
+  return response.data;
 }
 
 export async function getFeedbackAnalytics() {
-  const res = await fetch(`${API_URL}/api/feedback/analytics`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/feedback/analytics');
+  return response.data;
 }

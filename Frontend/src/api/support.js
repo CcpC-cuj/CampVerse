@@ -1,51 +1,35 @@
-// Support-related APIs aligned with Backend/Routes/supportRoutes.js
-import { API_URL, getAuthHeaders } from './user';
+import api from './axiosInstance';
 
 export async function submitTicket(formData) {
-  const res = await fetch(`${API_URL}/api/support/tickets`, {
-    method: 'POST',
-    headers: { ...getAuthHeaders() },
-    body: formData,
+  const response = await api.post('/api/support/tickets', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
-  return res.json();
+  return response.data;
 }
 
 export async function getMyTickets() {
-  const res = await fetch(`${API_URL}/api/support/tickets/my`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/support/tickets/my');
+  return response.data;
 }
 
 export async function getTicketById(id) {
-  const res = await fetch(`${API_URL}/api/support/tickets/${id}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/support/tickets/${id}`);
+  return response.data;
 }
 
 export async function getAllTickets(params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${API_URL}/api/support/tickets${query ? `?${query}` : ''}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/support/tickets', { params });
+  return response.data;
 }
 
 export async function updateTicket(id, payload) {
-  const res = await fetch(`${API_URL}/api/support/tickets/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.patch(`/api/support/tickets/${id}`, payload);
+  return response.data;
 }
 
 export async function getSupportAnalytics() {
-  const res = await fetch(`${API_URL}/api/support/analytics`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/support/analytics');
+  return response.data;
 }
 
 

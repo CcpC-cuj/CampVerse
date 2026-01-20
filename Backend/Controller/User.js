@@ -2223,6 +2223,32 @@ async function resendOtp(req, res) {
   }
 }
 
+/**
+ * Find user by email (for co-host nomination validation)
+ * Returns basic info: _id, name, email, canHost
+ */
+async function findUserByEmail(req, res) {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: 'Email query parameter is required' });
+    }
+
+    const user = await User.findOne({ email }).select('_id name email canHost');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    logger.error('Error in findUserByEmail:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -2262,4 +2288,5 @@ module.exports = {
   deleteMe,
   unlinkGoogleAccount,
   logout,
+  findUserByEmail,
 };

@@ -19,6 +19,8 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+
 const TemplateGallery = ({ eventId, onTemplateSelect, selectedTemplateId }) => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,51 +35,30 @@ const TemplateGallery = ({ eventId, onTemplateSelect, selectedTemplateId }) => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      // Fetch templates from certificate generator API
-      const response = await fetch(`${import.meta.env.VITE_ML_CERTIFICATE_API_URL || 'https://imkrish-certificate-generator.hf.space'}/templates/list`);
+      const token = localStorage.getItem('token');
+      // Fetch templates from main backend API instead of ML service
+      // This ensures we see templates uploaded by admins
+      const response = await fetch(`${API_BASE}/api/admin/certificate-templates`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      });
+      
       if (!response.ok) throw new Error('Failed to fetch templates');
       
       const data = await response.json();
-      setTemplates(data.templates || []);
+      
+      // Map backend fields to frontend expectations
+      const mappedTemplates = (data.templates || []).map(t => ({
+        ...t,
+        thumbnailUrl: t.preview || t.url,
+        previewUrl: t.url,
+        description: t.description || `Certificate template for ${t.type} events`
+      }));
+      
+      setTemplates(mappedTemplates);
       setError(null);
     } catch (err) {
-      setError('Failed to load templates. Please try again.');
-      
-      // Mock data for development
-      setTemplates([
-        {
-          id: 'template_participation_1',
-          name: 'Modern Participation',
-          type: 'participation',
-          thumbnailUrl: '/templates/participation_1_thumb.png',
-          previewUrl: '/templates/participation_1.png',
-          description: 'Clean modern design for participation certificates',
-        },
-        {
-          id: 'template_participation_2',
-          name: 'Classic Participation',
-          type: 'participation',
-          thumbnailUrl: '/templates/participation_2_thumb.png',
-          previewUrl: '/templates/participation_2.png',
-          description: 'Traditional elegant style for participation',
-        },
-        {
-          id: 'template_achievement_1',
-          name: 'Modern Achievement',
-          type: 'achievement',
-          thumbnailUrl: '/templates/achievement_1_thumb.png',
-          previewUrl: '/templates/achievement_1.png',
-          description: 'Bold design for achievement recognition',
-        },
-        {
-          id: 'template_achievement_2',
-          name: 'Classic Achievement',
-          type: 'achievement',
-          thumbnailUrl: '/templates/achievement_2_thumb.png',
-          previewUrl: '/templates/achievement_2.png',
-          description: 'Formal design for achievement certificates',
-        },
-      ]);
+      setError('Failed to load templates: ' + err.message);
     } finally {
       setLoading(false);
     }

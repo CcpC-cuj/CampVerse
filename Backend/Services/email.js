@@ -57,7 +57,13 @@ function createEmailTransporter() {
  * Send email via Brevo HTTP API
  * Works on Hugging Face (uses port 443)
  */
-async function sendViaBrevo({ to, subject, html, text }) {
+async function sendViaBrevo({ to, subject, html, text, attachments = [] }) {
+  // Format attachments for Brevo
+  const formattedAttachments = attachments.map(att => ({
+    content: Buffer.isBuffer(att.content) ? att.content.toString('base64') : att.content,
+    name: att.filename || 'attachment'
+  }));
+
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -73,7 +79,8 @@ async function sendViaBrevo({ to, subject, html, text }) {
       to: [{ email: Array.isArray(to) ? to[0] : to }],
       subject,
       htmlContent: html,
-      textContent: text
+      textContent: text,
+      attachment: formattedAttachments.length > 0 ? formattedAttachments : undefined
     }),
   });
 
@@ -90,11 +97,11 @@ async function sendViaBrevo({ to, subject, html, text }) {
  * Universal email sending function
  * Priority: Brevo > Resend > Nodemailer
  */
-async function sendEmail({ to, subject, html, text }) {
+async function sendEmail({ to, subject, html, text, attachments = [] }) {
   try {
     if (useBrevo) {
       // Use Brevo HTTP API (works on Hugging Face)
-      const result = await sendViaBrevo({ to, subject, html, text });
+      const result = await sendViaBrevo({ to, subject, html, text, attachments });
       logger.info('Email sent via Brevo:', { messageId: result?.messageId, to });
       return true;
     } else if (useResend) {
@@ -105,6 +112,10 @@ async function sendEmail({ to, subject, html, text }) {
         subject,
         html,
         text,
+        attachments: attachments.map(att => ({
+          filename: att.filename,
+          content: att.content // Resend handles Buffers/strings
+        }))
       });
       logger.info('Email sent via Resend:', { id: result?.data?.id, to });
       return true;
@@ -117,6 +128,7 @@ async function sendEmail({ to, subject, html, text }) {
         subject,
         html,
         text,
+        attachments
       });
       logger.info('Email sent via Nodemailer:', { to });
       return true;
@@ -319,6 +331,7 @@ function createEmailService() {
         subject: options.subject,
         html: options.html,
         text: options.text,
+        attachments: options.attachments,
       });
     },
   };

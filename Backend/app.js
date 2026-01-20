@@ -528,6 +528,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/feedback', require('./Routes/feedbackRoutes'));
 app.use('/api/support', require('./Routes/supportRoutes'));
 app.use('/api/admin', require('./Routes/adminTemplateRoutes')); // Admin template management
+app.use('/api/admin', require('./Routes/adminSettingsRoutes')); // Admin platform settings
 
 // Initialize Socket.IO in notification service for real-time notifications
 const { setSocketIO } = require('./Services/notification');

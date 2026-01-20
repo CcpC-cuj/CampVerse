@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import api from '../api/axiosInstance';
 import axios from 'axios';
 import {
   Box,
@@ -114,6 +115,7 @@ const CertificateManagement = ({ eventId }) => {
   // Dialogs
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
@@ -122,13 +124,9 @@ const CertificateManagement = ({ eventId }) => {
 
   const fetchEventDetails = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/events/${eventId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get(`/api/events/${eventId}`);
       
-      const eventData = response.data;
+      const eventData = response.data?.data || response.data;
       setEvent(eventData);
       setCertificateEnabled(eventData.features?.certificateEnabled || false);
       
@@ -156,11 +154,7 @@ const CertificateManagement = ({ eventId }) => {
 
   const fetchCertificateStatus = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/status`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get(`/api/certificate-management/events/${eventId}/status`);
       
       setCertificateStatus(response.data);
       setParticipants(response.data.participants || []);
@@ -173,10 +167,9 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setError('');
       setSuccess('');
-      const token = localStorage.getItem('token');
       
-      await axios.patch(
-        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/settings`,
+      await api.patch(
+        `/api/certificate-management/events/${eventId}/settings`,
         {
           certificateEnabled,
           certificateType,
@@ -184,8 +177,7 @@ const CertificateManagement = ({ eventId }) => {
           leftSignatory,
           rightSignatory,
           selectedTemplateId: selectedTemplate?.id,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
+        }
       );
       
       setSuccess('Certificate settings updated successfully!');
@@ -198,12 +190,7 @@ const CertificateManagement = ({ eventId }) => {
 
   const handleSubmitForVerification = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/submit`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post(`/api/certificate-management/events/${eventId}/submit`, {});
       setSuccess('Submitted for verification!');
       fetchEventDetails();
     } catch (err) {
@@ -215,7 +202,6 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setError('');
       setSuccess('');
-      const token = localStorage.getItem('token');
       
       // Upload template
       if (templateFile) {
@@ -224,12 +210,11 @@ const CertificateManagement = ({ eventId }) => {
         formData.append('assetType', 'template');
         formData.append('template_type', certificateType);
         
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/upload-assets`,
+        await api.post(
+          `/api/certificate-management/events/${eventId}/upload-assets`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
             },
           }
@@ -243,12 +228,11 @@ const CertificateManagement = ({ eventId }) => {
         formData.append('assetType', 'logo');
         formData.append('logo_type', 'left');
         
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/upload-assets`,
+        await api.post(
+          `/api/certificate-management/events/${eventId}/upload-assets`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
             },
           }
@@ -261,12 +245,11 @@ const CertificateManagement = ({ eventId }) => {
         formData.append('assetType', 'logo');
         formData.append('logo_type', 'right');
         
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/upload-assets`,
+        await api.post(
+          `/api/certificate-management/events/${eventId}/upload-assets`,
           formData,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'multipart/form-data',
             },
           }
@@ -329,13 +312,8 @@ const CertificateManagement = ({ eventId }) => {
       setError('');
       setSuccess('');
       setGenerationProgress(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/generate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post(`/api/certificate-management/events/${eventId}/generate`, {});
       
       setSuccess(`Successfully generated ${response.data.totalGenerated} certificate(s)!`);
       setGenerationProgress(false);
@@ -355,13 +333,8 @@ const CertificateManagement = ({ eventId }) => {
       setError('');
       setSuccess('');
       setGenerationProgress(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/certificate-management/events/${eventId}/regenerate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post(`/api/certificate-management/events/${eventId}/regenerate`, {});
       
       setSuccess('Certificates regenerated successfully!');
       setGenerationProgress(false);

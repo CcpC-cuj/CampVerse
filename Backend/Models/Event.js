@@ -26,6 +26,7 @@ const eventSchema = new mongoose.Schema({
       approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
       approvedAt: { type: Date },
       remarks: { type: String },
+      token: { type: String },
     },
   ],
   hostUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

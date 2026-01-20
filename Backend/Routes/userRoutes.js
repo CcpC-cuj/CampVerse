@@ -37,6 +37,7 @@ const {
   updateMyNotificationPreferences,
   deleteMe,
   unlinkGoogleAccount,
+  findUserByEmail,
 } = require('../Controller/User');
 
 const {
@@ -1316,5 +1317,7 @@ router.patch(
   requireSelfOrRole(['platformAdmin']),
   updateUserById,
 );
+
+router.get('/find-by-email', authenticateToken, findUserByEmail);
 
 module.exports = router;

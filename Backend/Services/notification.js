@@ -143,18 +143,8 @@ async function sendHostRequestEmail(
   userEmail,
 ) {
   try {
-    const transporter = require('nodemailer').createTransporter({
-      service: 'gmail',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: '"CampVerse Admin" <noreply@campverse.com>',
+    const emailService = createEmailService();
+    await emailService.sendMail({
       to: adminEmail,
       subject: 'New Host Request - Action Required',
       html: `
@@ -180,21 +170,11 @@ async function sendHostRequestEmail(
  */
 async function sendHostStatusEmail(userEmail, userName, status, remarks) {
   try {
-    const transporter = require('nodemailer').createTransporter({
-      service: 'gmail',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Host Request ${status === 'approved' ? 'Approved' : 'Rejected'}`;
 
-    await transporter.sendMail({
-      from: '"CampVerse" <noreply@campverse.com>',
+    const emailService = createEmailService();
+    await emailService.sendMail({
       to: userEmail,
       subject,
       html: `
@@ -356,21 +336,11 @@ async function notifyInstitutionStatusUpdate({
  */
 async function sendInstitutionStatusEmail(userEmail, userName, institutionName, status, remarks) {
   try {
-    const transporter = require('nodemailer').createTransporter({
-      service: 'gmail',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-
     const statusText = status === 'approved' ? 'approved' : 'rejected';
     const subject = `Institution ${status === 'approved' ? 'Approved' : 'Rejected'} - ${institutionName}`;
 
-    await transporter.sendMail({
-      from: '"CampVerse" <noreply@campverse.com>',
+    const emailService = createEmailService();
+    await emailService.sendMail({
       to: userEmail,
       subject,
       html: `

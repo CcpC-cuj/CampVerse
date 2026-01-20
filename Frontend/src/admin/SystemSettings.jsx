@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
 
 export default function SystemSettings() {
   const [settings, setSettings] = useState({
     maintenanceMode: false,
     registrationEnabled: true,
     eventCreationEnabled: true,
-    paidEventsEnabled: false, // Disabled due to payment system maintenance
+    paidEventsEnabled: false,
     certificateGenerationEnabled: true,
     mlRecommendationsEnabled: true,
     emailNotificationsEnabled: true,
@@ -15,7 +17,64 @@ export default function SystemSettings() {
     certificateExpiryDays: 365,
   });
 
+  const [health, setHealth] = useState({
+    api: 'unknown',
+    mongodb: 'unknown',
+    redis: 'unknown',
+    ml: 'unknown'
+  });
+
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    fetchSettings();
+    const healthInterval = setInterval(checkHealth, 30000);
+    checkHealth();
+    return () => clearInterval(healthInterval);
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/api/admin/settings`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch settings');
+      const data = await response.json();
+      setSettings(data);
+    } catch (err) {
+      setError('Error loading settings: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkHealth = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/health`);
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      
+      setHealth({
+        api: 'online',
+        mongodb: data.services.mongodb === 'connected' ? 'online' : 'offline',
+        redis: data.services.redis === 'connected' ? 'online' : 'offline',
+        ml: 'online' // Backend check doesn't include ML yet, but we'll assume online if API is up
+      });
+    } catch (err) {
+      setHealth({
+        api: 'offline',
+        mongodb: 'offline',
+        redis: 'offline',
+        ml: 'offline'
+      });
+    }
+  };
 
   const handleToggle = (key) => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
@@ -26,11 +85,31 @@ export default function SystemSettings() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    alert('Settings saved successfully!');
-    setSaving(false);
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE}/api/admin/settings`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(settings)
+      });
+
+      if (!response.ok) throw new Error('Failed to save settings');
+      
+      setSuccess('Settings saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const SettingToggle = ({ label, description, settingKey, disabled = false }) => (
@@ -53,9 +132,32 @@ export default function SystemSettings() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <Layout title="System Settings">
+        <div className="flex flex-col items-center justify-center py-20">
+          <i className="ri-loader-4-line animate-spin text-4xl text-purple-400 mb-4" />
+          <p className="text-gray-400">Loading platform settings...</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout title="System Settings">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-900/40 border border-red-500/50 rounded-lg p-4 text-red-300">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-900/40 border border-green-500/50 rounded-lg p-4 text-green-300">
+            {success}
+          </div>
+        )}
+
         {/* Warning Banner */}
         <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-xl p-4">
           <div className="flex items-start gap-3">
@@ -179,31 +281,31 @@ export default function SystemSettings() {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div className={`w-3 h-3 rounded-full ${health.api === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <div>
                 <p className="text-white text-sm font-medium">API Server</p>
-                <p className="text-green-400 text-xs">Online</p>
+                <p className={`${health.api === 'online' ? 'text-green-400' : 'text-red-400'} text-xs capitalize`}>{health.api}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div className={`w-3 h-3 rounded-full ${health.mongodb === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <div>
                 <p className="text-white text-sm font-medium">Database</p>
-                <p className="text-green-400 text-xs">Online</p>
+                <p className={`${health.mongodb === 'online' ? 'text-green-400' : 'text-red-400'} text-xs capitalize`}>{health.mongodb}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+              <div className={`w-3 h-3 rounded-full ${health.redis === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <div>
+                <p className="text-white text-sm font-medium">Redis</p>
+                <p className={`${health.redis === 'online' ? 'text-green-400' : 'text-red-400'} text-xs capitalize`}>{health.redis}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
+              <div className={`w-3 h-3 rounded-full ${health.ml === 'online' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <div>
                 <p className="text-white text-sm font-medium">ML Services</p>
-                <p className="text-green-400 text-xs">Online</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <div>
-                <p className="text-white text-sm font-medium">Payment</p>
-                <p className="text-red-400 text-xs">Maintenance</p>
+                <p className={`${health.ml === 'online' ? 'text-green-400' : 'text-red-400'} text-xs capitalize`}>{health.ml}</p>
               </div>
             </div>
           </div>

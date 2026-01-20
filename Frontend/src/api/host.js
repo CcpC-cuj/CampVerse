@@ -1,50 +1,32 @@
-// Host-related APIs aligned with Backend/Routes/hostRoutes.js
-import { API_URL, getAuthHeaders } from './user';
+import api from './axiosInstance';
 
 export async function getHostDashboard() {
-  const res = await fetch(`${API_URL}/api/hosts/dashboard`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/hosts/dashboard');
+  return response.data;
 }
 
 export async function getMyEvents() {
-  const res = await fetch(`${API_URL}/api/hosts/my-events`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get('/api/hosts/my-events');
+  return response.data;
 }
 
 export async function createHostEvent(payload) {
-  const res = await fetch(`${API_URL}/api/hosts/events`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.post('/api/hosts/events', payload);
+  return response.data;
 }
 
 export async function updateHostEvent(id, payload) {
-  const res = await fetch(`${API_URL}/api/hosts/events/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return res.json();
+  const response = await api.patch(`/api/hosts/events/${id}`, payload);
+  return response.data;
 }
 
 export async function deleteHostEvent(id) {
-  const res = await fetch(`${API_URL}/api/hosts/events/${id}`, {
-    method: 'DELETE',
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.delete(`/api/hosts/events/${id}`);
+  return response.data;
 }
 
 export async function getHostEventParticipants(id) {
-  const res = await fetch(`${API_URL}/api/hosts/events/${id}/participants`, {
-    headers: { ...getAuthHeaders() },
-  });
-  return res.json();
+  const response = await api.get(`/api/hosts/events/${id}/participants`);
+  return response.data;
 }
 

@@ -36,6 +36,9 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		chatEnabled: false,
 	});
 	const [cohostInput, setCohostInput] = useState('');
+	const [isValidatingCohost, setIsValidatingCohost] = useState(false);
+	const [cohostValidationMsg, setCohostValidationMsg] = useState({ type: '', text: '' });
+	const [lastValidatedUser, setLastValidatedUser] = useState(null);
 	const [sessionInput, setSessionInput] = useState({ title: '', time: '', speaker: '' });
 	const [bannerUrl, setBannerUrl] = useState(null);
 	const [logoUrl, setLogoUrl] = useState(null);
@@ -108,21 +111,47 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			}));
 		} else {
 			if (name === 'cohostInput') {
-				setCohostInput(value);
-			} else {
-				setEventForm(prev => ({ ...prev, [name]: value }));
+			setCohostInput(value);
+			// Optional: Clear validation when typing
+			if (cohostValidationMsg.text) setCohostValidationMsg({ type: '', text: '' });
+			return;
+		}
+		setEventForm(prev => ({ ...prev, [name]: value }));
 			}
 		}
 	};
 
-	const handleAddCohost = () => {
-		const email = cohostInput.trim();
-		if (email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-			setEventForm(prev => ({
-				...prev,
-				cohosts: [...prev.cohosts, email]
-			}));
-			setCohostInput('');
+	const handleAddCohost = async () => {
+		if (!cohostInput) return;
+		if (eventForm.cohosts.includes(cohostInput)) {
+			setCohostValidationMsg({ type: 'error', text: 'User already added' });
+			return;
+		}
+
+		try {
+			setIsValidatingCohost(true);
+			setCohostValidationMsg({ type: 'info', text: 'Looking up user...' });
+			
+			const response = await api.get(`/users/find-by-email?email=${cohostInput.trim()}`);
+			if (response.data.success) {
+				const user = response.data.user;
+				setEventForm(prev => ({
+					...prev,
+					cohosts: [...prev.cohosts, user.email]
+				}));
+				setCohostInput('');
+				setCohostValidationMsg({ type: 'success', text: `Added ${user.name}` });
+				setTimeout(() => setCohostValidationMsg({ type: '', text: '' }), 3000);
+			} else {
+				const errorMsg = response.data.error || 'User not found in CampVerse';
+				setCohostValidationMsg({ type: 'error', text: errorMsg });
+			}
+		} catch (error) {
+			console.error('Cohost lookup failed:', error);
+			const errorMsg = error.response?.data?.error || 'User not found in CampVerse';
+			setCohostValidationMsg({ type: 'error', text: errorMsg });
+		} finally {
+			setIsValidatingCohost(false);
 		}
 	};
 
@@ -527,28 +556,27 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Sessions/Agenda</label>
-							<div className="space-y-2">
-								<div className="grid grid-cols-3 gap-2">
+							<div className="space-y-3">
+								<div className="flex flex-col sm:grid sm:grid-cols-3 gap-3">
 									<input 
 										type="text" 
 										value={sessionInput.title}
 										onChange={(e) => setSessionInput(prev => ({ ...prev, title: e.target.value }))}
 										placeholder="Session Title" 
-										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+										className="w-full px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
 									/>
 									<input 
 										type="time" 
 										value={sessionInput.time}
 										onChange={(e) => setSessionInput(prev => ({ ...prev, time: e.target.value }))}
-										placeholder="Time" 
-										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+										className="w-full px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
 									/>
 									<input 
 										type="text" 
 										value={sessionInput.speaker}
 										onChange={(e) => setSessionInput(prev => ({ ...prev, speaker: e.target.value }))}
 										placeholder="Speaker Name" 
-										className="px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
+										className="w-full px-3 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none text-sm"
 									/>
 								</div>
 								<button 
@@ -578,26 +606,28 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								)}
 							</div>
 						</div>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
 							<div className="flex items-center gap-3">
 								<input 
 									type="checkbox" 
+									id="cert-enabled"
 									name="certificateEnabled" 
 									checked={eventForm.certificateEnabled} 
 									onChange={(e) => setEventForm(prev => ({ ...prev, certificateEnabled: e.target.checked }))}
-									className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
+									className="w-5 h-5 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
 								/>
-								<label className="text-sm font-medium text-purple-300">🏆 Enable Certificates</label>
+								<label htmlFor="cert-enabled" className="text-sm font-medium text-purple-300 cursor-pointer">🏆 Enable Certificates</label>
 							</div>
 							<div className="flex items-center gap-3">
 								<input 
 									type="checkbox" 
+									id="chat-enabled"
 									name="chatEnabled" 
 									checked={eventForm.chatEnabled} 
 									onChange={(e) => setEventForm(prev => ({ ...prev, chatEnabled: e.target.checked }))}
-									className="w-4 h-4 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
+									className="w-5 h-5 text-purple-600 bg-transparent border-purple-500 rounded focus:ring-purple-500"
 								/>
-								<label className="text-sm font-medium text-purple-300">💬 Enable Chat System</label>
+								<label htmlFor="chat-enabled" className="text-sm font-medium text-purple-300 cursor-pointer">💬 Enable Chat System</label>
 							</div>
 						</div>
 						{eventForm.certificateEnabled && (
@@ -621,7 +651,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								</div>
 							</div>
 						)}
-						<div className="grid grid-cols-2 gap-4">
+						<div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
 							<div>
 								<label className="block text-sm font-medium text-purple-300 mb-2">Website</label>
 								<input 
@@ -647,23 +677,38 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-purple-300 mb-2">Co-hosts (Emails)</label>
-							<div className="flex gap-2 mb-2">
+							<div className="flex flex-col sm:flex-row gap-2 mb-2">
 								<input 
-									type="text" 
+									type="email" 
 									name="cohostInput" 
 									value={cohostInput} 
 									onChange={handleFormChange} 
 									placeholder="Enter co-host email" 
-									className="flex-1 px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none"
+									className="flex-1 px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none"
 								/>
 								<button 
 									type="button" 
 									onClick={handleAddCohost} 
-									className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-600 transition-colors"
+									disabled={isValidatingCohost || !cohostInput}
+									className={`px-6 py-3 rounded-lg transition-colors font-medium sm:w-auto w-full ${
+										isValidatingCohost || !cohostInput 
+											? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
+											: 'bg-purple-700 text-white hover:bg-purple-600'
+									}`}
 								>
-									Add
+									{isValidatingCohost ? 'Checking...' : 'Add Co-host'}
 								</button>
 							</div>
+							{cohostValidationMsg.text && (
+								<p className={`text-xs mb-3 px-1 font-medium ${
+									cohostValidationMsg.type === 'error' ? 'text-red-400' : 
+									cohostValidationMsg.type === 'success' ? 'text-green-400' : 'text-purple-300'
+								}`}>
+									{cohostValidationMsg.type === 'error' ? '❌ ' : 
+									 cohostValidationMsg.type === 'success' ? '✅ ' : '🔍 '}
+									{cohostValidationMsg.text}
+								</p>
+							)}
 							{eventForm.cohosts.length > 0 && (
 								<div className="space-y-1">
 									{eventForm.cohosts.map((email, idx) => (
@@ -681,7 +726,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								</div>
 							)}
 						</div>
-						<div className="grid grid-cols-2 gap-4">
+						<div className="flex flex-col sm:grid sm:grid-cols-2 gap-4">
 							<div>
 								<label className="block text-sm font-medium text-purple-300 mb-2">Event Banner Image</label>
 								<input 
@@ -692,7 +737,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 									className="w-full px-4 py-3 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-700 file:text-white hover:file:bg-purple-600"
 								/>
 								{bannerUrl && (
-									<div className="mt-2 w-full h-24 bg-black/40 rounded-lg flex items-center justify-center overflow-hidden border border-purple-500/30">
+									<div className="mt-2 w-full h-32 bg-black/40 rounded-lg flex items-center justify-center overflow-hidden border border-purple-500/30">
 										<img src={bannerUrl} alt="Banner Preview" className="object-cover w-full h-full" />
 									</div>
 								)}
@@ -708,7 +753,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 								/>
 								{logoUrl && (
 									<div className="mt-2 flex items-center justify-center">
-										<img src={logoUrl} alt="Logo Preview" className="object-cover w-16 h-16 rounded-full border-2 border-purple-500/50" />
+										<img src={logoUrl} alt="Logo Preview" className="object-cover w-20 h-20 rounded-full border-2 border-purple-500/50 shadow-lg" />
 									</div>
 								)}
 							</div>

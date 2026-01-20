@@ -35,6 +35,7 @@ import {
   InstitutionManagement,
   PlatformAnalytics,
   SystemSettings,
+  CertificateTemplateManagement,
 } from "./admin";
 
 // ✅ Host dashboard module imports (updated)
@@ -88,275 +89,283 @@ const OAuthDetector = () => {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ToastProvider>
-        <AuthProvider>
-          <ModalProvider>
-            <EventProvider>
-              <Router>
+    <ToastProvider>
+      <AuthProvider>
+        <ModalProvider>
+          <EventProvider>
+            <Router>
+              <ErrorBoundary>
                 <OAuthDetector />
-              <Routes>
-              {/* Development-only test route */}
-              {import.meta.env.DEV && (
-                <Route path="/test-create-event" element={<CreateEventForm />} />
-              )}
-              <Route path="/" element={<Landing />} />
-              <Route
-                path="/dashboard/*"
-                element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/verifier/dashboard"
-              element={
-                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
-                  <VerifierDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/verifier/event-queue"
-              element={
-                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
-                  <EventVerificationQueue />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/verifier/certificate-review"
-              element={
-                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
-                  <CertificateReview />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/verifier/analytics"
-              element={
-                <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
-                  <VerifierAnalytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/events"
-              element={
-                <ProtectedRoute>
-                  <Events />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/help"
-              element={
-                <ProtectedRoute>
-                  <HelpCenter />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/feedback"
-              element={
-                <ProtectedRoute>
-                  <Feedback />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/colleges"
-              element={
-                <ProtectedRoute>
-                  <MyInstitution />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/oauth-callback" element={<OAuthCallback />} />
-            
-            {/* Event details route */}
-            <Route path="/events/:id" element={<EventDetailsPage />} />
-            
-            {/* QR Code viewer route */}
-            <Route 
-              path="/events/:id/qr" 
-              element={
-                <ProtectedRoute>
-                  <QRViewer />
-                </ProtectedRoute>
-              } 
-            />
-
-            {/* Host routes */}
-            <Route
-              path="/host/registration"
-              element={
-                <ProtectedRoute>
-                  <HostRegistration />
-                </ProtectedRoute>
-              }
-            />
-            {/* Consolidated ManageEvents route */}
-            <Route
-              path="/host/manage-events"
-              element={
-                <ProtectedRoute>
-                  <ManageEvents />
-                </ProtectedRoute>
-              }
-            />
-            {/* Legacy route redirects */}
-            <Route
-              path="/host/dashboard"
-              element={
-                <ProtectedRoute>
-                  <ManageEvents />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/host/events"
-              element={
-                <ProtectedRoute>
-                  <ManageEvents />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/host/events-new"
-              element={
-                <ProtectedRoute>
-                  <HostEventsNew />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* QR Scanner route */}
-            <Route
-              path="/host/events/:eventId/qr-scanner"
-              element={
-                <ProtectedRoute>
-                  <QRScanner />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Attendance Dashboard route */}
-            <Route
-              path="/host/events/:eventId/attendance"
-              element={
-                <ProtectedRoute>
-                  <AttendanceDashboard />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Bulk Attendance route */}
-            <Route
-              path="/host/events/:eventId/bulk-attendance"
-              element={
-                <ProtectedRoute>
-                  <BulkAttendance />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Certificate Management route */}
-            <Route
-              path="/host/events/:eventId/certificates"
-              element={
-                <ProtectedRoute>
-                  <CertificateManagement />
-                </ProtectedRoute>
-              }
-            />
-            
-            <Route
-              path="/host/applications"
-              element={
-                <ProtectedRoute>
-                  <HostApplications />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/host/analytics"
-              element={
-                <ProtectedRoute>
-                  <HostAnalytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/host/settings"
-              element={
-                <ProtectedRoute>
-                  <HostSettings />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ✅ Platform Admin Routes */}
-            <Route
-              path="/admin/dashboard"
-              element={
-                <ProtectedRoute requiredRoles={['platformAdmin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute requiredRoles={['platformAdmin']}>
-                  <UserManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/institutions"
-              element={
-                <ProtectedRoute requiredRoles={['platformAdmin']}>
-                  <InstitutionManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/analytics"
-              element={
-                <ProtectedRoute requiredRoles={['platformAdmin']}>
-                  <PlatformAnalytics />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/settings"
-              element={
-                <ProtectedRoute requiredRoles={['platformAdmin']}>
-                  <SystemSettings />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* 404 Not Found - catch all unmatched routes */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Router>
-      </EventProvider>
-      </ModalProvider>
-    </AuthProvider>
+                <Routes>
+                  {/* Development-only test route */}
+                  {import.meta.env.DEV && (
+                    <Route path="/test-create-event" element={<CreateEventForm />} />
+                  )}
+                  <Route path="/" element={<Landing />} />
+                  <Route
+                    path="/dashboard/*"
+                    element={
+                      <ProtectedRoute>
+                        <UserDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/verifier/dashboard"
+                    element={
+                      <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                        <VerifierDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/verifier/event-queue"
+                    element={
+                      <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                        <EventVerificationQueue />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/verifier/certificate-review"
+                    element={
+                      <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                        <CertificateReview />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/verifier/analytics"
+                    element={
+                      <ProtectedRoute requiredRoles={['verifier', 'platformAdmin']}>
+                        <VerifierAnalytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/events"
+                    element={
+                      <ProtectedRoute>
+                        <Events />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/help"
+                    element={
+                      <ProtectedRoute>
+                        <HelpCenter />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/feedback"
+                    element={
+                      <ProtectedRoute>
+                        <Feedback />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/colleges"
+                    element={
+                      <ProtectedRoute>
+                        <MyInstitution />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/oauth-callback" element={<OAuthCallback />} />
+                  
+                  {/* Event details route */}
+                  <Route path="/events/:id" element={<EventDetailsPage />} />
+                  
+                  {/* QR Code viewer route */}
+                  <Route 
+                    path="/events/:id/qr" 
+                    element={
+                      <ProtectedRoute>
+                        <QRViewer />
+                      </ProtectedRoute>
+                    } 
+                  />
+    
+                  {/* Host routes */}
+                  <Route
+                    path="/host/registration"
+                    element={
+                      <ProtectedRoute>
+                        <HostRegistration />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Consolidated ManageEvents route */}
+                  <Route
+                    path="/host/manage-events"
+                    element={
+                      <ProtectedRoute>
+                        <ManageEvents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* Legacy route redirects */}
+                  <Route
+                    path="/host/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <ManageEvents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/host/events"
+                    element={
+                      <ProtectedRoute>
+                        <ManageEvents />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/host/events-new"
+                    element={
+                      <ProtectedRoute>
+                        <HostEventsNew />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* QR Scanner route */}
+                  <Route
+                    path="/host/events/:eventId/qr-scanner"
+                    element={
+                      <ProtectedRoute>
+                        <QRScanner />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Attendance Dashboard route */}
+                  <Route
+                    path="/host/events/:eventId/attendance"
+                    element={
+                      <ProtectedRoute>
+                        <AttendanceDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Bulk Attendance route */}
+                  <Route
+                    path="/host/events/:eventId/bulk-attendance"
+                    element={
+                      <ProtectedRoute>
+                        <BulkAttendance />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Certificate Management route */}
+                  <Route
+                    path="/host/events/:eventId/certificates"
+                    element={
+                      <ProtectedRoute>
+                        <CertificateManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  <Route
+                    path="/host/applications"
+                    element={
+                      <ProtectedRoute>
+                        <HostApplications />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/host/analytics"
+                    element={
+                      <ProtectedRoute>
+                        <HostAnalytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/host/settings"
+                    element={
+                      <ProtectedRoute>
+                        <HostSettings />
+                      </ProtectedRoute>
+                    }
+                  />
+    
+                  {/* ✅ Platform Admin Routes */}
+                  <Route
+                    path="/admin/dashboard"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <UserManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/institutions"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <InstitutionManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/analytics"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <PlatformAnalytics />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/settings"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <SystemSettings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/certificate-templates"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <CertificateTemplateManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+    
+                  {/* 404 Not Found - catch all unmatched routes */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ErrorBoundary>
+            </Router>
+          </EventProvider>
+        </ModalProvider>
+      </AuthProvider>
     </ToastProvider>
-    </ErrorBoundary>
   );
 }
 
