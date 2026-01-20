@@ -94,60 +94,61 @@ const SignupModal = ({
 
         {error && <div className="text-red-500 text-center mb-2">{error}</div>}
 
+
         {/* Form */}
-          {/* Maintenance message and disabled form */}
-          <div className="space-y-4">
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg text-center mb-2">
-              <strong>Server under maintenance:</strong> Email/password signup is temporarily unavailable.<br />
-              Please use Google login to sign up.
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            name="name"
+            type="text"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400"
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="College Email"
+            value={formData.email}
+            onChange={handleInputChange}
+            required
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400"
+          />
+          <input
+            name="phone"
+            type="tel"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleInputChange}
+            required
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400"
+          />
+          <div className="relative">
             <input
-              name="name"
-              type="text"
-              placeholder="Full Name"
-              value={formData.name}
-              disabled
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400 pr-10"
             />
-            <input
-              name="email"
-              type="email"
-              placeholder="College Email"
-              value={formData.email}
-              disabled
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
-            />
-            <input
-              name="phone"
-              type="tel"
-              placeholder="Phone Number"
-              value={formData.phone}
-              disabled
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
-            />
-            <div className="relative">
-              <input
-                name="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create a password"
-                value={formData.password}
-                disabled
-                className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed pr-10"
-              />
-              <span
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-not-allowed"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </span>
-            </div>
-            <button
-              type="submit"
-              disabled
-              className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 opacity-50 cursor-not-allowed"
+            <span
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-pointer hover:text-purple-200"
             >
-              Server under maintenance
-            </button>
+              {showPassword ? "Hide" : "Show"}
+            </span>
           </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Creating account...' : 'Sign Up'}
+          </button>
+        </form>
 
         {/* Or Divider */}
         <div className="flex items-center my-4">

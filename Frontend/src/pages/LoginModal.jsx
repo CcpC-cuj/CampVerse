@@ -108,19 +108,17 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
           </div>
         )}
 
-        {/* Maintenance message and disabled form */}
-        <div className="space-y-4">
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg text-center mb-2">
-            <strong>Server under maintenance:</strong> Email/password login is temporarily unavailable.<br />
-            Please use Google login to sign in.
-          </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
             name="email"
             placeholder="College Email"
             value={formData.email}
-            disabled
-            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
+            onChange={handleInputChange}
+            required
+            className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400"
           />
           <div className="relative">
             <input
@@ -128,23 +126,35 @@ const LoginModal = ({ onClose, onSwitchToSignup, onForgotPassword }) => {
               name="password"
               placeholder="Password"
               value={formData.password}
-              disabled
-              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 opacity-50 cursor-not-allowed"
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-2 bg-transparent border border-purple-500 rounded-lg text-white placeholder-purple-400 focus:outline-none focus:border-purple-400"
             />
             <span
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-not-allowed"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 cursor-pointer hover:text-purple-200"
             >
               {showPassword ? "Hide" : "Show"}
             </span>
           </div>
           <button
             type="submit"
-            disabled
-            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 opacity-50 cursor-not-allowed"
+            disabled={isLoading}
+            className="w-full bg-purple-700 text-white font-semibold py-2 rounded-full transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Server under maintenance
+            {isLoading ? 'Logging in...' : 'Log In'}
           </button>
-        </div>
+        </form>
+
+        {/* Forgot Password Link */}
+        <p className="text-xs text-center text-purple-300 mt-2">
+          <span
+            onClick={onForgotPassword}
+            className="text-white hover:underline cursor-pointer"
+          >
+            Forgot Password?
+          </span>
+        </p>
 
         {/* Or divider */}
         <div className="flex items-center my-4">
