@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { createEventWithFiles, nominateCoHost } from "../api/events";
 import { findUserByEmail } from "../api/user";
+import { useToast } from "../components/Toast";
 
 const CreateEventForm = ({ onSuccess, onClose }) => {
 	const { user } = useAuth();
+	const toast = useToast();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [formErrors, setFormErrors] = useState({});
 	const [eventForm, setEventForm] = useState({
@@ -187,6 +189,19 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 		
 		setLoading(true);
 		try {
+			const parsedSessions = (() => {
+				if (Array.isArray(eventForm.sessions)) return eventForm.sessions;
+				if (typeof eventForm.sessions === 'string') {
+					try {
+						const parsed = JSON.parse(eventForm.sessions);
+						return Array.isArray(parsed) ? parsed : [];
+					} catch {
+						return [];
+					}
+				}
+				return [];
+			})();
+
 			// Transform data to match backend schema exactly
 			const eventData = {
 				title: eventForm.title,
@@ -215,7 +230,7 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 					linkedin: eventForm.socialLinks?.linkedin || ''
 				},
 				audienceType: eventForm.audienceType || 'public',
-				sessions: eventForm.sessions || [],
+				sessions: parsedSessions,
 				features: {
 					certificateEnabled: eventForm.certificateEnabled || false,
 					chatEnabled: eventForm.chatEnabled || false
@@ -256,12 +271,12 @@ const CreateEventForm = ({ onSuccess, onClose }) => {
 			} else {
 				// Handle API error response
 				const errorMessage = response.error || response.message || 'Failed to create event. Please try again.';
-				alert(errorMessage);
+				toast.error(errorMessage);
 			}
 		} catch (err) {
 			// Handle network or unexpected errors
 			const errorMessage = err?.response?.data?.error || err?.message || 'An unexpected error occurred. Please try again.';
-			alert(errorMessage);
+			toast.error(errorMessage);
 		} finally {
 			setLoading(false);
 		}

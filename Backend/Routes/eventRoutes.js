@@ -43,7 +43,7 @@ const { parseJsonBody } = require('../Middleware/bodyParsing');
 const router = express.Router();
 
 // Define common JSON fields for parsing multipart data
-const eventJsonFields = ['location', 'features', 'organizer', 'socialLinks', 'tags', 'requirements'];
+const eventJsonFields = ['location', 'features', 'organizer', 'socialLinks', 'tags', 'requirements', 'sessions'];
 
 // Public list events endpoint for browsing (used by tests and landing pages)
 /**
