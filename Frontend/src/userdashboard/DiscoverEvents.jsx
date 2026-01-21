@@ -112,21 +112,14 @@ const DiscoverEvents = () => {
             return false;
           }
 
-          const now = new Date();
-          const eventDate = event.date ? new Date(event.date) : null;
-          const derivedStatus = eventDate
-            ? eventDate > now
-              ? 'upcoming'
-              : 'ongoing'
-            : null;
-          const status = event.status || derivedStatus;
-
-          // Only show events with status 'upcoming' or 'ongoing'
-          if (status !== 'upcoming' && status !== 'ongoing') {
-            return false;
-          }
-
           const audienceType = event.audienceType || 'public';
+
+          // Always show events hosted by the current user
+          const eventHostId = event.hostUserId?._id || event.hostUserId?.id || event.hostUserId;
+          const currentUserId = user?.id || user?._id;
+          if (eventHostId && currentUserId && String(eventHostId) === String(currentUserId)) {
+            return true;
+          }
 
           // Show public events
           if (audienceType === 'public') {
@@ -135,8 +128,8 @@ const DiscoverEvents = () => {
 
           // Show institution events if user belongs to the same institution
           if (audienceType === 'institution' && user?.institutionId) {
-            const eventInstitutionId = event.institutionId?._id || event.institutionId;
-            const userInstitutionId = user.institutionId?._id || user.institutionId;
+            const eventInstitutionId = event.institutionId?._id || event.institutionId?.id || event.institutionId;
+            const userInstitutionId = user.institutionId?._id || user.institutionId?.id || user.institutionId;
             return String(eventInstitutionId) === String(userInstitutionId);
           }
 
