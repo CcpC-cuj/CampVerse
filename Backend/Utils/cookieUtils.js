@@ -4,16 +4,15 @@
  */
 
 // Environment check for cookie settings
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.RENDER || !!process.env.VERCEL || !!process.env.SPACE_ID;
 
 // Cookie configuration - production vs development
-// CRITICAL: secure must be false on localhost (HTTP), true on Render (HTTPS)
-// CRITICAL: sameSite must be 'lax' on localhost, 'none' for cross-origin
+// CRITICAL: secure must be true for cross-origin / HTTPS (Render, Hugging Face, Vercel)
 const getRefreshTokenCookieOptions = () => ({
     httpOnly: true,                              // Prevents JavaScript access (XSS protection)
-    secure: isProduction,                        // true on Render (HTTPS), false on localhost (HTTP)
-    sameSite: isProduction ? 'none' : 'lax',     // 'none' for cross-origin, 'lax' for same-origin
-    maxAge: 7 * 24 * 60 * 60 * 1000,            // 7 days in milliseconds
+    secure: true,                                // Always true - browsers allow secure cookies on localhost if SameSite is Lax/None
+    sameSite: 'none',                            // Required for cross-origin cookie sharing between HF and Vercel
+    maxAge: 30 * 24 * 60 * 60 * 1000,            // 30 days in milliseconds (Synced with tokenService)
     path: '/',                                   // Cookie available for all paths
 });
 

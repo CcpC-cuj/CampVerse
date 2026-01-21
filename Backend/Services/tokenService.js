@@ -113,7 +113,13 @@ async function refreshAccessToken(refreshToken, req) {
     // Generate new access token with session ID for revocation checking
     const accessToken = generateAccessToken(user, session._id.toString());
     
-    // Update session last activity
+    // Implement Token Rotation: Generate a new refresh token for this session
+    const newRefreshToken = crypto.randomBytes(64).toString('hex');
+    const hashedNewToken = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
+    
+    // Update session with new hashed token and set new expiry
+    session.refreshToken = hashedNewToken;
+    session.expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     await session.touch();
     
     // Log token refresh
@@ -129,6 +135,7 @@ async function refreshAccessToken(refreshToken, req) {
     return {
       success: true,
       accessToken,
+      newRefreshToken, // Return unhashed token for cookie setting
       user: {
         id: user._id,
         name: user.name,

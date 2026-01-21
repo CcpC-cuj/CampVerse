@@ -16,7 +16,20 @@ self.addEventListener('fetch', event => {
   
   // Skip caching for API calls to ensure fresh data
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(err => {
+        console.warn('[SW] API Fetch failed:', err.message, url.pathname);
+        // Return a custom error response instead of letting the promise reject
+        return new Response(JSON.stringify({ 
+          error: 'Network error', 
+          message: err.message,
+          path: url.pathname 
+        }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
     return;
   }
 
