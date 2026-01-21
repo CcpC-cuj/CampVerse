@@ -48,12 +48,24 @@ const QRScanner = () => {
         setEvent(data);
         // Check if user is host or co-host
         const hostId = data.hostUserId?._id || data.hostUserId?.id || data.hostUserId;
+        const hostEmail = data.hostUserId?.email;
         const currentUserId = user?.id || user?._id;
+        const currentUserEmail = user?.email;
         const isHost = hostId && currentUserId && String(hostId) === String(currentUserId);
         const isCoHost = Array.isArray(data.coHosts)
-          ? data.coHosts.some(ch => String(ch._id || ch.id || ch) === String(currentUserId))
+          ? data.coHosts.some(ch => {
+              const coHostId = ch?._id || ch?.id || ch;
+              const coHostEmail = ch?.email;
+              return (
+                (coHostId && currentUserId && String(coHostId) === String(currentUserId)) ||
+                (coHostEmail && currentUserEmail && String(coHostEmail).toLowerCase() === String(currentUserEmail).toLowerCase())
+              );
+            })
           : false;
-        if (!isHost && !isCoHost) {
+        const isHostByEmail = hostEmail && currentUserEmail
+          ? String(hostEmail).toLowerCase() === String(currentUserEmail).toLowerCase()
+          : false;
+        if (!isHost && !isCoHost && !isHostByEmail) {
           alert('⛔ You do not have permission to scan QR codes for this event.');
           navigate('/host/manage-events');
         }
