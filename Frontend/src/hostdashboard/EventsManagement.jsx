@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { BrowserRouter, useInRouterContext, useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
 import { getMyEvents } from "../api/host";
 import Sidebar from "../userdashboard/sidebar";
@@ -12,7 +12,7 @@ import ParticipantsModal from "./ParticipantsModal";
 import EventDetailsModal from "./EventDetailsModal";
 import CertificateManagementModal from "./CertificateManagementModal";
 
-const EventsManagement = () => {
+const EventsManagementContent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -301,7 +301,7 @@ const EventsManagement = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col sm:flex-row bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
+    <div className="h-screen flex flex-col sm:flex-row bg-linear-to-br from-purple-900 via-blue-900 to-indigo-900 text-white font-poppins">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -467,7 +467,7 @@ const EventsManagement = () => {
               </p>
               <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-red-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                   <p className="text-red-300 text-sm">
@@ -530,6 +530,20 @@ const EventsManagement = () => {
         />
       )}
     </div>
+  );
+};
+
+const EventsManagement = () => {
+  const inRouter = useInRouterContext();
+
+  if (inRouter) {
+    return <EventsManagementContent />;
+  }
+
+  return (
+    <BrowserRouter>
+      <EventsManagementContent />
+    </BrowserRouter>
   );
 };
 
