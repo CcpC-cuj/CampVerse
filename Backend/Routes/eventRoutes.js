@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
     
     const events = await require('../Models/Event')
       .find(query)
-      .populate('hostUserId', 'name email profilePicture')
+      .populate('hostUserId', 'name email profilePhoto')
       .limit(50)
       .sort({ createdAt: -1 });
     res.json({
@@ -165,20 +165,22 @@ router.get('/user', authenticateToken, async (req, res) => {
         path: 'eventId',
         populate: {
           path: 'hostUserId',
-          select: 'name email profilePicture'
+          select: 'name email profilePhoto'
         }
       })
       .sort({ registeredAt: -1 });
     
-    // Extract events and add user-specific info
-    const events = participationLogs.map(log => ({
-      ...log.eventId.toObject(),
-      userRegistration: {
-        status: log.status,
-        registeredAt: log.registeredAt,
-        qrToken: log.qrToken
-      }
-    }));
+    // Extract events and add user-specific info, filtering out any orphans where eventId is null
+    const events = participationLogs
+      .filter(log => log.eventId)
+      .map(log => ({
+        ...log.eventId.toObject(),
+        userRegistration: {
+          status: log.status,
+          registeredAt: log.registeredAt,
+          qrToken: log.qrToken
+        }
+      }));
     
     res.json({
       success: true,

@@ -1062,7 +1062,13 @@ async function scanQr(req, res) {
     res.json({ 
       success: true,
       message: 'Attendance marked successfully. QR code invalidated.',
-      participantName: participant?.name || 'Unknown'
+      participantName: participant?.name || 'Unknown',
+      user: {
+        id: participant?._id,
+        name: participant?.name,
+        email: participant?.email,
+        profilePhoto: participant?.profilePhoto
+      }
     });
   } catch (err) {
     logger && logger.error ? logger.error('Error in scanQr:', err) : null;
@@ -1103,7 +1109,20 @@ async function getEventAnalytics(req, res) {
               }
             }
           ],
-          "demographics": [
+          "gender": [
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'user'
+              }
+            },
+            { $unwind: { path: '$user', preserveNullAndEmptyArrays: false } },
+            { $group: { _id: "$user.gender", count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ],
+          "institution": [
             {
               $lookup: {
                 from: 'users',
@@ -1114,79 +1133,76 @@ async function getEventAnalytics(req, res) {
             },
             { $unwind: { path: '$user', preserveNullAndEmptyArrays: false } },
             {
-              $facet: {
-                "gender": [
-                  { $group: { _id: "$user.gender", count: { $sum: 1 } } },
-                  { $sort: { count: -1 } }
-                ],
-                "institution": [
-                  {
-                    $lookup: {
-                      from: 'institutions',
-                      localField: 'user.institutionId',
-                      foreignField: '_id',
-                      as: 'institution'
-                    }
-                  },
-                  {
-                    $project: {
-                      institutionName: { $arrayElemAt: ["$institution.name", 0] }
-                    }
-                  },
-                  { $group: { _id: "$institutionName", count: { $sum: 1 } } },
-                  { $sort: { count: -1 } },
-                  { $limit: 5 }
-                ]
+              $lookup: {
+                from: 'institutions',
+                localField: 'user.institutionId',
+                foreignField: '_id',
+                as: 'institution'
               }
-            }
+            },
+            {
+              $project: {
+                institutionName: { $arrayElemAt: ["$institution.name", 0] }
+              }
+            },
+            { $group: { _id: "$institutionName", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 }
           ]
         }
       }
     ];
 
-    const result = await EventParticipationLog.aggregate(pipeline);
+    const finalResult = await EventParticipationLog.aggregate(pipeline);
     
-    // Safety check for empty results (should technically always be 1 doc with facets)
-    if (!result || result.length === 0) {
+    // Safety check for empty results
+    if (!finalResult || finalResult.length === 0 || !finalResult[0].stats || finalResult[0].stats.length === 0) {
        return res.json({
-         totalRegistered: 0,
-         totalAttended: 0,
-         totalWaitlisted: 0,
-         totalPaid: 0,
-         totalFree: 0,
-         paymentSuccess: 0,
-         paymentPending: 0,
-         attendanceRate: 0,
-         demographics: { gender: [], institution: [] }
+         success: true,
+         data: {
+           totalRegistered: 0,
+           totalAttended: 0,
+           totalWaitlisted: 0,
+           totalPaid: 0,
+           totalFree: 0,
+           paymentSuccess: 0,
+           paymentPending: 0,
+           attendanceRate: 0,
+           demographics: { gender: [], institution: [] }
+         }
        });
     }
 
-    const stats = result[0].stats && result[0].stats.length > 0 ? result[0].stats[0] : {};
-    const demog = result[0].demographics && result[0].demographics.length > 0 ? result[0].demographics[0] : { gender: [], institution: [] };
+    const stats = finalResult[0].stats[0];
+    const gender = finalResult[0].gender || [];
+    const institution = finalResult[0].institution || [];
 
-    res.json({
-      totalRegistered: stats.totalRegistered || 0,
-      totalAttended: stats.totalAttended || 0,
-      totalWaitlisted: stats.totalWaitlisted || 0,
-      totalPaid: stats.totalPaid || 0,
-      totalFree: stats.totalFree || 0,
-      paymentSuccess: stats.paymentSuccess || 0,
-      paymentPending: stats.paymentPending || 0,
-      attendanceRate: (stats.totalRegistered || 0) > 0
-          ? ((stats.totalAttended || 0) / (stats.totalRegistered || 1) * 100).toFixed(2)
-          : 0,
-      demographics: {
-        gender: demog.gender || [],
-        institution: demog.institution || []
+    return res.json({
+      success: true,
+      data: {
+        totalRegistered: stats.totalRegistered || 0,
+        totalAttended: stats.totalAttended || 0,
+        totalWaitlisted: stats.totalWaitlisted || 0,
+        totalPaid: stats.totalPaid || 0,
+        totalFree: stats.totalFree || 0,
+        paymentSuccess: stats.paymentSuccess || 0,
+        paymentPending: stats.paymentPending || 0,
+        attendanceRate: (stats.totalRegistered || 0) > 0
+            ? ((stats.totalAttended || 0) / (stats.totalRegistered || 1) * 100).toFixed(2)
+            : 0,
+        demographics: {
+          gender: gender,
+          institution: institution
+        }
       }
     });
   } catch (err) {
     logger.error('Error in getEventAnalytics:', err);
-    res.status(500).json({ error: 'Error fetching analytics.', details: err.message });
+    res.status(500).json({ success: false, error: 'Error fetching analytics.', details: err.message });
   }
 }
 
-// Host-wide analytics (aggreggated across all events)
+// Host-wide analytics (aggregated across all events)
 async function getHostAnalytics(req, res) {
   try {
     let userId = req.user.id;
@@ -1216,7 +1232,20 @@ async function getHostAnalytics(req, res) {
               }
             }
           ],
-          "demographics": [
+          "genderDemographics": [
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'user'
+              }
+            },
+            { $unwind: '$user' },
+            { $group: { _id: "$user.gender", count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+          ],
+          "institutionDemographics": [
             {
               $lookup: {
                 from: 'users',
@@ -1227,34 +1256,33 @@ async function getHostAnalytics(req, res) {
             },
             { $unwind: '$user' },
             {
-              $facet: {
-                "gender": [
-                  { $group: { _id: "$user.gender", count: { $sum: 1 } } },
-                  { $sort: { count: -1 } }
-                ],
-                "institution": [
-                  {
-                    $lookup: {
-                      from: 'institutions',
-                      localField: 'user.institutionId',
-                      foreignField: '_id',
-                      as: 'institution'
-                    }
-                  },
-                  {
-                    $project: {
-                      institutionName: { $arrayElemAt: ["$institution.name", 0] }
-                    }
-                  },
-                  { $group: { _id: "$institutionName", count: { $sum: 1 } } },
-                  { $sort: { count: -1 } },
-                  { $limit: 5 }
-                ],
-                "year": [
-                   { $group: { _id: { $year: "$user.createdAt" }, count: { $sum: 1 } } } 
-                ]
+              $lookup: {
+                from: 'institutions',
+                localField: 'user.institutionId',
+                foreignField: '_id',
+                as: 'institution'
               }
-            }
+            },
+            {
+              $project: {
+                institutionName: { $arrayElemAt: ["$institution.name", 0] }
+              }
+            },
+            { $group: { _id: "$institutionName", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 5 }
+          ],
+          "year": [
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'userId',
+                foreignField: '_id',
+                as: 'user'
+              }
+            },
+            { $unwind: '$user' },
+            { $group: { _id: { $year: "$user.createdAt" }, count: { $sum: 1 } } } 
           ],
           "recentActivity": [
               { $sort: { createdAt: -1 } },
@@ -1282,10 +1310,26 @@ async function getHostAnalytics(req, res) {
       }
     ];
 
-    const result = await EventParticipationLog.aggregate(pipeline);
-    const overview = result[0]?.overview[0] || {};
-    const demog = result[0]?.demographics[0] || { gender: [], institution: [] };
-    const recent = result[0]?.recentActivity || [];
+    const hostResult = await EventParticipationLog.aggregate(pipeline);
+    
+    // Safety check for empty results
+    if (!hostResult || hostResult.length === 0 || !hostResult[0].overview || hostResult[0].overview.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          overview: { totalEvents: events.length, totalParticipants: 0, totalRevenue: 0, avgRating: 0, completionRate: 0, growthRate: 0 },
+          eventPerformance: [],
+          demographics: { gender: [], institution: [] },
+          registrationTrends: { labels: [], datasets: [] },
+          recentActivity: [],
+          eventStats: { completed: 0, ongoing: 0, upcoming: 0 }
+        }
+      });
+    }
+
+    const overview = hostResult[0].overview[0];
+    const gender = hostResult[0].genderDemographics || [];
+    const institution = hostResult[0].institutionDemographics || [];
     
     // Calculate Per Event Stats
     const eventStatsAggregate = await EventParticipationLog.aggregate([
@@ -1304,36 +1348,35 @@ async function getHostAnalytics(req, res) {
         };
     }).sort((a,b) => b.participants - a.participants).slice(0, 5);
 
-    res.json({
+    return res.json({
+      success: true,
+      data: {
         overview: {
-            totalEvents: events.length,
-            totalParticipants: overview.totalParticipants || 0,
-            totalRevenue: overview.totalRevenue || 0,
-            avgRating: 4.5,
-            completionRate: events.length > 0 ? Math.round((events.filter(e => e.status === 'completed').length / events.length) * 100) + '%' : '0%',
-            growthRate: "+12%"
+          totalEvents: events.length,
+          totalParticipants: overview.totalParticipants || 0,
+          totalRevenue: overview.totalRevenue || 0,
+          avgRating: 4.5,
+          completionRate: events.length > 0 ? Math.round((events.filter(e => e.status === 'completed').length / events.length) * 100) : 0,
+          growthRate: 12
         },
         eventPerformance,
         demographics: {
-            gender: demog.gender || [],
-            institution: demog.institution || []
+          gender: gender,
+          institution: institution
         },
-        recentActivity: recent.map(r => ({
-            type: 'registration',
-            user: r.user.name,
-            event: r.event.title,
-            timestamp: r.createdAt
-        })),
+        registrationTrends: [],
+        recentActivity: [],
         eventStats: {
-            completed: events.filter(e => e.status === 'completed').length,
-            ongoing: events.filter(e => e.status === 'ongoing').length,
-            upcoming: events.filter(e => e.status === 'upcoming').length
+          completed: events.filter(e => e.status === 'completed').length,
+          ongoing: events.filter(e => e.status === 'ongoing').length,
+          upcoming: events.filter(e => e.status === 'upcoming').length
         }
+      }
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error fetching host analytics.' });
+    logger.error('Error in getHostAnalytics:', err);
+    res.status(500).json({ success: false, error: 'Error fetching host analytics.', details: err.message });
   }
 }
 
@@ -1363,6 +1406,23 @@ async function nominateCoHost(req, res) {
         .status(403)
         .json({ error: 'Only the main host can nominate co-hosts.' });
     }
+
+    // Validate domain match for institutional events if host is from specific domain (e.g. cuj.ac.in)
+    if (event.audienceType === 'institution' && event.institutionId) {
+      const hostUser = await User.findById(event.hostUserId);
+      if (hostUser && hostUser.email.endsWith('@cuj.ac.in')) {
+        if (!nominatedUser.email.endsWith('@cuj.ac.in')) {
+          return res.status(400).json({ 
+            error: 'For institutional events at Central University of Jharkhand, co-hosts must also be from the @cuj.ac.in domain.' 
+          });
+        }
+      }
+    }
+
+    // NEW: Check if already a host or co-host
+    if (event.hostUserId.toString() === userId || event.coHosts?.some(id => id.toString() === userId)) {
+      return res.status(400).json({ error: 'User is already a host or co-host for this event.' });
+    }
     // Prevent duplicate nominations
     if (
       event.coHostRequests.some(
@@ -1385,73 +1445,85 @@ async function nominateCoHost(req, res) {
     });
     await event.save();
     
-    // Notify nominated user with in-app notification and request for ID card if not a host
+    // Notify nominated user - only if not already pending notification or has different status
     const isHost = nominatedUser.canHost;
     const needsIdCard = !isHost && !nominatedUser.hostRequestIdCardPhoto;
     const acceptanceLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/accept-nomination?token=${token}&eventId=${eventId}`;
     
-    await notifyUser({
-      userId,
-      type: 'cohost_request',
-      message: `You have been nominated as a co-host for ${event.title}.${needsIdCard ? ' Please upload your ID card to complete the process.' : ' Please click the link in your email to accept or reject.'}`,
-      data: { 
-        eventId, 
-        eventTitle: event.title, 
-        needsIdCard,
-        isHost 
-      },
-      link: needsIdCard ? `/profile/host-request` : acceptanceLink,
-      emailOptions: nominatedUser.notificationPreferences?.email?.cohost !== false ? {
-        to: nominatedUser.email,
-        subject: `Co-host Nomination for ${event.title}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #9b5de5; text-align: center;">Co-host Nomination</h2>
-            <p>Hi ${nominatedUser.name},</p>
-            <p>You have been nominated as a co-host for the event: <b style="color: #9b5de5;">${event.title}</b>.</p>
-            
-            <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-              <p style="margin-bottom: 20px;">Would you like to join as a co-host?</p>
-              <a href="${acceptanceLink}" style="background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Invitation</a>
-            </div>
+    // Check if we should send notification (prevent spam)
+    const lastRequest = event.coHostRequests
+      .filter(r => r.userId.toString() === userId)
+      .sort((a, b) => b.requestedAt - a.requestedAt)[0];
+    
+    const shouldNotify = !lastRequest || 
+      (new Date() - new Date(lastRequest.requestedAt) > 24 * 60 * 60 * 1000); // 24h cooldown
 
-            ${needsIdCard ? `
-              <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0;">
-                <p><strong>⚠️ Note:</strong> You'll need to upload your ID card in your profile settings to be fully verified as a co-host after accepting.</p>
+    if (shouldNotify) {
+      await notifyUser({
+        userId,
+        type: 'cohost_request',
+        message: `You have been nominated as a co-host for ${event.title}.${needsIdCard ? ' Please upload your ID card to complete the process.' : ' Please click the link in your email to accept or reject.'}`,
+        data: { 
+          eventId, 
+          eventTitle: event.title, 
+          needsIdCard,
+          isHost 
+        },
+        link: needsIdCard ? `/profile/host-request` : acceptanceLink,
+        emailOptions: nominatedUser.notificationPreferences?.email?.cohost !== false ? {
+          to: nominatedUser.email,
+          subject: `Co-host Nomination for ${event.title}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #9b5de5; text-align: center;">Co-host Nomination</h2>
+              <p>Hi ${nominatedUser.name},</p>
+              <p>You have been nominated as a co-host for the event: <b style="color: #9b5de5;">${event.title}</b>.</p>
+              
+              <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <p style="margin-bottom: 20px;">Would you like to join as a co-host?</p>
+                <a href="${acceptanceLink}" style="background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Invitation</a>
               </div>
-            ` : ''}
 
-            <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
-              If you didn't expect this invitation, you can simply ignore this email or reject it via the link above.
-            </p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="text-align: center; color: #9b5de5; font-weight: bold;">CampVerse Team</p>
-          </div>
-        `,
-      } : null,
-    });
-    // Notify verifiers (approval needed)
-    const verifiers = await User.find({ roles: 'verifier' });
-    await notifyUsers({
-      userIds: verifiers.map((v) => v._id),
-      type: 'cohost',
-      message: `A new co-host nomination for event: ${event.title} requires your approval.`,
-      data: { eventId, userId },
-      emailOptionsFn: async (verifierId) => {
-        const verifier = verifiers.find(
-          (v) => v._id.toString() === verifierId.toString(),
-        );
-        return verifier
-          ? {
-            to: verifier.email,
-            subject: `Co-host Nomination Approval Needed for ${event.title}`,
-            html: `<p>Hi ${verifier.name},<br>A new co-host nomination for <b>${event.title}</b> requires your approval.</p>`,
-          }
-          : null;
-      },
-    });
-    // Audit log
-    // Audit: Nominate co-host: host ${req.user.id} nominated user ${userId} for event ${eventId}
+              ${needsIdCard ? `
+                <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 15px 0;">
+                  <p><strong>⚠️ Note:</strong> You'll need to upload your ID card in your profile settings to be fully verified as a co-host after accepting.</p>
+                </div>
+              ` : ''}
+
+              <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+                If you didn't expect this invitation, you can simply ignore this email or reject it via the link above.
+              </p>
+              <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+              <p style="text-align: center; color: #9b5de5; font-weight: bold;">CampVerse Team</p>
+            </div>
+          `,
+        } : null,
+      });
+
+      // Notify verifiers (approval needed) if nominee not a host
+      if (!isHost) {
+        const verifiers = await User.find({ roles: 'verifier' });
+        await notifyUsers({
+          userIds: verifiers.map((v) => v._id),
+          type: 'cohost',
+          message: `A new co-host nomination for event: ${event.title} requires your approval.`,
+          data: { eventId, userId },
+          emailOptionsFn: async (verifierId) => {
+            const verifier = verifiers.find(
+              (v) => v._id.toString() === verifierId.toString(),
+            );
+            return verifier
+              ? {
+                to: verifier.email,
+                subject: `Co-host Nomination Approval Needed for ${event.title}`,
+                html: `<p>Hi ${verifier.name},<br>A new co-host nomination for <b>${event.title}</b> requires your approval.</p>`,
+              }
+              : null;
+          },
+        });
+      }
+    }
+
     res.json({ message: 'Co-host nomination submitted.' });
   } catch (err) {
     logger && logger.error ? logger.error('Error in nominateCoHost:', err) : null;
@@ -1770,31 +1842,29 @@ async function getAttendance(req, res) {
       });
     }
 
-    // Get all participants
-    const allParticipants = await EventParticipationLog.find({
+    // Get all participants who are either registered or already attended
+    const allLogs = await EventParticipationLog.find({
       eventId: id,
-      status: 'registered'
+      status: { $in: ['registered', 'attended'] }
     }).populate('userId', 'name email profilePhoto');
 
-    // Get attended participants (those who scanned QR)
-    const attendedParticipants = await EventParticipationLog.find({
-      eventId: id,
-      status: 'registered',
-      attended: true
-    }).populate('userId', 'name email');
+    // Filter to get those who have already attended
+    const attendedLogs = allLogs.filter(log => log.status === 'attended');
 
     res.json({
       success: true,
-      totalRegistered: allParticipants.length,
-      attendees: attendedParticipants.map(p => ({
+      totalRegistered: allLogs.length,
+      attendees: attendedLogs.map(p => ({
         _id: p._id,
         userId: p.userId,
-        scanTime: p.qrCode?.usedAt || p.createdAt,
-        attended: p.attended
+        scanTime: p.attendanceTimestamp || p.qrCode?.usedAt || p.createdAt,
+        status: p.status
       })),
-      attendanceRate: allParticipants.length > 0 
-        ? Math.round((attendedParticipants.length / allParticipants.length) * 100)
-        : 0
+      stats: {
+        total: allLogs.length,
+        attended: attendedLogs.length,
+        percentage: allLogs.length > 0 ? Math.round((attendedLogs.length / allLogs.length) * 100) : 0
+      }
     });
 
   } catch (err) {

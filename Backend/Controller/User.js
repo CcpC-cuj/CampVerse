@@ -2232,19 +2232,36 @@ async function resendOtp(req, res) {
  */
 async function findUserByEmail(req, res) {
   try {
-    const { email } = req.query;
-    if (!email) {
-      return res.status(400).json({ error: 'Email query parameter is required' });
+    const { email, domain } = req.query;
+    if (!email && !domain) {
+      return res.status(400).json({ error: 'Email or domain query parameter is required' });
     }
 
-    const user = await User.findOne({ email }).select('_id name email canHost');
-    if (!user) {
+    let query = {};
+    if (email) {
+      query.email = email.toLowerCase();
+    } else if (domain) {
+      query.email = { $regex: `@${domain.replace('.', '\\.')}$`, $options: 'i' };
+    }
+
+    const users = await User.find(query).select('_id name email canHost profilePhoto').limit(10);
+    
+    if (users.length === 0) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    // If exact email was requested and found, return singular user for backward compatibility
+    if (email && users.length > 0) {
+      return res.status(200).json({
+        success: true,
+        user: users[0],
+        users
+      });
     }
 
     return res.status(200).json({
       success: true,
-      user
+      users
     });
   } catch (error) {
     logger.error('Error in findUserByEmail:', error);

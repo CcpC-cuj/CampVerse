@@ -69,31 +69,41 @@ const Events = () => {
       setLoading(true);
       setError(null);
 
-      const [userEventsRes, upcomingRes, pastRes] = await Promise.all([
-        getUserEvents().catch(() => ({ success: false })),
-        getUpcomingEvents().catch(() => ({ success: false })),
-        getPastEvents().catch(() => ({ success: false })),
-      ]);
-
+      // Fetch all user's registered/attended events
+      const userEventsRes = await getUserEvents().catch(() => ({ success: false }));
+      
       const newEvents = { registered: [], past: [], saved: [] };
       const rsvpSet = new Set();
+      const now = new Date();
 
-      // Load registered events and build RSVP set
       if (userEventsRes.success && userEventsRes.data) {
-  const registeredEvents = userEventsRes.data.events || [];
-        newEvents.registered = registeredEvents;
-        registeredEvents.forEach((event) => rsvpSet.add(event._id));
-        if (userEventsRes.data.savedEvents) newEvents.saved = userEventsRes.data.savedEvents;
-      }
+        const allUserEvents = userEventsRes.data.events || [];
+        
+        // Partition events into Registered (Upcoming) and Past
+        allUserEvents.forEach(event => {
+          const eventDate = event.date ? new Date(event.date) : null;
+          const isPast = eventDate && eventDate < now;
+          const userStatus = event.userRegistration?.status;
 
-      // Load past events
-      if (pastRes.success && pastRes.data) {
-        newEvents.past = pastRes.data.events || pastRes.data || [];
+          // Add to RSVP set to track what user is registered for
+          rsvpSet.add(event._id);
+
+          if (isPast || userStatus === 'attended') {
+            newEvents.past.push(event);
+          } else {
+            newEvents.registered.push(event);
+          }
+        });
+
+        if (userEventsRes.data.savedEvents) {
+          newEvents.saved = userEventsRes.data.savedEvents;
+        }
       }
 
       setEvents(newEvents);
       setUserRsvps(rsvpSet);
     } catch (err) {
+      console.error("LoadUserEvents error:", err);
       setError("Failed to load events");
     } finally {
       setLoading(false);

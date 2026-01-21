@@ -723,14 +723,20 @@ const CertificateManagement = ({ eventId }) => {
                   Choose from Templates
                 </Button>
                 <Typography variant="body2" color="text.secondary">or</Typography>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg"
-                  onChange={(e) => {
-                    setTemplateFile(e.target.files[0]);
-                    setSelectedTemplate(null);
-                  }}
-                />
+                {(user?.role === 'admin' || user?.role === 'platformAdmin') ? (
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    onChange={(e) => {
+                      setTemplateFile(e.target.files[0]);
+                      setSelectedTemplate(null);
+                    }}
+                  />
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    (Administrative upload only)
+                  </Typography>
+                )}
               </Box>
               {selectedTemplate && (
                 <Chip 

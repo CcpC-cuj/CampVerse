@@ -126,7 +126,12 @@ async function deleteEvent(req, res) {
 async function getMyEvents(req, res) {
   try {
     const userId = req.user.id;
-    const events = await Event.find({ hostUserId: userId }).lean();
+    const events = await Event.find({
+      $or: [
+        { hostUserId: userId },
+        { coHosts: userId }
+      ]
+    }).lean();
     const eventIds = events.map(e => e._id);
     const logs = await EventParticipationLog.find({ eventId: { $in: eventIds } }).lean();
     const users = await User.find({ _id: { $in: logs.map(l => l.userId) } }).lean();

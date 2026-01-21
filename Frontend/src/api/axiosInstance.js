@@ -62,18 +62,15 @@ api.interceptors.response.use(
     }
 
     // If error is 401 and we haven't already tried to refresh
+    // If error is 401 and we haven't already tried to refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Don't try to refresh if this is already a refresh request
-      if (originalRequest.url?.includes('/auth/refresh') || originalRequest.url?.includes('/users/me')) {
-        // If /me returns 401, we might be truly logged out or token is invalid
-        // But let's check if it's specifically the refresh endpoint
-        if (originalRequest.url?.includes('/auth/refresh')) {
-          console.log('[Auth] Refresh token invalid, logging out...');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/';
-          return Promise.reject(error);
-        }
+      // Handle 401 on refresh specifically to avoid infinite loops
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        console.log('[Auth] Refresh token invalid, logging out...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+        return Promise.reject(error);
       }
 
       // Don't try to refresh for login/register endpoints

@@ -108,8 +108,15 @@ async function uploadCertificateAssets(req, res) {
     }
 
     // Check if files were uploaded
-    if (!req.files || req.files.length === 0) {
+    if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
       return res.status(400).json({ error: 'No files uploaded.' });
+    }
+
+    // DISALLOW hosts from uploading templates (requested: Centralized Template Management)
+    if (assetType === 'template' && req.user.role !== 'admin' && req.user.role !== 'platformAdmin') {
+      return res.status(403).json({ 
+        error: 'Only administrators can upload custom certificate templates. Please select from the predefined templates.' 
+      });
     }
 
     const uploadedFiles = [];
@@ -118,16 +125,22 @@ async function uploadCertificateAssets(req, res) {
     if (!event.certificateSettings) {
       event.certificateSettings = {};
     }
-    if (!event.certificateSettings.assets) {
-      event.certificateSettings.assets = {};
+    if (!event.certificateSettings.uploadedAssets) {
+      event.certificateSettings.uploadedAssets = {};
     }
 
     // Upload files to cloud storage
     for (const file of req.files) {
       try {
-        let uploadResult;
-        
-        switch (assetType) {
+        // Normalize assetType from frontend
+        let effectiveAssetType = assetType;
+        if (assetType === 'logo') {
+          effectiveAssetType = req.body.logo_type === 'right' ? 'rightLogo' : 'orgLogo';
+        } else if (assetType === 'signature') {
+          effectiveAssetType = req.body.signature_type === 'right' ? 'rightSignature' : 'leftSignature';
+        }
+
+        switch (effectiveAssetType) {
           case 'template':
             const templateType = req.body.template_type || 'participation';
             uploadResult = await storageService.uploadCertificateTemplate(
@@ -139,23 +152,38 @@ async function uploadCertificateAssets(req, res) {
             );
             
             // Store template info
-            event.certificateSettings.assets.templateUrl = uploadResult.url;
-            event.certificateSettings.assets.templatePath = uploadResult.path;
+            event.certificateSettings.uploadedAssets.templateUrl = uploadResult.url;
+            event.certificateSettings.uploadedAssets.templatePath = uploadResult.path;
             event.certificateSettings.certificateType = templateType;
             break;
 
           case 'orgLogo':
+          case 'leftLogo':
             uploadResult = await storageService.uploadCertificateLogo(
               file.buffer,
               file.originalname,
               eventId,
-              'organization',
+              'left',
               file.mimetype
             );
             
             // Store org logo info
-            event.certificateSettings.assets.orgLogoUrl = uploadResult.url;
-            event.certificateSettings.assets.orgLogoPath = uploadResult.path;
+            event.certificateSettings.uploadedAssets.organizationLogo = uploadResult.url;
+            event.certificateSettings.uploadedAssets.orgLogoPath = uploadResult.path;
+            break;
+
+          case 'rightLogo':
+            uploadResult = await storageService.uploadCertificateLogo(
+              file.buffer,
+              file.originalname,
+              eventId,
+              'right',
+              file.mimetype
+            );
+            
+            // Store right logo info
+            event.certificateSettings.uploadedAssets.rightLogoUrl = uploadResult.url;
+            event.certificateSettings.uploadedAssets.rightLogoPath = uploadResult.path;
             break;
 
           case 'leftSignature':
@@ -173,12 +201,6 @@ async function uploadCertificateAssets(req, res) {
             }
             event.certificateSettings.leftSignatory.signatureUrl = uploadResult.url;
             event.certificateSettings.leftSignatory.signaturePath = uploadResult.path;
-            if (req.body.leftSignatoryName) {
-              event.certificateSettings.leftSignatory.name = req.body.leftSignatoryName;
-            }
-            if (req.body.leftSignatoryTitle) {
-              event.certificateSettings.leftSignatory.title = req.body.leftSignatoryTitle;
-            }
             break;
 
           case 'rightSignature':
@@ -196,15 +218,10 @@ async function uploadCertificateAssets(req, res) {
             }
             event.certificateSettings.rightSignatory.signatureUrl = uploadResult.url;
             event.certificateSettings.rightSignatory.signaturePath = uploadResult.path;
-            if (req.body.rightSignatoryName) {
-              event.certificateSettings.rightSignatory.name = req.body.rightSignatoryName;
-            }
-            if (req.body.rightSignatoryTitle) {
-              event.certificateSettings.rightSignatory.title = req.body.rightSignatoryTitle;
-            }
             break;
 
           default:
+            console.warn(`[Cert] Unknown effective asset type: ${effectiveAssetType}`);
             continue;
         }
 
@@ -663,6 +680,7 @@ async function renderCertificate(req, res) {
       eventTitle: event.title,
       templateUrl: templateUrl,
       orgLogoUrl: uploadedAssets.organizationLogo,
+      rightLogoUrl: uploadedAssets.rightLogoUrl || 'https://campverse.com/logo.png', // Default CampVerse logo
       leftSignature: {
         url: uploadedAssets.leftSignature,
         name: certificateSettings.leftSignatory?.name || '',
