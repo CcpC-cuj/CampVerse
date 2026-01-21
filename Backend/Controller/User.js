@@ -201,6 +201,7 @@ async function googleSignIn(req, res) {
         logger.info("Mock Google login successful for user:", { email: mockEmail, timestamp: new Date().toISOString() });
 
         // Set refresh token as HttpOnly cookie
+        logger.info('Setting mock refresh token cookie for Google user:', { id: user._id, email: user.email });
         setRefreshTokenCookie(res, tokens.refreshToken);
 
         return res.json({
@@ -323,6 +324,7 @@ async function googleSignIn(req, res) {
         logger.info("Google login successful for user:", { email, timestamp: new Date().toISOString() });
 
         // Set refresh token as HttpOnly cookie
+        logger.info('Setting refresh token cookie for Google user:', { id: user._id, email: user.email });
         setRefreshTokenCookie(res, tokens.refreshToken);
 
         return res.json({
@@ -976,6 +978,7 @@ async function login(req, res) {
       const tokens = await generateTokenPair(user, req, 'email');
 
       // Set refresh token as HttpOnly cookie
+      logger.info('Setting refresh token cookie for user:', { id: user._id, email: user.email });
       setRefreshTokenCookie(res, tokens.refreshToken);
 
       return res.json({

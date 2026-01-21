@@ -38,7 +38,7 @@ async function getEventRecommendations(req, res) {
       interests: user.interests || [],
       skills: user.skills || [],
       attendedEvents: userHistory
-        .filter((log) => log.status === 'attended')
+        .filter((log) => log.eventId && log.status === 'attended')
         .map((log) => ({
           eventId: log.eventId._id,
           title: log.eventId.title,
@@ -47,7 +47,7 @@ async function getEventRecommendations(req, res) {
           organizer: log.eventId.organizer,
         })),
       registeredEvents: userHistory
-        .filter((log) => log.status === 'registered')
+        .filter((log) => log.eventId && log.status === 'registered')
         .map((log) => ({
           eventId: log.eventId._id,
           title: log.eventId.title,
@@ -128,8 +128,10 @@ async function getEventRecommendations(req, res) {
       // Map recommendations with full event details
       const finalRecommendations = recommendations
         .map((rec) => {
+          if (!rec.eventId) return null;
+          const eventIdStr = rec.eventId.toString();
           const event = recommendedEvents.find(
-            (e) => e._id.toString() === rec.eventId,
+            (e) => e && e._id && e._id.toString() === eventIdStr,
           );
           return {
             eventId: rec.eventId,

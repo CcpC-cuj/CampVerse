@@ -8,13 +8,22 @@ const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REND
 
 // Cookie configuration - production vs development
 // CRITICAL: secure must be true for cross-origin / HTTPS (Render, Hugging Face, Vercel)
-const getRefreshTokenCookieOptions = () => ({
-    httpOnly: true,                              // Prevents JavaScript access (XSS protection)
-    secure: true,                                // Always true - browsers allow secure cookies on localhost if SameSite is Lax/None
-    sameSite: 'none',                            // Required for cross-origin cookie sharing between HF and Vercel
-    maxAge: 30 * 24 * 60 * 60 * 1000,            // 30 days in milliseconds (Synced with tokenService)
-    path: '/',                                   // Cookie available for all paths
-});
+const getRefreshTokenCookieOptions = () => {
+    const options = {
+        httpOnly: true,                              // Prevents JavaScript access (XSS protection)
+        secure: true,                                // Always true - browsers allow secure cookies on localhost if SameSite is Lax/None
+        sameSite: 'none',                            // Required for cross-origin cookie sharing between HF and Vercel
+        maxAge: 30 * 24 * 60 * 60 * 1000,            // 30 days in milliseconds (Synced with tokenService)
+        path: '/',                                   // Cookie available for all paths
+    };
+
+    // Add partitioned attribute for modern Chrome cross-site cookie support
+    if (isProduction) {
+        options.partitioned = true;
+    }
+
+    return options;
+};
 
 /**
  * Helper to set refresh token as HttpOnly cookie
@@ -24,17 +33,13 @@ const getRefreshTokenCookieOptions = () => ({
 function setRefreshTokenCookie(res, refreshToken) {
     const options = getRefreshTokenCookieOptions();
     console.log('🍪 [CookieUtils] Setting refresh token cookie:', {
-        httpOnly: options.httpOnly,
-        secure: options.secure,
-        sameSite: options.sameSite,
-        maxAge: options.maxAge,
+        ...options,
         isProduction,
         nodeEnv: process.env.NODE_ENV,
         tokenLength: refreshToken ? refreshToken.length : 0
     });
 
     res.cookie('refreshToken', refreshToken, options);
-    console.log('🍪 [CookieUtils] Cookie set successfully');
 }
 
 /**
@@ -42,13 +47,11 @@ function setRefreshTokenCookie(res, refreshToken) {
  * @param {Object} res - Express response object
  */
 function clearRefreshTokenCookie(res) {
-    console.log('🍪 [CookieUtils] Clearing refresh token cookie');
-    res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax',
-        path: '/',
-    });
+    const options = getRefreshTokenCookieOptions();
+    delete options.maxAge; // Not needed for clearCookie
+    
+    console.log('🍪 [CookieUtils] Clearing refresh token cookie with options:', options);
+    res.clearCookie('refreshToken', options);
 }
 
 module.exports = {
