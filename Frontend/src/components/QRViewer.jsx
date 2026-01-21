@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/Toast';
 
 const QRViewer = () => {
   const { id } = useParams(); // eventId
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,18 +141,18 @@ const QRViewer = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert('✅ QR code regenerated successfully! Check your email for the new QR code.');
+        toast.success('QR code regenerated successfully! Check your email for the new QR code.');
         // Reload QR code
         await loadQRCode();
       } else {
         if (response.status === 410) {
-          alert('❌ Cannot regenerate QR code for past events.');
+          toast.error('Cannot regenerate QR code for past events.');
         } else {
-          alert(`❌ ${data.message || data.error || 'Failed to regenerate QR code'}`);
+          toast.error(data.message || data.error || 'Failed to regenerate QR code');
         }
       }
     } catch (err) {
-      alert('Failed to regenerate QR code. Please try again.');
+      toast.error('Failed to regenerate QR code. Please try again.');
     } finally {
       setRegenerating(false);
     }

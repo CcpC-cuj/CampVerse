@@ -7,11 +7,13 @@ import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
 import Chatbot from '../components/Chatbot';
 import { addToGoogleCalendar, downloadICSFile } from '../utils/googleCalendar';
+import { useToast } from '../components/Toast';
 
 const EventDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -133,11 +135,11 @@ const EventDetailsPage = () => {
         
         // Show success message based on status
         if (response.status === 'registered') {
-          alert('✅ Successfully registered for the event! Check your email for QR code.');
+          toast.success('Successfully registered for the event! Check your email for QR code.');
           // Show Google Calendar prompt
           setShowCalendarPrompt(true);
         } else if (response.status === 'waitlisted') {
-          alert('⏳ You have been added to the waitlist. You will be notified if a spot opens up.');
+          toast.info('You have been added to the waitlist. You will be notified if a spot opens up.');
         }
       } else {
         // Error - still reload to sync state
@@ -184,7 +186,7 @@ const EventDetailsPage = () => {
         // Success - reload event data
         await loadEvent();
         setRsvpError("");
-        alert('✅ Your registration has been cancelled successfully.');
+        toast.success('Your registration has been cancelled successfully.');
       } else {
         // Error - still reload to sync state
         await loadEvent();

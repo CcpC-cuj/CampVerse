@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toast";
 import { getMyEvents, createHostEvent, updateHostEvent, deleteHostEvent, getHostDashboard } from "../api/host";
 import { createEvent, updateEvent, deleteEvent, createEventWithFiles, updateEventWithFiles } from "../api/events";
 import HostSidebar from "./HostSidebar";
@@ -20,6 +21,7 @@ const HostEventsDashboard = () => {
   return URL.createObjectURL(file);
   };
   const { user } = useAuth();
+  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("all");
@@ -201,7 +203,7 @@ const HostEventsDashboard = () => {
 
       // Validate required organizer fields
       if (!organizer.name || !organizer.type) {
-        alert('Organization name and type are required');
+        toast.error('Organization name and type are required');
         setLoading(false);
         return;
       }
@@ -269,10 +271,10 @@ const HostEventsDashboard = () => {
         loadEvents(); // Reload events
         // Event created successfully
       } else {
-        alert(response.error || 'Failed to create event');
+        toast.error(response.error || 'Failed to create event');
       }
     } catch (err) {
-      alert('Error creating event: ' + (err.message || 'Unknown error'));
+      toast.error('Error creating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -311,13 +313,13 @@ const HostEventsDashboard = () => {
       
       // Validate required fields
       if (!eventForm.title.trim()) {
-        alert('Event title is required');
+        toast.error('Event title is required');
         setLoading(false);
         return;
       }
       
       if (!eventForm.date) {
-        alert('Event date is required');
+        toast.error('Event date is required');
         setLoading(false);
         return;
       }
@@ -326,7 +328,7 @@ const HostEventsDashboard = () => {
       const startDate = new Date(eventForm.date);
       const now = new Date();
       if (startDate <= now && !editingEvent._id) {
-        alert('Event start date must be in the future');
+        toast.error('Event start date must be in the future');
         setLoading(false);
         return;
       }
@@ -335,7 +337,7 @@ const HostEventsDashboard = () => {
       if (eventForm.endDate) {
         const endDate = new Date(eventForm.endDate);
         if (endDate <= startDate) {
-          alert('End date must be after start date');
+          toast.error('End date must be after start date');
           setLoading(false);
           return;
         }
@@ -378,10 +380,10 @@ const HostEventsDashboard = () => {
         loadEvents();
         // Event updated successfully
       } else {
-        alert(response.error || 'Failed to update event');
+        toast.error(response.error || 'Failed to update event');
       }
     } catch (err) {
-      alert('Error updating event: ' + (err.message || 'Unknown error'));
+      toast.error('Error updating event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -400,10 +402,10 @@ const HostEventsDashboard = () => {
         loadEvents();
         // Event deleted successfully
       } else {
-        alert(response.error || 'Failed to delete event');
+        toast.error(response.error || 'Failed to delete event');
       }
     } catch (err) {
-      alert('Error deleting event: ' + (err.message || 'Unknown error'));
+      toast.error('Error deleting event: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -859,7 +861,7 @@ const HostEventsDashboard = () => {
                         type="button"
                         disabled={!eventForm.fee || !eventForm.title || !eventForm.date}
                         className="mt-2 w-full px-4 py-3 bg-purple-700/30 border border-purple-500/50 text-purple-300 rounded-lg font-medium disabled:opacity-50 hover:bg-purple-600/30 transition-colors"
-                        onClick={() => alert('Payment info integration coming soon!')}
+                        onClick={() => toast.info('Payment info integration coming soon!')}
                       >
                         Add Payment Info
                       </button>

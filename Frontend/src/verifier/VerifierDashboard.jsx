@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import { getPendingInstitutionVerifications, approveInstitutionVerificationAPI, rejectInstitutionVerificationAPI } from "../api/institution";
 import { listPendingHostRequests, approveHostRequest, rejectHostRequest } from "../api/user";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toast";
 
 // Modal Component for viewing and editing details
 function DetailModal({ isOpen, onClose, title, children }) {
@@ -71,6 +72,7 @@ function EditableField({ label, value, fieldKey, editMode, editData, setEditData
 
 export default function VerifierDashboard() {
   const { user } = useAuth();
+  const toast = useToast();
   const [pendingInstitutions, setPendingInstitutions] = useState([]);
   const [pendingHosts, setPendingHosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,14 +149,14 @@ export default function VerifierDashboard() {
       const result = await approveInstitutionVerificationAPI(instId, payload);
       
       if (result.success || result.message || result.institution) {
-        alert('Institution approved successfully!');
+        toast.success('Institution approved successfully!');
         setSelectedInstitution(null);
         fetchData();
       } else {
-        alert('Failed to approve: ' + (result.error || 'Unknown error'));
+        toast.error('Failed to approve: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      alert('Failed to approve institution');
+      toast.error('Failed to approve institution');
     }
     setActionLoading(null);
   };
@@ -168,14 +170,14 @@ export default function VerifierDashboard() {
       const result = await rejectInstitutionVerificationAPI(instId, { reason: rejectReason });
       
       if (result.success || result.message) {
-        alert('Institution rejected.');
+        toast.success('Institution rejected.');
         setSelectedInstitution(null);
         fetchData();
       } else {
-        alert('Failed to reject: ' + (result.error || 'Unknown error'));
+        toast.error('Failed to reject: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      alert('Failed to reject institution');
+      toast.error('Failed to reject institution');
     }
     setActionLoading(null);
   };
@@ -197,14 +199,14 @@ export default function VerifierDashboard() {
       const result = await approveHostRequest(hostId, { remarks: remarks || 'Approved by verifier' });
       
       if (result.success || result.message || result.user) {
-        alert('Host request approved successfully!');
+        toast.success('Host request approved successfully!');
         setSelectedHost(null);
         fetchData();
       } else {
-        alert('Failed to approve: ' + (result.error || 'Unknown error'));
+        toast.error('Failed to approve: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      alert('Failed to approve host request');
+      toast.error('Failed to approve host request');
     }
     setActionLoading(null);
   };
@@ -218,14 +220,14 @@ export default function VerifierDashboard() {
       const result = await rejectHostRequest(hostId, { reason: rejectReason || 'Application rejected by verifier' });
       
       if (result.success || result.message) {
-        alert('Host request rejected.');
+        toast.success('Host request rejected.');
         setSelectedHost(null);
         fetchData();
       } else {
-        alert('Failed to reject: ' + (result.error || 'Unknown error'));
+        toast.error('Failed to reject: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
-      alert('Failed to reject host request');
+      toast.error('Failed to reject host request');
     }
     setActionLoading(null);
   };

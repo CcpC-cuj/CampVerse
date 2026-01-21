@@ -17,10 +17,12 @@ import HostRegistrationModal from './HostRegistrationModal'; // ✅ ADDED
 import NavBar from './NavBar';
 import LoginHistory from './LoginHistory';
 import ActiveSessions from './ActiveSessions';
+import { useToast } from '../components/Toast';
 
 const Settings = () => {
   const navigate = useNavigate();
   const { user, setUser, logout, refreshUser, lastRefresh } = useAuth();
+  const toast = useToast();
 
   // layout state (to keep dashboard sidebar exactly as in dashboard)
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -364,7 +366,11 @@ useEffect(() => {
   const handleDeleteAccount = async () => {
     if (!confirm('Are you sure? This will schedule deletion in 30 days.')) return;
     const res = await deleteMyAccount();
-    alert(res.message || res.error || 'Request sent');
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(res?.message || 'Request sent');
+    }
   };
 
   // profile photo upload

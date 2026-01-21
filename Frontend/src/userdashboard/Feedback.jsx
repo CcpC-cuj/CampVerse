@@ -3,6 +3,7 @@ import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
 import { submitFeedback } from "../api/feedback";
 import NavBar from "./NavBar";
+import { useToast } from "../components/Toast";
 
 /**
  * Feedback (frontend only)
@@ -36,6 +37,7 @@ const Star = ({ filled, onClick, onMouseEnter, onMouseLeave }) => (
 
 const Feedback = () => {
   const { user } = useAuth();
+  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // rating states
@@ -288,7 +290,7 @@ const Feedback = () => {
               {/* Public changelog link - coming soon */}
               <button
                 className="w-full text-left px-3 py-2 rounded-lg bg-gray-900/60 border border-gray-700 hover:border-[#9b5de5]/40 hover:bg-gray-900 transition-all"
-                onClick={() => alert("Coming soon: Public changelog")}
+                onClick={() => toast.info("Coming soon: Public changelog")}
               >
                 <i className="ri-timeline-view mr-2"></i>
                 View Changelog (coming soon)

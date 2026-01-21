@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getActiveSessions, revokeSession, revokeAllSessions } from '../api/auth';
+import { useToast } from '../components/Toast';
 
 /**
  * ActiveSessions Component
  * Displays and manages active user sessions across devices
  */
 export default function ActiveSessions({ onClose }) {
+  const toast = useToast();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
@@ -36,7 +38,7 @@ export default function ActiveSessions({ onClose }) {
       await revokeSession(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
     } catch (error) {
-      alert('Failed to end session. Please try again.');
+      toast.error('Failed to end session. Please try again.');
     }
     setActionLoading(null);
   };
@@ -48,7 +50,7 @@ export default function ActiveSessions({ onClose }) {
       await loadSessions();
       setShowConfirmAll(false);
     } catch (error) {
-      alert('Failed to end sessions. Please try again.');
+      toast.error('Failed to end sessions. Please try again.');
     }
     setActionLoading(null);
   };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/Toast';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../api/axiosInstance';
 import { getEventById, scanQr } from '../api/events';
@@ -9,6 +10,7 @@ const QRScanner = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
@@ -66,15 +68,15 @@ const QRScanner = () => {
           ? String(hostEmail).toLowerCase() === String(currentUserEmail).toLowerCase()
           : false;
         if (!isHost && !isCoHost && !isHostByEmail) {
-          alert('⛔ You do not have permission to scan QR codes for this event.');
+          toast.error('You do not have permission to scan QR codes for this event.');
           navigate('/host/manage-events');
         }
       } else {
-        alert('Failed to load event details');
+        toast.error('Failed to load event details');
         navigate('/host/manage-events');
       }
     } catch (err) {
-      alert('Failed to load event details');
+      toast.error('Failed to load event details');
     } finally {
       setLoading(false);
     }
@@ -216,7 +218,7 @@ const QRScanner = () => {
   const handleManualScan = async (e) => {
     e.preventDefault();
     if (!manualToken.trim()) {
-      alert('Please enter a QR token');
+      toast.warning('Please enter a QR token');
       return;
     }
     await handleScan(manualToken.trim());

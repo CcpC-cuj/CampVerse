@@ -72,6 +72,14 @@ const createEvent = asyncHandler(async (req, res) => {
   if (typeof requirements === 'string') {
     requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
   }
+  if (typeof sessions === 'string') {
+    try {
+      const parsedSessions = JSON.parse(sessions);
+      sessions = Array.isArray(parsedSessions) ? parsedSessions : [];
+    } catch {
+      sessions = [];
+    }
+  }
     let logoURL, bannerURL;
     // File upload using storage service
     if (req.files && req.files['logo']) {

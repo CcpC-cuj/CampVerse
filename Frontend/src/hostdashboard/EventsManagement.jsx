@@ -4,6 +4,7 @@ import { BrowserRouter, useInRouterContext, useNavigate } from "react-router-dom
 import api from "../api/axiosInstance";
 import { getMyEvents } from "../api/host";
 import { listEvents } from "../api/events";
+import { useToast } from "../components/Toast";
 import Sidebar from "../userdashboard/sidebar";
 import HostNavBar from "./HostNavBar";
 import DetailedEventCard from "./DetailedEventCard";
@@ -16,6 +17,7 @@ import CertificateManagementModal from "./CertificateManagementModal";
 const EventsManagementContent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
@@ -247,10 +249,10 @@ const EventsManagementContent = () => {
         // Refresh events list
         loadEventsData();
       } catch (err) {
-        alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update event');
+        toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to update event');
       }
     } catch (error) {
-      alert('Error updating event: ' + (error.message || 'Unknown error'));
+      toast.error('Error updating event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -272,7 +274,7 @@ const EventsManagementContent = () => {
   setShowDeleteModal(false);
   setSelectedEvent(null);
     } catch (error) {
-      alert('Error deleting event: ' + (error.message || 'Unknown error'));
+      toast.error('Error deleting event: ' + (error.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }

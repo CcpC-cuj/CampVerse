@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { nominateCoHost } from "../api/events";
 import { findUserByEmail } from "../api/user";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toast";
 
 const EditEventForm = ({ event, onSave, onCancel, loading }) => {
   const { user } = useAuth();
+  const toast = useToast();
   // EditEventForm received event: (console.log removed)
   const [eventForm, setEventForm] = useState({
     title: '',
@@ -138,7 +140,7 @@ const EditEventForm = ({ event, onSave, onCancel, loading }) => {
     
     // Validate required fields
     if (!eventForm.title || !eventForm.description || !eventForm.date || !eventForm.location || !eventForm.contactEmail || !eventForm.contactPhone) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
     

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import api from "../api/axiosInstance";
+import { useToast } from "../components/Toast";
 
 export default function UserManagement() {
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,14 +64,14 @@ export default function UserManagement() {
     try {
       const res = await api.patch(`/api/users/${userId}/roles`, { roles });
       if (res.status === 200) {
-        alert('User roles updated successfully!');
+        toast.success('User roles updated successfully!');
         fetchUsers(page);
         setShowModal(false);
       } else {
-        alert('Failed to update user roles');
+        toast.error('Failed to update user roles');
       }
     } catch (err) {
-      alert('Error updating user roles');
+      toast.error('Error updating user roles');
     }
   };
 

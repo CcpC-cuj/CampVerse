@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
+import { useToast } from '../components/Toast';
 
 const AcceptNomination = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const toast = useToast();
     const token = searchParams.get('token');
     const eventId = searchParams.get('eventId');
     
@@ -52,7 +54,7 @@ const AcceptNomination = () => {
         } catch (err) {
             console.error(err);
             const errorMsg = err.response?.data?.error || 'Failed to process invitation';
-            alert(errorMsg); // Fallback to alert since react-hot-toast is missing
+            toast.error(errorMsg);
         } finally {
             setSubmitting(false);
         }

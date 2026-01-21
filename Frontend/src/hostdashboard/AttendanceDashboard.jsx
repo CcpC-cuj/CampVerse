@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../components/Toast';
 import api from '../api/axiosInstance';
 
 const AttendanceDashboard = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
   const [event, setEvent] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
@@ -66,7 +68,7 @@ const AttendanceDashboard = () => {
           ? String(hostEmail).toLowerCase() === String(currentUserEmail).toLowerCase()
           : false;
         if (!isHost && !isCoHost && !isHostByEmail) {
-          alert('⛔ You do not have permission to view this dashboard.');
+          toast.error('You do not have permission to view this dashboard.');
           navigate('/host/manage-events');
           return;
         }
