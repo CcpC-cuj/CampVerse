@@ -367,8 +367,8 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                 </div>
               )}
 
-              {/* QR Code Section - Show only for registered users */}
-              {rsvped && (
+              {/* QR Code Section - Show only for registered users who haven't attended yet */}
+              {rsvped && eventDetails.userRegistration?.status !== 'attended' && (
                 <div className="mt-6">
                   <h3 className="text-base sm:text-lg font-semibold mb-3 flex items-center gap-2">
                     <span className="text-lg sm:text-xl">🎫</span> Your Event QR Code
@@ -403,6 +403,14 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                     )}
                   </div>
                 </div>
+              )}
+              
+              {/* Message for Attended Users */}
+              {rsvped && eventDetails.userRegistration?.status === 'attended' && (
+                 <div className="mt-6 bg-green-900/20 border border-green-500/30 rounded-lg p-6 text-center">
+                    <h3 className="text-xl font-bold text-green-400 mb-2">🎉 You've Attended This Event!</h3>
+                    <p className="text-gray-300">Your attendance has been recorded. You don't need a QR code anymore.</p>
+                 </div>
               )}
 
               {/* Action Buttons */}

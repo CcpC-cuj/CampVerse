@@ -164,15 +164,25 @@ router.get('/user', authenticateToken, async (req, res) => {
       .sort({ registeredAt: -1 });
     
     // Extract events and add user-specific info, filtering out any orphans where eventId is null
-    const events = participationLogs
+    // Extract events and add user-specific info
+    const events = await Promise.all(participationLogs
       .filter(log => log.eventId)
-      .map(log => ({
-        ...log.eventId.toObject(),
-        userRegistration: {
-          status: log.status,
-          registeredAt: log.registeredAt,
-          qrToken: log.qrToken
-        }
+      .map(async (log) => {
+        const eventId = log.eventId._id;
+        const count = await EventParticipationLog.countDocuments({
+          eventId: eventId,
+          status: { $in: ['registered', 'attended'] }
+        });
+        
+        return {
+          ...log.eventId.toObject(),
+          participants: count,
+          userRegistration: {
+            status: log.status,
+            registeredAt: log.registeredAt,
+            qrToken: log.qrToken
+          }
+        };
       }));
     
     res.json({
