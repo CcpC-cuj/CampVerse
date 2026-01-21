@@ -32,6 +32,9 @@ const Sidebar = ({ onDiscoverClick }) => {
   const getProfileUrl = () => {
     const rawUrl = user?.profilePhoto || user?.avatar;
     if (!rawUrl) return "/default-avatar.png";
+    if (typeof rawUrl === 'string' && rawUrl.includes('default-profile-photo')) {
+      return "/default-avatar.png";
+    }
     // If already absolute (starts with http/https), use as is
     if (/^https?:\/\//.test(rawUrl)) return rawUrl;
     // Otherwise, prepend backend base URL (adjust as needed)
@@ -163,6 +166,7 @@ const Sidebar = ({ onDiscoverClick }) => {
               <SidebarLink icon="ri-user-settings-line" to="/admin/users" label="User Management" />
               <SidebarLink icon="ri-building-4-line" to="/admin/institutions" label="Institutions" />
               <SidebarLink icon="ri-line-chart-line" to="/admin/analytics" label="Platform Analytics" />
+                  <SidebarLink icon="ri-file-upload-line" to="/admin/certificate-templates" label="Certificate Templates" />
               <SidebarLink icon="ri-customer-service-2-line" to="/admin/support" label="Support Tickets" />
               <SidebarLink icon="ri-feedback-line" to="/admin/feedback" label="Feedback" />
               <SidebarLink icon="ri-tools-line" to="/admin/tools" label="Admin Tools" />

@@ -37,6 +37,14 @@ export default function AdminTools() {
     }
   };
 
+  const requireId = (value, label, fn) => {
+    if (!value) {
+      setError(`${label} is required.`);
+      return;
+    }
+    run(fn);
+  };
+
   return (
     <Layout title="Admin Tools">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -58,19 +66,19 @@ export default function AdminTools() {
             />
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => run(() => getAdvancedEventAnalytics(eventId))}
+                onClick={() => requireId(eventId, 'Event ID', () => getAdvancedEventAnalytics(eventId))}
                 className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm"
               >
                 Advanced Analytics
               </button>
               <button
-                onClick={() => run(() => getEventQrCode(eventId))}
+                onClick={() => requireId(eventId, 'Event ID', () => getEventQrCode(eventId))}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
               >
                 Event QR Code
               </button>
               <button
-                onClick={() => run(() => getGoogleCalendarLink(eventId))}
+                onClick={() => requireId(eventId, 'Event ID', () => getGoogleCalendarLink(eventId))}
                 className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm"
               >
                 Google Calendar Link
@@ -89,19 +97,19 @@ export default function AdminTools() {
             />
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => run(() => getUserAnalytics(userId))}
+                onClick={() => requireId(userId, 'User ID', () => getUserAnalytics(userId))}
                 className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm"
               >
                 User Analytics
               </button>
               <button
-                onClick={() => run(() => getUserActivityTimeline(userId))}
+                onClick={() => requireId(userId, 'User ID', () => getUserActivityTimeline(userId))}
                 className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
               >
                 Activity Timeline
               </button>
               <button
-                onClick={() => run(() => getCertificatesForUser(userId))}
+                onClick={() => requireId(userId, 'User ID', () => getCertificatesForUser(userId))}
                 className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm"
               >
                 Certificates

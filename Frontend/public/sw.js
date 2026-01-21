@@ -8,6 +8,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // Skip cross-origin requests to avoid cache errors for external assets
+  if (url.origin !== self.location.origin) {
+    return;
+  }
   
   // Only handle http and https requests (ignore chrome-extension://, etc.)
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {

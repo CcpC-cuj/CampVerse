@@ -275,7 +275,10 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                       <div className="flex items-center gap-2 sm:gap-3">
                         <span className="text-lg sm:text-xl">👥</span>
                         <div className="text-xs sm:text-sm">
-                          <span className="font-medium text-white">Participants:</span> {eventDetails.participants || 0}
+                          <span className="font-medium text-white">Participants:</span>{' '}
+                          {Array.isArray(eventDetails.participants)
+                            ? eventDetails.participants.length
+                            : eventDetails.participants || 0}
                         </div>
                       </div>
                       {(eventDetails.capacity || eventDetails.maxParticipants) && (
@@ -317,7 +320,7 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                         {eventDetails.tags.map((tag, idx) => (
                           <span
                             key={idx}
-                            className="bg-gradient-to-r from-[#9b5de5] to-[#7c3aed] text-white px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full shadow-sm hover:shadow-md transition-shadow"
+                            className="bg-linear-to-r from-[#9b5de5] to-[#7c3aed] text-white px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full shadow-sm hover:shadow-md transition-shadow"
                           >
                             {tag}
                           </span>
