@@ -17,7 +17,6 @@ const HostAnalytics = () => {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-    try {
       const data = await getHostAnalytics();
       
       // Transform demographics if necessary or map backend response to UI state
@@ -72,8 +71,9 @@ const HostAnalytics = () => {
         recentActivity: [],
         eventStats: { completed: 0, ongoing: 0, upcoming: 0 }
       });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getActivityIcon = (type) => {
@@ -257,7 +257,7 @@ const HostAnalytics = () => {
                     </div>
                     <div className="w-full bg-gray-700/50 rounded-full h-2">
                       <div 
-                        className="bg-gradient-to-r from-[#9b5de5] to-[#8c4be1] h-2 rounded-full transition-all duration-300"
+                        className="bg-linear-to-r from-[#9b5de5] to-[#8c4be1] h-2 rounded-full transition-all duration-300"
                         style={{ width: `${dept.percentage}%` }}
                       ></div>
                     </div>
