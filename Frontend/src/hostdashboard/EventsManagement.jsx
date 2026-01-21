@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { BrowserRouter, useInRouterContext, useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
 import { getMyEvents } from "../api/host";
+import { listEvents } from "../api/events";
 import Sidebar from "../userdashboard/sidebar";
 import HostNavBar from "./HostNavBar";
 import DetailedEventCard from "./DetailedEventCard";
@@ -56,6 +57,22 @@ const EventsManagementContent = () => {
           setError("Failed to load events. Please try again.");
         }
         eventsData = [];
+      }
+
+      // Fallback: if host events empty, try general list and filter by host
+      if (eventsData.length === 0 && user?.id) {
+        try {
+          const generalResponse = await listEvents();
+          const generalEvents = generalResponse?.data?.events || [];
+          if (Array.isArray(generalEvents)) {
+            eventsData = generalEvents.filter(event => {
+              const hostId = event.hostUserId?._id || event.hostUserId;
+              return String(hostId) === String(user.id || user._id);
+            });
+          }
+        } catch {
+          // Ignore fallback errors
+        }
       }
 
       // Transform events data for display
