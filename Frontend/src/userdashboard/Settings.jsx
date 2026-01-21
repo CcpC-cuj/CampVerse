@@ -602,20 +602,22 @@ const handleSaveProfile = async () => {
             >
               <div className="space-y-6">
                 <div className="w-full bg-gray-800/60 border border-gray-700 rounded-xl p-6 text-white">
-                  <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      Profile Settings
+                      {securityAlert && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 text-red-300 px-2 py-0.5 text-xs border border-red-500/30">
+                          <i className="ri-alert-fill" />
+                          Security warning
+                        </span>
+                      )}
+                    </h3>
+                  </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        Profile Settings
-                        {securityAlert && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 text-red-300 px-2 py-0.5 text-xs border border-red-500/30">
-                            <i className="ri-alert-fill" />
-                            Security warning
-                          </span>
-                        )}
-                      </h3>
-                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <img
+                        src={profilePhoto || user?.profilePhoto || '/default-avatar.png'}
                         alt="Profile"
                         className="w-16 h-16 rounded-full object-cover"
                         onError={(e) => {

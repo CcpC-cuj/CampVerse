@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { googleSignIn } from "../api";
+import { googleSignIn, verifyOtp, resendOtp } from "../api";
 import StarryBackground from "../landing/StarryBackground";
 import Navbar from "../landing/navbar";
 import Hero from "../landing/hero";
@@ -158,7 +158,7 @@ const Landing = () => {
           onVerifyOtp={async (code) => {
             // Call verifyOtp API
             try {
-              const res = await import('../api').then(m => m.verifyOtp({ email: otpEmail, otp: code }));
+              const res = await verifyOtp({ email: otpEmail, otp: code });
               if (res.token && res.user) {
                   // Update AuthContext state with refresh token
                   login(res.token, res.user);
@@ -175,7 +175,7 @@ const Landing = () => {
           }}
           onResendOtp={async () => {
             try {
-              const res = await import('../api').then(m => m.resendOtp({ email: otpEmail }));
+              const res = await resendOtp({ email: otpEmail });
               if (res.message) {
                   // The timer reset is handled inside OtpModal via setTimer(30)
                 } else {
