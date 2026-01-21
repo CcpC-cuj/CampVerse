@@ -152,17 +152,23 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
               {eventDetails.organizationName && (
                 <span className="text-xs sm:text-sm text-gray-300 font-semibold mb-2">{eventDetails.organizationName}</span>
               )}
-              <span
-                className={`inline-block px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit ${
-                  status === "upcoming"
-                    ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                    : status === "ongoing"
-                    ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                    : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
-                }`}
-              >
-                {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
-              </span>
+                {eventDetails.userRegistration?.status === 'attended' ? (
+                  <span className="bg-green-500/20 text-green-300 border border-green-500/30 px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit flex items-center gap-1">
+                    <span>✅</span> Attended
+                  </span>
+                ) : (
+                  <span
+                    className={`inline-block px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit ${
+                      status === "upcoming"
+                        ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                        : status === "ongoing"
+                        ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                        : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
+                    }`}
+                  >
+                    {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
+                  </span>
+                )}
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 self-end sm:self-auto">

@@ -199,6 +199,12 @@ const getEventById = asyncHandler(async (req, res) => {
     });
   }
 
+  // Calculate participant count (registered + attended)
+  const participantCount = await EventParticipationLog.countDocuments({
+    eventId: event._id,
+    status: { $in: ['registered', 'attended'] }
+  });
+
   let userRegistration = null;
   if (userId) {
     // Check if user is registered for this event
@@ -212,9 +218,12 @@ const getEventById = asyncHandler(async (req, res) => {
     success: true,
     data: {
       ...event.toObject(),
+      participants: participantCount, // Add calculated count
       userRegistration: userRegistration ? {
         status: userRegistration.status,
-        registeredAt: userRegistration.registeredAt
+        registeredAt: userRegistration.registeredAt,
+        qrCode: userRegistration.qrCode, // Include QR code object
+        qrToken: userRegistration.qrToken // Include legacy token
       } : null
     }
   });
@@ -223,22 +232,37 @@ const getEventById = asyncHandler(async (req, res) => {
 // Update event (host/co-host)
 const updateEvent = asyncHandler(async (req, res) => {
   logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
-  const update = req.body;
+  // Whitelist-based update construction
+  const allowedFields = [
+    'title', 'description', 'type', 'organizationName', 
+    'location', 'capacity', 'date', 'isPaid', 'price', 
+    'tags', 'requirements', 'audienceType', 'features', 
+    'sessions', 'about', 'socialLinks'
+  ];
+
+  const updateData = {};
   
-  // Validate required fields for update (if present)
+  // Only copy allowed fields from req.body
+  allowedFields.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  });
+
+  // Validate required fields for update (if present in updateData)
   const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
   for (const field of updatableFields) {
-    if (field in update && !update[field]) {
+    if (field in updateData && !updateData[field]) {
       return res.status(400).json({ error: `Field cannot be empty: ${field}` });
     }
   }
 
-  // Handle tags & requirements splits if they came as raw strings not handled by middleware
-  if (typeof update.tags === 'string') {
-    update.tags = update.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  // Handle tags & requirements splits if they came as raw strings
+  if (typeof updateData.tags === 'string') {
+    updateData.tags = updateData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
   }
-  if (typeof update.requirements === 'string') {
-    update.requirements = update.requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+  if (typeof updateData.requirements === 'string') {
+    updateData.requirements = updateData.requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
   }
   
   const event = await Event.findById(req.params.id);
@@ -247,26 +271,29 @@ const updateEvent = asyncHandler(async (req, res) => {
   if (req.files && req.files['logo']) {
     if (event.logoURL) await deleteEventImage(event.logoURL);
     const f = req.files['logo'][0];
-    update.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
+    updateData.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
   }
   if (req.files && req.files['banner']) {
     if (event.bannerURL) await deleteEventImage(event.bannerURL);
     const f = req.files['banner'][0];
-    update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
+    updateData.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
   }
-  update.updatedAt = new Date();
+  updateData.updatedAt = new Date();
   
-  // Validate isPaid and price
-  if ('isPaid' in update) {
-    update.isPaid = update.isPaid === true || update.isPaid === 'true';
-    update.price = update.isPaid ? (typeof update.price === 'number' ? update.price : parseFloat(update.price) || 0) : 0;
-    if (update.isPaid && update.price <= 0) {
-      return res.status(400).json({ error: 'Paid events must have a valid price.' });
+  // Validate isPaid and price if present
+  if ('isPaid' in updateData) {
+    updateData.isPaid = updateData.isPaid === true || updateData.isPaid === 'true';
+    // Use submitted price or default to 0 if not valid number
+    if (updateData.isPaid) {
+       updateData.price = typeof updateData.price === 'number' ? updateData.price : parseFloat(updateData.price) || 0;
+       if (updateData.price <= 0) return res.status(400).json({ error: 'Paid events must have a valid price.' });
+    } else {
+       updateData.price = 0;
     }
   }
   
-  logger.info('📝 Complete update object:', JSON.stringify(update, null, 2));
-  const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
+  logger.info('📝 Safe update object:', JSON.stringify(updateData, null, 2));
+  const updatedEvent = await Event.findByIdAndUpdate(req.params.id, { $set: updateData }, { new: true });
   logger.info('✅ Updated event features:', JSON.stringify(updatedEvent.features, null, 2));
   
   res.json(updatedEvent);
@@ -1618,13 +1645,22 @@ async function getPublicEventById(req, res) {
       logger.info('📊 Public Event - No auth header provided');
     }
 
+    // Calculate participant count
+    const participantCount = await EventParticipationLog.countDocuments({
+      eventId: event._id,
+      status: { $in: ['registered', 'attended'] }
+    });
+
     res.json({
       success: true,
       data: {
         ...event.toObject(),
+        participants: participantCount,
         userRegistration: userRegistration ? {
           status: userRegistration.status,
-          registeredAt: userRegistration.registeredAt
+          registeredAt: userRegistration.registeredAt,
+          qrCode: userRegistration.qrCode,
+          qrToken: userRegistration.qrToken
         } : null
       }
     });

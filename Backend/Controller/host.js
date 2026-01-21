@@ -142,7 +142,24 @@ const updateEvent = asyncHandler(async (req, res) => {
     return res
       .status(404)
       .json({ error: 'Event not found or not owned by user.' });
-  Object.assign(event, req.body);
+
+  // Whitelist allow-able fields
+  const allowedUpdates = [
+    'title', 'description', 'type', 'organizationName', 
+    'location', 'capacity', 'date', 'isPaid', 'price', 
+    'tags', 'requirements', 'audienceType', 'features', 
+    'sessions', 'about', 'socialLinks'
+  ];
+
+  allowedUpdates.forEach((field) => {
+    if (req.body[field] !== undefined) {
+      event[field] = req.body[field];
+    }
+  });
+
+  // Handle special cases safely if needed (e.g. nested objects)
+  // For now, the direct assignment works for top-level schema fields.
+  
   await event.save();
   return res.json(event);
 });
