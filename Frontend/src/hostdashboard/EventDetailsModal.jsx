@@ -242,7 +242,11 @@ const EventDetailsModal = ({ event, onClose }) => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Current Participants:</span>
-                  <span className="font-medium">{eventDetails.participants || 0}</span>
+                  <span className="font-medium">
+                    {Array.isArray(eventDetails.participants)
+                      ? eventDetails.participants.length
+                      : eventDetails.participants || 0}
+                  </span>
                 </div>
                 {(eventDetails.maxParticipants || eventDetails.capacity) && (
                   <div className="flex justify-between">
