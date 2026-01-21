@@ -88,7 +88,7 @@ const Events = () => {
           // Add to RSVP set to track what user is registered for
           rsvpSet.add(event._id);
 
-          if (isPast || userStatus === 'attended') {
+          if (isPast) {
             newEvents.past.push(event);
           } else {
             newEvents.registered.push(event);

@@ -206,6 +206,69 @@ async function logout(req, res) {
 }
 
 /**
+ * Middleware that attempts to authenticate user but allows anonymous access.
+ * Attaches user to req.user if valid token present.
+ */
+async function authenticateTokenOptional(req, res, next) {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (!token) return next();
+
+    // Check blacklist
+    try {
+      if (redisClient && redisClient.isOpen) {
+        const isBlacklisted = await redisClient.get(`blacklist:${token}`);
+        if (isBlacklisted) return next();
+      }
+    } catch (e) {
+      logger.error('Redis error in optional auth:', e);
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: 'campverse',
+      audience: 'campverse-users',
+      clockTolerance: 30,
+    }, async (err, user) => {
+      if (err || !user?.id) return next();
+
+      // Check session
+      try {
+        if (user.sessionId && redisClient && redisClient.isOpen) {
+          const sessionBlacklisted = await redisClient.get(`campverse:session:blacklist:${user.sessionId}`);
+          if (sessionBlacklisted) return next();
+        }
+      } catch (e) {
+        logger.error('Redis error in optional auth session check:', e);
+      }
+
+      // Check user in DB
+      try {
+        const User = require('../Models/User');
+        const dbUser = await User.findById(user.id).select('_id roles isVerified name email institutionId');
+        if (dbUser) {
+          req.user = {
+            id: dbUser._id,
+            roles: dbUser.roles,
+            isVerified: dbUser.isVerified,
+            name: dbUser.name,
+            email: dbUser.email,
+            institutionId: dbUser.institutionId
+          };
+        }
+      } catch (e) {
+        // Ignore DB errors in optional auth
+      }
+      next();
+    });
+  } catch (err) {
+    next();
+  }
+}
+
+/**
  * Middleware to check if user is active and not suspended
  */
 function requireActiveUser(req, res, next) {
@@ -227,6 +290,7 @@ function requireActiveUser(req, res, next) {
 
 module.exports = {
   authenticateToken,
+  authenticateTokenOptional,
   requireRole,
   requireSelfOrRole,
   requirePermission,

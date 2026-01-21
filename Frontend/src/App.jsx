@@ -1,5 +1,4 @@
-import { CreateEventForm } from "./hostdashboard";
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ModalProvider } from "./components/Modal";
@@ -8,49 +7,58 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import { ToastProvider } from "./components/Toast";
 
-// Import pages
+// Static imports for critical/entry pages
 import Landing from "./pages/landing";
-import UserDashboard from "./userdashboard/UserDashboard";
-import Settings from "./userdashboard/Settings";
-import OAuthCallback from "./pages/OAuthCallback";
-import Events from "./userdashboard/Events";
-import HelpCenter from "./userdashboard/HelpCenter";
-import Feedback from "./userdashboard/Feedback";
-import MyInstitution from "./userdashboard/MyInstitution";
 import ResetPassword from "./pages/ResetPassword";
-import EventDetailsPage from "./pages/PublicEventDetailsPage";
-import QRViewer from "./components/QRViewer";
-import "remixicon/fonts/remixicon.css";
-import HostRegistration from "./userdashboard/HostRegistration";
-import { EventProvider } from "./userdashboard/EventContext";
-import VerifierDashboard from "./verifier/VerifierDashboard";
-import EventVerificationQueue from "./verifier/EventVerificationQueue";
-import CertificateReview from "./verifier/CertificateReview";
-import VerifierAnalytics from "./verifier/VerifierAnalytics";
+import OAuthCallback from "./pages/OAuthCallback";
 import AcceptNomination from "./pages/AcceptNomination";
+import EventDetailsPage from "./pages/PublicEventDetailsPage";
+import "remixicon/fonts/remixicon.css";
+import { EventProvider } from "./userdashboard/EventContext";
 
-// ✅ Admin dashboard imports
-import {
-  AdminDashboard,
-  UserManagement,
-  InstitutionManagement,
-  PlatformAnalytics,
-  SystemSettings,
-  CertificateTemplateManagement,
-} from "./admin";
+// Lazy-loaded pages (Dashboards and heavy modules)
+const UserDashboard = lazy(() => import("./userdashboard/UserDashboard"));
+const Settings = lazy(() => import("./userdashboard/Settings"));
+const Events = lazy(() => import("./userdashboard/Events"));
+const HelpCenter = lazy(() => import("./userdashboard/HelpCenter"));
+const Feedback = lazy(() => import("./userdashboard/Feedback"));
+const MyInstitution = lazy(() => import("./userdashboard/MyInstitution"));
+const HostRegistration = lazy(() => import("./userdashboard/HostRegistration"));
+const QRViewer = lazy(() => import("./components/QRViewer"));
 
-// ✅ Host dashboard module imports (updated)
-import {
-  ManageEvents,
-  HostEventsNew,
-  HostApplications,
-  HostAnalytics,
-  HostSettings,
-  QRScanner,
-  BulkAttendance,
-  AttendanceDashboard,
-  CertificateManagement,
-} from "./hostdashboard";
+// Verifier lazy imports
+const VerifierDashboard = lazy(() => import("./verifier/VerifierDashboard"));
+const EventVerificationQueue = lazy(() => import("./verifier/EventVerificationQueue"));
+const CertificateReview = lazy(() => import("./verifier/CertificateReview"));
+const VerifierAnalytics = lazy(() => import("./verifier/VerifierAnalytics"));
+
+// Admin lazy imports
+const AdminDashboard = lazy(() => import("./admin/AdminDashboard"));
+const UserManagement = lazy(() => import("./admin/UserManagement"));
+const InstitutionManagement = lazy(() => import("./admin/InstitutionManagement"));
+const PlatformAnalytics = lazy(() => import("./admin/PlatformAnalytics"));
+const SystemSettings = lazy(() => import("./admin/SystemSettings"));
+const CertificateTemplateManagement = lazy(() => import("./admin/CertificateTemplateManagement"));
+
+// Host lazy imports
+const ManageEvents = lazy(() => import("./hostdashboard/EventsManagement"));
+const HostEventsNew = lazy(() => import("./hostdashboard/HostEventsDashboard"));
+const HostApplications = lazy(() => import("./hostdashboard/HostApplications"));
+const HostAnalytics = lazy(() => import("./hostdashboard/HostAnalytics"));
+const HostSettings = lazy(() => import("./hostdashboard/HostSettings"));
+const QRScanner = lazy(() => import("./hostdashboard/QRScanner"));
+const BulkAttendance = lazy(() => import("./hostdashboard/BulkAttendance"));
+const AttendanceDashboard = lazy(() => import("./hostdashboard/AttendanceDashboard"));
+const CertificateManagement = lazy(() => import("./hostdashboard/CertificateManagement"));
+const CreateEventForm = lazy(() => import("./hostdashboard/CreateEventForm"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="h-screen w-full flex flex-col items-center justify-center bg-[#141a45] text-white">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
+    <p className="text-purple-300 font-medium animate-pulse">Loading CampVerse...</p>
+  </div>
+);
 
 // Component to handle OAuth detection and redirection
 const OAuthDetector = () => {
@@ -97,7 +105,8 @@ function App() {
             <Router>
               <ErrorBoundary>
                 <OAuthDetector />
-                <Routes>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
                   {/* Development-only test route */}
                   {import.meta.env.DEV && (
                     <Route path="/test-create-event" element={<CreateEventForm />} />
@@ -363,6 +372,7 @@ function App() {
                   {/* 404 Not Found - catch all unmatched routes */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </Suspense>
               </ErrorBoundary>
             </Router>
           </EventProvider>

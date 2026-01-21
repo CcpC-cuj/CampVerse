@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../api/axiosInstance';
 
 const BulkAttendance = () => {
   const { eventId } = useParams();
@@ -25,20 +24,12 @@ const BulkAttendance = () => {
   const loadEventAndParticipants = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
 
       // Load event details
-      const eventResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const eventResponse = await api.get(`/api/events/${eventId}`);
+      const eventData = eventResponse.data;
 
-      const eventData = await eventResponse.json();
-      if (eventResponse.ok && eventData.success) {
+      if (eventData.success) {
         setEvent(eventData.data);
         // Check if user is host or co-host
         const isHost = eventData.data.hostId === user.id;
@@ -51,30 +42,21 @@ const BulkAttendance = () => {
       }
 
       // Load participants
-      const participantsResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/participants`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const participantsResponse = await api.get(`/api/events/${eventId}/participants`);
+      const participantsData = participantsResponse.data;
 
-      const participantsData = await participantsResponse.json();
-      if (participantsResponse.ok) {
-        // Handle different response formats
-        let participantsList = [];
-        if (participantsData.success && participantsData.participants) {
-          participantsList = participantsData.participants;
-        } else if (participantsData.success && participantsData.data) {
-          participantsList = participantsData.data;
-        } else if (Array.isArray(participantsData)) {
-          participantsList = participantsData;
-        }
-        setParticipants(participantsList);
+      // Handle different response formats
+      let participantsList = [];
+      if (participantsData.success && participantsData.participants) {
+        participantsList = participantsData.participants;
+      } else if (participantsData.success && participantsData.data) {
+        participantsList = participantsData.data;
+      } else if (Array.isArray(participantsData)) {
+        participantsList = participantsData;
       }
+      setParticipants(participantsList);
     } catch (err) {
-      alert('Failed to load event data');
+      alert('Failed to load event data: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -118,24 +100,13 @@ const BulkAttendance = () => {
 
     setBulkLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/bulk-attendance`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            userIds: Array.from(selectedUsers),
-          }),
-        }
-      );
+      const response = await api.post(`/api/events/${eventId}/bulk-attendance`, {
+        userIds: Array.from(selectedUsers),
+      });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok && data.success) {
+      if (data.success) {
         alert(`✅ Successfully marked ${data.marked || selectedUsers.size} participant(s) as attended!`);
         setSelectedUsers(new Set());
         await loadEventAndParticipants(); // Reload to update attendance status
@@ -143,7 +114,7 @@ const BulkAttendance = () => {
         alert(`❌ ${data.message || data.error || 'Failed to mark attendance'}`);
       }
     } catch (err) {
-      alert('Failed to mark attendance. Please try again.');
+      alert('Failed to mark attendance: ' + (err.response?.data?.error || err.message));
     } finally {
       setBulkLoading(false);
     }

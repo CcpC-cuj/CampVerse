@@ -33,13 +33,17 @@ const {
   getZeroResultSearches,
   getVerifierAnalytics,
 } = require('../Controller/analytics');
-const { authenticateToken, requireRole } = require('../Middleware/Auth');
+const { authenticateToken, authenticateTokenOptional, requireRole } = require('../Middleware/Auth');
 const {
   requireHostOrCoHost,
   requireVerifier,
 } = require('../Middleware/permissions');
+const { parseJsonBody } = require('../Middleware/bodyParsing');
 
 const router = express.Router();
+
+// Define common JSON fields for parsing multipart data
+const eventJsonFields = ['location', 'features', 'organizer', 'socialLinks', 'tags', 'requirements'];
 
 // Public list events endpoint for browsing (used by tests and landing pages)
 /**
@@ -59,43 +63,32 @@ const router = express.Router();
  *       404: { description: Not found or not approved }
  */
 router.get('/public/:id', require('../Controller/event').getPublicEventById);
-router.get('/', async (req, res) => {
-  try {
-    // Check if user is authenticated
-    const isAuthenticated = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
-    
-    const query = {};
-    if (!isAuthenticated) {
-      // Only show approved events to anonymous users
-      query.verificationStatus = 'approved';
-    }
-    
+router.get('/', authenticateTokenOptional, asyncHandler(async (req, res) => {
+  const isAuthenticated = !!req.user;
+  
+  const query = {};
+  if (!isAuthenticated || req.query.publicOnly === 'true') {
+    // Only show approved events to anonymous users
+    query.verificationStatus = 'approved';
+  } else if (req.query.status) {
     // Support status filtering for authenticated users
-    if (isAuthenticated && req.query.status) {
-      query.verificationStatus = req.query.status;
-    }
-    
-    const events = await require('../Models/Event')
-      .find(query)
-      .populate('hostUserId', 'name email profilePhoto')
-      .limit(50)
-      .sort({ createdAt: -1 });
-    res.json({
-      success: true,
-      data: {
-        events,
-        total: events.length
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching events:', err);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error fetching events.',
-      message: 'Failed to load events'
-    });
+    query.verificationStatus = req.query.status;
   }
-});
+  
+  const events = await require('../Models/Event')
+    .find(query)
+    .populate('hostUserId', 'name email profilePhoto')
+    .limit(50)
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data: {
+      events,
+      total: events.length
+    }
+  });
+}));
 
 // Advanced event search (filter, sort, paginate) - placed before '/:id' to avoid route collisions
 router.get('/search', authenticateToken, advancedEventSearch);
@@ -238,6 +231,7 @@ router.post(
   authenticateToken,
   requireRole('host'),
   upload.fields([{ name: 'logo' }, { name: 'banner' }]),
+  parseJsonBody(eventJsonFields),
   createEvent,
 );
 
@@ -290,6 +284,7 @@ router.patch(
   authenticateToken,
   requireHostOrCoHost,
   upload.fields([{ name: 'logo' }, { name: 'banner' }]),
+  parseJsonBody(eventJsonFields),
   updateEvent,
 );
 

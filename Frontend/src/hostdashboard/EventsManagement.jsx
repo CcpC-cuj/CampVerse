@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axiosInstance";
 import { getMyEvents } from "../api/host";
 import Sidebar from "../userdashboard/sidebar";
 import HostNavBar from "./HostNavBar";
@@ -218,23 +219,18 @@ const EventsManagement = () => {
         formData.append('logo', eventData.logoImage);
       }
       
-      // Call update API
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${selectedEvent._id}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formData
-      });
-      
-      if (response.ok) {
+      // Call update API - Note: api.patch automatically handles FormData correctly when passed as data
+      try {
+        await api.patch(`/api/events/${selectedEvent._id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
         setShowEditModal(false);
         setSelectedEvent(null);
         // Refresh events list
         loadEventsData();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || 'Failed to update event');
+      } catch (err) {
+        alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update event');
       }
     } catch (error) {
       alert('Error updating event: ' + (error.message || 'Unknown error'));
@@ -249,18 +245,7 @@ const EventsManagement = () => {
     setLoading(true);
     try {
       const eventId = selectedEvent.id || selectedEvent._id;
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/hosts/events/${eventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete event');
-      }
+      await api.delete(`/api/hosts/events/${eventId}`);
 
       // Remove the deleted event from the state
       setEvents(prevEvents => prevEvents.filter(event => 

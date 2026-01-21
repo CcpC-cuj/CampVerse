@@ -111,7 +111,11 @@ app.use(cors({
       callback(null, true);
     } else {
       logger.warn(`CORS blocked origin: ${origin}`);
-      callback(null, true); // Still allow for debugging, change to callback(new Error('Not allowed')) to block
+      if (process.env.NODE_ENV === 'development') {
+        callback(null, true); // Allow for debugging in local dev
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true,  // CRITICAL: Required for cookies to pass cross-origin

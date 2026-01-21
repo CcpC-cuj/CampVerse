@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import api from '../api/axiosInstance';
 
 const QRScanner = () => {
   const { eventId } = useParams();
@@ -40,18 +41,10 @@ const QRScanner = () => {
   const loadEventDetails = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get(`/api/events/${eventId}`);
+      const data = response.data;
 
-      const data = await response.json();
-      if (response.ok && data.success) {
+      if (data.success) {
         setEvent(data.data);
         // Check if user is host or co-host
         const isHost = data.data.hostId === user.id;
@@ -73,18 +66,10 @@ const QRScanner = () => {
 
   const loadScanHistory = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/attendance`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get(`/api/events/${eventId}/attendance`);
+      const data = response.data;
 
-      const data = await response.json();
-      if (response.ok && data.success) {
+      if (data.success) {
         setScanHistory(data.attendees || []);
         setStats({
           total: data.totalRegistered || 0,
@@ -172,24 +157,11 @@ const QRScanner = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
       const payload = { eventId, qrToken };
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/scan`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await api.post('/api/events/scan', payload);
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
+      if (data.success) {
         setScanResult({
           success: true,
           message: data.message || 'Attendance marked successfully!',
@@ -200,29 +172,30 @@ const QRScanner = () => {
         await loadScanHistory();
         // Play success sound (optional)
         playSuccessSound();
-      } else if (response.status === 409) {
-        setScanResult({
-          success: false,
-          isWarning: true,
-          message: data.message || 'Already checked in',
-          error: data.error,
-        });
-        // Play error sound (different sound?)
-        playErrorSound();
       } else {
         setScanResult({
           success: false,
           message: data.message || data.error || 'Failed to mark attendance',
           error: data.error,
         });
-        // Play error sound
         playErrorSound();
       }
     } catch (err) {
-      setScanResult({
-        success: false,
-        message: 'Failed to scan QR code. Please try again.',
-      });
+      const data = err.response?.data || {};
+      if (err.response?.status === 409) {
+        setScanResult({
+          success: false,
+          isWarning: true,
+          message: data.message || 'Already checked in',
+          error: data.error,
+        });
+      } else {
+        setScanResult({
+          success: false,
+          message: data.message || data.error || 'Failed to scan QR code. Please try again.',
+          error: data.error,
+        });
+      }
       playErrorSound();
     }
   };

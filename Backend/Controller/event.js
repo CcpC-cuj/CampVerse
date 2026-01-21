@@ -28,126 +28,50 @@ const qrcode = require('qrcode');
 const { createEmailService } = require('../Services/email');
 const emailService = createEmailService();
 const { notifyUser, notifyUsers } = require('../Services/notification');
-const { logger } = require('../Middleware/errorHandler');
+const { logger, asyncHandler } = require('../Middleware/errorHandler');
 
 // Create a new event (host/co-host)
-async function createEvent(req, res) {
-  try {
-    // Validate required fields
-    const requiredFields = ['title', 'description', 'type', 'location', 'capacity', 'date'];
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        return res.status(400).json({ error: `Missing required field: ${field}` });
-      }
+const createEvent = asyncHandler(async (req, res) => {
+  // Validate required fields
+  const requiredFields = ['title', 'description', 'type', 'location', 'capacity', 'date'];
+  for (const field of requiredFields) {
+    if (!req.body[field]) {
+      return res.status(400).json({ error: `Missing required field: ${field}` });
     }
-    
-    // Validate capacity is a valid positive number
-    const validatedCapacity = parseInt(req.body.capacity);
-    if (isNaN(validatedCapacity) || validatedCapacity < 1) {
-      return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
-    }
-    
-    // Extract and parse fields
-    const {
-      title,
-      description,
-      type,
-      organizationName,
-      date,
-      isPaid,
-      price,
-      audienceType,
-      about,
-    } = req.body;
-    
-    let {
-      tags,
-      location,
-      requirements,
-      socialLinks,
-      features,
-      sessions,
-    } = req.body;
-    if (typeof location === 'string') {
-      try {
-        location = JSON.parse(location);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid location format.' });
-      }
-    }
-    
-    // Parse socialLinks if sent as JSON string
-    if (typeof socialLinks === 'string') {
-      try {
-        socialLinks = JSON.parse(socialLinks);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid socialLinks format.' });
-      }
-    }
-    
-    // Parse features if sent as JSON string
-    if (typeof features === 'string') {
-      try {
-        features = JSON.parse(features);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid features format.' });
-      }
-    }
-    
-    // Parse sessions if sent as JSON string
-    if (typeof sessions === 'string') {
-      try {
-        sessions = JSON.parse(sessions);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid sessions format.' });
-      }
-    }
-    
-    // Parse tags - handle string, array with stringified JSON, or proper array
-    if (typeof tags === 'string') {
-      try {
-        tags = JSON.parse(tags);
-      } catch (e) {
-        // If not valid JSON, treat as comma-separated string
-        tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      }
-    } else if (Array.isArray(tags)) {
-      // Handle array containing stringified JSON
-      tags = tags.map(tag => {
-        if (typeof tag === 'string') {
-          try {
-            const parsed = JSON.parse(tag);
-            return Array.isArray(parsed) ? parsed : [tag];
-          } catch (e) {
-            return tag;
-          }
-        }
-        return tag;
-      }).flat().filter(tag => tag && tag.length > 0);
-    }
-    
-    // Parse requirements - handle string, array with stringified JSON, or proper array
-    if (typeof requirements === 'string') {
-      try {
-        requirements = JSON.parse(requirements);
-      } catch (e) {
-        // If not valid JSON, treat as newline-separated string
-        requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
-      }
-    } else if (Array.isArray(requirements)) {
-      // Handle array containing stringified JSON
-      requirements = requirements.map(req => {
-        if (typeof req === 'string') {
-          try {
-            const parsed = JSON.parse(req);
-            return Array.isArray(parsed) ? parsed : [req];
-          } catch (e) {
-            return req;
-          }
-        }
-        return req;
-      }).flat().filter(req => req && req.length > 0);
-    }
+  }
+  
+  // Validate capacity is a valid positive number
+  const validatedCapacity = parseInt(req.body.capacity);
+  if (isNaN(validatedCapacity) || validatedCapacity < 1) {
+    return res.status(400).json({ error: 'Capacity must be a valid positive number.' });
+  }
+  
+  // Extract and parse fields (middleware handles JSON parsing for objects/arrays)
+  let {
+    title,
+    description,
+    type,
+    organizationName,
+    date,
+    isPaid,
+    price,
+    audienceType,
+    about,
+    tags,
+    location,
+    requirements,
+    socialLinks,
+    features,
+    sessions,
+  } = req.body;
+
+  // Handle tags & requirements splits if they came as raw strings not handled by middleware
+  if (typeof tags === 'string') {
+    tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  }
+  if (typeof requirements === 'string') {
+    requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+  }
     let logoURL, bannerURL;
     // File upload using storage service
     if (req.files && req.files['logo']) {
@@ -252,223 +176,101 @@ async function createEvent(req, res) {
       logger && logger.error ? logger.error('Error sending event verification notifications:', notifErr) : null;
     }
     
-    res.status(201).json({
-      success: true,
-      message: 'Event created successfully',
-      event
-    });
-  } catch (err) {
-    if (process.env.NODE_ENV !== 'production') {
-      res.status(500).json({ error: 'Error creating event.', details: err?.message || err });
-    } else {
-      logger && logger.error ? logger.error('Error creating event:', err) : null;
-      res.status(500).json({ error: 'Error creating event.' });
-    }
-  }
-}
+  res.status(201).json({
+    success: true,
+    message: 'Event created successfully',
+    event
+  });
+});
 
 // Get event by ID
-async function getEventById(req, res) {
-  try {
-    const eventId = req.params.id;
-    const userId = req.user?.id; // Get user ID if authenticated
+const getEventById = asyncHandler(async (req, res) => {
+  const eventId = req.params.id;
+  const userId = req.user?.id; // Get user ID if authenticated
+  
+  const event = await Event.findById(eventId)
+    .populate('hostUserId', 'name email') // Populate host user details
+    .populate('coHosts', 'name email'); // Populate co-hosts too
     
-    const event = await Event.findById(eventId)
-      .populate('hostUserId', 'name email') // Populate host user details
-      .populate('coHosts', 'name email'); // Populate co-hosts too
-      
-    if (!event) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Event not found.' 
-      });
-    }
-
-    let userRegistration = null;
-    if (userId) {
-      // Check if user is registered for this event
-      userRegistration = await EventParticipationLog.findOne({
-        eventId,
-        userId
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        ...event.toObject(),
-        userRegistration: userRegistration ? {
-          status: userRegistration.status,
-          registeredAt: userRegistration.registeredAt
-        } : null
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ 
+  if (!event) {
+    return res.status(404).json({ 
       success: false, 
-      error: 'Error fetching event.' 
+      error: 'Event not found.' 
     });
   }
-}
+
+  let userRegistration = null;
+  if (userId) {
+    // Check if user is registered for this event
+    userRegistration = await EventParticipationLog.findOne({
+      eventId,
+      userId
+    });
+  }
+
+  res.json({
+    success: true,
+    data: {
+      ...event.toObject(),
+      userRegistration: userRegistration ? {
+        status: userRegistration.status,
+        registeredAt: userRegistration.registeredAt
+      } : null
+    }
+  });
+});
 
 // Update event (host/co-host)
-async function updateEvent(req, res) {
-  try {
-    logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
-    const update = req.body;
-    
-    // Parse location if it's a string
-    if ('location' in req.body && typeof req.body.location === 'string') {
-      try {
-        update.location = JSON.parse(req.body.location);
-      } catch (e) {
-        logger.error('Failed to parse location:', e);
-      }
+const updateEvent = asyncHandler(async (req, res) => {
+  logger.info('Update Event Request Body:', JSON.stringify(req.body, null, 2));
+  const update = req.body;
+  
+  // Validate required fields for update (if present)
+  const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
+  for (const field of updatableFields) {
+    if (field in update && !update[field]) {
+      return res.status(400).json({ error: `Field cannot be empty: ${field}` });
     }
-    
-    // Parse features if it's a string
-    if ('features' in req.body && typeof req.body.features === 'string') {
-      try {
-        update.features = JSON.parse(req.body.features);
-      } catch (e) {
-        logger.error('Failed to parse features:', e);
-      }
-    }
-    
-    // Parse organizer if it's a string
-    if ('organizer' in req.body && typeof req.body.organizer === 'string') {
-      try {
-        update.organizer = JSON.parse(req.body.organizer);
-      } catch (e) {
-        logger.error('Failed to parse organizer:', e);
-      }
-    }
-    
-    // Parse socialLinks if it's a string
-    if ('socialLinks' in req.body && typeof req.body.socialLinks === 'string') {
-      try {
-        update.socialLinks = JSON.parse(req.body.socialLinks);
-      } catch (e) {
-        logger.error('Failed to parse socialLinks:', e);
-      }
-    }
-    
-    // Validate required fields for update (if present)
-    const updatableFields = ['title', 'description', 'type', 'organizationName', 'location', 'capacity', 'date'];
-    for (const field of updatableFields) {
-      if (field in update && !update[field]) {
-        return res.status(400).json({ error: `Field cannot be empty: ${field}` });
-      }
-    }
-    // Parse and update tags if present
-    if ('tags' in req.body) {
-      let tags = req.body.tags;
-      if (typeof tags === 'string') {
-        try {
-          tags = JSON.parse(tags);
-        } catch (e) {
-          tags = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-        }
-      } else if (Array.isArray(tags)) {
-        // Handle array containing stringified JSON
-        tags = tags.map(tag => {
-          if (typeof tag === 'string') {
-            try {
-              const parsed = JSON.parse(tag);
-              return Array.isArray(parsed) ? parsed : [tag];
-            } catch (e) {
-              return tag;
-            }
-          }
-          return tag;
-        }).flat().filter(tag => tag && tag.length > 0);
-      }
-      update.tags = tags;
-    }
-    
-    // Parse and update requirements if present
-    if ('requirements' in req.body) {
-      let requirements = req.body.requirements;
-      if (typeof requirements === 'string') {
-        try {
-          requirements = JSON.parse(requirements);
-        } catch (e) {
-          requirements = requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
-        }
-      } else if (Array.isArray(requirements)) {
-        // Handle array containing stringified JSON
-        requirements = requirements.map(req => {
-          if (typeof req === 'string') {
-            try {
-              const parsed = JSON.parse(req);
-              return Array.isArray(parsed) ? parsed : [req];
-            } catch (e) {
-              return req;
-            }
-          }
-          return req;
-        }).flat().filter(req => req && req.length > 0);
-      }
-      update.requirements = requirements;
-    }
-    
-    // Parse and update sessions if present - preserve line breaks and formatting
-    if ('sessions' in req.body) {
-      let sessions = req.body.sessions;
-      if (typeof sessions === 'string') {
-        // Split by lines and preserve each line as separate array element
-        sessions = sessions.split('\n').filter(s => s.trim().length > 0);
-      } else if (Array.isArray(sessions)) {
-        // If already array, keep as is but filter empty entries
-        sessions = sessions.filter(s => s && s.trim().length > 0);
-      }
-      update.sessions = sessions;
-    }
-    
-    // Only allow socialLinks to be updated if present
-    if ('socialLinks' in req.body) update.socialLinks = req.body.socialLinks;
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    if (req.files && req.files['logo']) {
-      if (event.logoURL) await deleteEventImage(event.logoURL);
-      const f = req.files['logo'][0];
-      update.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
-    }
-    if (req.files && req.files['banner']) {
-      if (event.bannerURL) await deleteEventImage(event.bannerURL);
-      const f = req.files['banner'][0];
-      update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
-    }
-    update.updatedAt = new Date();
-    
-    // Log the features field specifically to debug
-    if ('features' in update) {
-      logger.info('🎯 Features field in update:', JSON.stringify(update.features, null, 2));
-    }
-    
-    // Validate isPaid and price
-    if ('isPaid' in update) {
-      update.isPaid = update.isPaid === true || update.isPaid === 'true';
-      update.price = update.isPaid ? (typeof update.price === 'number' ? update.price : parseFloat(update.price) || 0) : 0;
-      if (update.isPaid && update.price <= 0) {
-        return res.status(400).json({ error: 'Paid events must have a valid price.' });
-      }
-    }
-    
-    // Log the complete update object before saving
-    logger.info('📝 Complete update object:', JSON.stringify(update, null, 2));
-    
-    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
-    
-    // Log the updated event to verify features were saved
-    logger.info('✅ Updated event features:', JSON.stringify(updatedEvent.features, null, 2));
-    
-    res.json(updatedEvent);
-  } catch (err) {
-    logger && logger.error ? logger.error('Error updating event:', err) : null;
-    res.status(500).json({ error: 'Error updating event.' });
   }
-}
+
+  // Handle tags & requirements splits if they came as raw strings not handled by middleware
+  if (typeof update.tags === 'string') {
+    update.tags = update.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+  }
+  if (typeof update.requirements === 'string') {
+    update.requirements = update.requirements.split('\n').map(req => req.trim()).filter(req => req.length > 0);
+  }
+  
+  const event = await Event.findById(req.params.id);
+  if (!event) return res.status(404).json({ error: 'Event not found.' });
+
+  if (req.files && req.files['logo']) {
+    if (event.logoURL) await deleteEventImage(event.logoURL);
+    const f = req.files['logo'][0];
+    update.logoURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'logo', f.mimetype);
+  }
+  if (req.files && req.files['banner']) {
+    if (event.bannerURL) await deleteEventImage(event.bannerURL);
+    const f = req.files['banner'][0];
+    update.bannerURL = await uploadEventImageLegacy(f.buffer, f.originalname, 'banner', f.mimetype);
+  }
+  update.updatedAt = new Date();
+  
+  // Validate isPaid and price
+  if ('isPaid' in update) {
+    update.isPaid = update.isPaid === true || update.isPaid === 'true';
+    update.price = update.isPaid ? (typeof update.price === 'number' ? update.price : parseFloat(update.price) || 0) : 0;
+    if (update.isPaid && update.price <= 0) {
+      return res.status(400).json({ error: 'Paid events must have a valid price.' });
+    }
+  }
+  
+  logger.info('📝 Complete update object:', JSON.stringify(update, null, 2));
+  const updatedEvent = await Event.findByIdAndUpdate(req.params.id, update, { new: true });
+  logger.info('✅ Updated event features:', JSON.stringify(updatedEvent.features, null, 2));
+  
+  res.json(updatedEvent);
+});
 
 // Delete event (host/co-host)
 async function deleteEvent(req, res) {
@@ -998,6 +800,28 @@ async function scanQr(req, res) {
       });
     }
     
+    // Check timing window (Allow scanning 2 hours before and up to 12 hours after event start)
+    const now = new Date();
+    const eventTime = new Date(event.date);
+    const windowStart = new Date(eventTime.getTime() - 2 * 60 * 60 * 1000); 
+    const windowEnd = new Date(eventTime.getTime() + 12 * 60 * 60 * 1000);
+
+    if (now < windowStart) {
+      return res.status(400).json({
+        success: false,
+        error: 'Event not yet started.',
+        message: `Attendance scanning will open at ${windowStart.toLocaleTimeString()} on ${windowStart.toLocaleDateString()}`
+      });
+    }
+
+    if (now > windowEnd) {
+      return res.status(400).json({
+        success: false,
+        error: 'Event has ended.',
+        message: 'Attendance scanning window has closed for this event.'
+      });
+    }
+
     // Check if attendance already marked (legacy check)
     if (log.status === 'attended') {
       return res.status(409).json({ 

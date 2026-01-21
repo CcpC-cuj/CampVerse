@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+import api from "../api/axiosInstance";
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -10,20 +9,49 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(page);
+  }, [page, roleFilter]); // Reload when page or filter changes
 
-  const fetchUsers = async () => {
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setPage(1); // Reset to page 1 on search
+      fetchUsers(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchUsers = async (pageNum = 1) => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/users/all`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await api.get('/api/users/all', {
+        params: {
+          page: pageNum,
+          limit: 10,
+          search: searchQuery,
+          role: roleFilter
+        }
       });
-      const data = await res.json();
-      setUsers(Array.isArray(data?.users) ? data.users : Array.isArray(data) ? data : []);
+      const data = res.data;
+      
+      if (data.users) {
+        setUsers(data.users);
+        if (data.pagination) {
+          setTotalPages(data.pagination.pages);
+          setTotalUsers(data.pagination.total);
+          setPage(data.pagination.page);
+        } else {
+           // Fallback if backend doesn't return pagination
+           setTotalUsers(data.users.length);
+        }
+      } else {
+        setUsers([]);
+      }
     } catch (err) {
       setUsers([]);
     }
@@ -32,18 +60,10 @@ export default function UserManagement() {
 
   const handleUpdateRole = async (userId, roles) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/users/${userId}/roles`, {
-        method: 'PATCH',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ roles })
-      });
-      if (res.ok) {
+      const res = await api.patch(`/api/users/${userId}/roles`, { roles });
+      if (res.status === 200) {
         alert('User roles updated successfully!');
-        fetchUsers();
+        fetchUsers(page);
         setShowModal(false);
       } else {
         alert('Failed to update user roles');
@@ -53,13 +73,7 @@ export default function UserManagement() {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesRole = roleFilter === 'all' || 
-                       (Array.isArray(user.roles) && user.roles.includes(roleFilter));
-    return matchesSearch && matchesRole;
-  });
+  // Client-side filtering removed as backend handles it now
 
   const getRoleBadge = (role) => {
     const colors = {
@@ -99,7 +113,7 @@ export default function UserManagement() {
               <option value="student">Student</option>
             </select>
             <button
-              onClick={fetchUsers}
+              onClick={() => fetchUsers(page)}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 transition-colors flex items-center gap-2"
             >
               <i className="ri-refresh-line" />
@@ -111,24 +125,25 @@ export default function UserManagement() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40">
-            <p className="text-2xl font-bold text-white">{users.length}</p>
+            <p className="text-2xl font-bold text-white">{totalUsers}</p>
             <p className="text-sm text-gray-400">Total Users</p>
           </div>
           <div className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40">
             <p className="text-2xl font-bold text-red-400">
-              {users.filter(u => u.roles?.includes('platformAdmin')).length}
+              {/* Stats for roles are approximate now or need separate count endpoint, using current page counts for now or removing */}
+              {users.filter(u => u.roles?.includes('platformAdmin')).length} (on page)
             </p>
             <p className="text-sm text-gray-400">Admins</p>
           </div>
           <div className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40">
             <p className="text-2xl font-bold text-blue-400">
-              {users.filter(u => u.roles?.includes('verifier')).length}
+              {users.filter(u => u.roles?.includes('verifier')).length} (on page)
             </p>
             <p className="text-sm text-gray-400">Verifiers</p>
           </div>
           <div className="bg-gray-800/60 rounded-lg p-4 border border-gray-700/40">
             <p className="text-2xl font-bold text-green-400">
-              {users.filter(u => u.roles?.includes('host')).length}
+              {users.filter(u => u.roles?.includes('host')).length} (on page)
             </p>
             <p className="text-sm text-gray-400">Hosts</p>
           </div>
@@ -136,11 +151,11 @@ export default function UserManagement() {
 
         {/* Users Table */}
         <div className="bg-gray-800/60 rounded-xl border border-gray-700/40 overflow-hidden">
-          {loading ? (
+           {loading ? (
             <div className="flex items-center justify-center py-20">
               <i className="ri-loader-4-line animate-spin text-3xl text-purple-500" />
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="text-center py-20">
               <i className="ri-user-search-line text-5xl text-gray-600 mb-4" />
               <p className="text-gray-400">No users found</p>
@@ -158,7 +173,7 @@ export default function UserManagement() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700/50">
-                  {filteredUsers.map(user => (
+                  {users.map(user => (
                     <tr key={user._id} className="hover:bg-gray-700/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -202,6 +217,49 @@ export default function UserManagement() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          
+          {/* Pagination Controls */}
+          {!loading && users.length > 0 && (
+            <div className="flex items-center justify-between p-4 bg-gray-900/50">
+              <div className="text-sm text-gray-400">
+                Showing page {page} of {totalPages} ({totalUsers} users)
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+                >
+                  Previous
+                </button>
+                <div className="flex gap-1">
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                     // Simple pagination logic window
+                     let p = i + 1;
+                     if (totalPages > 5 && page > 3) p = page - 2 + i;
+                     if (p > totalPages) return null;
+                     
+                     return (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`px-3 py-1 rounded ${page === p ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                      >
+                        {p}
+                      </button>
+                     );
+                  })}
+                </div>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 bg-gray-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>

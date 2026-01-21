@@ -10,7 +10,12 @@
  */
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  console.error('CRITICAL: VITE_API_URL environment variable is missing!');
+  // In production we should probably throw or handle gracefully
+}
 
 // Create axios instance with credentials enabled for cookies
 const api = axios.create({

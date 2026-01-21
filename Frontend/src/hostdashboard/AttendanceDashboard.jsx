@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../api/axiosInstance';
 
 const AttendanceDashboard = () => {
   const { eventId } = useParams();
@@ -39,20 +38,11 @@ const AttendanceDashboard = () => {
 
   const loadData = async () => {
     try {
-      const token = localStorage.getItem('token');
-
       // Load event details
-      const eventResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const eventResponse = await api.get(`/api/events/${eventId}`);
+      const eventData = eventResponse.data;
 
-      const eventData = await eventResponse.json();
-      if (eventResponse.ok && eventData.success) {
+      if (eventData.success) {
         setEvent(eventData.data);
         // Check permissions
         const isHost = eventData.data.hostId === user.id;
@@ -65,17 +55,10 @@ const AttendanceDashboard = () => {
       }
 
       // Load attendance data
-      const attendanceResponse = await fetch(
-        `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/api/events/${eventId}/attendance`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const attendanceResponse = await api.get(`/api/events/${eventId}/attendance`);
+      const attendanceData = attendanceResponse.data;
 
-      const attendanceData = await attendanceResponse.json();
-      if (attendanceResponse.ok && attendanceData.success) {
+      if (attendanceData.success) {
         const total = attendanceData.totalRegistered || 0;
         const attended = attendanceData.attendees?.length || 0;
         const notAttended = total - attended;

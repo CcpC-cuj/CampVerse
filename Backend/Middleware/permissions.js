@@ -18,7 +18,7 @@ async function requireHostOrCoHost(req, res, next) {
   }
   
   try {
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(eventId).select('hostUserId coHosts');
     if (!event) {
       return res.status(404).json({ error: 'Event not found.' });
     }

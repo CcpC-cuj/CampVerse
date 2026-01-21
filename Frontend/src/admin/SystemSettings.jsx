@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from "react";
-import Layout from "../components/Layout";
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+import api from "../api/axiosInstance";
 
 export default function SystemSettings() {
   const [settings, setSettings] = useState({
@@ -39,16 +36,10 @@ export default function SystemSettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/admin/settings`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch settings');
-      const data = await response.json();
-      setSettings(data);
+      const response = await api.get('/api/admin/settings');
+      setSettings(response.data);
     } catch (err) {
-      setError('Error loading settings: ' + err.message);
+      setError('Error loading settings: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -56,15 +47,14 @@ export default function SystemSettings() {
 
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${API_BASE}/health`);
-      if (!response.ok) throw new Error();
-      const data = await response.json();
+      const response = await api.get('/health');
+      const data = response.data;
       
       setHealth({
         api: 'online',
         mongodb: data.services.mongodb === 'connected' ? 'online' : 'offline',
         redis: data.services.redis === 'connected' ? 'online' : 'offline',
-        ml: 'online' // Backend check doesn't include ML yet, but we'll assume online if API is up
+        ml: 'online'
       });
     } catch (err) {
       setHealth({
@@ -90,23 +80,12 @@ export default function SystemSettings() {
       setError('');
       setSuccess('');
       
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/admin/settings`, {
-        method: 'PATCH',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(settings)
-      });
+      await api.patch('/api/admin/settings', settings);
 
-      if (!response.ok) throw new Error('Failed to save settings');
-      
       setSuccess('Settings saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setSaving(false);
     }

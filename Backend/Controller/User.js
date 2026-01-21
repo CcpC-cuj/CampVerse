@@ -52,6 +52,7 @@ const logger = winston.createLogger({
 });
 const crypto = require('crypto');
 const { cacheService } = require('../Services/cacheService');
+const { asyncHandler } = require('../Middleware/errorHandler');
 
 // Import cookie helper for setting refresh token (separate module to avoid circular deps)
 const { setRefreshTokenCookie } = require('../Utils/cookieUtils');
@@ -137,8 +138,8 @@ async function googleSignIn(req, res) {
       return res.status(400).json({ error: 'Google token missing.' });
     }
 
-    // Handle mock tokens for testing
-    if (token.startsWith('mock_google_token_')) {
+    // Handle mock tokens for testing (only in non-production environments)
+    if (token.startsWith('mock_google_token_') && process.env.NODE_ENV !== 'production') {
       // Extract email and name from token if present
       let mockEmail = 'test.user@cuj.ac.in';
       let mockName = 'Test User';
@@ -2269,13 +2270,54 @@ async function findUserByEmail(req, res) {
   }
 }
 
-// Get all users (admin only)
+// Get all users (admin only) with pagination and search
 async function getAllUsers(req, res) {
   try {
-    const users = await User.find()
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+    const role = req.query.role || '';
+    const skip = (page - 1) * limit;
+
+    let query = {};
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    if (role && role !== 'all') {
+      if (query.$or) {
+        query = {
+          $and: [
+            query,
+            { roles: role }
+          ]
+        };
+      } else {
+        query.roles = role;
+      }
+    }
+
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
       .select('-passwordHash')
-      .sort({ createdAt: -1 });
-    return res.json({ users });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return res.json({
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (err) {
     logger.error('GetAllUsers error:', err);
     return res.status(500).json({ error: 'Server error fetching users.' });

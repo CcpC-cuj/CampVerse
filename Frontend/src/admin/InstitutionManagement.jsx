@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from "react";
-import Layout from "../components/Layout";
-import { useModal } from "../components/Modal";
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+import api from "../api/axiosInstance";
 
 // Helper to format location object
 const formatLocation = (location) => {
@@ -29,11 +25,8 @@ export default function InstitutionManagement() {
   const fetchInstitutions = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/institutions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const res = await api.get('/api/institutions');
+      const data = res.data;
       setInstitutions(Array.isArray(data?.institutions) ? data.institutions : Array.isArray(data) ? data : []);
     } catch {
       setInstitutions([]);
@@ -44,22 +37,11 @@ export default function InstitutionManagement() {
   const handleApprove = async (institutionId) => {
     setActionLoading(institutionId);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/institutions/${institutionId}/approve-verification`, {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      if (res.ok) {
-        await showSuccess('Institution approved successfully!');
-        fetchInstitutions();
-      } else {
-        await showError('Failed to approve institution');
-      }
-    } catch {
-      await showError('Error approving institution');
+      await api.post(`/api/institutions/${institutionId}/approve-verification`);
+      await showSuccess('Institution approved successfully!');
+      fetchInstitutions();
+    } catch (error) {
+      await showError(error.response?.data?.error || 'Failed to approve institution');
     }
     setActionLoading(null);
   };
@@ -75,23 +57,11 @@ export default function InstitutionManagement() {
 
     setActionLoading(institutionId);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/api/institutions/${institutionId}/reject-verification`, {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-      if (res.ok) {
-        await showSuccess('Institution rejected');
-        fetchInstitutions();
-      } else {
-        await showError('Failed to reject institution');
-      }
-    } catch {
-      await showError('Error rejecting institution');
+      await api.post(`/api/institutions/${institutionId}/reject-verification`, { reason });
+      await showSuccess('Institution rejected');
+      fetchInstitutions();
+    } catch (error) {
+      await showError(error.response?.data?.error || 'Failed to reject institution');
     }
     setActionLoading(null);
   };

@@ -1,7 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Layout from '../components/Layout';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
+import api from '../api/axiosInstance';
 
 export default function CertificateTemplateManagement() {
   const [templates, setTemplates] = useState([]);
@@ -26,19 +23,11 @@ export default function CertificateTemplateManagement() {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/admin/certificate-templates`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch templates');
-      
-      const data = await response.json();
-      setTemplates(data.templates || []);
+      const response = await api.get('/api/admin/certificate-templates');
+      setTemplates(response.data.templates || []);
       setError('');
     } catch (err) {
-      setError('Failed to load templates: ' + err.message);
+      setError('Failed to load templates: ' + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
@@ -61,20 +50,11 @@ export default function CertificateTemplateManagement() {
       form.append('name', formData.name);
       form.append('type', formData.type);
 
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/admin/certificate-templates`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include',
-        body: form
+      const response = await api.post('/api/admin/certificate-templates', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to upload template');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setSuccess(`Template "${data.template.name}" uploaded successfully!`);
       setShowUploadForm(false);
       setFormData({ name: '', type: 'participation' });
@@ -83,7 +63,7 @@ export default function CertificateTemplateManagement() {
       setPreviewUrl('');
       fetchTemplates();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setUploading(false);
     }
@@ -93,22 +73,11 @@ export default function CertificateTemplateManagement() {
     if (!confirm(`Are you sure you want to delete "${templateName}"?`)) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE}/api/admin/certificate-templates/${templateId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete template');
-      }
-
+      await api.delete(`/api/admin/certificate-templates/${templateId}`);
       setSuccess(`Template "${templateName}" deleted successfully!`);
       fetchTemplates();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
