@@ -20,6 +20,22 @@ export default function InstitutionManagement() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    type: 'college',
+    emailDomain: '',
+    website: '',
+    phone: '',
+    info: '',
+    isVerified: false,
+    location: {
+      city: '',
+      state: '',
+      country: '',
+    },
+  });
 
   useEffect(() => {
     fetchInstitutions();
@@ -67,6 +83,68 @@ export default function InstitutionManagement() {
       await showError(error.response?.data?.error || 'Failed to reject institution');
     }
     setActionLoading(null);
+  };
+
+  const openEdit = (inst) => {
+    setEditTarget(inst);
+    setEditForm({
+      name: inst.name || '',
+      type: inst.type || 'college',
+      emailDomain: inst.emailDomain || inst.domain || '',
+      website: inst.website || '',
+      phone: inst.phone || '',
+      info: inst.info || inst.description || '',
+      isVerified: !!inst.isVerified,
+      location: {
+        city: inst.location?.city || '',
+        state: inst.location?.state || '',
+        country: inst.location?.country || '',
+      },
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditChange = (field, value) => {
+    if (field.startsWith('location.')) {
+      const key = field.split('.')[1];
+      setEditForm((prev) => ({
+        ...prev,
+        location: { ...prev.location, [key]: value },
+      }));
+      return;
+    }
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTarget?._id) return;
+    try {
+      setActionLoading(editTarget._id);
+      const payload = {
+        name: editForm.name?.trim(),
+        type: editForm.type,
+        emailDomain: editForm.emailDomain?.trim().toLowerCase(),
+        website: editForm.website?.trim(),
+        phone: editForm.phone?.trim(),
+        info: editForm.info?.trim(),
+        isVerified: editForm.isVerified,
+        location: {
+          city: editForm.location.city?.trim(),
+          state: editForm.location.state?.trim(),
+          country: editForm.location.country?.trim(),
+        },
+      };
+
+      await api.patch(`/api/institutions/${editTarget._id}`, payload);
+      await showSuccess('Institution updated successfully!');
+      setEditOpen(false);
+      setEditTarget(null);
+      fetchInstitutions();
+    } catch (error) {
+      await showError(error.response?.data?.error || 'Failed to update institution');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const filteredInstitutions = institutions.filter(inst => {
@@ -172,10 +250,10 @@ export default function InstitutionManagement() {
                   </div>
 
                   <div className="space-y-2 text-sm mb-4">
-                    {inst.domain && (
+                    {(inst.emailDomain || inst.domain) && (
                       <div className="flex items-center gap-2 text-gray-300">
                         <i className="ri-global-line text-gray-500" />
-                        <span>{inst.domain}</span>
+                        <span>{inst.emailDomain || inst.domain}</span>
                       </div>
                     )}
                     {formatLocation(inst.location) && (
@@ -190,8 +268,15 @@ export default function InstitutionManagement() {
                   </div>
 
                   {/* Actions for pending institutions */}
-                  {!inst.isVerified && inst.verificationStatus !== 'rejected' && (
-                    <div className="flex gap-2 pt-3 border-t border-gray-700/50">
+                  <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-700/50">
+                    <button
+                      onClick={() => openEdit(inst)}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm flex items-center justify-center gap-1"
+                    >
+                      <i className="ri-edit-line" />
+                      Edit
+                    </button>
+                    {!inst.isVerified && inst.verificationStatus !== 'rejected' && (
                       <button
                         onClick={() => handleApprove(inst._id)}
                         disabled={actionLoading === inst._id}
@@ -206,6 +291,8 @@ export default function InstitutionManagement() {
                           </>
                         )}
                       </button>
+                    )}
+                    {!inst.isVerified && inst.verificationStatus !== 'rejected' && (
                       <button
                         onClick={() => handleReject(inst._id)}
                         disabled={actionLoading === inst._id}
@@ -214,14 +301,135 @@ export default function InstitutionManagement() {
                         <i className="ri-close-line" />
                         Reject
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setEditOpen(false)} />
+          <div className="relative w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">Edit Institution</h3>
+              <button onClick={() => setEditOpen(false)} className="text-gray-400 hover:text-white">
+                <i className="ri-close-line text-xl" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm text-gray-400">Name</label>
+                <input
+                  value={editForm.name}
+                  onChange={(e) => handleEditChange('name', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">Type</label>
+                <select
+                  value={editForm.type}
+                  onChange={(e) => handleEditChange('type', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                >
+                  <option value="college">College</option>
+                  <option value="university">University</option>
+                  <option value="org">Organization</option>
+                  <option value="temporary">Temporary</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">Email Domain</label>
+                <input
+                  value={editForm.emailDomain}
+                  onChange={(e) => handleEditChange('emailDomain', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                  placeholder="example.edu"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">Website</label>
+                <input
+                  value={editForm.website}
+                  onChange={(e) => handleEditChange('website', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                  placeholder="https://"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">Phone</label>
+                <input
+                  value={editForm.phone}
+                  onChange={(e) => handleEditChange('phone', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <input
+                  type="checkbox"
+                  checked={editForm.isVerified}
+                  onChange={(e) => handleEditChange('isVerified', e.target.checked)}
+                />
+                <span className="text-sm text-gray-300">Verified</span>
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">City</label>
+                <input
+                  value={editForm.location.city}
+                  onChange={(e) => handleEditChange('location.city', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">State</label>
+                <input
+                  value={editForm.location.state}
+                  onChange={(e) => handleEditChange('location.state', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-400">Country</label>
+                <input
+                  value={editForm.location.country}
+                  onChange={(e) => handleEditChange('location.country', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-sm text-gray-400">Info</label>
+                <textarea
+                  value={editForm.info}
+                  onChange={(e) => handleEditChange('info', e.target.value)}
+                  className="mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setEditOpen(false)}
+                className="px-4 py-2 rounded-lg bg-gray-700 text-white hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={actionLoading === editTarget?._id}
+                className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50"
+              >
+                {actionLoading === editTarget?._id ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

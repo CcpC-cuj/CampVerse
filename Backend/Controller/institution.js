@@ -80,7 +80,7 @@ async function deleteInstitution(req, res) {
 // Approve institution verification (verifier or admin)
 async function approveInstitutionVerification(req, res) {
   try {
-    const { location, website, phone, info, remarks } = req.body || {};
+    const { name, type, emailDomain, location, website, phone, info, remarks } = req.body || {};
     const verifierId = req.user.id;
 
     const institution = await Institution.findById(req.params.id);
@@ -109,6 +109,9 @@ async function approveInstitutionVerification(req, res) {
 
     // Store previous data for history
     const previousData = {
+      name: institution.name,
+      type: institution.type,
+      emailDomain: institution.emailDomain,
       isVerified: institution.isVerified,
       website: institution.website,
       phone: institution.phone,
@@ -120,7 +123,11 @@ async function approveInstitutionVerification(req, res) {
     institution.isVerified = true;
     institution.verificationRequested = false;
 
-    // Verifier can add/update location and other details during approval
+    // Verifier can override name/type/domain and add/update location and other details during approval
+    if (name && name.trim()) institution.name = name.trim();
+    if (type && type.trim()) institution.type = type.trim();
+    if (emailDomain && emailDomain.trim()) institution.emailDomain = emailDomain.trim().toLowerCase();
+
     if (location) {
       institution.location = {
         city: location.city || institution.location?.city || '',
@@ -150,6 +157,9 @@ async function approveInstitutionVerification(req, res) {
       remarks: remarks || 'Institution approved after verification',
       previousData,
       newData: {
+        name: institution.name,
+        type: institution.type,
+        emailDomain: institution.emailDomain,
         isVerified: true,
         website: institution.website,
         phone: institution.phone,
