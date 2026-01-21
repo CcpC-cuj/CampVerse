@@ -9,7 +9,6 @@ import {
   unlinkGoogleAccount,
   forgotPassword
 } from '../api';
-import { checkSecurityStatus, refreshAccessToken } from '../api/auth';
 import { getGoogleToken } from '../utils/googleAuth';
 
 const AuthenticationSettings = () => {
@@ -17,7 +16,6 @@ const AuthenticationSettings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [securityStatus, setSecurityStatus] = useState(null);
 
   // Form states
   const [showPasswordSetup, setShowPasswordSetup] = useState(false);
@@ -35,7 +33,7 @@ const AuthenticationSettings = () => {
   const [otpData, setOtpData] = useState({ otp: '' });
   const [googleLinkData, setGoogleLinkData] = useState({ email: '', password: '' });
 
-  useEffect(() => { loadAuthStatus(); loadSecurityStatus(); }, []);
+  useEffect(() => { loadAuthStatus(); }, []);
 
   const loadAuthStatus = async () => {
     try {
@@ -49,30 +47,6 @@ const AuthenticationSettings = () => {
     }
   };
 
-  const loadSecurityStatus = async () => {
-    try {
-      const status = await checkSecurityStatus();
-      setSecurityStatus(status?.data || status || null);
-    } catch {
-      setSecurityStatus(null);
-    }
-  };
-
-  const handleRefreshToken = async () => {
-    try {
-      setLoading(true);
-      const res = await refreshAccessToken();
-      if (res?.message) {
-        setSuccess(res.message);
-      } else {
-        setSuccess('Session refreshed.');
-      }
-    } catch {
-      setError('Failed to refresh session');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handlePasswordSetup = async (e) => {
     e.preventDefault();
@@ -279,34 +253,6 @@ const AuthenticationSettings = () => {
               Google Login: Available
             </div>
           </div>
-        </div>
-
-        {/* Security Status */}
-        <div className="mb-6 p-4 bg-gray-900/40 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">Security Status</h3>
-            <div className="flex gap-2">
-              <button
-                onClick={loadSecurityStatus}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-button text-sm"
-              >
-                Refresh
-              </button>
-              <button
-                onClick={handleRefreshToken}
-                className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-3 py-1 rounded-button text-sm"
-              >
-                Refresh Session
-              </button>
-            </div>
-          </div>
-          {securityStatus ? (
-            <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-              {JSON.stringify(securityStatus, null, 2)}
-            </pre>
-          ) : (
-            <p className="text-gray-400 text-sm">No security status available.</p>
-          )}
         </div>
 
         {/* Action Blocks (neutral cards, purple primary) */}

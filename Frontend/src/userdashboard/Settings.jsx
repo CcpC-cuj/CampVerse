@@ -18,6 +18,7 @@ import NavBar from './NavBar';
 import LoginHistory from './LoginHistory';
 import ActiveSessions from './ActiveSessions';
 import { useToast } from '../components/Toast';
+import { checkSecurityStatus } from '../api/auth';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const Settings = () => {
 
   // notifications state (unchanged functionality)
   const [emailNotifications, setEmailNotifications] = useState(true);
+    const [securityAlert, setSecurityAlert] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [notifPrefs, setNotifPrefs] = useState({ email: {}, inApp: {} });
   const [notifSaving, setNotifSaving] = useState(false);
@@ -347,6 +349,25 @@ useEffect(() => {
     loadPrefs();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadSecurity = async () => {
+      try {
+        const res = await checkSecurityStatus();
+        const report = res?.data || res || null;
+        if (mounted) {
+          setSecurityAlert(Boolean(report?.suspicious));
+        }
+      } catch {
+        if (mounted) setSecurityAlert(false);
+      }
+    };
+    loadSecurity();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const saveNotificationPrefs = async () => {
     try {
       setNotifSaving(true);
@@ -584,9 +605,17 @@ const handleSaveProfile = async () => {
                   <h3 className="text-xl font-semibold mb-4">Profile Settings</h3>
 
                   <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={profilePhoto}
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                        Profile Settings
+                        {securityAlert && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 text-red-300 px-2 py-0.5 text-xs border border-red-500/30">
+                            <i className="ri-alert-fill" />
+                            Security warning
+                          </span>
+                        )}
+                      </h3>
+                    </div>
                         alt="Profile"
                         className="w-16 h-16 rounded-full object-cover"
                         onError={(e) => {

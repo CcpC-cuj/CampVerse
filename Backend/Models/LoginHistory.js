@@ -128,10 +128,11 @@ loginHistorySchema.statics.logAttempt = async function({
 
 // Static method: Get login history for user
 loginHistorySchema.statics.getHistory = async function(userId, options = {}) {
-  const { limit = 50, skip = 0, status = null } = options;
+  const { limit = 50, skip = 0, status = null, includeRefreshTokens = false } = options;
   
   const query = { userId };
   if (status) query.status = status;
+  if (!includeRefreshTokens) query.authMethod = { $ne: 'refresh_token' };
   
   return this.find(query)
     .sort({ timestamp: -1 })
@@ -167,7 +168,8 @@ loginHistorySchema.statics.checkSuspiciousActivity = async function(userId) {
   const recentLogins = await this.find({
     userId,
     status: 'success',
-    timestamp: { $gte: oneDayAgo }
+    timestamp: { $gte: oneDayAgo },
+    authMethod: { $ne: 'refresh_token' }
   }).select('location.country ipAddress timestamp');
   
   const uniqueCountries = [...new Set(recentLogins.map(l => l.location?.country).filter(Boolean))];
@@ -186,7 +188,7 @@ loginHistorySchema.statics.getStats = async function(userId, days = 30) {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   
   const stats = await this.aggregate([
-    { $match: { userId: new mongoose.Types.ObjectId(userId), timestamp: { $gte: since } } },
+    { $match: { userId: new mongoose.Types.ObjectId(userId), timestamp: { $gte: since }, authMethod: { $ne: 'refresh_token' } } },
     {
       $group: {
         _id: '$status',

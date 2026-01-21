@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 
 const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
   const [otp, setOtp] = useState(Array(6).fill(""));
+  const [error, setError] = useState('');
   const [timer, setTimer] = useState(30);
   const inputsRef = useRef([]);
 
@@ -25,6 +26,7 @@ const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
     const newOtp = [...otp];
     newOtp[i] = val[0];
     setOtp(newOtp);
+    if (error) setError('');
     if (i < 5) inputsRef.current[i + 1].focus();
   };
 
@@ -38,14 +40,22 @@ const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
     const newOtp = Array(6).fill("");
     paste.forEach((ch, idx) => (newOtp[idx] = ch));
     setOtp(newOtp);
+    if (error) setError('');
     const next = paste.length >= 6 ? 5 : paste.length;
     inputsRef.current[next]?.focus();
   };
 
   // Submit OTP
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onVerifyOtp(otp.join(""));
+    try {
+      await onVerifyOtp(otp.join(""));
+    } catch (err) {
+      setError(err?.message || 'Incorrect OTP. Please try again.');
+      const cleared = Array(6).fill("");
+      setOtp(cleared);
+      inputsRef.current[0]?.focus();
+    }
   };
 
   return (
@@ -61,7 +71,10 @@ const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-white">Verify Your Email</h2>
           <p className="text-sm text-purple-300">
-            Please enter the code sent to your email below
+            Please enter the code sent to your email below.
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Check your spam/junk folder if you don’t see it.
           </p>
         </div>
 
@@ -92,6 +105,10 @@ const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
             ))}
           </div>
 
+          {error && (
+            <p className="text-sm text-red-400 text-center">{error}</p>
+          )}
+
           <button
             type="submit"
             className="block mx-auto w-32 bg-purple-700 hover:bg-purple-800 text-white font-semibold py-2 rounded-full transition"
@@ -102,9 +119,14 @@ const OtpModal = ({ email, onClose, onVerifyOtp, onResendOtp }) => {
 
         <div className="flex justify-between items-center mt-4 text-sm">
           <button
-            onClick={() => {
-              onResendOtp();
-              setTimer(30);
+            onClick={async () => {
+              try {
+                await onResendOtp();
+                setTimer(30);
+                setError('');
+              } catch (err) {
+                setError(err?.message || 'Failed to resend OTP');
+              }
             }}
             disabled={timer > 0}
             className={`font-bold text-purple-500 hover:text-purple-400 ${

@@ -124,15 +124,7 @@ async function refreshAccessToken(refreshToken, req) {
     session.expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     await session.touch();
     
-    // Log token refresh
-    const deviceInfo = await getDeviceInfo(req);
-    await LoginHistory.logAttempt({
-      userId: user._id,
-      status: 'success',
-      authMethod: 'refresh_token',
-      deviceInfo,
-      sessionId: session._id
-    });
+    // Do not log refresh token rotations as login history entries
     
     return {
       success: true,
