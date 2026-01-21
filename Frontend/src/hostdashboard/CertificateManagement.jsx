@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axiosInstance';
+import {
+  getCertificateProgress,
+  generateBatchCertificates,
+  retryCertificateGeneration,
+  bulkRetryFailedCertificates,
+  sendCertificateNotification,
+} from '../api/certificates';
 
 import {
   Box,
@@ -111,6 +118,10 @@ const CertificateManagement = ({ eventId }) => {
   const [certificateStatus, setCertificateStatus] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [generationProgress, setGenerationProgress] = useState(false);
+  const [progressData, setProgressData] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
+  const [certificateIdInput, setCertificateIdInput] = useState('');
   
   // Dialogs
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
@@ -343,6 +354,68 @@ const CertificateManagement = ({ eventId }) => {
     }
   };
 
+  const handleCheckProgress = async () => {
+    try {
+      setActionLoading(true);
+      const res = await getCertificateProgress(eventId);
+      setProgressData(res?.data || res || null);
+      setActionMessage('Progress loaded.');
+    } catch (err) {
+      setActionMessage('Failed to load progress.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleGenerateBatch = async () => {
+    try {
+      setActionLoading(true);
+      const res = await generateBatchCertificates({ eventId });
+      setActionMessage(res?.message || 'Batch generation started.');
+      fetchCertificateStatus();
+    } catch {
+      setActionMessage('Batch generation failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBulkRetryFailed = async () => {
+    try {
+      setActionLoading(true);
+      const res = await bulkRetryFailedCertificates(eventId);
+      setActionMessage(res?.message || 'Retry initiated for failed certificates.');
+    } catch {
+      setActionMessage('Bulk retry failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleNotifyCertificate = async (certificateId) => {
+    try {
+      setActionLoading(true);
+      const res = await sendCertificateNotification(certificateId);
+      setActionMessage(res?.message || 'Notification sent.');
+    } catch {
+      setActionMessage('Failed to send notification.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRetrySingle = async (certificateId) => {
+    try {
+      setActionLoading(true);
+      const res = await retryCertificateGeneration(certificateId);
+      setActionMessage(res?.message || 'Retry started.');
+    } catch {
+      setActionMessage('Retry failed.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return <LinearProgress />;
   }
@@ -364,6 +437,64 @@ const CertificateManagement = ({ eventId }) => {
           {success}
         </Alert>
       )}
+
+      {actionMessage && (
+        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setActionMessage('')}>
+          {actionMessage}
+        </Alert>
+      )}
+
+      {/* Certificate Operations */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>Certificate Operations</Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            <Button variant="outlined" onClick={handleCheckProgress} disabled={actionLoading}>
+              Check Progress
+            </Button>
+            <Button variant="contained" color="primary" onClick={handleGenerateBatch} disabled={actionLoading}>
+              Generate Batch
+            </Button>
+            <Button variant="outlined" color="warning" onClick={handleBulkRetryFailed} disabled={actionLoading}>
+              Retry Failed
+            </Button>
+          </Box>
+
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            <TextField
+              size="small"
+              label="Certificate ID"
+              value={certificateIdInput}
+              onChange={(e) => setCertificateIdInput(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              onClick={() => certificateIdInput && handleRetrySingle(certificateIdInput)}
+              disabled={actionLoading || !certificateIdInput}
+            >
+              Retry Single
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => certificateIdInput && handleNotifyCertificate(certificateIdInput)}
+              disabled={actionLoading || !certificateIdInput}
+            >
+              Send Notification
+            </Button>
+          </Box>
+
+          {progressData && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Status: {progressData.status || progressData.generationStatus || 'N/A'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Generated: {progressData.generated || progressData.totalGenerated || 0}
+              </Typography>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Certificate Settings Card */}
       <Card sx={{ mb: 3 }}>

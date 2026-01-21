@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../api/axiosInstance';
+import { getEventById, scanQr } from '../api/events';
 
 const QRScanner = () => {
   const { eventId } = useParams();
@@ -41,14 +42,13 @@ const QRScanner = () => {
   const loadEventDetails = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/events/${eventId}`);
-      const data = response.data;
-
-      if (data.success) {
-        setEvent(data.data);
+      const response = await getEventById(eventId);
+      if (response?.success && response.data) {
+        const data = response.data;
+        setEvent(data);
         // Check if user is host or co-host
-        const isHost = data.data.hostId === user.id;
-        const isCoHost = data.data.coHosts?.some(ch => ch._id === user.id);
+        const isHost = data.hostUserId === user.id || data.hostUserId?._id === user.id;
+        const isCoHost = data.coHosts?.some(ch => ch._id === user.id);
         if (!isHost && !isCoHost) {
           alert('⛔ You do not have permission to scan QR codes for this event.');
           navigate('/host/manage-events');
@@ -157,10 +157,7 @@ const QRScanner = () => {
     }
 
     try {
-      const payload = { eventId, qrToken };
-      const response = await api.post('/api/events/scan', payload);
-      const data = response.data;
-
+      const data = await scanQr(eventId, qrToken);
       if (data.success) {
         setScanResult({
           success: true,

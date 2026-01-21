@@ -4,6 +4,7 @@ import ArticleModal from "./ArticleModal";
 import Sidebar from "./sidebar";
 import { useAuth } from "../contexts/AuthContext";
 import NavBar from "./NavBar";
+import { submitTicket as submitSupportTicket } from "../api/support";
 
 /**
  * Help Center (frontend only)
@@ -141,21 +142,21 @@ const HelpCenter = () => {
     setFeedback("");
     setSubmitting(true);
     try {
-      // TODO: BACKEND—create a route & API:
-      //  - POST /api/support/tickets
-      //  - Body: { name, email, topic, subject, message }, File: attachment (multipart/form-data)
-      //  - Returns: { ticketId, message }
-      //
-      // Example call once you implement:
-      // const res = await createSupportTicket(form); // <- implement in ../api
-      // setFeedback(res.message || "Ticket created!");
+      const formData = new FormData();
+      formData.append("name", form.name || user?.name || "");
+      formData.append("email", form.email || user?.email || "");
+      formData.append("topic", form.topic);
+      formData.append("subject", form.subject);
+      formData.append("message", form.message);
+      if (form.attachment) {
+        formData.append("attachment", form.attachment);
+      }
 
-      // Temporary UX: pretend success
-      await new Promise((r) => setTimeout(r, 900));
-      setFeedback("Thanks! Your message has been received. We’ll get back via email.");
+      const res = await submitSupportTicket(formData);
+      setFeedback(res?.message || "Ticket created successfully.");
       setForm((f) => ({ ...f, subject: "", message: "", attachment: null }));
     } catch (err) {
-      setFeedback("Something went wrong. Please try again.");
+      setFeedback(err?.error || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
       setTimeout(() => setFeedback(""), 3000);

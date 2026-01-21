@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import {
   getMyNotificationPreferences,
   updateMyNotificationPreferences,
+  updatePreferences,
+  trackReferral,
   deleteMyAccount,
   updateMe,
   uploadProfilePhoto,
@@ -174,12 +176,48 @@ const [institution, setInstitution] = useState(user?.institution || null);
   const [interestInput, setInterestInput] = useState('');
   const [skillInput, setSkillInput] = useState('');
   const [goalInput, setGoalInput] = useState('');
+    const [preferencesSaving, setPreferencesSaving] = useState(false);
+    const [preferencesMessage, setPreferencesMessage] = useState('');
+    const [referralCode, setReferralCode] = useState('');
+    const [referralMessage, setReferralMessage] = useState('');
 
 
 
 const SUGGESTED_INTERESTS = ['Hackathons', 'Robotics', 'AI/ML', 'Open Source', 'Sports', 'Cultural', 'Debate', 'Entrepreneurship'];
 const SUGGESTED_SKILLS = ['JavaScript', 'Python', 'C++', 'UI/UX', 'Data Science', 'Public Speaking', 'Leadership'];
 const SUGGESTED_GOALS = ['Get internship', 'Win a hackathon', 'Publish a paper', 'Improve DSA', 'Learn design'];
+
+  const handleSavePreferences = async () => {
+    try {
+      setPreferencesSaving(true);
+      setPreferencesMessage('');
+      const payload = {
+        interests,
+        skills,
+        learningGoals,
+      };
+      const res = await updatePreferences(payload);
+      setPreferencesMessage(res?.message || 'Preferences updated successfully.');
+    } catch (err) {
+      setPreferencesMessage(err?.error || 'Failed to update preferences.');
+    } finally {
+      setPreferencesSaving(false);
+      setTimeout(() => setPreferencesMessage(''), 4000);
+    }
+  };
+
+  const handleTrackReferral = async () => {
+    if (!referralCode.trim()) return;
+    try {
+      const res = await trackReferral({ code: referralCode.trim() });
+      setReferralMessage(res?.message || 'Referral tracked.');
+      setReferralCode('');
+    } catch (err) {
+      setReferralMessage(err?.error || 'Failed to track referral.');
+    } finally {
+      setTimeout(() => setReferralMessage(''), 4000);
+    }
+  };
 
 
 const Chip = ({ label, onRemove }) => (
@@ -952,7 +990,7 @@ const handleSaveProfile = async () => {
                           <SuggestionPills items={filteredGoalSuggestions} onPick={(v) => setLearningGoals([...learningGoals, v])} />
                         </>
                       ) : (
-                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40 bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
+                        <div className="text-gray-400 p-1 border border-gray-700 rounded-sm bg-gray-900/40">{learningGoals.join(', ') || 'No goals added'}</div>
                       )}
                     </div>
 
@@ -1076,7 +1114,38 @@ const handleSaveProfile = async () => {
                         )}
                       </div>
 
-
+                      {/* Preferences Save + Referral */}
+                      <div className="mt-4 space-y-3">
+                        <button
+                          type="button"
+                          onClick={handleSavePreferences}
+                          className="bg-[#9b5de5] hover:bg-[#8c4be1] text-white px-4 py-2 rounded-button"
+                          disabled={preferencesSaving}
+                        >
+                          {preferencesSaving ? 'Saving...' : 'Save Preferences'}
+                        </button>
+                        {preferencesMessage && (
+                          <div className="text-sm text-gray-300">{preferencesMessage}</div>
+                        )}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            value={referralCode}
+                            onChange={(e) => setReferralCode(e.target.value)}
+                            placeholder="Referral code"
+                            className="flex-1 bg-gray-900/60 border border-gray-700 rounded-lg px-3 py-2 text-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleTrackReferral}
+                            className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-button"
+                          >
+                            Apply Referral
+                          </button>
+                        </div>
+                        {referralMessage && (
+                          <div className="text-sm text-gray-300">{referralMessage}</div>
+                        )}
+                      </div>
 
                     {/* Removed Save Changes button for notification preferences. Changes are now instant. */}
 

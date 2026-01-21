@@ -22,6 +22,8 @@ const Settings = lazy(() => import("./userdashboard/Settings"));
 const Events = lazy(() => import("./userdashboard/Events"));
 const HelpCenter = lazy(() => import("./userdashboard/HelpCenter"));
 const Feedback = lazy(() => import("./userdashboard/Feedback"));
+const MyCertificates = lazy(() => import("./userdashboard/MyCertificates"));
+const UserBadges = lazy(() => import("./userdashboard/UserBadges"));
 const MyInstitution = lazy(() => import("./userdashboard/MyInstitution"));
 const HostRegistration = lazy(() => import("./userdashboard/HostRegistration"));
 const QRViewer = lazy(() => import("./components/QRViewer"));
@@ -39,6 +41,9 @@ const InstitutionManagement = lazy(() => import("./admin/InstitutionManagement")
 const PlatformAnalytics = lazy(() => import("./admin/PlatformAnalytics"));
 const SystemSettings = lazy(() => import("./admin/SystemSettings"));
 const CertificateTemplateManagement = lazy(() => import("./admin/CertificateTemplateManagement"));
+const SupportTickets = lazy(() => import("./admin/SupportTickets"));
+const FeedbackManagement = lazy(() => import("./admin/FeedbackManagement"));
+const AdminTools = lazy(() => import("./admin/AdminTools"));
 
 // Host lazy imports
 const ManageEvents = lazy(() => import("./hostdashboard/EventsManagement"));
@@ -165,6 +170,22 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Events />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/certificates"
+                    element={
+                      <ProtectedRoute>
+                        <MyCertificates />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/badges"
+                    element={
+                      <ProtectedRoute>
+                        <UserBadges />
                       </ProtectedRoute>
                     }
                   />
@@ -365,6 +386,30 @@ function App() {
                     element={
                       <ProtectedRoute requiredRoles={['platformAdmin']}>
                         <CertificateTemplateManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/support"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <SupportTickets />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/feedback"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <FeedbackManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/tools"
+                    element={
+                      <ProtectedRoute requiredRoles={['platformAdmin']}>
+                        <AdminTools />
                       </ProtectedRoute>
                     }
                   />

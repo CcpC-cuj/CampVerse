@@ -123,6 +123,8 @@ const eventSchema = new mongoose.Schema({
   },
   // participants and participantCount removed; use EventParticipationLog for tracking
   capacity: { type: Number },
+  // Atomic registration counter for capacity enforcement
+  registeredCount: { type: Number, default: 0 },
   waitlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   sessions: [
     {

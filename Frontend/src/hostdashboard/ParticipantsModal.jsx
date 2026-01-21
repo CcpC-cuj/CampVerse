@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { getEventParticipants } from "../api/events";
+import { getParticipants } from "../api/events";
+import { getHostEventParticipants } from "../api/host";
 
 const ParticipantsModal = ({ event, onClose }) => {
   const [participants, setParticipants] = useState([]);
@@ -19,7 +20,12 @@ const ParticipantsModal = ({ event, onClose }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getEventParticipants(event._id);
+      let response;
+      try {
+        response = await getHostEventParticipants(event._id);
+      } catch {
+        response = await getParticipants(event._id);
+      }
       
       // Handle different response formats
       if (Array.isArray(response)) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPublicEventById, rsvpEvent, cancelRsvp, getMyEventQrCode } from '../api/events';
+import { getPublicEventById, rsvpEvent, cancelRsvp, getMyEventQrCode, getSimilarEvents, getGoogleCalendarLink } from '../api/events';
 import { useAuth } from '../contexts/AuthContext';
 import ShareButton from '../userdashboard/ShareButton';
 import LoginModal from './LoginModal';
@@ -25,6 +25,8 @@ const EventDetailsPage = () => {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [showCalendarPrompt, setShowCalendarPrompt] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0); // Force refresh key
+  const [similarEvents, setSimilarEvents] = useState([]);
+  const [calendarLinkLoading, setCalendarLinkLoading] = useState(false);
 
   useEffect(() => {
     loadEvent();
@@ -59,6 +61,15 @@ const EventDetailsPage = () => {
         } else {
           setRegistrationStatus(null);
           setQrCodeImage(null); // Clear QR if not registered
+        }
+
+        // Load similar events
+        try {
+          const similarRes = await getSimilarEvents(id, 4);
+          const similarList = similarRes?.data?.events || similarRes?.events || [];
+          setSimilarEvents(similarList.filter(e => e._id !== id));
+        } catch {
+          setSimilarEvents([]);
         }
       } else {
         setError('Event not found');
@@ -545,6 +556,27 @@ const EventDetailsPage = () => {
               </div>
             </div>
           )}
+
+          {/* Similar Events */}
+          {similarEvents.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-2xl font-bold text-white mb-4">✨ Similar Events</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {similarEvents.slice(0, 6).map((ev) => (
+                  <div key={ev._id} className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2">{ev.title}</h3>
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2">{ev.description}</p>
+                    <button
+                      onClick={() => navigate(`/events/${ev._id}`)}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      View Event
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -572,6 +604,24 @@ const EventDetailsPage = () => {
               Would you like to add this event to your calendar so you don't forget?
             </p>
             <div className="flex flex-col gap-3">
+              <button
+                onClick={async () => {
+                  try {
+                    setCalendarLinkLoading(true);
+                    const res = await getGoogleCalendarLink(event._id || id);
+                    const link = res?.url || res?.data?.url || res?.link || res?.data?.link;
+                    if (link) {
+                      window.open(link, '_blank');
+                    }
+                  } finally {
+                    setCalendarLinkLoading(false);
+                  }
+                }}
+                className="w-full px-6 py-3 bg-purple-700 hover:bg-purple-800 text-white rounded-lg font-semibold transition-colors"
+                disabled={calendarLinkLoading}
+              >
+                {calendarLinkLoading ? 'Loading link...' : '🔗 Get Google Calendar Link'}
+              </button>
               <button
                 onClick={() => {
                   addToGoogleCalendar(event);

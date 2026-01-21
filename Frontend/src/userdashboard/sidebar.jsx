@@ -128,6 +128,8 @@ const Sidebar = ({ onDiscoverClick }) => {
           
           <SidebarSection title="Events" />
           <SidebarLink icon="ri-calendar-event-line" to="/dashboard/events" label="My Events" />
+          <SidebarLink icon="ri-award-line" to="/dashboard/certificates" label="My Certificates" />
+          <SidebarLink icon="ri-medal-2-line" to="/dashboard/badges" label="My Badges" />
           
           <SidebarSection title="Community" />
           <SidebarLink icon="ri-building-2-line" to="/colleges" label="My Institution" />
@@ -161,6 +163,9 @@ const Sidebar = ({ onDiscoverClick }) => {
               <SidebarLink icon="ri-user-settings-line" to="/admin/users" label="User Management" />
               <SidebarLink icon="ri-building-4-line" to="/admin/institutions" label="Institutions" />
               <SidebarLink icon="ri-line-chart-line" to="/admin/analytics" label="Platform Analytics" />
+              <SidebarLink icon="ri-customer-service-2-line" to="/admin/support" label="Support Tickets" />
+              <SidebarLink icon="ri-feedback-line" to="/admin/feedback" label="Feedback" />
+              <SidebarLink icon="ri-tools-line" to="/admin/tools" label="Admin Tools" />
               <SidebarLink icon="ri-tools-line" to="/admin/settings" label="System Settings" />
             </>
           )}

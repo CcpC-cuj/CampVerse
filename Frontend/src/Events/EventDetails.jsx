@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { approveCoHost, rejectCoHost } from "../api/events";
 
 const EventDetails = ({ event, onClose, onEdit, onRSVP, onCancelRSVP, onVerify, onApproveCoHost, onRejectCoHost }) => {
   const { user } = useAuth();
@@ -305,13 +306,13 @@ const EventDetails = ({ event, onClose, onEdit, onRSVP, onCancelRSVP, onVerify, 
                           {request.status === 'pending' && (
                             <div className="flex gap-2">
                               <button 
-                                onClick={() => onApproveCoHost && onApproveCoHost(event._id, request.userId)}
+                                onClick={() => (onApproveCoHost ? onApproveCoHost(event._id, request.userId) : approveCoHost(event._id, request.userId))}
                                 className="px-3 py-1 bg-green-700 hover:bg-green-800 text-white rounded text-sm"
                               >
                                 Approve
                               </button>
                               <button 
-                                onClick={() => onRejectCoHost && onRejectCoHost(event._id, request.userId)}
+                                onClick={() => (onRejectCoHost ? onRejectCoHost(event._id, request.userId) : rejectCoHost(event._id, request.userId))}
                                 className="px-3 py-1 bg-red-700 hover:bg-red-800 text-white rounded text-sm"
                               >
                                 Reject

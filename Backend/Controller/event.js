@@ -123,6 +123,7 @@ const createEvent = asyncHandler(async (req, res) => {
       about: about || '',
       logoURL,
       bannerURL,
+      registeredCount: 0,
       hostUserId: req.user.id,
       institutionId: req.user.institutionId,
     });
@@ -314,9 +315,23 @@ async function deleteEvent(req, res) {
 }
 
 // RSVP/register for event (user) - Without transactions for standalone MongoDB
+async function ensureRegisteredCount(event) {
+  if (event.registeredCount === undefined || event.registeredCount === null) {
+    const count = await EventParticipationLog.countDocuments({
+      eventId: event._id,
+      status: { $in: ['registered', 'attended'] }
+    });
+    await Event.findByIdAndUpdate(event._id, { $set: { registeredCount: count } });
+    event.registeredCount = count;
+  }
+  return event.registeredCount;
+}
+
 async function rsvpEvent(req, res) {
+  let seatReserved = false;
+  let eventId;
   try {
-    const { eventId } = req.body;
+    ({ eventId } = req.body);
     const userId = req.user.id;
     
     logger && logger.info ? logger.info('🎯 RSVP Request:', { eventId, userId }) : null;
@@ -331,33 +346,6 @@ async function rsvpEvent(req, res) {
       });
     }
     
-    // Check capacity and determine status
-    let status = 'registered';
-    let qrToken = null;
-    
-    if (event.capacity) {
-      const registeredCount = await EventParticipationLog.countDocuments({
-        eventId,
-        status: 'registered'
-      });
-      
-      if (registeredCount >= event.capacity) {
-        status = 'waitlisted';
-      }
-    }
-    
-    // Generate secure QR token using crypto
-    const crypto = require('crypto');
-    qrToken = crypto.randomBytes(32).toString('hex');
-    
-    // Calculate QR expiration (event end + 2 hours)
-    const qrExpiresAt = new Date(event.date);
-    if (event.endDate) {
-      qrExpiresAt.setTime(new Date(event.endDate).getTime() + 2 * 60 * 60 * 1000);
-    } else {
-      qrExpiresAt.setTime(event.date.getTime() + 2 * 60 * 60 * 1000);
-    }
-    
     // Check if user is already registered
     const existingLog = await EventParticipationLog.findOne({ userId, eventId });
     if (existingLog) {
@@ -367,6 +355,39 @@ async function rsvpEvent(req, res) {
         error: 'User already registered for this event',
         message: 'You have already registered for this event'
       });
+    }
+
+    // Check capacity and determine status atomically
+    let status = 'registered';
+    let qrToken = null;
+
+    if (event.capacity) {
+      await ensureRegisteredCount(event);
+
+      const updatedEvent = await Event.findOneAndUpdate(
+        { _id: eventId, registeredCount: { $lt: event.capacity } },
+        { $inc: { registeredCount: 1 } },
+        { new: true }
+      );
+
+      if (!updatedEvent) {
+        status = 'waitlisted';
+      } else {
+        seatReserved = true;
+        event.registeredCount = updatedEvent.registeredCount;
+      }
+    }
+
+    // Generate secure QR token using crypto
+    const crypto = require('crypto');
+    qrToken = crypto.randomBytes(32).toString('hex');
+
+    // Calculate QR expiration (event end + 2 hours)
+    const qrExpiresAt = new Date(event.date);
+    if (event.endDate) {
+      qrExpiresAt.setTime(new Date(event.endDate).getTime() + 2 * 60 * 60 * 1000);
+    } else {
+      qrExpiresAt.setTime(event.date.getTime() + 2 * 60 * 60 * 1000);
     }
     
     // Create new participation log
@@ -498,6 +519,15 @@ async function rsvpEvent(req, res) {
     
   } catch (err) {
     logger && logger.error ? logger.error('RSVP error:', err) : null;
+
+    // Roll back reserved seat if log creation failed
+    if (seatReserved && eventId) {
+      try {
+        await Event.findByIdAndUpdate(eventId, { $inc: { registeredCount: -1 } });
+      } catch (rollbackErr) {
+        logger && logger.error ? logger.error('RSVP rollback error:', rollbackErr) : null;
+      }
+    }
     
     // Handle duplicate key error specifically
     if (err.code === 11000) {
@@ -532,6 +562,9 @@ async function cancelRsvp(req, res) {
         message: 'The event you are trying to cancel RSVP for does not exist'
       });
     }
+
+    // Ensure registeredCount is initialized for atomic updates
+    await ensureRegisteredCount(event);
     
     // Find participation log
     const log = await EventParticipationLog.findOne({
@@ -558,14 +591,18 @@ async function cancelRsvp(req, res) {
     
     // Delete the participation log
     await EventParticipationLog.findByIdAndDelete(log._id);
-    
-    // Remove from event waitlist if present
-    event.waitlist = event.waitlist.filter(
-      (id) => id.toString() !== userId.toString(),
-    );
+
+    const freedSeat = log.status === 'registered';
+
+    // Remove from event waitlist and decrement registeredCount if needed
+    const cancelUpdate = { $pull: { waitlist: userId } };
+    if (freedSeat) {
+      cancelUpdate.$inc = { registeredCount: -1 };
+    }
+    await Event.findByIdAndUpdate(eventId, cancelUpdate);
     
     // If user was registered, promote first waitlisted user
-    if (log.status === 'registered' && event.waitlist.length > 0) {
+    if (freedSeat && event.waitlist.length > 0) {
       const nextUserId = event.waitlist[0];
       
       // Update their participation log
@@ -599,6 +636,12 @@ async function cancelRsvp(req, res) {
         };
         
         await nextLog.save();
+
+        // Remove promoted user from waitlist and restore registeredCount
+        await Event.findByIdAndUpdate(eventId, {
+          $pull: { waitlist: nextUserId },
+          $inc: { registeredCount: 1 }
+        });
         
         // Notify promoted user
         const promotedUser = await User.findById(nextUserId);

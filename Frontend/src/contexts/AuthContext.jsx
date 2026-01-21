@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getToken, setToken, removeToken, getUser, setUser, removeUser } from '../utils/auth';
-import { getMe } from '../api/user';
+import { getMe, updateLocalUserIfPresent } from '../api/user';
 import api from '../api/axiosInstance';
 
 const AuthContext = createContext();
@@ -98,6 +98,7 @@ export const AuthProvider = ({ children }) => {
       if (freshUserData && !freshUserData.error) {
         setUser(freshUserData);
         setUserState(freshUserData);
+        updateLocalUserIfPresent({ user: freshUserData });
       }
     } catch (error) {
       console.error('Manual user refresh failed:', error);

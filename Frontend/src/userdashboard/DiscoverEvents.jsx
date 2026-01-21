@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ShareButton from "./ShareButton";
 import EventDetailsModal from "./EventDetailsModal";
-import { listEvents, rsvpEvent, cancelRsvp, getEventRecommendations } from "../api/events";
+import { listEvents, rsvpEvent, cancelRsvp, getEventRecommendations, advancedEventSearch } from "../api/events";
 import { useAuth } from "../contexts/AuthContext";
 
 // Placeholder images for mock data
@@ -15,11 +15,41 @@ const DiscoverEvents = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchEvents();
     fetchRecommendations();
   }, [user]);
+
+  const transformEvent = (event) => {
+    const d = new Date(event.date);
+    const year = d.getUTCFullYear();
+    const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
+    const day = d.getUTCDate();
+    let hours = d.getUTCHours();
+    const minutes = d.getUTCMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedMinutes = minutes.toString().padStart(2, '0');
+
+    return {
+      id: event._id,
+      title: event.title,
+      date: `${month} ${day}, ${year}`,
+      time: `${hours}:${formattedMinutes} ${ampm}`,
+      location: event.location?.venue || event.location?.type || 'N/A',
+      host: event.organizationName || event.organizer?.name || 'Host',
+      participants: event.participants || event.registrations || 0,
+      tags: Array.isArray(event.tags) ? event.tags : [],
+      description: event.description || '',
+      sessions: event.sessions || [],
+      image: event.bannerURL || event.bannerImage || hackathonImg,
+      isPaid: event.isPaid,
+      price: event.price || event.fee,
+      _id: event._id
+    };
+  };
 
   const fetchRecommendations = async () => {
     if (!user) return;
@@ -96,34 +126,7 @@ const DiscoverEvents = () => {
           return false;
         });
         // Transform backend events to match component format
-        const transformedEvents = filteredEvents.map(event => {
-          const d = new Date(event.date);
-          const year = d.getUTCFullYear();
-          const month = d.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' });
-          const day = d.getUTCDate();
-          let hours = d.getUTCHours();
-          const minutes = d.getUTCMinutes();
-          const ampm = hours >= 12 ? 'PM' : 'AM';
-          hours = hours % 12 || 12;
-          const formattedMinutes = minutes.toString().padStart(2, '0');
-          
-          return {
-            id: event._id,
-            title: event.title,
-            date: `${month} ${day}, ${year}`,
-            time: `${hours}:${formattedMinutes} ${ampm}`,
-            location: event.location?.venue || event.location?.type || 'N/A',
-            host: event.organizationName || event.organizer?.name || 'Host',
-            participants: event.participants || event.registrations || 0,
-            tags: Array.isArray(event.tags) ? event.tags : [],
-            description: event.description || '',
-            sessions: event.sessions || [],
-            image: event.bannerURL || event.bannerImage || hackathonImg,
-            isPaid: event.isPaid,
-            price: event.price || event.fee,
-            _id: event._id
-          };
-        });
+        const transformedEvents = filteredEvents.map(transformEvent);
         setEvents(transformedEvents);
       } else {
         // API failed, show nothing
@@ -132,6 +135,25 @@ const DiscoverEvents = () => {
     } catch (err) {
       setError('Failed to load events. Please try again.');
       setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchEvents();
+      return;
+    }
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await advancedEventSearch({ q: searchQuery.trim() });
+      const eventsArr = res?.data?.events || res?.events || [];
+      const transformed = Array.isArray(eventsArr) ? eventsArr.map(transformEvent) : [];
+      setEvents(transformed);
+    } catch {
+      setError('Failed to search events. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -167,6 +189,21 @@ const DiscoverEvents = () => {
 
   return (
     <div className="bg-transparent rounded-lg p-4 sm:p-6">
+      {/* Search */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-3">
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search events..."
+          className="flex-1 bg-gray-900/60 border border-gray-700 rounded-lg px-4 py-2 text-white"
+        />
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2 bg-[#9b5de5] hover:bg-[#8c4be1] text-white rounded-lg"
+        >
+          Search
+        </button>
+      </div>
       {/* Recommendations Section */}
       {recommendations.length > 0 && (
         <div className="mb-8">

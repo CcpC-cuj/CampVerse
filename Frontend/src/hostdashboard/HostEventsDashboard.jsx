@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { getMyEvents, createHostEvent, updateHostEvent, deleteHostEvent } from "../api/host";
+import { getMyEvents, createHostEvent, updateHostEvent, deleteHostEvent, getHostDashboard } from "../api/host";
 import { createEvent, updateEvent, deleteEvent, createEventWithFiles, updateEventWithFiles } from "../api/events";
 import HostSidebar from "./HostSidebar";
 import HostNavBar from "./HostNavBar";
@@ -25,6 +25,7 @@ const HostEventsDashboard = () => {
   const [selectedTab, setSelectedTab] = useState("all");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hostStats, setHostStats] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
@@ -68,7 +69,17 @@ const HostEventsDashboard = () => {
 
   useEffect(() => {
     loadEvents();
+    loadHostStats();
   }, []);
+
+  const loadHostStats = async () => {
+    try {
+      const res = await getHostDashboard();
+      setHostStats(res?.data || res || null);
+    } catch {
+      setHostStats(null);
+    }
+  };
 
   const loadEvents = async () => {
     try {
@@ -484,6 +495,28 @@ const HostEventsDashboard = () => {
               <span>+</span> Create Event
             </button>
           </div>
+
+          {/* Host Dashboard Stats */}
+          {hostStats && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-4">
+                <p className="text-gray-400 text-sm">Total Events</p>
+                <p className="text-2xl font-bold text-white">{hostStats.totalEvents || 0}</p>
+              </div>
+              <div className="bg-blue-900/30 border border-blue-700/40 rounded-xl p-4">
+                <p className="text-blue-300 text-sm">Total Registrations</p>
+                <p className="text-2xl font-bold text-blue-200">{hostStats.totalRegistrations || 0}</p>
+              </div>
+              <div className="bg-green-900/30 border border-green-700/40 rounded-xl p-4">
+                <p className="text-green-300 text-sm">Total Attended</p>
+                <p className="text-2xl font-bold text-green-200">{hostStats.totalAttended || 0}</p>
+              </div>
+              <div className="bg-purple-900/30 border border-purple-700/40 rounded-xl p-4">
+                <p className="text-purple-300 text-sm">Certificates Issued</p>
+                <p className="text-2xl font-bold text-purple-200">{hostStats.totalCertificates || 0}</p>
+              </div>
+            </div>
+          )}
 
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">

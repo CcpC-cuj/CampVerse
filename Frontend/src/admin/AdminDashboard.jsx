@@ -176,6 +176,27 @@ export default function AdminDashboard() {
                 onClick={() => navigate('/admin/analytics')}
               />
               <QuickActionCard 
+                title="Support Tickets" 
+                description="Review and resolve user support tickets"
+                icon="ri-customer-service-2-line"
+                color="blue"
+                onClick={() => navigate('/admin/support')}
+              />
+              <QuickActionCard 
+                title="Feedback Management" 
+                description="Review user feedback and mark status"
+                icon="ri-feedback-line"
+                color="green"
+                onClick={() => navigate('/admin/feedback')}
+              />
+              <QuickActionCard 
+                title="Admin Tools" 
+                description="Advanced analytics & utilities"
+                icon="ri-tools-line"
+                color="purple"
+                onClick={() => navigate('/admin/tools')}
+              />
+              <QuickActionCard 
                 title="System Settings" 
                 description="Configure platform settings"
                 icon="ri-settings-4-line"

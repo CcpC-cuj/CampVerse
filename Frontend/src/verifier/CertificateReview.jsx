@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
-import { getCertificateDashboard } from "../api/certificates";
+import { getCertificateDashboard, approveCertificate, rejectCertificate } from "../api/certificates";
 import { useModal } from "../components/Modal";
 
 export default function CertificateReview() {
@@ -30,13 +30,8 @@ export default function CertificateReview() {
   const handleApproveCertificate = async (certId) => {
     setActionLoading(certId);
     try {
-      // API call to approve certificate
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/certificates/${certId}/approve`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
+      const res = await approveCertificate(certId);
+      if (res?.message || res?.success !== false) {
         await showSuccess('Certificate approved successfully!');
         fetchPendingCertificates();
       } else {
@@ -59,16 +54,8 @@ export default function CertificateReview() {
     
     setActionLoading(certId);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/certificates/${certId}/reject`, {
-        method: 'POST',
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-      });
-      if (res.ok) {
+      const res = await rejectCertificate(certId, reason);
+      if (res?.message || res?.success !== false) {
         await showSuccess('Certificate rejected successfully!');
         fetchPendingCertificates();
       } else {
