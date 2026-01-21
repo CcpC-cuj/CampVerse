@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../api/axiosInstance';
-import { toast } from 'react-hot-toast';
 
 const AcceptNomination = () => {
     const [searchParams] = useSearchParams();
@@ -48,11 +47,12 @@ const AcceptNomination = () => {
             
             if (res.data.success) {
                 setStatus(action === 'accept' ? 'accepted' : 'rejected');
-                toast.success(action === 'accept' ? 'Invitation accepted!' : 'Invitation rejected.');
+                // View will update based on status, no toast needed
             }
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.error || 'Failed to process invitation');
+            const errorMsg = err.response?.data?.error || 'Failed to process invitation';
+            alert(errorMsg); // Fallback to alert since react-hot-toast is missing
         } finally {
             setSubmitting(false);
         }

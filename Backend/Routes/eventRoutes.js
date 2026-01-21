@@ -1,6 +1,6 @@
 const express = require('express');
 const upload = require('../Middleware/upload');
-const { logger } = require('../Middleware/errorHandler');
+const { logger, asyncHandler } = require('../Middleware/errorHandler');
 const {
   createEvent,
   getEventById,
