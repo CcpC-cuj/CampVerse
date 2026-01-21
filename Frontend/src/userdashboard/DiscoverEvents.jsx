@@ -111,18 +111,35 @@ const DiscoverEvents = () => {
           if (event.verificationStatus !== 'approved') {
             return false;
           }
+
+          const now = new Date();
+          const eventDate = event.date ? new Date(event.date) : null;
+          const derivedStatus = eventDate
+            ? eventDate > now
+              ? 'upcoming'
+              : 'ongoing'
+            : null;
+          const status = event.status || derivedStatus;
+
           // Only show events with status 'upcoming' or 'ongoing'
-          if (event.status !== 'upcoming' && event.status !== 'ongoing') {
+          if (status !== 'upcoming' && status !== 'ongoing') {
             return false;
           }
+
+          const audienceType = event.audienceType || 'public';
+
           // Show public events
-          if (event.audienceType === 'public') {
+          if (audienceType === 'public') {
             return true;
           }
+
           // Show institution events if user belongs to the same institution
-          if (event.audienceType === 'institution' && user?.institutionId) {
-            return event.institutionId === user.institutionId;
+          if (audienceType === 'institution' && user?.institutionId) {
+            const eventInstitutionId = event.institutionId?._id || event.institutionId;
+            const userInstitutionId = user.institutionId?._id || user.institutionId;
+            return String(eventInstitutionId) === String(userInstitutionId);
           }
+
           return false;
         });
         // Transform backend events to match component format
