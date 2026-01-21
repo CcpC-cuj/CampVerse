@@ -1,11 +1,19 @@
+import React, { useEffect, useRef, useState } from 'react';
 import api from '../api/axiosInstance';
+import Layout from '../components/Layout';
+import { useToast } from '../components/Toast';
+import { useModal } from '../components/Modal';
 
 export default function CertificateTemplateManagement() {
+  const toast = useToast();
+  const { showDanger, showSuccess, showError } = useModal();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   
   // Upload form state
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -27,7 +35,9 @@ export default function CertificateTemplateManagement() {
       setTemplates(response.data.templates || []);
       setError('');
     } catch (err) {
-      setError('Failed to load templates: ' + (err.response?.data?.error || err.message));
+      const message = err.response?.data?.error || err.message || 'Failed to load templates';
+      setError(`Failed to load templates: ${message}`);
+      toast.error('Failed to load templates.');
     } finally {
       setLoading(false);
     }
@@ -37,6 +47,7 @@ export default function CertificateTemplateManagement() {
     e.preventDefault();
     if (!templateFile || !formData.name || !formData.type) {
       setError('Please fill all required fields and select a template file');
+      toast.warning('Please complete all required fields.');
       return;
     }
 
@@ -56,6 +67,7 @@ export default function CertificateTemplateManagement() {
 
       const data = response.data;
       setSuccess(`Template "${data.template.name}" uploaded successfully!`);
+      toast.success('Template uploaded successfully!');
       setShowUploadForm(false);
       setFormData({ name: '', type: 'participation' });
       setTemplateFile(null);
@@ -63,21 +75,29 @@ export default function CertificateTemplateManagement() {
       setPreviewUrl('');
       fetchTemplates();
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      const message = err.response?.data?.error || err.message || 'Upload failed';
+      setError(message);
+      toast.error('Failed to upload template.');
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async (templateId, templateName) => {
-    if (!confirm(`Are you sure you want to delete "${templateName}"?`)) return;
+    const confirmed = await showDanger(`Delete "${templateName}"? This cannot be undone.`, {
+      confirmText: 'Delete Template',
+    });
+    if (!confirmed) return;
 
     try {
       await api.delete(`/api/admin/certificate-templates/${templateId}`);
       setSuccess(`Template "${templateName}" deleted successfully!`);
+      await showSuccess('Template deleted successfully!');
       fetchTemplates();
     } catch (err) {
-      setError(err.response?.data?.error || err.message);
+      const message = err.response?.data?.error || err.message || 'Delete failed';
+      setError(message);
+      await showError('Failed to delete template.');
     }
   };
 
@@ -89,11 +109,26 @@ export default function CertificateTemplateManagement() {
     }
   };
 
+  const stats = {
+    total: templates.length,
+    participation: templates.filter((t) => t.type === 'participation').length,
+    achievement: templates.filter((t) => t.type === 'achievement').length,
+  };
+
+  const filteredTemplates = templates.filter((template) => {
+    const matchesQuery =
+      template.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.type?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (typeFilter === 'all') return matchesQuery;
+    return matchesQuery && template.type === typeFilter;
+  });
+
   return (
     <Layout title="Certificate Templates">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Certificate Templates</h1>
             <p className="text-gray-400 text-sm">Manage templates available for event certificates</p>
@@ -105,6 +140,42 @@ export default function CertificateTemplateManagement() {
             <i className="ri-add-line" />
             {showUploadForm ? 'Cancel' : 'Upload Template'}
           </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-4">
+            <p className="text-sm text-gray-400">Total Templates</p>
+            <p className="text-3xl font-semibold text-white mt-1">{stats.total}</p>
+          </div>
+          <div className="bg-gray-800/60 border border-blue-500/30 rounded-xl p-4">
+            <p className="text-sm text-blue-300">Participation</p>
+            <p className="text-3xl font-semibold text-white mt-1">{stats.participation}</p>
+          </div>
+          <div className="bg-gray-800/60 border border-amber-500/30 rounded-xl p-4">
+            <p className="text-sm text-amber-300">Achievement</p>
+            <p className="text-3xl font-semibold text-white mt-1">{stats.achievement}</p>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="flex flex-col md:flex-row gap-3">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search templates..."
+            className="flex-1 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+          />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+          >
+            <option value="all">All Types</option>
+            <option value="participation">Participation</option>
+            <option value="achievement">Achievement</option>
+          </select>
         </div>
 
         {/* Messages */}
@@ -213,20 +284,20 @@ export default function CertificateTemplateManagement() {
           <div className="flex justify-center py-12">
             <i className="ri-loader-4-line animate-spin text-4xl text-purple-400" />
           </div>
-        ) : templates.length === 0 ? (
+        ) : filteredTemplates.length === 0 ? (
           <div className="bg-gray-800/60 rounded-xl p-12 text-center border border-gray-700/40">
             <i className="ri-file-list-3-line text-6xl text-gray-600 mb-4" />
-            <p className="text-gray-400">No templates available</p>
-            <p className="text-sm text-gray-500">Upload your first certificate template to get started</p>
+            <p className="text-gray-400">No templates found</p>
+            <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {templates.map((template) => (
+            {filteredTemplates.map((template) => (
               <div
                 key={template.id}
                 className="bg-gray-800/60 rounded-xl border border-gray-700/40 overflow-hidden hover:border-purple-500/50 transition-colors"
               >
-                <div className="aspect-[16/11] bg-gray-900 relative">
+                <div className="aspect-16/11 bg-gray-900 relative">
                   <img
                     src={template.preview || template.url}
                     alt={template.name}

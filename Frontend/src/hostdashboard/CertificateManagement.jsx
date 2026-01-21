@@ -634,8 +634,14 @@ const CertificateManagement = ({ eventId }) => {
             </Box>
 
             <Typography variant="body2" color="text.secondary">
-              Upload certificate template, logos, and signature images to customize your certificates.
+              Upload your organization logo and signatures. The CampVerse logo and templates are managed centrally.
             </Typography>
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              <Chip label="Left Logo" variant="outlined" />
+              <Chip label="Left Signature" variant="outlined" />
+              <Chip label="Right Signature" variant="outlined" />
+              <Chip label="Right Logo (fixed)" color="default" />
+            </Box>
           </CardContent>
         </Card>
       )}

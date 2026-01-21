@@ -9,6 +9,7 @@ export default function CertificateReview() {
   const [pendingCertificates, setPendingCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -105,35 +106,73 @@ export default function CertificateReview() {
     }
   };
 
+  const filteredCertificates = pendingCertificates.filter((cert) => {
+    const haystack = `${cert.title || ''} ${cert.eventTitle || ''} ${cert.userName || ''} ${cert.recipientName || ''}`.toLowerCase();
+    return haystack.includes(searchQuery.toLowerCase());
+  });
+
   return (
     <Layout title="Certificate Review">
-      <div className="max-w-5xl mx-auto">
-        <div className="bg-gray-800/60 rounded-xl p-4 sm:p-8 border border-gray-700/40 mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-            <h3 className="text-xl sm:text-2xl font-semibold text-[#9b5de5]">Pending Certificates</h3>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="bg-linear-to-br from-[#151729] via-[#1b1f3b] to-[#151729] rounded-2xl p-6 border border-purple-500/20">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-2xl font-semibold text-white">Pending Certificates</h3>
+              <p className="text-sm text-purple-200">Review and approve certificates submitted by hosts</p>
+            </div>
             <button 
               onClick={fetchPendingCertificates}
-              className="px-4 py-2 bg-[#9b5de5]/20 text-[#9b5de5] rounded-lg hover:bg-[#9b5de5]/30 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors flex items-center gap-2"
             >
               <i className="ri-refresh-line" />
               Refresh
             </button>
           </div>
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <p className="text-xs text-purple-200">Total Pending</p>
+              <p className="text-3xl font-semibold text-white">{pendingCertificates.length}</p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <p className="text-xs text-purple-200">Participation</p>
+              <p className="text-3xl font-semibold text-white">
+                {pendingCertificates.filter((cert) => (cert.type || cert.certificateType) === 'participation').length}
+              </p>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <p className="text-xs text-purple-200">Achievement</p>
+              <p className="text-3xl font-semibold text-white">
+                {pendingCertificates.filter((cert) => (cert.type || cert.certificateType) === 'achievement').length}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by recipient or event name..."
+              className="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/10 text-white placeholder:text-gray-400 focus:outline-none focus:border-purple-400"
+            />
+          </div>
+        </div>
+
+        <div className="bg-gray-800/60 rounded-xl p-4 sm:p-6 border border-gray-700/40">
           {loading ? (
             <div className="flex items-center justify-center gap-3 text-gray-300 py-10">
               <i className="ri-loader-4-line animate-spin text-3xl text-[#9b5de5]" />
               <span>Loading certificates...</span>
             </div>
-          ) : pendingCertificates.length === 0 ? (
+          ) : filteredCertificates.length === 0 ? (
             <div className="text-center py-10">
               <i className="ri-file-check-line text-6xl text-gray-600 mb-4" />
-              <p className="text-gray-400 text-lg">No certificates pending review.</p>
-              <p className="text-gray-500 text-sm mt-2">All certificates have been reviewed or none have been submitted yet.</p>
+              <p className="text-gray-400 text-lg">No certificates match your search.</p>
+              <p className="text-gray-500 text-sm mt-2">Try a different keyword.</p>
             </div>
           ) : (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                    {pendingCertificates.map(cert => (
-                      <div key={cert._id || cert.id} className="bg-[#141a45] rounded-lg p-6 border border-gray-700/40 shadow hover:shadow-[0_0_15px_rgba(155,93,229,0.25)] transition-all">
+                    {filteredCertificates.map(cert => (
+                      <div key={cert._id || cert.id} className="bg-[#141a45] rounded-xl p-6 border border-gray-700/40 shadow hover:shadow-[0_0_15px_rgba(155,93,229,0.25)] transition-all">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h4 className="text-lg font-semibold text-white mb-1">{cert.title || cert.eventTitle || 'Certificate'}</h4>

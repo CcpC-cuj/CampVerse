@@ -108,10 +108,13 @@ const CertificateManagementModal = ({ event, onClose }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
         {/* Header */}
-        <div className="p-6 border-b border-gray-700 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-linear-to-r from-[#151729] via-[#1b1f3b] to-[#151729]">
           <div>
             <h2 className="text-2xl font-bold text-white">Certificate Management</h2>
             <p className="text-gray-400 text-sm mt-1">{event?.title}</p>
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border border-purple-500/30 text-purple-300 bg-purple-500/10">
+              {isCertificateEnabled ? 'Certificates Enabled' : 'Certificates Disabled'}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -124,12 +127,12 @@ const CertificateManagementModal = ({ event, onClose }) => {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-700 px-6">
+        <div className="flex border-b border-gray-700 px-6 gap-2">
           <button
             onClick={() => setActiveTab('upload')}
             className={`px-4 py-3 font-medium transition-colors ${
               activeTab === 'upload'
-                ? 'text-purple-400 border-b-2 border-purple-400'
+                ? 'text-purple-300 border-b-2 border-purple-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -139,7 +142,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
             onClick={() => setActiveTab('settings')}
             className={`px-4 py-3 font-medium transition-colors ${
               activeTab === 'settings'
-                ? 'text-purple-400 border-b-2 border-purple-400'
+                ? 'text-purple-300 border-b-2 border-purple-400'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
@@ -163,7 +166,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
 
           {activeTab === 'upload' && (
             <div className="space-y-6">
-              <div>
+              <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
                 <label className="block text-sm font-medium text-purple-300 mb-2">
                   Certificate Template
                 </label>
@@ -178,8 +181,8 @@ const CertificateManagementModal = ({ event, onClose }) => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
                   <label className="block text-sm font-medium text-purple-300 mb-2">
                     Left Logo
                   </label>
@@ -187,14 +190,14 @@ const CertificateManagementModal = ({ event, onClose }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setLeftLogoFile(e.target.files[0])}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                   />
                   {leftLogoFile && (
-                    <p className="mt-2 text-sm text-gray-400">Selected: {leftLogoFile.name}</p>
+                    <p className="mt-2 text-xs text-gray-400">Selected: {leftLogoFile.name}</p>
                   )}
                 </div>
 
-                <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-4">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
                   <div className="text-sm text-purple-300 mb-1">Right Logo</div>
                   <div className="text-xs text-gray-400">
                     CampVerse logo is fixed and applied automatically.
@@ -202,8 +205,8 @@ const CertificateManagementModal = ({ event, onClose }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
                   <label className="block text-sm font-medium text-purple-300 mb-2">
                     Left Signature
                   </label>
@@ -211,14 +214,14 @@ const CertificateManagementModal = ({ event, onClose }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setLeftSignatureFile(e.target.files[0])}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                   />
                   {leftSignatureFile && (
-                    <p className="mt-2 text-sm text-gray-400">Selected: {leftSignatureFile.name}</p>
+                    <p className="mt-2 text-xs text-gray-400">Selected: {leftSignatureFile.name}</p>
                   )}
                 </div>
 
-                <div>
+                <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
                   <label className="block text-sm font-medium text-purple-300 mb-2">
                     Right Signature
                   </label>
@@ -226,10 +229,10 @@ const CertificateManagementModal = ({ event, onClose }) => {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setRightSignatureFile(e.target.files[0])}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                    className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
                   />
                   {rightSignatureFile && (
-                    <p className="mt-2 text-sm text-gray-400">Selected: {rightSignatureFile.name}</p>
+                    <p className="mt-2 text-xs text-gray-400">Selected: {rightSignatureFile.name}</p>
                   )}
                 </div>
               </div>
