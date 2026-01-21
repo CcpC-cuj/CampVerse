@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { nominateCoHost } from "../api/events";
-import { findUserByEmail } from "../api/users";
+import { findUserByEmail } from "../api/user";
 import { useAuth } from "../contexts/AuthContext";
 
 const EditEventForm = ({ event, onSave, onCancel, loading }) => {

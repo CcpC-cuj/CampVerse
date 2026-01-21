@@ -102,6 +102,7 @@ const EventDetailsModal = ({ event, onClose }) => {
             </svg>
           </button>
         </div>
+      </div>
 
       {/* Modal Content */}
       <div className="flex-1 overflow-auto p-6">
@@ -267,7 +268,7 @@ const EventDetailsModal = ({ event, onClose }) => {
                 </div>
               </div>
               </div>
-            </div>
+
 
             {/* Host Information */}
             {(eventDetails.hostUserId || eventDetails.organizer || eventDetails.host) && (
@@ -391,6 +392,7 @@ const EventDetailsModal = ({ event, onClose }) => {
               </button>
             </div>
           </div>
+
         )}
       </div>
     </div>

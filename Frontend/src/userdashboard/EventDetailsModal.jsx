@@ -271,7 +271,7 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                           </div>
                         </div>
                       )}
-                      </div>
+
                       <div className="flex items-center gap-2 sm:gap-3">
                         <span className="text-lg sm:text-xl">👥</span>
                         <div className="text-xs sm:text-sm">

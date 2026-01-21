@@ -48,10 +48,7 @@ const HostAnalytics = () => {
               yearDistribution: years.length > 0 ? years : []
           },
           // Ensure arrays are present
-          registrationTrends: data.registrationTrends || { labels: [], datasets: [] }, // Backend didn't return this yet, keep empty or mock? 
-          // My backend implementation didn't calculate registrationTrends. 
-          // I should add a basic mock or ensure UI handles empty.
-          // Let's keep the mock data for trends for now or set to empty to avoid crash
+
           registrationTrends: {
              labels: ["Week 1", "Week 2", "Week 3", "Week 4"],
              datasets: [
