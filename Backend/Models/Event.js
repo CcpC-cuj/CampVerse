@@ -145,6 +145,8 @@ eventSchema.index({ 'organizer.type': 1 });
 eventSchema.index({ createdAt: -1 });
 eventSchema.index({ updatedAt: -1 });
 eventSchema.index({ date: 1 });
+eventSchema.index({ verificationStatus: 1, date: 1 });
+eventSchema.index({ hostUserId: 1 });
 
 // Text search index for event search (exclude organizer, use organizer.name)
 eventSchema.index({ 

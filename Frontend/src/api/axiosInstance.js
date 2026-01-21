@@ -23,6 +23,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 20000, // Prevent hanging requests
   withCredentials: true, // CRITICAL: This allows cookies to be sent/received cross-origin
 });
 

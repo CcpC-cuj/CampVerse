@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { getToken, setToken, removeToken, getUser, setUser, removeUser } from '../utils/auth';
 import { getMe, updateLocalUserIfPresent } from '../api/user';
 import api from '../api/axiosInstance';
+import { resetSocket } from '../utils/socketManager';
 
 const AuthContext = createContext();
 
@@ -83,6 +84,7 @@ export const AuthProvider = ({ children }) => {
       removeToken();
       removeUser();
       setUserState(null);
+      resetSocket();
       // Notify other tabs by triggering explicit storage changes
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -105,6 +107,35 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUserSilently = async () => {
+    try {
+      const freshUserData = await getMe();
+      if (freshUserData && !freshUserData.error) {
+        let didUpdate = false;
+        setUserState((prev) => {
+          if (!prev) {
+            didUpdate = true;
+            return freshUserData;
+          }
+          const prevJson = JSON.stringify(prev);
+          const nextJson = JSON.stringify(freshUserData);
+          if (prevJson === nextJson) {
+            return prev;
+          }
+          didUpdate = true;
+          return freshUserData;
+        });
+
+        if (didUpdate) {
+          setUser(freshUserData);
+          updateLocalUserIfPresent({ user: freshUserData });
+        }
+      }
+    } catch (error) {
+      console.warn('Silent user refresh failed:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -114,6 +145,7 @@ export const AuthProvider = ({ children }) => {
       loading,
       isAuthenticated: !!user,
       refreshUser,
+      refreshUserSilently,
       refreshToken: async () => {
         // Handled automatically by axiosInstance interceptors, 
         // but can be called manually if needed

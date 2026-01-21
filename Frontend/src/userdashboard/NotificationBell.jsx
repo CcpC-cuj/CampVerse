@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getNotifications, markNotificationAsRead } from "../api";
 import { useAuth } from "../contexts/AuthContext";
-import io from 'socket.io-client';
+import { useSocket } from '../hooks/useSocket';
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
@@ -10,8 +10,9 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [animatedIds, setAnimatedIds] = useState([]);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
   const dropdownRef = useRef(null);
-  const socketRef = useRef(null);
+  const socketRef = useSocket();
 
   // Fetch notifications from backend (silent = don't show loading spinner)
   const fetchNotifications = async (silent = false) => {
@@ -58,77 +59,80 @@ const NotificationBell = () => {
   useEffect(() => {
     fetchNotifications();
 
-    // Connect to Socket.IO server
-    const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      socketRef.current = io(API_URL, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5
-      });
+    const socket = socketRef.current;
+    if (!socket) return;
 
-      // Authenticate with token to join user room
-      socketRef.current.on('connect', () => {
-        socketRef.current.emit('authenticate', token);
-      });
-
-      socketRef.current.on('authenticated', (data) => {
-        // Socket authenticated
-      });
-
-      // Listen for new notifications
-      socketRef.current.on('notification', (newNotification) => {
-        setNotifications(prev => [newNotification, ...prev].slice(0, 10));
-        setAnimatedIds(prev => [newNotification._id, ...prev].slice(0, 10));
-        showBrowserNotification(newNotification);
-        
-        // If host status update notification, refresh user data to update UI
-        if (newNotification.type === 'host_status_update') {
-          refreshUserSilently();
-        }
-      });
-
-      // Listen for notification read status updates
-      socketRef.current.on('notificationRead', ({ notificationId }) => {
-        setNotifications(prev => 
-          prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
-        );
-      });
-
-      socketRef.current.on('disconnect', () => {
-        // Socket disconnected
-      });
-
-      socketRef.current.on('connect_error', (error) => {
-        // Connection error - silently handle
-      });
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+    const handleConnect = () => {
+      setIsSocketConnected(true);
+      const token = localStorage.getItem('token');
+      if (token) {
+        socket.emit('authenticate', token);
       }
     };
-  }, []);
+
+    const handleDisconnect = () => {
+      setIsSocketConnected(false);
+    };
+
+    const handleNotification = (newNotification) => {
+      setNotifications(prev => [newNotification, ...prev].slice(0, 10));
+      setAnimatedIds(prev => [newNotification._id, ...prev].slice(0, 10));
+      showBrowserNotification(newNotification);
+
+      // If host status update notification, refresh user data to update UI
+      if (newNotification.type === 'host_status_update') {
+        refreshUserSilently();
+      }
+    };
+
+    const handleNotificationRead = ({ notificationId }) => {
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
+      );
+    };
+
+    const handleConnectError = () => {
+      setIsSocketConnected(false);
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+    socket.on('notification', handleNotification);
+    socket.on('notificationRead', handleNotificationRead);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+      socket.off('notification', handleNotification);
+      socket.off('notificationRead', handleNotificationRead);
+    };
+  }, [refreshUserSilently, socketRef]);
 
   // Separate polling effect that depends on open state
   useEffect(() => {
-    if (open) {
-      // Stop polling when dropdown is open
+    if (open || isSocketConnected) {
       return;
     }
 
-    // Start polling when dropdown is closed
     const refreshInterval = setInterval(() => {
       fetchNotifications(true); // Silent fetch (no loading spinner)
-    }, 2000);
+    }, 15000);
 
     return () => {
       clearInterval(refreshInterval);
     };
+  }, [open, isSocketConnected]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (!open) {
+        fetchNotifications(true);
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [open]);
 
   // Close when clicking outside

@@ -58,12 +58,14 @@ async function getEventRecommendations(req, res) {
     };
 
     // Get available events for recommendation
+    const maxCandidates = Math.min(parseInt(limit) * 50, 500);
     const availableEvents = await Event.find({
       verificationStatus: 'approved',
       date: { $gte: new Date() },
-    }).select(
-      'title description tags type organizer schedule hostUserId institutionId',
-    );
+    })
+      .select('title description tags type organizer schedule hostUserId institutionId date')
+      .sort({ date: 1 })
+      .limit(maxCandidates);
 
     // Prepare data for ML API
     const recommendationData = {

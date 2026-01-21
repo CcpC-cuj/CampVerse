@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../components/Toast';
@@ -21,26 +21,10 @@ const AttendanceDashboard = () => {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const intervalRef = useRef(null);
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
+  const loadData = useCallback(async () => {
+    if (document.visibilityState === 'hidden') {
       return;
     }
-    loadData();
-
-    // Set up auto-refresh
-    if (autoRefresh) {
-      intervalRef.current = setInterval(loadData, 5000); // Refresh every 5 seconds
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [eventId, user, autoRefresh]);
-
-  const loadData = async () => {
     try {
       // Load event details
       const eventResponse = await api.get(`/api/events/${eventId}`);
@@ -92,7 +76,26 @@ const AttendanceDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId, navigate, toast, user]);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    loadData();
+
+    // Set up auto-refresh
+    if (autoRefresh) {
+      intervalRef.current = setInterval(loadData, 15000); // Refresh every 15 seconds
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [eventId, user, autoRefresh, loadData, navigate]);
 
   const toggleAutoRefresh = () => {
     setAutoRefresh(prev => !prev);

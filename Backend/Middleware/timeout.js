@@ -274,7 +274,9 @@ const emailCircuitBreaker = new CircuitBreaker({
   monitoringPeriod: 10000
 });
 
-const requestQueue = new RequestQueue(50);
+const requestQueue = new RequestQueue(
+  parseInt(process.env.REQUEST_QUEUE_CONCURRENCY || '10', 10)
+);
 
 /**
  * Middleware to add request to queue for rate limiting

@@ -45,7 +45,7 @@
     "mongodb"
   ],
   "author": "CampVerse Team",
-  "license": "ISC",
+  "license": "GPL-3.0-only",
   "bugs": {
     "url": "https://github.com/CcpC-cuj/CampVerse/issues"
   },

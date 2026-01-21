@@ -1,13 +1,13 @@
 // components/RecentNotifications.jsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bell } from 'lucide-react';
 import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../api';
-import io from 'socket.io-client';
+import { useSocket } from '../hooks/useSocket';
 
 const RecentNotifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef(null);
+  const socketRef = useSocket();
 
   const load = async () => {
     try {
@@ -23,60 +23,43 @@ const RecentNotifications = () => {
 
   useEffect(() => {
     load();
-    
-    // Connect to Socket.IO server for real-time updates
-    const API_URL = import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space';
-    const token = localStorage.getItem('token');
-    
-    if (token) {
-      socketRef.current = io(API_URL, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5
-      });
 
-      // Authenticate with token to join user room
-      socketRef.current.on('connect', () => {
-        socketRef.current.emit('authenticate', token);
-      });
+    const socket = socketRef.current;
+    if (!socket) return;
 
-      socketRef.current.on('authenticated', () => {
-        // Socket authenticated successfully
-      });
-
-      // Listen for new notifications
-      socketRef.current.on('notification', (newNotification) => {
-        setNotifications(prev => [newNotification, ...prev].slice(0, 20));
-      });
-
-      // Listen for notification read status updates
-      socketRef.current.on('notificationRead', ({ notificationId }) => {
-        setNotifications(prev => 
-          prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
-        );
-      });
-
-      // Listen for all notifications marked as read
-      socketRef.current.on('allNotificationsRead', () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      });
-
-      socketRef.current.on('disconnect', () => {
-        // Socket disconnected
-      });
-
-      socketRef.current.on('connect_error', () => {
-        // Socket connection error - will auto-retry
-      });
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+    const handleConnect = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        socket.emit('authenticate', token);
       }
     };
-  }, []);
+
+    const handleNotification = (newNotification) => {
+      setNotifications(prev => [newNotification, ...prev].slice(0, 20));
+    };
+
+    const handleNotificationRead = ({ notificationId }) => {
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
+      );
+    };
+
+    const handleAllNotificationsRead = () => {
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('notification', handleNotification);
+    socket.on('notificationRead', handleNotificationRead);
+    socket.on('allNotificationsRead', handleAllNotificationsRead);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('notification', handleNotification);
+      socket.off('notificationRead', handleNotificationRead);
+      socket.off('allNotificationsRead', handleAllNotificationsRead);
+    };
+  }, [socketRef]);
 
   const handleMarkAll = async () => {
     try {

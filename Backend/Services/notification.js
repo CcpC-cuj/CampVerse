@@ -6,6 +6,36 @@ const { logger } = require('../Middleware/errorHandler');
 // Store io instance
 let io = null;
 
+// Per-user notification batching
+const notificationBuffers = new Map();
+const notificationFlushTimers = new Map();
+const NOTIFICATION_FLUSH_MS = 300;
+
+const flushNotifications = (userId) => {
+  const buffer = notificationBuffers.get(userId);
+  if (!buffer || buffer.length === 0 || !io) {
+    return;
+  }
+
+  const notifications = buffer.splice(0, buffer.length);
+  notifications.forEach((notification) => {
+    io.to(`user:${userId}`).emit('notification', notification);
+  });
+};
+
+const scheduleNotificationFlush = (userId) => {
+  if (notificationFlushTimers.has(userId)) {
+    return;
+  }
+
+  const timerId = setTimeout(() => {
+    notificationFlushTimers.delete(userId);
+    flushNotifications(userId);
+  }, NOTIFICATION_FLUSH_MS);
+
+  notificationFlushTimers.set(userId, timerId);
+};
+
 /**
  * Set Socket.IO instance for real-time notifications
  */
@@ -29,10 +59,14 @@ async function createNotification(userId, type, message, data = {}, link = null)
     });
     await notification.save();
     
-    // Emit real-time notification via Socket.IO
+    // Emit real-time notification via Socket.IO (batched)
     if (io) {
-      io.to(`user:${userId}`).emit('notification', notification);
-      logger.info(`Real-time notification sent to user:${userId}`);
+      if (!notificationBuffers.has(userId)) {
+        notificationBuffers.set(userId, []);
+      }
+      notificationBuffers.get(userId).push(notification);
+      scheduleNotificationFlush(userId);
+      logger.info(`Queued real-time notification for user:${userId}`);
     }
     
     return notification;
