@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api/axiosInstance';
+import { useToast } from '../components/Toast';
+import ErrorBoundary from '../components/ErrorBoundary';
+import { CERTIFICATE_TYPES, VERIFICATION_STATUS } from '../constants/statuses';
 import {
   getCertificateProgress,
   generateBatchCertificates,
@@ -19,12 +22,12 @@ import {
   FormControlLabel,
   TextField,
   Grid,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   LinearProgress,
+  CircularProgress,
   Chip,
   Table,
   TableBody,
@@ -40,6 +43,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Autocomplete,
 } from '@mui/material';
 import {
   CloudUpload,
@@ -59,28 +63,28 @@ const CERTIFICATE_TEMPLATES = [
     name: 'Classic Blue',
     preview: '/templates/classic-blue-preview.png',
     url: 'https://storage.campverse.com/templates/classic-blue.png',
-    type: 'participation'
+    type: CERTIFICATE_TYPES.PARTICIPATION
   },
   {
     id: 'modern-purple',
     name: 'Modern Purple',
     preview: '/templates/modern-purple-preview.png',
     url: 'https://storage.campverse.com/templates/modern-purple.png',
-    type: 'participation'
+    type: CERTIFICATE_TYPES.PARTICIPATION
   },
   {
     id: 'elegant-gold',
     name: 'Elegant Gold',
     preview: '/templates/elegant-gold-preview.png',
     url: 'https://storage.campverse.com/templates/elegant-gold.png',
-    type: 'achievement'
+    type: CERTIFICATE_TYPES.ACHIEVEMENT
   },
   {
     id: 'minimal-dark',
     name: 'Minimal Dark',
     preview: '/templates/minimal-dark-preview.png',
     url: 'https://storage.campverse.com/templates/minimal-dark.png',
-    type: 'participation'
+    type: CERTIFICATE_TYPES.PARTICIPATION
   }
 ];
 
@@ -88,20 +92,19 @@ const CERTIFICATE_TEMPLATES = [
 const CAMPVERSE_LOGO_URL = '/logo.png';
 
 const CertificateManagement = ({ eventId }) => {
+  const toast = useToast();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   
   // Certificate settings
   const [certificateEnabled, setCertificateEnabled] = useState(false);
-  const [certificateType, setCertificateType] = useState('participation');
+  const [certificateType, setCertificateType] = useState(CERTIFICATE_TYPES.PARTICIPATION);
   const [awardText, setAwardText] = useState('');
   const [leftSignatory, setLeftSignatory] = useState({ name: '', title: '' });
   const [rightSignatory, setRightSignatory] = useState({ name: '', title: '' });
   
   // Verification Status
-  const [verificationStatus, setVerificationStatus] = useState('not_configured');
+  const [verificationStatus, setVerificationStatus] = useState(VERIFICATION_STATUS.NOT_CONFIGURED);
   const [rejectionReason, setRejectionReason] = useState('');
   
   // Selected Template (Assigned by Admin)
@@ -120,18 +123,107 @@ const CertificateManagement = ({ eventId }) => {
   const [generationProgress, setGenerationProgress] = useState(false);
   const [progressData, setProgressData] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [actionMessage, setActionMessage] = useState('');
   const [certificateIdInput, setCertificateIdInput] = useState('');
+  const [autoPolling, setAutoPolling] = useState(false);
   
   // Dialogs
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
+  const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchEventDetails();
     fetchCertificateStatus();
   }, [eventId]);
+
+  const progressStats = useMemo(() => {
+    const total =
+      progressData?.total ||
+      progressData?.totalAttended ||
+      certificateStatus?.totalAttended ||
+      0;
+    const generated =
+      progressData?.generated ||
+      progressData?.totalGenerated ||
+      certificateStatus?.certificatesGenerated ||
+      0;
+    const percentage = total > 0 ? Math.min(100, Math.round((generated / total) * 100)) : 0;
+    const rawStatus = (progressData?.status || progressData?.generationStatus || '').toLowerCase();
+    const isComplete =
+      rawStatus.includes('complete') ||
+      rawStatus.includes('done') ||
+      rawStatus.includes('finished') ||
+      (total > 0 && generated >= total);
+    const isActive =
+      rawStatus.includes('generat') ||
+      rawStatus.includes('process') ||
+      rawStatus.includes('running') ||
+      rawStatus.includes('in_progress');
+
+    return { total, generated, percentage, rawStatus, isComplete, isActive };
+  }, [progressData, certificateStatus]);
+
+  const certificateOptions = useMemo(() => {
+    return (participants || [])
+      .map((participant) => {
+        const id =
+          participant.certificateId ||
+          participant.certificate?._id ||
+          participant.certificate?.id;
+
+        if (!id) return null;
+
+        return {
+          id,
+          label: `${participant.name || 'Unknown'} • ${participant.email || 'N/A'}`,
+        };
+      })
+      .filter(Boolean);
+  }, [participants]);
+
+  useEffect(() => {
+    if (!autoPolling) return;
+
+    let isMounted = true;
+
+    const pollProgress = async () => {
+      try {
+        const res = await getCertificateProgress(eventId);
+        const data = res?.data || res || null;
+        if (isMounted) {
+          setProgressData(data);
+        }
+
+        const total = data?.total || data?.totalAttended || certificateStatus?.totalAttended || 0;
+        const generated = data?.generated || data?.totalGenerated || 0;
+        const status = (data?.status || data?.generationStatus || '').toLowerCase();
+        const isComplete =
+          status.includes('complete') ||
+          status.includes('done') ||
+          status.includes('finished') ||
+          (total > 0 && generated >= total);
+
+        if (isMounted && isComplete) {
+          setAutoPolling(false);
+          fetchCertificateStatus();
+        }
+      } catch (err) {
+        if (isMounted) {
+          toast.error('Failed to refresh progress.');
+          setAutoPolling(false);
+        }
+      }
+    };
+
+    pollProgress();
+    const interval = setInterval(pollProgress, 3000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [autoPolling, eventId, certificateStatus, toast]);
 
   const fetchEventDetails = async () => {
     try {
@@ -142,11 +234,11 @@ const CertificateManagement = ({ eventId }) => {
       setCertificateEnabled(eventData.features?.certificateEnabled || false);
       
       if (eventData.certificateSettings) {
-        setCertificateType(eventData.certificateSettings.certificateType || 'participation');
+        setCertificateType(eventData.certificateSettings.certificateType || CERTIFICATE_TYPES.PARTICIPATION);
         setAwardText(eventData.certificateSettings.awardText || '');
         setLeftSignatory(eventData.certificateSettings.leftSignatory || { name: '', title: '' });
         setRightSignatory(eventData.certificateSettings.rightSignatory || { name: '', title: '' });
-        setVerificationStatus(eventData.certificateSettings.verificationStatus || 'not_configured');
+        setVerificationStatus(eventData.certificateSettings.verificationStatus || VERIFICATION_STATUS.NOT_CONFIGURED);
         setRejectionReason(eventData.certificateSettings.rejectionReason || '');
         
         // Find selected template from gallery if ID exists
@@ -158,7 +250,7 @@ const CertificateManagement = ({ eventId }) => {
       
       setLoading(false);
     } catch (err) {
-      setError('Failed to load event details');
+      toast.error('Failed to load event details.');
       setLoading(false);
     }
   };
@@ -176,9 +268,6 @@ const CertificateManagement = ({ eventId }) => {
 
   const handleUpdateSettings = async () => {
     try {
-      setError('');
-      setSuccess('');
-      
       await api.patch(
         `/api/certificate-management/events/${eventId}/settings`,
         {
@@ -190,12 +279,11 @@ const CertificateManagement = ({ eventId }) => {
           selectedTemplateId: selectedTemplate?.id,
         }
       );
-      
-      setSuccess('Certificate settings updated successfully!');
+      toast.success('Certificate settings updated successfully!');
       setSettingsDialogOpen(false);
       fetchEventDetails();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to update settings');
+      toast.error(err.response?.data?.error || 'Failed to update settings');
     }
   };
 
@@ -318,38 +406,30 @@ const CertificateManagement = ({ eventId }) => {
 
   const handleGenerateCertificates = async () => {
     try {
-      setError('');
-      setSuccess('');
       setGenerationProgress(true);
       
       const response = await api.post(`/api/certificate-management/events/${eventId}/generate`, {});
-      
-      setSuccess(`Successfully generated ${response.data.totalGenerated} certificate(s)!`);
+      setAutoPolling(true);
+      toast.success(`Successfully generated ${response.data.totalGenerated} certificate(s)!`);
       setGenerationProgress(false);
       fetchCertificateStatus();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to generate certificates');
+      toast.error(err.response?.data?.error || 'Failed to generate certificates');
       setGenerationProgress(false);
     }
   };
 
   const handleRegenerateCertificates = async () => {
-    if (!confirm('This will delete all existing certificates and regenerate them. Continue?')) {
-      return;
-    }
-    
     try {
-      setError('');
-      setSuccess('');
       setGenerationProgress(true);
       
       const response = await api.post(`/api/certificate-management/events/${eventId}/regenerate`, {});
-      
-      setSuccess('Certificates regenerated successfully!');
+      setAutoPolling(true);
+      toast.success('Certificates regenerated successfully!');
       setGenerationProgress(false);
       fetchCertificateStatus();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to regenerate certificates');
+      toast.error(err.response?.data?.error || 'Failed to regenerate certificates');
       setGenerationProgress(false);
     }
   };
@@ -359,9 +439,9 @@ const CertificateManagement = ({ eventId }) => {
       setActionLoading(true);
       const res = await getCertificateProgress(eventId);
       setProgressData(res?.data || res || null);
-      setActionMessage('Progress loaded.');
+      toast.info('Progress loaded.');
     } catch (err) {
-      setActionMessage('Failed to load progress.');
+      toast.error('Failed to load progress.');
     } finally {
       setActionLoading(false);
     }
@@ -371,10 +451,11 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setActionLoading(true);
       const res = await generateBatchCertificates({ eventId });
-      setActionMessage(res?.message || 'Batch generation started.');
+      setAutoPolling(true);
+      toast.info(res?.message || 'Batch generation started.');
       fetchCertificateStatus();
     } catch {
-      setActionMessage('Batch generation failed.');
+      toast.error('Batch generation failed.');
     } finally {
       setActionLoading(false);
     }
@@ -384,9 +465,9 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setActionLoading(true);
       const res = await bulkRetryFailedCertificates(eventId);
-      setActionMessage(res?.message || 'Retry initiated for failed certificates.');
+      toast.info(res?.message || 'Retry initiated for failed certificates.');
     } catch {
-      setActionMessage('Bulk retry failed.');
+      toast.error('Bulk retry failed.');
     } finally {
       setActionLoading(false);
     }
@@ -396,9 +477,9 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setActionLoading(true);
       const res = await sendCertificateNotification(certificateId);
-      setActionMessage(res?.message || 'Notification sent.');
+      toast.success(res?.message || 'Notification sent.');
     } catch {
-      setActionMessage('Failed to send notification.');
+      toast.error('Failed to send notification.');
     } finally {
       setActionLoading(false);
     }
@@ -408,41 +489,28 @@ const CertificateManagement = ({ eventId }) => {
     try {
       setActionLoading(true);
       const res = await retryCertificateGeneration(certificateId);
-      setActionMessage(res?.message || 'Retry started.');
+      toast.info(res?.message || 'Retry started.');
     } catch {
-      setActionMessage('Retry failed.');
+      toast.error('Retry failed.');
     } finally {
       setActionLoading(false);
     }
   };
 
   if (loading) {
-    return <LinearProgress />;
+    return (
+      <ErrorBoundary>
+        <LinearProgress />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <ErrorBoundary>
+      <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
         Certificate Management
       </Typography>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
-          {success}
-        </Alert>
-      )}
-
-      {actionMessage && (
-        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setActionMessage('')}>
-          {actionMessage}
-        </Alert>
-      )}
 
       {/* Certificate Operations */}
       <Card sx={{ mb: 3 }}>
@@ -461,11 +529,26 @@ const CertificateManagement = ({ eventId }) => {
           </Box>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            <TextField
+            <Autocomplete
               size="small"
-              label="Certificate ID"
-              value={certificateIdInput}
-              onChange={(e) => setCertificateIdInput(e.target.value)}
+              options={certificateOptions}
+              getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
+              value={certificateOptions.find((option) => option.id === certificateIdInput) || null}
+              onChange={(event, newValue) => {
+                if (typeof newValue === 'string') {
+                  setCertificateIdInput(newValue);
+                } else {
+                  setCertificateIdInput(newValue?.id || '');
+                }
+              }}
+              inputValue={certificateIdInput}
+              onInputChange={(event, newInputValue) => setCertificateIdInput(newInputValue)}
+              freeSolo
+              renderInput={(params) => (
+                <TextField {...params} label="Certificate" placeholder="Search by name or email" />
+              )}
+              sx={{ minWidth: 320 }}
+              noOptionsText="No certificates available"
             />
             <Button
               variant="outlined"
@@ -489,7 +572,15 @@ const CertificateManagement = ({ eventId }) => {
                 Status: {progressData.status || progressData.generationStatus || 'N/A'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Generated: {progressData.generated || progressData.totalGenerated || 0}
+                Generated: {progressStats.generated} / {progressStats.total}
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={progressStats.percentage}
+                sx={{ mt: 1, height: 8, borderRadius: 5 }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {progressStats.percentage}% complete
               </Typography>
             </Box>
           )}
@@ -542,9 +633,9 @@ const CertificateManagement = ({ eventId }) => {
                 <Chip 
                   label={verificationStatus.toUpperCase()} 
                   color={
-                    verificationStatus === 'approved' ? 'success' : 
-                    verificationStatus === 'pending' ? 'warning' : 
-                    verificationStatus === 'rejected' ? 'error' : 'default'
+                    verificationStatus === VERIFICATION_STATUS.APPROVED ? 'success' : 
+                    verificationStatus === VERIFICATION_STATUS.PENDING ? 'warning' : 
+                    verificationStatus === VERIFICATION_STATUS.REJECTED ? 'error' : 'default'
                   } 
                   size="small" 
                 />
@@ -552,22 +643,27 @@ const CertificateManagement = ({ eventId }) => {
             </Grid>
           </Grid>
           
-          {verificationStatus === 'rejected' && rejectionReason && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              <strong>Rejected:</strong> {rejectionReason}
-            </Alert>
+          {verificationStatus === VERIFICATION_STATUS.REJECTED && rejectionReason && (
+            <Box sx={{ mt: 2, p: 2, borderRadius: 2, backgroundColor: 'rgba(244, 67, 54, 0.12)', border: '1px solid rgba(244, 67, 54, 0.35)' }}>
+              <Typography variant="subtitle2" color="error" gutterBottom>
+                Rejected
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {rejectionReason}
+              </Typography>
+            </Box>
           )}
 
-          {certificateEnabled && verificationStatus !== 'approved' && (
+          {certificateEnabled && verificationStatus !== VERIFICATION_STATUS.APPROVED && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
               <Button 
                 variant="contained" 
                 color="primary" 
                 onClick={handleSubmitForVerification}
-                disabled={verificationStatus === 'pending'}
+                disabled={verificationStatus === VERIFICATION_STATUS.PENDING}
                 startIcon={<Refresh />}
               >
-                {verificationStatus === 'pending' ? 'Pending Approval' : 'Submit for Verification'}
+                {verificationStatus === VERIFICATION_STATUS.PENDING ? 'Pending Approval' : 'Submit for Verification'}
               </Button>
             </Box>
           )}
@@ -608,36 +704,69 @@ const CertificateManagement = ({ eventId }) => {
               <Grid item xs={12} md={4}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h4" color="primary">
-                      {certificateStatus.totalAttended}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Attended
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="h4" color="primary">
+                          {certificateStatus.totalAttended}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Total Attended
+                        </Typography>
+                      </Box>
+                      <CircularProgress
+                        variant="determinate"
+                        value={100}
+                        size={56}
+                        thickness={4}
+                        color="primary"
+                      />
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h4" color="success.main">
-                      {certificateStatus.certificatesGenerated}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Certificates Generated
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="h4" color="success.main">
+                          {certificateStatus.certificatesGenerated}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Certificates Generated
+                        </Typography>
+                      </Box>
+                      <CircularProgress
+                        variant="determinate"
+                        value={progressStats.percentage}
+                        size={56}
+                        thickness={4}
+                        color="success"
+                      />
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
               <Grid item xs={12} md={4}>
                 <Card variant="outlined">
                   <CardContent>
-                    <Typography variant="h4" color="warning.main">
-                      {(certificateStatus.totalAttended || 0) - (certificateStatus.certificatesGenerated || 0)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pending
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Box>
+                        <Typography variant="h4" color="warning.main">
+                          {(certificateStatus.totalAttended || 0) - (certificateStatus.certificatesGenerated || 0)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Pending
+                        </Typography>
+                      </Box>
+                      <CircularProgress
+                        variant="determinate"
+                        value={100 - progressStats.percentage}
+                        size={56}
+                        thickness={4}
+                        color="warning"
+                      />
+                    </Box>
                   </CardContent>
                 </Card>
               </Grid>
@@ -648,19 +777,19 @@ const CertificateManagement = ({ eventId }) => {
                 variant="contained"
                 startIcon={<FileUpload />}
                 onClick={handleGenerateCertificates}
-                disabled={generationProgress || verificationStatus !== 'approved' || certificateStatus.certificatesGenerated === certificateStatus.totalAttended}
+                disabled={generationProgress || verificationStatus !== VERIFICATION_STATUS.APPROVED || certificateStatus.certificatesGenerated === certificateStatus.totalAttended}
               >
                 Generate Certificates
               </Button>
               <Button
                 variant="outlined"
                 startIcon={<Refresh />}
-                onClick={handleRegenerateCertificates}
-                disabled={generationProgress || verificationStatus !== 'approved' || certificateStatus.certificatesGenerated === 0}
+                onClick={() => setRegenerateDialogOpen(true)}
+                disabled={generationProgress || verificationStatus !== VERIFICATION_STATUS.APPROVED || certificateStatus.certificatesGenerated === 0}
               >
                 Regenerate All
               </Button>
-              {verificationStatus !== 'approved' && (
+              {verificationStatus !== VERIFICATION_STATUS.APPROVED && (
                 <Typography variant="caption" color="error">
                   Generation locked until configuration is approved by verifier.
                 </Typography>
@@ -740,8 +869,8 @@ const CertificateManagement = ({ eventId }) => {
                 label="Certificate Type"
                 onChange={(e) => setCertificateType(e.target.value)}
               >
-                <MenuItem value="participation">Participation</MenuItem>
-                <MenuItem value="achievement">Achievement</MenuItem>
+                <MenuItem value={CERTIFICATE_TYPES.PARTICIPATION}>Participation</MenuItem>
+                <MenuItem value={CERTIFICATE_TYPES.ACHIEVEMENT}>Achievement</MenuItem>
               </Select>
             </FormControl>
 
@@ -1051,7 +1180,30 @@ const CertificateManagement = ({ eventId }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      <Dialog open={regenerateDialogOpen} onClose={() => setRegenerateDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Regenerate All Certificates</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            This will delete all existing certificates and regenerate them. Continue?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRegenerateDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => {
+              setRegenerateDialogOpen(false);
+              handleRegenerateCertificates();
+            }}
+          >
+            Regenerate
+          </Button>
+        </DialogActions>
+      </Dialog>
+      </Box>
+    </ErrorBoundary>
   );
 };
 

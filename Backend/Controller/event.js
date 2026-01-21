@@ -762,23 +762,88 @@ async function sendQrEmail(to, qrImage, eventTitle, eventId) {
 async function getParticipants(req, res) {
   try {
     const eventId = req.params.id;
-    const logs = await EventParticipationLog.find({ eventId });
-    const users = await User.find({ _id: { $in: logs.map((l) => l.userId) } });
-    // Map logs to user details
+    const page = parseInt(req.query.page || '1', 10);
+    const limit = parseInt(req.query.limit || '50', 10);
+    const mode = req.query.mode;
+    const usePagination = Number.isFinite(page) || Number.isFinite(limit) || mode;
+
+    if (!usePagination || (!req.query.page && !req.query.limit && !mode)) {
+      const logs = await EventParticipationLog.find({ eventId });
+      const users = await User.find({ _id: { $in: logs.map((l) => l.userId) } });
+
+      const participants = logs.map((log) => {
+        const user = users.find((u) => u._id.equals(log.userId));
+        return {
+          userId: log.userId,
+          name: user?.name,
+          email: user?.email,
+          phone: user?.phone,
+          profilePhoto: user?.profilePhoto,
+          paymentType: log.paymentType,
+          paymentStatus: log.paymentStatus,
+          status: log.status,
+          attended: log.status === 'attended',
+          attendanceTimestamp: log.attendanceTimestamp,
+        };
+      });
+
+      return res.json(participants);
+    }
+
+    const pageNumber = Math.max(page, 1);
+    const limitNumber = Math.min(Math.max(limit, 1), 200);
+    const skip = (pageNumber - 1) * limitNumber;
+    const total = await EventParticipationLog.countDocuments({ eventId });
+    const totalPages = Math.max(Math.ceil(total / limitNumber), 1);
+
+    let logsQuery = EventParticipationLog.find({ eventId })
+      .sort({ registeredAt: -1 })
+      .skip(skip)
+      .limit(limitNumber);
+
+    if (mode !== 'ids') {
+      logsQuery = logsQuery.populate('userId', 'name email phone profilePhoto');
+    }
+
+    const logs = await logsQuery;
+
     const participants = logs.map((log) => {
-      const user = users.find((u) => u._id.equals(log.userId));
+      if (mode === 'ids') {
+        return {
+          userId: log.userId,
+          status: log.status,
+          attended: log.status === 'attended',
+        };
+      }
+
+      const user = log.userId || {};
       return {
-        name: user?.name,
-        email: user?.email,
-        phone: user?.phone,
-        profilePhoto: user?.profilePhoto,
+        userId: user._id || log.userId,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profilePhoto: user.profilePhoto,
         paymentType: log.paymentType,
         paymentStatus: log.paymentStatus,
         status: log.status,
+        attended: log.status === 'attended',
         attendanceTimestamp: log.attendanceTimestamp,
       };
     });
-    res.json(participants);
+
+    const attendedCount = await EventParticipationLog.countDocuments({ eventId, status: 'attended' });
+
+    return res.json({
+      participants,
+      total,
+      totalPages,
+      page: pageNumber,
+      limit: limitNumber,
+      stats: {
+        attended: attendedCount,
+        notAttended: Math.max(total - attendedCount, 0),
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching participants.' });
   }
