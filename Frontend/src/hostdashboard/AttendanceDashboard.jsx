@@ -1,3 +1,5 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../api/axiosInstance';
 
@@ -45,8 +47,12 @@ const AttendanceDashboard = () => {
       if (eventData.success) {
         setEvent(eventData.data);
         // Check permissions
-        const isHost = eventData.data.hostId === user.id;
-        const isCoHost = eventData.data.coHosts?.some(ch => ch._id === user.id);
+        const hostId = eventData.data.hostUserId?._id || eventData.data.hostUserId?.id || eventData.data.hostUserId;
+        const currentUserId = user?.id || user?._id;
+        const isHost = hostId && currentUserId && String(hostId) === String(currentUserId);
+        const isCoHost = Array.isArray(eventData.data.coHosts)
+          ? eventData.data.coHosts.some(ch => String(ch._id || ch.id || ch) === String(currentUserId))
+          : false;
         if (!isHost && !isCoHost) {
           alert('⛔ You do not have permission to view this dashboard.');
           navigate('/host/manage-events');

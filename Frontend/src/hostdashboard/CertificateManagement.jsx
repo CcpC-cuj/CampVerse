@@ -62,7 +62,9 @@ import {
 // CampVerse logo URL (always used on right side)
 const CAMPVERSE_LOGO_URL = '/logo.png';
 
-const CertificateManagement = ({ eventId }) => {
+const CertificateManagement = ({ eventId: eventIdProp }) => {
+  const params = useParams();
+  const eventId = eventIdProp || params.eventId;
   const toast = useToast();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +82,7 @@ const CertificateManagement = ({ eventId }) => {
   
   // Selected Template (Chosen from Admin Templates)
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   
   // Upload states
   const [leftLogoFile, setLeftLogoFile] = useState(null);
@@ -107,6 +110,7 @@ const CertificateManagement = ({ eventId }) => {
   useEffect(() => {
     fetchEventDetails();
     fetchCertificateStatus();
+    fetchTemplates();
   }, [eventId]);
 
   useEffect(() => {
@@ -230,9 +234,10 @@ const CertificateManagement = ({ eventId }) => {
         
         // Find selected template from gallery if ID exists
         if (eventData.certificateSettings.selectedTemplateId) {
-          // Templates will be loaded later, or we can fetch them here if needed
-          // For now, we rely on the ID being present
-          // We can't search certificateTemplates here because it might be empty
+          setSelectedTemplateId(eventData.certificateSettings.selectedTemplateId);
+        } else {
+          setSelectedTemplateId(null);
+          setSelectedTemplate(null);
         }
       }
       
@@ -242,6 +247,16 @@ const CertificateManagement = ({ eventId }) => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!selectedTemplateId || certificateTemplates.length === 0) return;
+    const match = certificateTemplates.find(
+      (template) => template.id === selectedTemplateId || template._id === selectedTemplateId
+    );
+    if (match) {
+      setSelectedTemplate(match);
+    }
+  }, [selectedTemplateId, certificateTemplates]);
 
   const fetchCertificateStatus = async () => {
     try {
@@ -264,7 +279,7 @@ const CertificateManagement = ({ eventId }) => {
           awardText,
           leftSignatory,
           rightSignatory,
-          selectedTemplateId: selectedTemplate?.id,
+          selectedTemplateId: selectedTemplate?.id || selectedTemplate?._id,
         }
       );
       toast.success('Certificate settings updated successfully!');
@@ -545,7 +560,7 @@ const CertificateManagement = ({ eventId }) => {
                 startIcon={<Preview />}
                 variant="outlined"
                 color="secondary"
-                onClick={() => window.open(import.meta.env.VITE_CERTIFICATE_DESIGNER_URL || `${import.meta.env.VITE_API_URL || 'https://imkrish-campverse-backend.hf.space'}/certificate-designer`, '_blank')}
+                onClick={() => window.open(import.meta.env.VITE_CERTIFICATE_DESIGNER_URL || `${window.location.origin}/certificate-designer`, '_blank')}
               >
                 Designer Tool
               </Button>
@@ -588,6 +603,30 @@ const CertificateManagement = ({ eventId }) => {
                   size="small" 
                 />
               </Typography>
+            </Grid>
+            <Grid item xs={12} md={8}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Template: {selectedTemplate ? selectedTemplate.name : 'Not selected'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Templates are managed by admins.
+                  </Typography>
+                </Box>
+                <Button variant="outlined" onClick={() => setTemplateGalleryOpen(true)} startIcon={<Preview />}>
+                  Choose Template
+                </Button>
+              </Box>
+              {selectedTemplate && (
+                <Box sx={{ mt: 1 }}>
+                  <Chip
+                    label={`Selected: ${selectedTemplate.name}`}
+                    color="primary"
+                    onDelete={() => setSelectedTemplate(null)}
+                  />
+                </Box>
+              )}
             </Grid>
           </Grid>
           
@@ -1062,22 +1101,25 @@ const CertificateManagement = ({ eventId }) => {
             </Typography>
             
             <Grid container spacing={3}>
-              {certificateTemplates.map((template) => (
-                <Grid item xs={12} sm={6} md={3} key={template.id}>
-                  <Card 
-                    sx={{ 
-                      cursor: 'pointer',
-                      border: selectedTemplate?.id === template.id ? '2px solid #9b5de5' : '1px solid #e0e0e0',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: 3
-                      }
-                    }}
-                    onClick={() => {
-                      setSelectedTemplate(template);
-                    }}
-                  >
+              {certificateTemplates.map((template) => {
+                const templateId = template.id || template._id;
+                return (
+                  <Grid item xs={12} sm={6} md={3} key={templateId}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        border: (selectedTemplate?.id || selectedTemplate?._id) === templateId ? '2px solid #9b5de5' : '1px solid #e0e0e0',
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: 3
+                        }
+                      }}
+                      onClick={() => {
+                        setSelectedTemplate(template);
+                        setSelectedTemplateId(templateId);
+                      }}
+                    >
                     <Box sx={{ 
                       height: 180, 
                       bgcolor: 'grey.200', 
@@ -1127,9 +1169,10 @@ const CertificateManagement = ({ eventId }) => {
                         color={template.type === 'achievement' ? 'warning' : 'primary'}
                       />
                     </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+                    </Card>
+                  </Grid>
+                );
+              })}
             </Grid>
           </Box>
         </DialogContent>
