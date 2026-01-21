@@ -138,6 +138,8 @@ const MyInstitution = () => {
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
 
   const institutionId = user?.institutionId;
@@ -150,7 +152,12 @@ const MyInstitution = () => {
 
     const fetchData = async () => {
       try {
-        setLoading(true);
+        if (hasLoaded) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+        setError("");
         
         // Get institution ID as string
         const instId = typeof institutionId === 'object' && institutionId._id 
@@ -177,6 +184,8 @@ const MyInstitution = () => {
         setError("Failed to load institution data");
       } finally {
         setLoading(false);
+        setRefreshing(false);
+        setHasLoaded(true);
       }
     };
 
@@ -340,6 +349,11 @@ const MyInstitution = () => {
                   {institution?.isVerified && (
                     <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                       <i className="ri-verified-badge-fill"></i> Verified
+                    </span>
+                  )}
+                  {refreshing && (
+                    <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full">
+                      Updating...
                     </span>
                   )}
                 </div>

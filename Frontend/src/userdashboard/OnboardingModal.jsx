@@ -389,8 +389,8 @@ const OnboardingModal = ({ visible, onComplete }) => {
             <div className="text-slate-400 text-sm">If not found, request a new institution:</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-slate-300">Name</label>
-                <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.name} onChange={(e)=>setReqInstitution({...reqInstitution,name:e.target.value})} />
+                <label className="text-sm text-slate-300">University name</label>
+                <input className="w-full mt-1 bg-slate-800 border border-slate-700 rounded px-3 py-2" value={reqInstitution.name} onChange={(e)=>setReqInstitution({...reqInstitution,name:e.target.value})} placeholder="University name" />
               </div>
               <div>
                 <label className="text-sm text-slate-300">Type</label>
