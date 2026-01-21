@@ -98,10 +98,12 @@ async function refreshAccessToken(refreshToken, req) {
     const session = await Session.findByRefreshToken(refreshToken);
     
     if (!session) {
+      logger.warn('Refresh failed: Session not found for token');
       return { success: false, error: 'Invalid or expired refresh token' };
     }
     
     if (!session.isValid()) {
+      logger.warn('Refresh failed: Session is invalid or expired', { id: session._id, expiresAt: session.expiresAt });
       return { success: false, error: 'Session expired' };
     }
     

@@ -29,13 +29,16 @@ router.post('/refresh', async (req, res) => {
     // Get refresh token from HttpOnly cookie (browser sends it automatically)
     const refreshToken = req.cookies?.refreshToken;
 
-    logger.debug('Refresh token request received', { 
+    logger.info('Refresh token request received', { 
       hasCookie: !!refreshToken, 
-      cookieKeys: Object.keys(req.cookies || {}) 
+      cookieKeys: Object.keys(req.cookies || {}),
+      rawCookieHeader: req.headers.cookie ? 'Present (redacted)' : 'Missing',
+      origin: req.headers.origin,
+      userAgent: req.headers['user-agent']
     });
 
     if (!refreshToken) {
-      logger.warn('No refresh token in cookies');
+      logger.warn('No refresh token in cookies - 401');
       return res.status(401).json({
         success: false,
         error: 'No refresh token found. Please login again.'
