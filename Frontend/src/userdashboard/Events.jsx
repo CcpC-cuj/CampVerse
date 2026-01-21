@@ -158,9 +158,14 @@ const Events = () => {
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-bold text-white">{event.title}</h3>
-          {showRegisteredBadge && (
-            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">Registered</span>
-          )}
+          <div className="flex flex-col gap-1 items-end">
+            {showRegisteredBadge && event.userRegistration?.status !== 'attended' && (
+              <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">Registered</span>
+            )}
+            {event.userRegistration?.status === 'attended' && (
+              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">✅ Attended</span>
+            )}
+          </div>
         </div>
         <p className="text-gray-400 text-sm mb-2">📅 {formatDateShort(event.date)}</p>
         <p className="text-gray-400 text-sm mb-3">📍 {event.location?.venue || event.location?.type || "Location TBD"}</p>
@@ -263,7 +268,7 @@ const Events = () => {
                   {getFilteredEvents(events.past).length === 0 ? (
                     <div className="text-center py-12">
                       <p className="text-gray-400 text-lg">No past events</p>
-                      <p className="text-gray-500 text-sm mt-2">Events you've attended will appear here</p>
+                      <p className="text-gray-500 text-sm mt-2">Events you've attended or that have ended will appear here</p>
                     </div>
                   ) : (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
