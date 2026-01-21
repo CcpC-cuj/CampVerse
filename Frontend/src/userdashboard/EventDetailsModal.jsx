@@ -16,14 +16,14 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
     }
   }, [event._id]);
 
-  // Fetch QR code when event is registered
+  // Fetch QR code when event is registered (but not attended)
   useEffect(() => {
-    if (eventDetails._id && rsvped) {
+    if (eventDetails._id && rsvped && eventDetails.userRegistration?.status !== 'attended') {
       fetchQrCode(eventDetails._id);
-    } else {
+    } else if (!rsvped || eventDetails.userRegistration?.status === 'attended') {
       setQrCodeImage(null);
     }
-  }, [eventDetails._id, rsvped]);
+  }, [eventDetails._id, rsvped, eventDetails.userRegistration?.status]);
 
   const fetchQrCode = async (eventId) => {
     try {
@@ -67,9 +67,13 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
       } else {
         // Register for event
         response = await rsvpEvent(eventDetails._id || eventDetails.id);
-        // Store QR code if provided
-        if (response.success && response.data && response.data.qrImage) {
-          setQrCodeImage(response.data.qrImage);
+        // Store QR code if provided (check both root and nested data)
+        if (response.success) {
+          if (response.qrImage) {
+            setQrCodeImage(response.qrImage);
+          } else if (response.data?.qrImage) {
+            setQrCodeImage(response.data.qrImage);
+          }
         }
       }
       
@@ -157,17 +161,34 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                     <span>✅</span> Attended
                   </span>
                 ) : (
-                  <span
-                    className={`inline-block px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit ${
-                      status === "upcoming"
-                        ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                        : status === "ongoing"
-                        ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
-                        : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
-                    }`}
-                  >
-                    {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`inline-block px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit ${
+                        status === "upcoming"
+                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                          : status === "ongoing"
+                          ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                          : "bg-gray-500/20 text-gray-300 border border-gray-500/30"
+                      }`}
+                    >
+                      {status === "upcoming" ? "Upcoming" : status === "ongoing" ? "Ongoing" : "Past"}
+                    </span>
+                    {/* Verification Status Badge */}
+                    {eventDetails.verificationStatus && (
+                      <span
+                        className={`inline-block px-2 py-1 sm:px-3 text-xs sm:text-sm font-medium rounded-full w-fit ${
+                          eventDetails.verificationStatus === "approved"
+                            ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                            : eventDetails.verificationStatus === "pending"
+                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            : "bg-red-500/20 text-red-300 border border-red-500/30"
+                        }`}
+                      >
+                        {eventDetails.verificationStatus === "approved" ? "✓ Verified" : 
+                         eventDetails.verificationStatus === "pending" ? "⏳ Pending" : "✗ Rejected"}
+                      </span>
+                    )}
+                  </div>
                 )}
             </div>
           </div>
@@ -225,8 +246,31 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                       <div className="flex items-center gap-2 sm:gap-3">
                         <span className="text-lg sm:text-xl">📍</span>
                         <div className="text-xs sm:text-sm">
-                          <span className="font-medium text-white">Location:</span> {eventDetails.location?.venue || eventDetails.location?.type || eventDetails.venue || 'Location TBD'}
+                          <span className="font-medium text-white">Location:</span>{' '}
+                          {eventDetails.location?.type === 'online' 
+                            ? 'Online Event' 
+                            : eventDetails.location?.venue || eventDetails.venue || 'Location TBD'}
+                          {eventDetails.location?.type && eventDetails.location?.venue && (
+                            <span className="text-gray-400 ml-1">({eventDetails.location.type})</span>
+                          )}
                         </div>
+                      </div>
+                      {/* Online link for virtual events */}
+                      {eventDetails.location?.type === 'online' && eventDetails.location?.link && (
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <span className="text-lg sm:text-xl">🔗</span>
+                          <div className="text-xs sm:text-sm">
+                            <a 
+                              href={eventDetails.location.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                              Join Online
+                            </a>
+                          </div>
+                        </div>
+                      )}
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3">
                         <span className="text-lg sm:text-xl">👥</span>
@@ -301,18 +345,21 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
                 </div>
               )}
 
-              {/* Event Information: only show if there's fee or enabled features */}
-              {(eventDetails.fee !== undefined || (eventDetails.features && (eventDetails.features.certificateEnabled || eventDetails.features.chatEnabled))) && (
+              {/* Event Information: pricing and enabled features */}
+              {(eventDetails.isPaid !== undefined || eventDetails.price !== undefined || (eventDetails.features && (eventDetails.features.certificateEnabled || eventDetails.features.chatEnabled))) && (
                 <div className="bg-gray-800/30 backdrop-blur-sm rounded-lg p-3 sm:p-4 mt-4 sm:mt-6 border border-gray-700/30 shadow-lg">
                   <div className="space-y-2 sm:space-y-3">
-                    {eventDetails.fee !== undefined && (
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
-                        <span className="text-gray-400 flex items-center gap-2 text-sm sm:text-base"><span className="text-base sm:text-lg">💸</span>Registration Fee:</span>
-                        <span className="font-medium text-white text-sm sm:text-base">
-                          {eventDetails.fee > 0 ? `$${eventDetails.fee}` : 'Free'}
-                        </span>
-                      </div>
-                    )}
+                    {/* Registration Fee - use isPaid and price from backend */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
+                      <span className="text-gray-400 flex items-center gap-2 text-sm sm:text-base"><span className="text-base sm:text-lg">💸</span>Registration Fee:</span>
+                      <span className="font-medium text-sm sm:text-base">
+                        {eventDetails.isPaid && eventDetails.price > 0 ? (
+                          <span className="text-blue-400">₹{eventDetails.price}</span>
+                        ) : (
+                          <span className="text-green-400">Free</span>
+                        )}
+                      </span>
+                    </div>
                     {/* Features: only show if enabled */}
                     {eventDetails.features && eventDetails.features.certificateEnabled && (
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-0">
@@ -415,17 +462,45 @@ const EventDetails = ({ event, onBack, onRSVP, isRsvped }) => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
-                <button
-                  onClick={handleRSVP}
-                  className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg shadow-lg transition-all duration-200 ${
-                    rsvped
-                      ? 'bg-red-600 hover:bg-red-700 text-white hover:shadow-red-500/25'
-                      : 'bg-gradient-to-r from-[#9b5de5] to-[#7c3aed] hover:from-[#8a4fd3] hover:to-[#6b21a8] text-white hover:shadow-purple-500/25'
-                  }`}
-                  disabled={loading}
-                >
-                  {rsvped ? 'Cancel RSVP' : 'Register for Event'}
-                </button>
+                {/* Show warning for unverified events */}
+                {eventDetails.verificationStatus && eventDetails.verificationStatus !== 'approved' && !rsvped && (
+                  <div className="w-full bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 text-center">
+                    <p className="text-amber-300 text-sm">
+                      ⚠️ This event is {eventDetails.verificationStatus === 'pending' ? 'pending verification' : 'not approved'}. Registration will be available once verified.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Only show RSVP button for approved events OR if user is already RSVPed */}
+                {(eventDetails.verificationStatus === 'approved' || rsvped) && status !== 'past' && (
+                  <button
+                    onClick={handleRSVP}
+                    className={`flex-1 py-3 sm:py-4 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-lg shadow-lg transition-all duration-200 ${
+                      rsvped
+                        ? 'bg-red-600 hover:bg-red-700 text-white hover:shadow-red-500/25'
+                        : 'bg-gradient-to-r from-[#9b5de5] to-[#7c3aed] hover:from-[#8a4fd3] hover:to-[#6b21a8] text-white hover:shadow-purple-500/25'
+                    }`}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                        Processing...
+                      </span>
+                    ) : rsvped ? (
+                      '❌ Cancel RSVP'
+                    ) : (
+                      '🎟️ Register for Event'
+                    )}
+                  </button>
+                )}
+                
+                {/* Show past event message */}
+                {status === 'past' && !rsvped && (
+                  <div className="w-full bg-gray-800/50 border border-gray-600/30 rounded-xl p-4 text-center">
+                    <p className="text-gray-400 text-sm">This event has ended. Registration is no longer available.</p>
+                  </div>
+                )}
               </div>
 
               {/* Social Links Section */}

@@ -102,15 +102,29 @@ const EventDetails = ({ event, onClose, onEdit, onRSVP, onCancelRSVP, onVerify, 
                 ✅ Verify Event
               </button>
             )}
-            {!isHost && !isCoHost && user && event.verificationStatus === 'approved' && (
+            {/* RSVP only for non-host/co-host regular users viewing verified events */}
+            {!isHost && !isCoHost && !isVerifier && !isPlatformAdmin && user && event.verificationStatus === 'approved' && !event.userRegistration && (
               <button onClick={() => onRSVP && onRSVP(event._id)} className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-medium transition-colors">
                 📝 RSVP / Register
               </button>
             )}
+            {/* Show registration status if registered */}
             {!isHost && !isCoHost && user && event.userRegistration && (
-              <button onClick={() => onCancelRSVP && onCancelRSVP(event._id)} className="px-6 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg font-medium transition-colors">
-                ❌ Cancel RSVP
-              </button>
+              <>
+                <span className={`px-6 py-2 rounded-lg font-medium ${
+                  event.userRegistration.status === 'attended' 
+                    ? 'bg-green-700/30 text-green-300' 
+                    : 'bg-blue-700/30 text-blue-300'
+                }`}>
+                  {event.userRegistration.status === 'attended' ? '✅ Attended' : 
+                   event.userRegistration.status === 'waitlisted' ? '⏳ Waitlisted' : '✓ Registered'}
+                </span>
+                {event.userRegistration.status !== 'attended' && (
+                  <button onClick={() => onCancelRSVP && onCancelRSVP(event._id)} className="px-6 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg font-medium transition-colors">
+                    ❌ Cancel RSVP
+                  </button>
+                )}
+              </>
             )}
             <button onClick={() => navigator.clipboard.writeText(window.location.href)} className="px-6 py-2 bg-purple-700/30 hover:bg-purple-700/50 text-purple-300 rounded-lg font-medium transition-colors">
               🔗 Share Event

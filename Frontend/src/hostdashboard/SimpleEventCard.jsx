@@ -45,6 +45,19 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
   const statusInfo = getStatusInfo(event.status);
   const eventStatus = getEventStatus();
 
+  // Get verification status styling
+  const getVerificationBadge = () => {
+    if (!event.verificationStatus) return null;
+    const statusConfig = {
+      approved: { bg: 'bg-green-500/20', text: 'text-green-300', label: '✓' },
+      pending: { bg: 'bg-amber-500/20', text: 'text-amber-300', label: '⏳' },
+      rejected: { bg: 'bg-red-500/20', text: 'text-red-300', label: '✗' }
+    };
+    return statusConfig[event.verificationStatus] || statusConfig.pending;
+  };
+
+  const verificationBadge = getVerificationBadge();
+
   return (
     <div className="bg-gray-800/60 rounded-xl overflow-hidden border border-gray-700/40 hover:border-[#9b5de5]/30 transition-all duration-300 group">
       {/* Event Image */}
@@ -55,11 +68,17 @@ const SimpleEventCard = ({ event, onEdit, onDelete, onViewParticipants }) => {
           className="w-full h-36 object-cover"
         />
         
-        {/* Status Badge */}
-        <div className="absolute top-2 left-2">
+        {/* Status Badges Row */}
+        <div className="absolute top-2 left-2 flex gap-1">
           <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.color} font-medium`}>
             {statusInfo.label}
           </span>
+          {/* Verification Badge */}
+          {verificationBadge && (
+            <span className={`text-xs px-2 py-1 rounded-full ${verificationBadge.bg} ${verificationBadge.text} font-medium`} title={`Verification: ${event.verificationStatus}`}>
+              {verificationBadge.label}
+            </span>
+          )}
         </div>
 
         {/* Event Status Badge */}

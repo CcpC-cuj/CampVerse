@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getEventById } from "../api/events";
 import { useNavigate } from "react-router-dom";
+import ShareButton from "../userdashboard/ShareButton";
 
 const EventDetailsModal = ({ event, onClose }) => {
   const navigate = useNavigate();
@@ -71,13 +72,32 @@ const EventDetailsModal = ({ event, onClose }) => {
       <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-700">
         {/* Modal Header */}
         <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-white">Event Details</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <div className="flex items-center gap-4">
+            <h2 className="text-2xl font-bold text-white">Event Details</h2>
+            {/* Verification Status Badge */}
+            {eventDetails.verificationStatus && (
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  eventDetails.verificationStatus === 'approved'
+                    ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                    : eventDetails.verificationStatus === 'pending'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                }`}
+              >
+                {eventDetails.verificationStatus === 'approved' ? '✓ Verified' : 
+                 eventDetails.verificationStatus === 'pending' ? '⏳ Pending Verification' : '✗ Rejected'}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <ShareButton event={eventDetails} />
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -223,20 +243,24 @@ const EventDetailsModal = ({ event, onClose }) => {
                   <span className="text-gray-400">Current Participants:</span>
                   <span className="font-medium">{eventDetails.participants || 0}</span>
                 </div>
-                {eventDetails.maxParticipants && (
+                {(eventDetails.maxParticipants || eventDetails.capacity) && (
                   <div className="flex justify-between">
                     <span className="text-gray-400">Max Participants:</span>
-                    <span className="font-medium">{eventDetails.maxParticipants}</span>
+                    <span className="font-medium">{eventDetails.maxParticipants || eventDetails.capacity}</span>
                   </div>
                 )}
-                {eventDetails.fee !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Registration Fee:</span>
-                    <span className="font-medium">
-                      {eventDetails.fee > 0 ? `$${eventDetails.fee}` : 'Free'}
-                    </span>
-                  </div>
-                )}
+                {/* Fixed: Use isPaid and price instead of fee */}
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Registration Fee:</span>
+                  <span className="font-medium">
+                    {eventDetails.isPaid && eventDetails.price > 0 ? (
+                      <span className="text-blue-400">₹{eventDetails.price}</span>
+                    ) : (
+                      <span className="text-green-400">Free</span>
+                    )}
+                  </span>
+                </div>
+              </div>
               </div>
             </div>
 
