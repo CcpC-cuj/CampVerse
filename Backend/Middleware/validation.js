@@ -73,7 +73,7 @@ const sanitize = {
 // Common validation schemas with enhanced security
 const commonSchemas = {
   objectId: joi.string().pattern(/^[0-9a-fA-F]{24}$/).message('Invalid ID format'),
-  email: joi.string().email().pattern(/\.(ac|edu)\.in$|\.edu$/).message('Must be a valid academic email'),
+  email: joi.string().email().pattern(/@([\w.-]+\.(ac|edu)\.in|[\w.-]+\.edu|[\w.-]+\.edu\.co\.in|[\w.-]*cuchd\.in)$/i).message('Must be a valid academic email or approved domain (e.g., cuchd.in)'),
   url: joi.string().uri({ scheme: ['http', 'https'] }).max(500),
   phone: joi.string().pattern(/^[+]?[1-9][\d]{0,15}$/).message('Invalid phone number format'),
   password: joi.string().min(8).pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
