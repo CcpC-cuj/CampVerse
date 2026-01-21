@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    match: /\.(ac|edu)\.in$|\.edu$/,
+    match: /@([\w.-]+\.(ac|edu)\.in|[\w.-]+\.edu|[\w.-]+\.edu\.co\.in|[\w.-]*cuchd\.in)$/i,
   },
   phone: { type: String, required: false },
   location: { type: String },
