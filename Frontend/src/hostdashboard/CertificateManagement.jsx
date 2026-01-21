@@ -57,36 +57,7 @@ import {
 } from '@mui/icons-material';
 
 // Predefined certificate templates from cloud storage
-const CERTIFICATE_TEMPLATES = [
-  {
-    id: 'classic-blue',
-    name: 'Classic Blue',
-    preview: '/templates/classic-blue-preview.png',
-    url: 'https://storage.campverse.com/templates/classic-blue.png',
-    type: CERTIFICATE_TYPES.PARTICIPATION
-  },
-  {
-    id: 'modern-purple',
-    name: 'Modern Purple',
-    preview: '/templates/modern-purple-preview.png',
-    url: 'https://storage.campverse.com/templates/modern-purple.png',
-    type: CERTIFICATE_TYPES.PARTICIPATION
-  },
-  {
-    id: 'elegant-gold',
-    name: 'Elegant Gold',
-    preview: '/templates/elegant-gold-preview.png',
-    url: 'https://storage.campverse.com/templates/elegant-gold.png',
-    type: CERTIFICATE_TYPES.ACHIEVEMENT
-  },
-  {
-    id: 'minimal-dark',
-    name: 'Minimal Dark',
-    preview: '/templates/minimal-dark-preview.png',
-    url: 'https://storage.campverse.com/templates/minimal-dark.png',
-    type: CERTIFICATE_TYPES.PARTICIPATION
-  }
-];
+// Templates will be fetched from API
 
 // CampVerse logo URL (always used on right side)
 const CAMPVERSE_LOGO_URL = '/logo.png';
@@ -107,13 +78,11 @@ const CertificateManagement = ({ eventId }) => {
   const [verificationStatus, setVerificationStatus] = useState(VERIFICATION_STATUS.NOT_CONFIGURED);
   const [rejectionReason, setRejectionReason] = useState('');
   
-  // Selected Template (Assigned by Admin)
+  // Selected Template (Chosen from Admin Templates)
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   
   // Upload states
-  const [templateFile, setTemplateFile] = useState(null);
   const [leftLogoFile, setLeftLogoFile] = useState(null);
-  const [rightLogoFile, setRightLogoFile] = useState(null);
   const [leftSignatureFile, setLeftSignatureFile] = useState(null);
   const [rightSignatureFile, setRightSignatureFile] = useState(null);
   
@@ -132,10 +101,28 @@ const CertificateManagement = ({ eventId }) => {
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [regenerateDialogOpen, setRegenerateDialogOpen] = useState(false);
 
+  // Templates State
+  const [certificateTemplates, setCertificateTemplates] = useState([]);
+
   useEffect(() => {
     fetchEventDetails();
     fetchCertificateStatus();
   }, [eventId]);
+
+  useEffect(() => {
+    if (templateGalleryOpen) {
+      fetchTemplates();
+    }
+  }, [templateGalleryOpen]);
+
+  const fetchTemplates = async () => {
+    try {
+      const response = await api.get('/api/admin/certificate-templates');
+      setCertificateTemplates(response.data.templates || []);
+    } catch (err) {
+      toast.error('Failed to load templates.');
+    }
+  };
 
   const progressStats = useMemo(() => {
     const total =
@@ -243,8 +230,9 @@ const CertificateManagement = ({ eventId }) => {
         
         // Find selected template from gallery if ID exists
         if (eventData.certificateSettings.selectedTemplateId) {
-          const template = CERTIFICATE_TEMPLATES.find(t => t.id === eventData.certificateSettings.selectedTemplateId);
-          setSelectedTemplate(template);
+          // Templates will be loaded later, or we can fetch them here if needed
+          // For now, we rely on the ID being present
+          // We can't search certificateTemplates here because it might be empty
         }
       }
       
@@ -290,59 +278,21 @@ const CertificateManagement = ({ eventId }) => {
   const handleSubmitForVerification = async () => {
     try {
       await api.post(`/api/certificate-management/events/${eventId}/submit`, {});
-      setSuccess('Submitted for verification!');
+      toast.success('Submitted for verification!');
       fetchEventDetails();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to submit for verification');
+      toast.error(err.response?.data?.error || 'Failed to submit for verification');
     }
   };
 
   const handleUploadAssets = async () => {
     try {
-      setError('');
-      setSuccess('');
-      
-      // Upload template
-      if (templateFile) {
-        const formData = new FormData();
-        formData.append('files', templateFile);
-        formData.append('assetType', 'template');
-        formData.append('template_type', certificateType);
-        
-        await api.post(
-          `/api/certificate-management/events/${eventId}/upload-assets`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-      }
-      
-      // Upload logos
+      // Upload logos (left only - right is fixed)
       if (leftLogoFile) {
         const formData = new FormData();
         formData.append('files', leftLogoFile);
         formData.append('assetType', 'logo');
         formData.append('logo_type', 'left');
-        
-        await api.post(
-          `/api/certificate-management/events/${eventId}/upload-assets`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-      }
-      
-      if (rightLogoFile) {
-        const formData = new FormData();
-        formData.append('files', rightLogoFile);
-        formData.append('assetType', 'logo');
-        formData.append('logo_type', 'right');
         
         await api.post(
           `/api/certificate-management/events/${eventId}/upload-assets`,
@@ -390,17 +340,15 @@ const CertificateManagement = ({ eventId }) => {
         );
       }
       
-      setSuccess('Assets uploaded successfully!');
+      toast.success('Assets uploaded successfully!');
       setUploadDialogOpen(false);
       
       // Reset file states
-      setTemplateFile(null);
       setLeftLogoFile(null);
-      setRightLogoFile(null);
       setLeftSignatureFile(null);
       setRightSignatureFile(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to upload assets');
+      toast.error(err.response?.data?.error || 'Failed to upload assets');
     }
   };
 
@@ -875,12 +823,19 @@ const CertificateManagement = ({ eventId }) => {
             </FormControl>
 
             <Box sx={{ mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom>Template</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {selectedTemplate 
-                  ? `Assigned Template: ${selectedTemplate.name}` 
-                  : "Template will be assigned by a verifier/admin after submission."}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>Template</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedTemplate 
+                      ? `Selected Template: ${selectedTemplate.name}` 
+                      : "Choose a template from the admin-approved gallery."}
+                  </Typography>
+                </Box>
+                <Button variant="outlined" onClick={() => setTemplateGalleryOpen(true)} startIcon={<Preview />}>
+                  Choose Template
+                </Button>
+              </Box>
             </Box>
 
             <TextField
@@ -892,8 +847,25 @@ const CertificateManagement = ({ eventId }) => {
               onChange={(e) => setAwardText(e.target.value)}
               placeholder="e.g. {name} has successfully participated in {event_name}"
               helperText="Use {name} for participant name and {event_name} for the event title."
-              sx={{ mb: 3 }}
+              sx={{ mb: 1 }}
             />
+            <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Typography variant="caption" sx={{ mr: 1, mt: 0.5 }}>Suggestions:</Typography>
+              <Chip 
+                label="{name}" 
+                size="small" 
+                onClick={() => setAwardText(prev => prev + '{name}')} 
+                sx={{ cursor: 'pointer' }}
+                color="primary" variant="outlined"
+              />
+              <Chip 
+                label="{event_name}" 
+                size="small" 
+                onClick={() => setAwardText(prev => prev + '{event_name}')} 
+                sx={{ cursor: 'pointer' }}
+                color="primary" variant="outlined"
+              />
+            </Box>
 
             <Typography variant="subtitle1" gutterBottom>
               Left Signatory
@@ -966,7 +938,7 @@ const CertificateManagement = ({ eventId }) => {
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Upload all required files for certificate generation. Supported formats: PNG, JPG, JPEG
+              Upload signatures and your organization logo. Supported formats: PNG, JPG, JPEG.
             </Typography>
 
             {/* Template Selection */}
@@ -982,21 +954,9 @@ const CertificateManagement = ({ eventId }) => {
                 >
                   Choose from Templates
                 </Button>
-                <Typography variant="body2" color="text.secondary">or</Typography>
-                {(user?.role === 'admin' || user?.role === 'platformAdmin') ? (
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg"
-                    onChange={(e) => {
-                      setTemplateFile(e.target.files[0]);
-                      setSelectedTemplate(null);
-                    }}
-                  />
-                ) : (
-                  <Typography variant="caption" color="text.secondary">
-                    (Administrative upload only)
-                  </Typography>
-                )}
+                <Typography variant="caption" color="text.secondary">
+                  Templates are managed by admins.
+                </Typography>
               </Box>
               {selectedTemplate && (
                 <Chip 
@@ -1005,11 +965,6 @@ const CertificateManagement = ({ eventId }) => {
                   onDelete={() => setSelectedTemplate(null)}
                   sx={{ mb: 1 }}
                 />
-              )}
-              {templateFile && !selectedTemplate && (
-                <Typography variant="caption" color="success.main">
-                  ✓ Custom: {templateFile.name}
-                </Typography>
               )}
             </Box>
 
@@ -1076,7 +1031,11 @@ const CertificateManagement = ({ eventId }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUploadAssets} variant="contained" disabled={!templateFile && !selectedTemplate}>
+          <Button
+            onClick={handleUploadAssets}
+            variant="contained"
+            disabled={!leftLogoFile && !leftSignatureFile && !rightSignatureFile}
+          >
             Upload Assets
           </Button>
         </DialogActions>
@@ -1097,7 +1056,7 @@ const CertificateManagement = ({ eventId }) => {
             </Typography>
             
             <Grid container spacing={3}>
-              {CERTIFICATE_TEMPLATES.map((template) => (
+              {certificateTemplates.map((template) => (
                 <Grid item xs={12} sm={6} md={3} key={template.id}>
                   <Card 
                     sx={{ 
@@ -1111,7 +1070,6 @@ const CertificateManagement = ({ eventId }) => {
                     }}
                     onClick={() => {
                       setSelectedTemplate(template);
-                      setTemplateFile(null);
                     }}
                   >
                     <Box sx={{ 

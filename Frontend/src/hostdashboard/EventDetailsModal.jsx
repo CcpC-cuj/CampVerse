@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { getEventById } from "../api/events";
-import { useNavigate } from "react-router-dom";
 import ShareButton from "../userdashboard/ShareButton";
 
 const EventDetailsModal = ({ event, onClose }) => {
-  const navigate = useNavigate();
+  const navigateTo = (path) => {
+    window.location.assign(path);
+  };
   const [eventDetails, setEventDetails] = useState(event);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -147,7 +148,7 @@ const EventDetailsModal = ({ event, onClose }) => {
               </div>
               {/* Event Logo */}
               {(eventDetails.logoURL || eventDetails.logo) && (
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <img
                     src={eventDetails.logoURL || eventDetails.logo}
                     alt="Event Logo"
@@ -314,7 +315,7 @@ const EventDetailsModal = ({ event, onClose }) => {
             {/* Action Buttons - Host Dashboard Actions */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pt-4 border-t border-gray-700">
               <button
-                onClick={() => navigate(`/host/events/${eventDetails._id}/qr-scanner`)}
+                onClick={() => navigateTo(`/host/events/${eventDetails._id}/qr-scanner`)}
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -324,7 +325,7 @@ const EventDetailsModal = ({ event, onClose }) => {
               </button>
 
               <button
-                onClick={() => navigate(`/host/events/${eventDetails._id}/attendance`)}
+                onClick={() => navigateTo(`/host/events/${eventDetails._id}/attendance`)}
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,7 +335,7 @@ const EventDetailsModal = ({ event, onClose }) => {
               </button>
 
               <button
-                onClick={() => navigate(`/host/events/${eventDetails._id}/bulk-attendance`)}
+                onClick={() => navigateTo(`/host/events/${eventDetails._id}/bulk-attendance`)}
                 className="flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -348,7 +349,7 @@ const EventDetailsModal = ({ event, onClose }) => {
                   onClick={() => {
                     onClose();
                     // Navigate to certificate management page
-                    navigate(`/host/events/${eventDetails._id}/certificates`);
+                    navigateTo(`/host/events/${eventDetails._id}/certificates`);
                   }}
                   className="flex items-center justify-center gap-2 py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors"
                 >

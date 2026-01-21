@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import api from "../api/axiosInstance";
 import { getCertificateDashboard, approveCertificate, rejectCertificate } from "../api/certificates";
 import { useModal } from "../components/Modal";
 
@@ -8,6 +9,9 @@ export default function CertificateReview() {
   const [pendingCertificates, setPendingCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
+
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     fetchPendingCertificates();
@@ -67,6 +71,40 @@ export default function CertificateReview() {
     setActionLoading(null);
   };
 
+  const handlePreview = async (cert) => {
+    try {
+      setActionLoading(cert.id || cert._id);
+      const eventId = cert.eventId || cert.event?._id;
+      const userId = cert.userId || cert.user?._id;
+      
+      if (!eventId || !userId) {
+        showError('Missing event or user information');
+        return;
+      }
+
+      const response = await api.get(
+        `/api/certificate-management/events/${eventId}/render/${userId}`,
+        { responseType: 'blob' }
+      );
+      
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      setPreviewUrl(url);
+      setPreviewOpen(true);
+    } catch (err) {
+      showError('Failed to load certificate preview');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    if (previewUrl) {
+      window.URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  };
+
   return (
     <Layout title="Certificate Review">
       <div className="max-w-5xl mx-auto">
@@ -121,6 +159,14 @@ export default function CertificateReview() {
                         
                         <div className="flex flex-col sm:flex-row gap-2">
                           <button
+                            onClick={() => handlePreview(cert)}
+                            disabled={actionLoading === (cert._id || cert.id)}
+                            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                             <i className="ri-eye-line" />
+                            Preview
+                          </button>
+                          <button
                             onClick={() => handleApproveCertificate(cert._id || cert.id)}
                             disabled={actionLoading === (cert._id || cert.id)}
                             className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
@@ -147,6 +193,29 @@ export default function CertificateReview() {
                 )}
               </div>
             </div>
+
+      {/* Preview Modal */}
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl h-[80vh] flex flex-col relative">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-900 rounded-t-xl text-white">
+              <h3 className="font-semibold">Certificate Preview</h3>
+              <button onClick={closePreview} className="text-gray-400 hover:text-white">
+                <i className="ri-close-line text-2xl" />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100 p-4 overflow-hidden">
+              {previewUrl && (
+                <iframe 
+                  src={previewUrl} 
+                  className="w-full h-full rounded border-0" 
+                  title="Certificate Preview"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

@@ -14,9 +14,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
   const [rightSignatory, setRightSignatory] = useState({ name: '', title: '' });
   
   // Upload files
-  const [templateFile, setTemplateFile] = useState(null);
   const [leftLogoFile, setLeftLogoFile] = useState(null);
-  const [rightLogoFile, setRightLogoFile] = useState(null);
   const [leftSignatureFile, setLeftSignatureFile] = useState(null);
   const [rightSignatureFile, setRightSignatureFile] = useState(null);
 
@@ -30,7 +28,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
   }, [event]);
 
   const handleUploadAssets = async () => {
-    if (!templateFile && !leftLogoFile && !rightLogoFile && !leftSignatureFile && !rightSignatureFile) {
+    if (!leftLogoFile && !leftSignatureFile && !rightSignatureFile) {
       setError('Please select at least one file to upload');
       return;
     }
@@ -41,9 +39,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
 
     try {
       const formData = new FormData();
-      if (templateFile) formData.append('template', templateFile);
       if (leftLogoFile) formData.append('leftLogo', leftLogoFile);
-      if (rightLogoFile) formData.append('rightLogo', rightLogoFile);
       if (leftSignatureFile) formData.append('leftSignature', leftSignatureFile);
       if (rightSignatureFile) formData.append('rightSignature', rightSignatureFile);
 
@@ -60,9 +56,7 @@ const CertificateManagementModal = ({ event, onClose }) => {
       );
 
       setSuccess('Assets uploaded successfully!');
-      setTemplateFile(null);
       setLeftLogoFile(null);
-      setRightLogoFile(null);
       setLeftSignatureFile(null);
       setRightSignatureFile(null);
     } catch (err) {
@@ -171,17 +165,17 @@ const CertificateManagementModal = ({ event, onClose }) => {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-purple-300 mb-2">
-                  Certificate Template (PNG/PDF)
+                  Certificate Template
                 </label>
-                <input
-                  type="file"
-                  accept=".png,.pdf"
-                  onChange={(e) => setTemplateFile(e.target.files[0])}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-                />
-                {templateFile && (
-                  <p className="mt-2 text-sm text-gray-400">Selected: {templateFile.name}</p>
-                )}
+                <div className="text-sm text-gray-400">
+                  Templates are managed by admins. Choose a template from the Certificate Management page.
+                </div>
+                <button
+                  onClick={handleGenerateCertificates}
+                  className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-[#9b5de5]/20 text-[#9b5de5] rounded-lg hover:bg-[#9b5de5]/30"
+                >
+                  Open Certificate Management
+                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -200,19 +194,11 @@ const CertificateManagementModal = ({ event, onClose }) => {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-purple-300 mb-2">
-                    Right Logo
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setRightLogoFile(e.target.files[0])}
-                    className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-                  />
-                  {rightLogoFile && (
-                    <p className="mt-2 text-sm text-gray-400">Selected: {rightLogoFile.name}</p>
-                  )}
+                <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-4">
+                  <div className="text-sm text-purple-300 mb-1">Right Logo</div>
+                  <div className="text-xs text-gray-400">
+                    CampVerse logo is fixed and applied automatically.
+                  </div>
                 </div>
               </div>
 
@@ -294,10 +280,27 @@ const CertificateManagementModal = ({ event, onClose }) => {
                 <textarea
                   value={awardText}
                   onChange={(e) => setAwardText(e.target.value)}
-                  placeholder="E.g., for successfully completing..."
+                  placeholder="e.g. {name} has successfully participated in {event_name}"
                   rows={3}
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                  <span>Suggestions:</span>
+                  <button
+                    type="button"
+                    onClick={() => setAwardText((prev) => `${prev}{name}`)}
+                    className="px-2 py-1 rounded-full border border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+                  >
+                    {"{name}"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAwardText((prev) => `${prev}{event_name}`)}
+                    className="px-2 py-1 rounded-full border border-purple-500/40 text-purple-300 hover:bg-purple-500/10"
+                  >
+                    {"{event_name}"}
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

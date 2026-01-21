@@ -628,8 +628,10 @@ async function renderCertificate(req, res) {
 
     const isHost = event.hostUserId.toString() === requestingUserId;
     const isOwnCertificate = userId === requestingUserId;
+    const isVerifier = req.user.roles.includes('verifier');
+    const isAdmin = req.user.roles.includes('platformAdmin');
 
-    if (!isHost && !isOwnCertificate) {
+    if (!isHost && !isOwnCertificate && !isVerifier && !isAdmin) {
       return res.status(403).json({
         error: 'You can only access your own certificate or certificates from events you host.',
       });
