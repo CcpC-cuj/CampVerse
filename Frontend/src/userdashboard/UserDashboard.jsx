@@ -3,8 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../userdashboard/sidebar';
 import OnboardingModal from './OnboardingModal';
-import { getDashboard, updateMe } from '../api';
+import { getDashboard, updateMe, getEventRecommendations } from '../api';
 import DiscoverEvents from './DiscoverEvents';
+import { formatDateShort } from '../utils/dateUtils';
 import GradientCircularProgress from "../components/GradientCircularProgress.jsx";
 import NavBar from './NavBar.jsx';
 
@@ -16,6 +17,8 @@ const UserDashboard = () => {
   const [stats, setStats] = useState(null);
   const [eventsData, setEventsData] = useState([]);
   const [search, setSearch] = useState('');
+  const [recommendations, setRecommendations] = useState([]);
+  const [loadingRecs, setLoadingRecs] = useState(true);
 
   const discoverEventsRef = useRef(null);
   const location = useLocation();
@@ -50,6 +53,18 @@ const UserDashboard = () => {
         }
         
         // If you want to refresh user data, call refreshUser() only when needed (e.g., after profile update)
+        // Fetch recommendations
+        try {
+          const recsRes = await getEventRecommendations(3);
+          if (recsRes.success) {
+            setRecommendations(recsRes.recommendations.map(r => r.event).filter(Boolean));
+          }
+        } catch (err) {
+          console.error("Failed to fetch recommendations:", err);
+        } finally {
+          setLoadingRecs(false);
+        }
+        
       } catch {
         setShowOnboarding(false);
       } finally {
@@ -169,23 +184,44 @@ const UserDashboard = () => {
                     </button>
                   </div>
                   <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* We can show a few top recommendations here */}
-                      <div className="flex-1 min-w-0 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 hover:border-[#9b5de5]/50 transition-all cursor-pointer group">
-                        <div className="h-24 bg-gray-800 rounded-md mb-2 overflow-hidden">
-                          <img src="/event-placeholder.png" alt="Featured" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                        </div>
-                        <h3 className="font-semibold text-white truncate text-sm">Tech Nexus 2026</h3>
-                        <p className="text-xs text-gray-400 mt-1">Tomorrow • IIT Delhi</p>
+                      <div className="flex flex-col sm:flex-row gap-4">
+                    {loadingRecs ? (
+                      <div className="flex-1 py-10 flex flex-col items-center justify-center text-gray-500">
+                        <div className="w-6 h-6 border-2 border-[#9b5de5] border-t-transparent rounded-full animate-spin mb-2"></div>
+                        <p className="text-xs">Finding matches...</p>
                       </div>
-                      <div className="flex-1 min-w-0 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 hover:border-[#9b5de5]/50 transition-all cursor-pointer group">
-                        <div className="h-24 bg-gray-800 rounded-md mb-2 overflow-hidden">
-                          <img src="/event-placeholder.png" alt="Featured" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                    ) : recommendations.length > 0 ? (
+                      recommendations.map((event) => (
+                        <div 
+                          key={event._id}
+                          onClick={() => window.location.href = `/events/${event._id}`}
+                          className="flex-1 min-w-0 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 hover:border-[#9b5de5]/50 transition-all cursor-pointer group"
+                        >
+                          <div className="h-24 bg-gray-800 rounded-md mb-2 overflow-hidden">
+                            <img 
+                              src={event.bannerURL || event.bannerImage || "/event-placeholder.png"} 
+                              alt={event.title} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
+                            />
+                          </div>
+                          <h3 className="font-semibold text-white truncate text-sm">{event.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-gray-400 truncate">
+                              {formatDateShort(event.date).split(',')[0]}
+                            </span>
+                            <span className="text-[10px] text-gray-400">•</span>
+                            <span className="text-[10px] text-gray-400 truncate">
+                              {event.location?.venue || event.location?.type || 'TBD'}
+                            </span>
+                          </div>
                         </div>
-                        <h3 className="font-semibold text-white truncate text-sm">Design Sprint</h3>
-                        <p className="text-xs text-gray-400 mt-1">24 Jan • Online</p>
+                      ))
+                    ) : (
+                      <div className="flex-1 py-10 text-center text-gray-500">
+                        <p className="text-xs italic">Explore events to get personalized recommendations!</p>
                       </div>
-                    </div>
+                    )}
+                  </div>
                   </div>
                 </div>
 
