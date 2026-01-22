@@ -1,6 +1,7 @@
 const Event = require('../Models/Event');
 const User = require('../Models/User');
 const Certificate = require('../Models/Certificate');
+const Institution = require('../Models/Institution');
 const EventParticipationLog = require('../Models/EventParticipationLog');
 const SearchAnalytics = require('../Models/SearchAnalytics');
 

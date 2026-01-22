@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import { getPlatformInsights } from "../api/events";
+import api from "../api/axiosInstance";
 import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
@@ -8,10 +9,69 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState([]);
+  const [systemStatus, setSystemStatus] = useState({
+    api: { label: 'API Server', status: 'unknown' },
+    mongodb: { label: 'Database', status: 'unknown' },
+    ml: { label: 'ML Services', status: 'unknown' },
+    payment: { label: 'Payment Gateway', status: 'unknown' },
+  });
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const loadHealth = async () => {
+      try {
+        const response = await api.get('/health');
+        const services = response?.data?.services || {};
+        if (!mounted) return;
+
+        setSystemStatus({
+          api: { label: 'API Server', status: services.api || 'operational' },
+          mongodb: { label: 'Database', status: services.mongodb || 'unknown' },
+          ml: { label: 'ML Services', status: services.ml || 'unknown' },
+          payment: { label: 'Payment Gateway', status: services.payment || 'maintenance' },
+        });
+      } catch (error) {
+        if (!mounted) return;
+        setSystemStatus((prev) => ({
+          ...prev,
+          api: { ...prev.api, status: 'degraded' },
+        }));
+      }
+    };
+
+    loadHealth();
+    const intervalId = setInterval(loadHealth, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const statusStyles = (status) => {
+    switch (status) {
+      case 'operational':
+      case 'connected':
+      case 'healthy':
+        return { dot: 'bg-green-500', text: 'text-green-400', label: 'Operational' };
+      case 'warning':
+      case 'partial':
+        return { dot: 'bg-yellow-500', text: 'text-yellow-400', label: 'Partial' };
+      case 'maintenance':
+      case 'critical':
+      case 'degraded':
+      case 'disconnected':
+      case 'error':
+        return { dot: 'bg-red-500', text: 'text-red-400', label: 'Maintenance' };
+      case 'disabled':
+        return { dot: 'bg-gray-500', text: 'text-gray-400', label: 'Disabled' };
+      default:
+        return { dot: 'bg-gray-500', text: 'text-gray-400', label: 'Unknown' };
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -235,34 +295,18 @@ export default function AdminDashboard() {
             System Status
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-4">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-              <div>
-                <p className="text-white text-sm font-medium">API Server</p>
-                <p className="text-green-400 text-xs">Operational</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-4">
-              <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-              <div>
-                <p className="text-white text-sm font-medium">Database</p>
-                <p className="text-green-400 text-xs">Operational</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-4">
-              <div className="w-3 h-3 rounded-full bg-yellow-500 animate-pulse" />
-              <div>
-                <p className="text-white text-sm font-medium">ML Services</p>
-                <p className="text-yellow-400 text-xs">Partial</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-4">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <div>
-                <p className="text-white text-sm font-medium">Payment Gateway</p>
-                <p className="text-red-400 text-xs">Maintenance</p>
-              </div>
-            </div>
+            {Object.values(systemStatus).map((service) => {
+              const styles = statusStyles(service.status);
+              return (
+                <div key={service.label} className="flex items-center gap-3 bg-gray-900/50 rounded-lg p-4">
+                  <div className={`w-3 h-3 rounded-full ${styles.dot} ${service.status === 'operational' ? 'animate-pulse' : ''}`} />
+                  <div>
+                    <p className="text-white text-sm font-medium">{service.label}</p>
+                    <p className={`${styles.text} text-xs`}>{styles.label}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

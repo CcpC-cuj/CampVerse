@@ -7,6 +7,12 @@ let refCount = 0;
 let currentToken = null;
 
 const getApiUrl = () => import.meta.env.VITE_API_URL || DEFAULT_API_URL;
+const getTransports = () => {
+  if (import.meta.env.VITE_DISABLE_WEBSOCKET === 'true') {
+    return ['polling'];
+  }
+  return ['websocket', 'polling'];
+};
 
 export const acquireSocket = () => {
   refCount += 1;
@@ -17,7 +23,7 @@ export const acquireSocket = () => {
     currentToken = token;
 
     socket = io(API_URL, {
-      transports: ['websocket', 'polling'],
+      transports: getTransports(),
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,

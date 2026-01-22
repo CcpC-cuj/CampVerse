@@ -15,7 +15,7 @@ ENV BACKEND_URL=""
 WORKDIR /app
 
 COPY --chown=user ./requirements.txt requirements.txt
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install --no-cache-dir --upgrade --default-timeout=120 --retries 5 -r requirements.txt
 
 COPY --chown=user . /app
 

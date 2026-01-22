@@ -32,6 +32,8 @@ const { memoryManager } = require('./Utils/memoryManager');
 const SocketService = require('./Services/socketService');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');  // CRITICAL: Import cors for cookie support
+const axios = require('axios');
+const { config } = require('./config/environment');
 
 // Generate correlation ID for request tracking
 function generateCorrelationId() {
@@ -414,7 +416,10 @@ app.get('/health', async (req, res) => {
       services: {
         mongodb: 'unknown',
         redis: 'unknown',
-        memory: 'unknown'
+        memory: 'unknown',
+        ml: 'unknown',
+        payment: process.env.PAYMENT_GATEWAY_STATUS || 'maintenance',
+        api: 'operational'
       },
       system: {
         memory: process.memoryUsage(),
@@ -474,6 +479,23 @@ app.get('/health', async (req, res) => {
       }
     } catch (err) {
       healthStatus.services.memory = 'error';
+      healthStatus.status = 'DEGRADED';
+    }
+
+    // Check ML service status (if enabled)
+    try {
+      if (!config.ml.recommendationEnabled) {
+        healthStatus.services.ml = 'disabled';
+      } else {
+        const mlUrl = `${config.ml.apiUrl}/health`;
+        const mlResponse = await axios.get(mlUrl, { timeout: 3000 });
+        healthStatus.services.ml = mlResponse.status === 200 ? 'operational' : 'degraded';
+        if (mlResponse.status !== 200) {
+          healthStatus.status = 'DEGRADED';
+        }
+      }
+    } catch (err) {
+      healthStatus.services.ml = 'degraded';
       healthStatus.status = 'DEGRADED';
     }
 
