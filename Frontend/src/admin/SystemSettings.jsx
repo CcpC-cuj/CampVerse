@@ -1,4 +1,6 @@
+import React, { useEffect, useState } from "react";
 import api from "../api/axiosInstance";
+import Layout from "../components/Layout";
 
 export default function SystemSettings() {
   const [settings, setSettings] = useState({

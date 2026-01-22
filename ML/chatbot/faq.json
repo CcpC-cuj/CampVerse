@@ -1,6 +1,7 @@
 [
   {
     "question": "How do I register for an event?",
+    "answer": "Visit the Events section, select your event, and click 'Register.' Complete the required details to finish registration."
   },
   {
     "question": "I can't log in. What should I do?",
@@ -85,8 +86,7 @@
   {
     "question": "How do I contact Support?",
     "answer": "Use the Support tab in your dashboard or ask the chatbot for help."
-  }
-    "answer": "Visit the Events section, select your event, and click 'Register.' Complete the required details to finish registration."
+  },
   },
   {
     "question": "How do I sign in with Google?",
