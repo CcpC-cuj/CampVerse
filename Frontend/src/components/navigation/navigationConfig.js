@@ -39,12 +39,7 @@ export const getNavigationSections = (user) => {
       title: 'Host Panel',
       items: [
         { label: 'Manage Events', to: '/host/manage-events', icon: 'ri-calendar-2-line' },
-        { label: 'Applications', to: '/host/applications', icon: 'ri-file-user-line' },
         { label: 'Analytics', to: '/host/analytics', icon: 'ri-line-chart-line' },
-        { label: 'Team Control', to: '/host/team', icon: 'ri-team-line' },
-        { label: 'Communications', to: '/host/communications', icon: 'ri-message-3-line' },
-        { label: 'Certificates', to: '/host/certificates', icon: 'ri-award-line' },
-        { label: 'Host Settings', to: '/host/settings', icon: 'ri-settings-3-line' },
       ],
     });
   }

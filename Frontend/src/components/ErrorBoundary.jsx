@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 
 /**
  * Error Boundary Component
@@ -11,7 +10,7 @@ class ErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error) {
     // Update state so the next render shows the fallback UI
     return { hasError: true };
   }
@@ -69,13 +68,13 @@ class ErrorBoundary extends React.Component {
                 <i className="ri-refresh-line"></i>
                 Try Again
               </button>
-              <Link
-                to="/"
+              <button
+                onClick={() => window.location.href = '/'}
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <i className="ri-home-line"></i>
                 Go Home
-              </Link>
+              </button>
             </div>
           </div>
         </div>

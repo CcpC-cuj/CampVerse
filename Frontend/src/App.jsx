@@ -48,9 +48,7 @@ const AdminTools = lazy(() => import("./admin/AdminTools"));
 // Host lazy imports
 const ManageEvents = lazy(() => import("./hostdashboard/EventsManagement"));
 const HostEventsNew = lazy(() => import("./hostdashboard/HostEventsDashboard"));
-const HostApplications = lazy(() => import("./hostdashboard/HostApplications"));
 const HostAnalytics = lazy(() => import("./hostdashboard/HostAnalytics"));
-const HostSettings = lazy(() => import("./hostdashboard/HostSettings"));
 const QRScanner = lazy(() => import("./hostdashboard/QRScanner"));
 const BulkAttendance = lazy(() => import("./hostdashboard/BulkAttendance"));
 const AttendanceDashboard = lazy(() => import("./hostdashboard/AttendanceDashboard"));
@@ -315,14 +313,7 @@ function App() {
                     }
                   />
                   
-                  <Route
-                    path="/host/applications"
-                    element={
-                      <ProtectedRoute>
-                        <HostApplications />
-                      </ProtectedRoute>
-                    }
-                  />
+
                   <Route
                     path="/host/analytics"
                     element={
@@ -331,14 +322,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/host/settings"
-                    element={
-                      <ProtectedRoute>
-                        <HostSettings />
-                      </ProtectedRoute>
-                    }
-                  />
+
     
                   {/* ✅ Platform Admin Routes */}
                   <Route

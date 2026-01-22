@@ -120,8 +120,10 @@ export default function CertificateTemplateManagement() {
       template.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       template.type?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    if (typeFilter === 'all') return matchesQuery;
-    return matchesQuery && template.type === typeFilter;
+    const isUserUploaded = template.uploadedBy !== 'system';
+
+    if (typeFilter === 'all') return matchesQuery && isUserUploaded;
+    return matchesQuery && template.type === typeFilter && isUserUploaded;
   });
 
   return (

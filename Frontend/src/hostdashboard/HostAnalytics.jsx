@@ -8,7 +8,6 @@ const HostAnalytics = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState([]);
 
   useEffect(() => {
     fetchAnalytics();
@@ -58,7 +57,7 @@ const HostAnalytics = () => {
       };
 
       setAnalytics(formattedAnalytics);
-    } catch (err) {
+    } catch {
       // Set empty analytics on error
       setAnalytics({
         overview: { totalEvents: 0, totalParticipants: 0, totalRevenue: "₹0", avgRating: 0, completionRate: "0%", growthRate: "0%" },
@@ -131,6 +130,13 @@ const HostAnalytics = () => {
             >
               <i className="ri-refresh-line"></i>
               Refresh
+            </button>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 border border-gray-700"
+            >
+              <i className="ri-home-line"></i>
+              Go Home
             </button>
           </div>
         </div>
@@ -217,20 +223,30 @@ const HostAnalytics = () => {
               
               {/* Simple Chart Visualization */}
               <div className="space-y-4">
-                {analytics.registrationTrends.datasets[0].data.map((value, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400">{analytics.registrationTrends.labels[index]}</span>
-                      <span className="text-white font-medium">{value}</span>
-                    </div>
-                    <div className="w-full bg-gray-700/50 rounded-full h-2">
-                      <div 
-                        className="bg-[#9b5de5] h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(value / Math.max(...analytics.registrationTrends.datasets[0].data)) * 100}%` }}
-                      ></div>
-                    </div>
+                {analytics.registrationTrends.datasets?.[0]?.data?.length > 0 ? (
+                  analytics.registrationTrends.datasets[0].data.map((value, index) => {
+                    const maxVal = Math.max(...analytics.registrationTrends.datasets[0].data);
+                    const percentage = maxVal > 0 ? (value / maxVal) * 100 : 0;
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-400">{analytics.registrationTrends.labels[index] || `Period ${index + 1}`}</span>
+                          <span className="text-white font-medium">{value}</span>
+                        </div>
+                        <div className="w-full bg-gray-700/50 rounded-full h-2">
+                          <div 
+                            className="bg-[#9b5de5] h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-gray-500 italic">
+                    No registration data available for this period
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>
