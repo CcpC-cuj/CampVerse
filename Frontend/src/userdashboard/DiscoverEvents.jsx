@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import ShareButton from "./ShareButton";
 import EventDetailsModal from "./EventDetailsModal";
-import { listEvents, rsvpEvent, cancelRsvp, getEventRecommendations, advancedEventSearch } from "../api/events";
+import { listEvents, rsvpEvent, getEventRecommendations, advancedEventSearch } from "../api/events";
 import { useAuth } from "../contexts/AuthContext";
 
 // Placeholder images for mock data
@@ -16,11 +15,14 @@ const DiscoverEvents = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+
+  const categories = ["All", "Tech", "Cultural", "Sports", "Workshops", "Academic"];
 
   useEffect(() => {
     fetchEvents();
     fetchRecommendations();
-  }, [user]);
+  }, [user, selectedCategory]);
 
   const transformEvent = (event) => {
     const d = new Date(event.date);
@@ -90,7 +92,7 @@ const DiscoverEvents = () => {
         }).filter(Boolean);
         setRecommendations(transformedRecs);
       }
-    } catch (err) {
+    } catch {
       // Failed to fetch recommendations - silently ignore
     }
   };
@@ -136,13 +138,22 @@ const DiscoverEvents = () => {
           return false;
         });
         // Transform backend events to match component format
-        const transformedEvents = filteredEvents.map(transformEvent);
+        let transformedEvents = filteredEvents.map(transformEvent);
+
+        // Apply local category filtering if not 'All'
+        if (selectedCategory !== "All") {
+          transformedEvents = transformedEvents.filter(e => 
+            e.tags?.some(tag => tag.toLowerCase() === selectedCategory.toLowerCase()) ||
+            e.title?.toLowerCase().includes(selectedCategory.toLowerCase())
+          );
+        }
+
         setEvents(transformedEvents);
       } else {
         // API failed, show nothing
         setEvents([]);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load events. Please try again.');
       setEvents([]);
     } finally {
@@ -185,34 +196,53 @@ const DiscoverEvents = () => {
         setSuccessMsg(response.message || response.error || "RSVP failed. Please try again.");
         setTimeout(() => setSuccessMsg(""), 3000);
       }
-    } catch (err) {
+    } catch {
       setSuccessMsg("RSVP failed. Please try again.");
       setTimeout(() => setSuccessMsg(""), 3000);
     }
   };
 
-  const getEventStatus = (event) => {
-    const now = new Date();
-    const eventDate = new Date(`${event.date} ${event.time}`);
-    return now < eventDate ? "upcoming" : "past";
-  };
+
 
   return (
     <div className="bg-transparent rounded-lg p-4 sm:p-6">
-      {/* Search */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-3">
-        <input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search events..."
-          className="flex-1 bg-gray-900/60 border border-gray-700 rounded-lg px-4 py-2 text-white"
-        />
-        <button
-          onClick={handleSearch}
-          className="px-4 py-2 bg-[#9b5de5] hover:bg-[#8c4be1] text-white rounded-lg"
-        >
-          Search
-        </button>
+      {/* Search & Categories */}
+      <div className="mb-8 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Search for events, workshops, or competitions..."
+              className="w-full bg-gray-900/60 border border-gray-700 rounded-xl pl-10 pr-4 py-3 text-white focus:border-[#9b5de5] transition-all outline-none"
+            />
+          </div>
+          <button
+            onClick={handleSearch}
+            className="px-8 py-3 bg-gradient-to-r from-[#9b5de5] to-[#7b2cbf] hover:from-[#8c4be1] hover:to-[#6a1b9a] text-white rounded-xl font-medium transition-all shadow-lg shadow-[#9b5de5]/20"
+          >
+            Search
+          </button>
+        </div>
+
+        {/* Category Chips */}
+        <div className="flex flex-wrap gap-2 pt-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${
+                selectedCategory === cat
+                  ? "bg-[#9b5de5] border-[#9b5de5] text-white shadow-lg shadow-[#9b5de5]/20"
+                  : "bg-gray-800/40 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
       {/* Recommendations Section */}
       {recommendations.length > 0 && (

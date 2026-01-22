@@ -16,7 +16,6 @@ const UserDashboard = () => {
   const [stats, setStats] = useState(null);
   const [eventsData, setEventsData] = useState([]);
   const [search, setSearch] = useState('');
-  const [events, setEvents] = useState([]); 
 
   const discoverEventsRef = useRef(null);
   const location = useLocation();
@@ -110,50 +109,129 @@ const UserDashboard = () => {
         {/* Main Scrollable Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
 
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15 flex flex-col sm:flex-row justify-between items-center gap-4">
-            {/* Text Section */}
-            <div className="text-center sm:text-left">
-              <h1 className="text-xl sm:text-2xl font-bold">
-                Welcome back, {user.name}!
-              </h1>
-              <p className="text-gray-300 mt-1">
-                Ready to explore your next event galaxy?
-              </p>
-            </div>
-
-            {/* Image Section */}
-            <img
-              src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20a%20space%20theme%20with%20planets%2C%20stars%2C%20and%20a%20rocket%2C%20colorful%2C%20playful%2C%20educational%20theme%2C%20galaxy%20exploration&width=200&height=200&seq=2&orientation=squarish"
-              alt="Space theme"
-              className="w-40 h-40 object-contain relative z-10"
-            />
-          </div>
-
-          {/* Stats Overview */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            {[
-              { icon: 'ri-calendar-check-fill', color: 'blue', label: 'Upcoming Events', count: (stats?.upcomingEvents ?? 0) },
-              { icon: 'ri-time-fill', color: 'green', label: 'Waitlisted', count: (stats?.totalWaitlisted ?? 0) },
-              { icon: 'ri-medal-fill', color: 'yellow', label: 'Achievements', count: (stats?.achievements ?? 0) },
-              { icon: 'ri-building-2-fill', color: 'purple', label: 'My Colleges', count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
-            ].map((stat, i) => (
-              <div key={i} className="bg-gray-800/60 rounded-lg p-4 flex items-center border border-gray-700/40 hover:border-[#9b5de5]/30">
-                <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
-                  <i className={`${stat.icon} ri-lg`} />
+          {/* Welcome & Stats (Home Only) */}
+          {location.pathname === '/dashboard' && (
+            <>
+              {/* Welcome Section */}
+              <div className="bg-gradient-to-r from-[#9b5de5]/20 to-transparent rounded-lg p-6 mb-6 border border-[#9b5de5]/15 flex flex-col sm:flex-row justify-between items-center gap-4">
+                {/* Text Section */}
+                <div className="text-center sm:text-left">
+                  <h1 className="text-xl sm:text-2xl font-bold">
+                    Welcome back, {user.name}!
+                  </h1>
+                  <p className="text-gray-300 mt-1">
+                    Ready to explore your next event galaxy?
+                  </p>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-400">{stat.label}</div>
-                  <div className="text-xl font-bold">{stat.count}</div>
+
+                {/* Image Section */}
+                <img
+                  src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20a%20space%20theme%20with%20planets%2C%20stars%2C%20and%20a%20rocket%2C%20colorful%2C%20playful%2C%20educational%20theme%2C%20galaxy%20exploration&width=200&height=200&seq=2&orientation=squarish"
+                  alt="Space theme"
+                  className="w-40 h-40 object-contain relative z-10"
+                />
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                {[
+                  { icon: 'ri-calendar-check-fill', color: 'blue', label: 'Upcoming Events', count: (stats?.upcomingEvents ?? 0) },
+                  { icon: 'ri-time-fill', color: 'green', label: 'Waitlisted', count: (stats?.totalWaitlisted ?? 0) },
+                  { icon: 'ri-medal-fill', color: 'yellow', label: 'Achievements', count: (stats?.achievements ?? 0) },
+                  { icon: 'ri-building-2-fill', color: 'purple', label: 'My Colleges', count: (stats?.myColleges ?? (user?.institutionId ? 1 : 0)) },
+                ].map((stat, i) => (
+                  <div key={i} className="bg-gray-800/60 rounded-lg p-4 flex items-center border border-gray-700/40 hover:border-[#9b5de5]/30">
+                    <div className={`w-12 h-12 rounded-lg ${colorClassMap[stat.color].bg} flex items-center justify-center ${colorClassMap[stat.color].text} mr-4`}>
+                      <i className={`${stat.icon} ri-lg`} />
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-400">{stat.label}</div>
+                      <div className="text-xl font-bold">{stat.count}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Recommendations & Quick Actions Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                {/* Recommendations Slider/Section */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      <i className="ri-magic-line text-[#9b5de5]" />
+                      Top Recommendations
+                    </h2>
+                    <button 
+                      onClick={() => window.location.href = '/dashboard/discover-events'}
+                      className="text-sm text-[#9b5de5] hover:underline"
+                    >
+                      See all events
+                    </button>
+                  </div>
+                  <div className="bg-gray-800/40 rounded-xl p-4 border border-gray-700/30">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      {/* We can show a few top recommendations here */}
+                      <div className="flex-1 min-w-0 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 hover:border-[#9b5de5]/50 transition-all cursor-pointer group">
+                        <div className="h-24 bg-gray-800 rounded-md mb-2 overflow-hidden">
+                          <img src="/event-placeholder.png" alt="Featured" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                        </div>
+                        <h3 className="font-semibold text-white truncate text-sm">Tech Nexus 2026</h3>
+                        <p className="text-xs text-gray-400 mt-1">Tomorrow • IIT Delhi</p>
+                      </div>
+                      <div className="flex-1 min-w-0 bg-gray-900/50 rounded-lg p-3 border border-gray-700/50 hover:border-[#9b5de5]/50 transition-all cursor-pointer group">
+                        <div className="h-24 bg-gray-800 rounded-md mb-2 overflow-hidden">
+                          <img src="/event-placeholder.png" alt="Featured" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                        </div>
+                        <h3 className="font-semibold text-white truncate text-sm">Design Sprint</h3>
+                        <p className="text-xs text-gray-400 mt-1">24 Jan • Online</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <i className="ri-flashlight-line text-yellow-400" />
+                    Quick Actions
+                  </h2>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button 
+                      onClick={() => window.location.href = '/host/manage-events'}
+                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 p-3 rounded-xl flex items-center gap-3 transition-all"
+                    >
+                      <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                        <i className="ri-add-line text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold text-sm">Host Event</div>
+                        <div className="text-[10px] text-white/70">Create a new experience</div>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => window.location.href = '/dashboard/certificates'}
+                      className="w-full bg-gray-800/60 hover:bg-gray-800/80 border border-gray-700 p-3 rounded-xl flex items-center gap-3 transition-all"
+                    >
+                      <div className="w-10 h-10 bg-[#9b5de5]/20 text-[#9b5de5] rounded-lg flex items-center justify-center">
+                        <i className="ri-award-line text-xl" />
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold text-sm">View Certificates</div>
+                        <div className="text-[10px] text-gray-400">Claim your achievements</div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
-          {/* Discover Events Section */}
-          <div ref={discoverEventsRef}>
-            <DiscoverEvents />
-          </div>
+          {/* Conditional Discover Events Section (only if specific path) */}
+          {location.pathname === '/dashboard/discover-events' && (
+            <div ref={discoverEventsRef} className="mt-8">
+              <DiscoverEvents />
+            </div>
+          )}
 
         </div>
       </div>
@@ -163,7 +241,7 @@ const UserDashboard = () => {
           visible={showOnboarding}
           onClose={() => setShowOnboarding(false)}
           onComplete={async () => {
-            try { await updateMe({ onboardingCompleted: true }); } catch {}
+            try { await updateMe({ onboardingCompleted: true }); } catch (error) { console.error("Onboarding update failed:", error); }
             setShowOnboarding(false);
           }}
         />

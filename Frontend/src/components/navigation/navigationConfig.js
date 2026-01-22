@@ -13,8 +13,8 @@ export const getNavigationSections = (user) => {
     {
       title: 'Main',
       items: [
-        { label: 'Dashboard', to: '/dashboard', icon: 'ri-dashboard-line', end: true },
-        { label: 'Discover Events', to: '/dashboard/discover-events', icon: 'ri-compass-line', end: true },
+        { label: 'Home', to: '/dashboard', icon: 'ri-home-4-line', end: true },
+        { label: 'Explore', to: '/dashboard/discover-events', icon: 'ri-compass-3-line', end: true },
       ],
     },
     {
