@@ -1,373 +1,371 @@
 [
   {
     "question": "How do I register for an event?",
+  },
+  {
+    "question": "I can't log in. What should I do?",
+    "answer": "Check your university email, then try Google sign-in again. If it still fails, clear cache or contact Support."
+  },
+  {
+    "question": "Why is my university email not accepted?",
+    "answer": "Your domain may not be verified yet. Contact Support and request domain verification for your institution."
+  },
+  {
+    "question": "How do I become a host?",
+    "answer": "Open Host Registration from your dashboard, complete the form, and wait for verification approval."
+  },
+  {
+    "question": "My host request is pending. How long does it take?",
+    "answer": "Host verification typically takes 2–5 business days. You’ll get a notification once approved."
+  },
+  {
+    "question": "Why was my event rejected?",
+    "answer": "Events may be rejected for missing details or policy issues. Check remarks in your Host Dashboard and resubmit."
+  },
+  {
+    "question": "How do I resubmit a rejected event?",
+    "answer": "Open Host Dashboard → Manage Events, edit the event, and submit it again for verification."
+  },
+  {
+    "question": "How do I edit or delete an event?",
+    "answer": "Go to Host Dashboard → Manage Events, select the event, and choose Edit or Delete."
+  },
+  {
+    "question": "Where can I see my badges and achievements?",
+    "answer": "Open Dashboard → Badges to view earned badges and achievements."
+  },
+  {
+    "question": "How do I earn badges?",
+    "answer": "Badges are earned by attending events, completing activities, and contributing to the community."
+  },
+  {
+    "question": "How do I update my profile photo?",
+    "answer": "Go to Settings → Profile and upload a new photo."
+  },
+  {
+    "question": "How do I change my notification settings?",
+    "answer": "Open Settings → Notifications and toggle email or in-app alerts."
+  },
+  {
+    "question": "How do I delete my account?",
+    "answer": "Go to Settings → Account and use the Delete Account option, or contact Support for assistance."
+  },
+  {
+    "question": "How do I view verifier queues?",
+    "answer": "Open Verifier Dashboard to access Event Queue and Certificate Review sections."
+  },
+  {
+    "question": "How do institution admins approve requests?",
+    "answer": "Admins can review and approve institution and event requests from the Admin Dashboard."
+  },
+  {
+    "question": "How do I check certificate verification?",
+    "answer": "Use the verification link or QR code on the certificate to validate it."
+  },
+  {
+    "question": "Why is my event not visible in Discover?",
+    "answer": "Only approved events appear in Discover. Check verification status in your Host Dashboard."
+  },
+  {
+    "question": "Can I invite participants directly?",
+    "answer": "Yes, share the event link or invite participants from your Host Dashboard if available."
+  },
+  {
+    "question": "What is the difference between 'Public' and 'Institution' events?",
+    "answer": "Public events are open to all verified users; Institution events are limited to a specific campus."
+  },
+  {
+    "question": "How do I use the chatbot?",
+    "answer": "Ask questions in simple language like 'How do I register?' or 'Where is my certificate?'."
+  },
+  {
+    "question": "Do I need to pay to join events?",
+    "answer": "Most events are free. Paid ticketing is under development and not active yet."
+  },
+  {
+    "question": "How do I contact Support?",
+    "answer": "Use the Support tab in your dashboard or ask the chatbot for help."
+  }
     "answer": "Visit the Events section, select your event, and click 'Register.' Complete the required details to finish registration."
   },
   {
+    "question": "How do I sign in with Google?",
+    "answer": "On the landing page, click Login or Sign Up and choose Google. Use your official university email to complete OAuth." 
+  },
+  {
+    "question": "Why is Google sign-in restricted to university emails?",
+    "answer": "CampVerse limits access to verified university domains to keep the community safe and authentic."
+  },
+  {
+    "question": "How do I complete my onboarding?",
+    "answer": "After login, fill in your profile details and add interest tags. This powers personalized recommendations."
+  },
+  {
+    "question": "How does the waitlist work?",
+    "answer": "If an event is full, you can join the waitlist. You’ll be notified if a spot opens." 
+  },
+  {
+    "question": "Where is my QR code for attendance?",
+    "answer": "Open your Dashboard → My Events and select the event to view your QR code." 
+  },
+  {
+    "question": "Why can’t I download my certificate yet?",
+    "answer": "Certificates appear only after attendance is marked by the host. Check your Past Events section later." 
+  },
+  {
+    "question": "How do I verify a certificate?",
+    "answer": "Scan the QR code on the certificate or use the certificate verification page to confirm authenticity." 
+  },
+  {
+    "question": "How do I create an event as a host?",
+    "answer": "Go to Host Dashboard → Create Event, fill details (title, date, location), and submit for verification." 
+  },
+  {
+    "question": "How does event verification work?",
+    "answer": "Submitted events are reviewed by verifiers or institution admins. Once approved, they go live." 
+  },
+  {
+    "question": "How do I add a co-host?",
+    "answer": "While creating or editing an event, add co-hosts by email. They’ll receive an invitation to join." 
+  },
+  {
+    "question": "How do I scan attendance as a host?",
+    "answer": "Open Host Dashboard → Scanner to scan participant QR codes in real time." 
+  },
+  {
+    "question": "Where can verifiers review events and certificates?",
+    "answer": "Go to Verifier Dashboard for queues and review actions for events and certificates." 
+  },
+  {
+    "question": "What can institution admins manage?",
+    "answer": "Admins can verify institutions, audit events, manage support tickets, and view analytics." 
+  },
+  {
+    "question": "How do I raise a support ticket?",
+    "answer": "Open Support from the dashboard, describe the issue, and submit a ticket." 
+  },
+  {
+    "question": "How do notifications work?",
+    "answer": "In-app notifications appear in the bell icon. Email notifications can be managed in Settings." 
+  },
+  {
+    "question": "Why do I see a maintenance notice for payments?",
+    "answer": "Payments are currently in development mode, so paid transactions are not enabled yet." 
+  },
+  {
     "question": "How do I sign up for CampVerse?",
-    "answer": "Welcome! To sign up, just click the 'Register' button on our homepage and fill in your details. We're excited to have you join our community!"
+    "answer": "Click the 'Register' button on the homepage and complete the form. Use your official university email for access."
   },
   {
     "question": "Is CampVerse free to use?",
-    "answer": "Yes! CampVerse is free for all users. Some events may have entry fees, but browsing and joining the platform is always free."
+    "answer": "Yes. CampVerse is free for students and most events are free to join. Paid ticketing is under development." 
   },
   {
     "question": "Can I get help if I'm stuck?",
-    "answer": "Absolutely! If you ever need help, just reach out via our Support page or chat with us here. We're always happy to assist you!"
+    "answer": "Yes. Use the Support tab in your dashboard to raise a ticket or ask here." 
   },
   {
     "question": "What should I do if I can't find my certificate?",
-    "answer": "No worries! Certificates are usually available in your dashboard after the event. If you can't find yours, contact support and we'll help you out."
+    "answer": "Certificates appear after attendance is marked. Check Past Events or contact support if it’s missing." 
   },
   {
-    "question": "How do I change my password?",
-    "answer": "To change your password, go to your profile settings and select 'Change Password.' If you forgot your password, use the 'Forgot Password' link on the login page."
-  },
-  {
-    "question": "Can I participate if I'm new to coding?",
-    "answer": "Of course! CampVerse welcomes everyone, whether you're a beginner or an expert. Many events are designed for all skill levels."
-  },
-  {
-    "question": "How do I contact a team member?",
-    "answer": "You can message your team members directly from your dashboard or use the chat feature during events."
+    "question": "How do I change or reset my password?",
+    "answer": "Use Settings → Change Password, or click 'Forgot Password' on the login page." 
   },
   {
     "question": "What happens after I register for an event?",
-    "answer": "After registering, you'll receive a confirmation email and see the event in your dashboard. We'll keep you updated with all the important details!"
-  },
-  {
-    "question": "Can I join more than one team?",
-    "answer": "You can only join one team per event, but you're welcome to participate in multiple events with different teams!"
-  },
-  {
-    "question": "What are the rules for the upcoming hackathon?",
-    "answer": "Rules are available on the event details page or in the official rulebook linked there."
-  },
-  {
-    "question": "When is the deadline for the coding competition?",
-    "answer": "Deadlines are listed on each event page under 'Important Dates.'"
-  },
-  {
-    "question": "Where can I find the results of the last event?",
-    "answer": "Results are posted on the Results page and sent to registered participants via email."
-  },
-  {
-    "question": "Who is eligible to participate?",
-    "answer": "Eligibility criteria are shown on each event’s details page."
-  },
-  {
-    "question": "How do I form a team?",
-    "answer": "You can invite users to join your team during registration or from your dashboard."
-  },
-  {
-    "question": "What are the prizes?",
-    "answer": "Prize details are available on the event page under 'Prizes.'"
-  },
-  {
-    "question": "How do I reset my password?",
-    "answer": "Go to the login page and click 'Forgot Password' to receive reset instructions."
-  },
-  {
-    "question": "How do I contact support?",
-    "answer": "Use the Support page or submit a ticket from your dashboard."
-  },
-  {
-    "question": "Can I edit my registration details?",
-    "answer": "Yes, you can update your registration from your dashboard before the event deadline."
-  },
-  {
-    "question": "How do I upload required documents?",
-    "answer": "Upload documents via the event registration form or your dashboard."
-  },
-  {
-    "question": "Where can I find event schedules?",
-    "answer": "Schedules are listed on each event’s details page."
-  },
-  {
-    "question": "How do I verify my participation?",
-    "answer": "Verification details are sent via email and shown on your dashboard after the event."
-  },
-  {
-    "question": "What is the process for certificate generation?",
-    "answer": "Certificates are generated after event completion and can be downloaded from your dashboard."
-  },
-  {
-    "question": "How do I report a problem or bug?",
-    "answer": "Use the Feedback or Support section to report issues."
-  },
-  {
-    "question": "How do I access the leaderboard?",
-    "answer": "The leaderboard is available on the Results or event details page."
-  },
-  {
-    "question": "Can I participate in multiple events?",
-    "answer": "Yes, you can register for multiple events if eligible."
-  },
-  {
-    "question": "How do I check my eligibility status?",
-    "answer": "Your eligibility status is displayed on your dashboard and event registration page."
-  },
-  {
-    "question": "How do I get notifications about upcoming events?",
-    "answer": "Enable notifications in your profile settings or check the Notifications section."
-  },
-  {
-    "question": "How do I use the platform’s storage service?",
-    "answer": "Refer to the Storage Service Guide in the documentation section."
-  },
-  {
-    "question": "How do I view my achievements?",
-    "answer": "Achievements are listed in your user profile and dashboard."
-  },
-  {
-    "question": "How do I update my profile information?",
-    "answer": "Go to your dashboard and select 'Edit Profile' to update your information."
-  },
-  {
-    "question": "How do I join as a host or institution?",
-    "answer": "Apply through the Host/Institution registration page and follow the instructions."
-  },
-  {
-    "question": "How do I access event analytics?",
-    "answer": "Event analytics are available to hosts and institutions on their dashboard."
-  },
-  {
-    "question": "How do I request a certificate re-issue?",
-    "answer": "Submit a request via the Support or Certificate section in your dashboard."
-  },
-  {
-    "question": "How do I view feedback for events?",
-    "answer": "Feedback is available on the event details page and your dashboard."
-  },
-  {
-    "question": "How do I manage notifications?",
-    "answer": "Notification settings can be managed from your profile page."
-  },
-  {
-    "question": "How do I access secure files?",
-    "answer": "Secure files are available to eligible users via the Secure Files section in your dashboard."
-  },
-  {
-    "question": "How do I check event participation logs?",
-    "answer": "Participation logs are available in your dashboard under 'Event Participation.'"
-  },
-  {
-    "question": "How do I get help with ML features?",
-    "answer": "Refer to the ML Integration documentation or contact support for assistance."
-  },
-  {
-    "question": "How do I use the API?",
-    "answer": "API documentation is available in the docs section."
-  },
-  {
-    "question": "How do I view or download certificates?",
-    "answer": "Certificates can be viewed and downloaded from your dashboard after event completion."
-  },
-  {
-    "question": "How do I check host eligibility status?",
-    "answer": "Host eligibility status is shown on the host dashboard and event registration page."
-  },
-  {
-    "question": "How do I migrate my account or data?",
-    "answer": "Migration instructions are available in the documentation or contact support for help."
-  },
-  {
-    "question": "How do I access business analytics?",
-    "answer": "Business analytics are available to authorized users in the analytics dashboard."
-  },
-  {
-    "question": "How do I validate event modules?",
-    "answer": "Use the validation scripts provided in the scripts folder or contact support."
-  },
-  {
-    "question": "How do I get started as a new user?",
-    "answer": "Check the Getting Started guide in the documentation and follow onboarding steps."
-  },
-  {
-    "question": "How do I access the development approach?",
-    "answer": "Development approach details are available in the DEVELOPMENT_APPROACH.md file."
-  },
-  {
-    "question": "How do I check API endpoints?",
-    "answer": "API endpoints are documented in the swagger documentation and docs section."
-  },
-  {
-    "question": "How do I use socket features?",
-    "answer": "Refer to the socketClient.js example in the examples folder."
-  },
-  {
-    "question": "How do I check system status or downtime?",
-    "answer": "System status updates are posted in the Notifications section and via email."
-  },
-  {
-    "question": "How do I access the platform from mobile?",
-    "answer": "The platform is mobile-friendly and can be accessed via any browser."
-  },
-  {
-    "question": "How do I get help with frontend issues?",
-    "answer": "Refer to the Frontend TODO and error documentation or contact support."
-  },
-  {
-    "question": "How do I check my event certificates?",
-    "answer": "Event certificates are listed in your dashboard under 'Certificates.'"
-  },
-  {
-    "question": "How do I get updates about new features?",
-    "answer": "Updates are announced in the Notifications section and via email."
-  },
-  {
-    "question": "How do I access storage usage details?",
-    "answer": "Storage usage details are available in your dashboard under 'Storage.'"
-  },
-  {
-    "question": "How do I request event verification?",
-    "answer": "Submit a verification request from the event details page or your dashboard."
-  },
-  {
-    "question": "How do I access institution features?",
-    "answer": "Institution features are available to registered institutions via their dashboard."
-  },
-  {
-    "question": "How do I check notification history?",
-    "answer": "Notification history is available in your dashboard under 'Notifications.'"
-  },
-  {
-    "question": "How do I access support tickets?",
-    "answer": "Support tickets can be viewed and managed from your dashboard under 'Support.'"
-  }
-  ,
-  {
-    "question": "hi",
-    "answer": "Hi, I'm CampVerseBot! How can I help you today?"
-  },
-  {
-    "question": "hello",
-    "answer": "Hello! I'm CampVerseBot, here to assist you. What would you like to know?"
-  },
-  {
-    "question": "hey",
-    "answer": "Hey there! How can I help you at CampVerse today?"
-  },
-  {
-    "question": "good morning",
-    "answer": "Good morning! How can I help you today at CampVerse?"
-  },
-  {
-    "question": "good afternoon",
-    "answer": "Good afternoon! What can I do for you at CampVerse?"
-  },
-  {
-    "question": "good evening",
-    "answer": "Good evening! How can I assist you at CampVerse?"
-  },
-  {
-    "question": "bye",
-    "answer": "Goodbye! If you need anything else, just ask. Have a great day!"
-  },
-  {
-    "question": "goodbye",
-    "answer": "Goodbye! Thanks for visiting CampVerse. See you next time!"
-  },
-  {
-    "question": "see you",
-    "answer": "See you! If you have more questions, come back anytime."
-  }
-  ,
-  {
-    "question": "How do I create an account on CampVerse?",
-    "answer": "Click the 'Create Account' button on the homepage and fill in your details. You’ll receive a confirmation email to activate your account."
-  },
-  {
-    "question": "How do I verify my email address?",
-    "answer": "After signing up, check your inbox for a verification email from CampVerse. Click the link in the email to verify your address. If you don’t see it, check your spam folder or request a new verification email from your dashboard."
-  },
-  {
-    "question": "What should I do if I don’t receive a confirmation email?",
-    "answer": "First, check your spam or junk folder. If you still can’t find it, use the 'Resend Confirmation Email' option on the login page or contact support for help."
+    "answer": "You’ll get a confirmation and the event will show in your dashboard. You’ll also receive reminders." 
   },
   {
     "question": "How do I browse and filter events?",
-    "answer": "Go to the Events section from the main menu. You can use filters to search by category, date, or institution to find events that interest you."
-  },
-  {
-    "question": "How do I join the CampVerse community?",
-    "answer": "Sign up with your college email and start participating in events, discussions, and feedback. You can also follow us on social media for updates."
-  },
-  {
-    "question": "How do I use the dashboard?",
-    "answer": "After logging in, your dashboard gives you access to your events, teams, certificates, notifications, and more. Use the sidebar to navigate different sections."
-  },
-  {
-    "question": "How do I contact support from the website?",
-    "answer": "Click the 'Support' or 'Help' link in the website footer or your dashboard to submit a ticket or chat with our support team."
-  },
-  {
-    "question": "What browsers and devices are supported?",
-    "answer": "CampVerse works best on the latest versions of Chrome, Firefox, Edge, and Safari. The platform is mobile-friendly and works on most smartphones and tablets."
-  },
-  {
-    "question": "How do I reset my password from the login page?",
-    "answer": "Click 'Forgot Password?' on the login page, enter your email, and follow the instructions sent to your inbox to reset your password."
-  },
-  {
-    "question": "How do I access event details and schedules?",
-    "answer": "Click on any event card to view its details, including schedule, rules, and prizes. Important dates are highlighted on the event page."
-  },
-  {
-    "question": "How do I use the Browse Events feature?",
-    "answer": "Use the 'Browse Events' button on the homepage or dashboard to see all upcoming and ongoing events. You can filter and sort events as needed."
-  },
-  {
-    "question": "How do I launch my own event on CampVerse?",
-    "answer": "If you’re an institution or host, log in to your dashboard and use the 'Create Event' option. Fill in the event details and submit for approval."
-  },
-  {
-    "question": "How do I access the institution dashboard?",
-    "answer": "Institution representatives can log in and access the institution dashboard from the main menu. Here you can manage events, view analytics, and more."
-  },
-  {
-    "question": "How do I update my profile or settings from the frontend?",
-    "answer": "Go to your dashboard, click on your profile icon, and select 'Edit Profile' to update your information, change your password, or manage notification settings."
-  },
-  {
-    "question": "Why can’t I see some events?",
-    "answer": "Some events may be restricted to certain colleges or require approval to join. Check the event’s eligibility criteria or contact support if you think there’s an error."
-  },
-  {
-    "question": "How do I know if an event is open to my college?",
-    "answer": "Each event page lists eligibility details. Look for 'Open to All' or check if your college is listed in the eligible institutions."
+    "answer": "Go to Discover Events and filter by tags, date, or category." 
   },
   {
     "question": "How do I join a team for an event?",
-    "answer": "When registering for an event, you can create a new team or join an existing one if the event allows teams. Follow the prompts during registration."
+    "answer": "During registration you can create a team or join an existing one if the event supports teams." 
   },
   {
-    "question": "How do I leave feedback for an event?",
-    "answer": "After the event, go to the event page or your dashboard and look for the 'Leave Feedback' option. Your feedback helps us improve!"
+    "question": "How do I update my profile and interests?",
+    "answer": "Go to Settings and update your profile details and interest tags." 
   },
   {
-    "question": "How do I report inappropriate content or users?",
-    "answer": "Use the 'Report' button on user profiles or event pages, or contact support directly. We take all reports seriously and will investigate promptly."
+    "question": "Where can I see my upcoming and past events?",
+    "answer": "Open Dashboard → My Events to view upcoming, past, and saved events." 
   },
   {
-    "question": "How do I stay safe while using CampVerse?",
-    "answer": "Never share your password or sensitive information. Use official communication channels and report any suspicious activity to support."
-  }
-  ,
-  {
-    "question": "How do I get verified as a host?",
-    "answer": "To get verified as a host, register your host account through the dedicated portal. Our team will review your details and may request additional documentation. Once approved, you’ll receive a verification badge and access to host features."
+    "question": "How do notifications work?",
+    "answer": "Check the bell icon for in-app notifications and manage email alerts in Settings." 
   },
   {
-    "question": "What documents are required for host verification?",
-    "answer": "Typically, you’ll need to provide a valid ID and official contact information. Specific requirements are listed during the registration process."
+    "question": "How do I access support tickets?",
+    "answer": "Open Support in your dashboard to view or create tickets." 
   },
   {
-    "question": "How long does host verification take?",
-    "answer": "Host verification usually takes 2-5 business days after submitting all required documents. You’ll be notified by email once your account is verified."
+    "question": "How do I create an event as a host?",
+    "answer": "Go to Host Dashboard → Create Event, fill the details, and submit for verification." 
+  },
+  {
+    "question": "How does event verification work?",
+    "answer": "Verifiers or admins review events. Approved events go live and appear in Discover." 
+  },
+  {
+    "question": "How do I add a co-host?",
+    "answer": "Add co-host emails in the event editor. They’ll receive an invitation to join." 
+  },
+  {
+    "question": "How do I mark attendance as a host?",
+    "answer": "Use the QR Scanner in the Host Dashboard to mark attendance in real time." 
+  },
+  {
+    "question": "Where can verifiers review requests?",
+    "answer": "Open Verifier Dashboard to review event, certificate, and institution requests." 
+  },
+  {
+    "question": "What can institution admins manage?",
+    "answer": "Admins can approve institutions, review events, handle support tickets, and view analytics." 
+  },
+  {
+    "question": "Why is payment marked as maintenance?",
+    "answer": "Payments are currently in development mode and are not active yet." 
+  },
+  {
+    "question": "Why should a university use CampVerse?",
+    "answer": "CampVerse provides verified certificates, AI-driven event discovery, academic email security, and centralized analytics for campus engagement." 
+  },
+  {
+    "question": "How does CampVerse prevent certificate fraud?",
+    "answer": "Certificates include unique verification links and QR codes, making them tamper-proof and easy to verify." 
+  },
+  {
+    "question": "How does AI personalization help students?",
+    "answer": "The recommendation engine suggests events based on student interests and participation trends, improving engagement." 
+  },
+  {
+    "question": "What makes CampVerse different from generic platforms?",
+    "answer": "CampVerse enforces academic verification, offers auto-certificates, provides admin audit trails, and supports campus-specific analytics." 
+  },
+  {
+    "question": "What is the CampVerse pitch for HOD/Dean?",
+    "answer": "We centralize campus life, secure institutional reputation with verified certificates, and use data to improve student success." 
+  },
+  {
+    "question": "How do I check system status?",
+    "answer": "System status is available in the admin dashboard and notifications." 
+  },
+  {
+    "question": "How do I contact support?",
+    "answer": "Open the Support tab in your dashboard to submit a ticket." 
+  },
+  {
+    "question": "Is CampVerse mobile-friendly?",
+    "answer": "Yes, the platform works on modern browsers across phones, tablets, and desktops." 
+  },
+  {
+    "question": "How do I verify my participation?",
+    "answer": "Participation is verified after QR attendance is marked by the host and shown in your dashboard." 
+  },
+  {
+    "question": "How do I download certificates?",
+    "answer": "Go to Dashboard → Certificates after event completion and download your certificate." 
+  },
+  {
+    "question": "How do I manage notification preferences?",
+    "answer": "Go to Settings → Notifications to enable or disable email and in-app alerts." 
+  },
+  {
+    "question": "How do I edit event details as a host?",
+    "answer": "Open Host Dashboard → Manage Events and select the event to edit details." 
+  },
+  {
+    "question": "How do I see analytics?",
+    "answer": "Hosts and admins can view analytics from their dashboard analytics section." 
+  },
+  {
+    "question": "Can I participate in multiple events?",
+    "answer": "Yes, you can register for multiple events if they fit your schedule and eligibility." 
+  },
+  {
+    "question": "What if my university email is not accepted?",
+    "answer": "Contact support and request domain verification for your institution." 
+  },
+  {
+    "question": "How do I get started quickly?",
+    "answer": "Sign up with your university email, complete onboarding, and explore Discover Events." 
+  },
+  {
+    "question": "How do I leave event feedback?",
+    "answer": "After attending, open the event page or dashboard and submit feedback." 
+  },
+  {
+    "question": "How do I access the chatbot?",
+    "answer": "Use the chatbot in the Help/Support area to ask questions about CampVerse." 
+  },
+  {
+    "question": "How do I contact a team member?",
+    "answer": "Use your dashboard to message or coordinate with team members for events." 
   },
   {
     "question": "What are the benefits of being a verified host?",
-    "answer": "Verified hosts can create and manage events, access advanced analytics, and gain greater visibility on CampVerse. A verification badge also builds trust with participants."
+    "answer": "Verified hosts can manage events, access advanced analytics, and gain more visibility." 
+  },
+  {
+    "question": "What if my QR code doesn't scan at the event?",
+    "answer": "Ensure your screen brightness is high. If it still fails, the host can manually mark your attendance using your registered email in their dashboard."
+  },
+  {
+    "question": "I attended the event but the certificate is missing. Why?",
+    "answer": "This usually happens if the host hasn't marked your attendance yet. Please wait 24 hours or contact the event host directly."
+  },
+  {
+    "question": "Can I cancel my RSVP for an event?",
+    "answer": "Yes, go to Dashboard → My Events, select the event, and click 'Cancel Registration.' This helps people on the waitlist get a spot."
+  },
+  {
+    "question": "How do I know if I've been promoted from the waitlist?",
+    "answer": "You will receive an in-app notification and an email once a spot becomes available and you are added to the participant list."
+  },
+  {
+    "question": "What is the difference between an Event Host and a Verifier?",
+    "answer": "A Host creates and manages events. A Verifier is an official from the institution who audits event details and certificates for quality and security."
+  },
+  {
+    "question": "Can I change my institution after signing up?",
+    "answer": "Institution changes are restricted for security. Please contact Support with proof of your new academic credentials to update your profile."
+  },
+  {
+    "question": "Is my phone number visible to other students?",
+    "answer": "No, your contact details are only visible to event hosts if you register for their event, and to system administrators for support purposes."
+  },
+  {
+    "question": "How do I report an inappropriate event?",
+    "answer": "On the event details page, use the 'Report' button or raise a support ticket with the event link and your concerns."
+  },
+  {
+    "question": "What browsers are recommended for CampVerse?",
+    "answer": "CampVerse works best on the latest versions of Chrome, Safari, and Firefox. Ensure JavaScript is enabled for the best experience."
+  },
+  {
+    "question": "Can I host an event for multiple institutions?",
+    "answer": "Yes, you can set the audience type to 'Public' and add co-hosts from other institutions to manage it jointly."
+  },
+  {
+    "question": "How do I accept a co-host invitation?",
+    "answer": "Click the link in the invitation email or go to your Notifications in the dashboard to accept or decline the request."
+  },
+  {
+    "question": "What happens if an event I registered for is cancelled?",
+    "answer": "You will receive an immediate notification, and the event will be moved to your 'Cancelled' list in the dashboard."
+  },
+  {
+    "question": "How do I add a signature to my certificates as a host?",
+    "answer": "In the Event Creation form, go to 'Certificate Settings' to upload your signature and organization logo."
+  },
+  {
+    "question": "Is there a limit to how many events I can host?",
+    "answer": "There is no strict limit, but each event must pass the verification process by your institution's admin."
+  },
+  {
+    "question": "Can I export my participant list as a host?",
+    "answer": "Yes, the Host Dashboard allows you to download event analytics and participant lists in CSV format."
   }
 ]
