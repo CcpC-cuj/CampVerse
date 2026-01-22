@@ -1,248 +1,120 @@
-# CampVerse
-## System Design
+# CampVerse 🚀
 
-- Frontend (Vite + React) at `/Frontend` handles UI, auth flows, dashboards.
-- Backend (Node + Express) at `/Backend` handles:
-    - User & institution management
-    - Event CRUD + verification flows
-    - JWT-based auth + RBAC
-    - Certificates, participation logs, notifications
-- ML service at `/ML` (optional; disabled by default in Docker Compose) does:
-    - Recommendations
-    - Search analytics + trending detection
-- Data stored in MongoDB (users, events, logs, certificates).
-- Redis used for caching sessions, leaderboard trends.
-- CI/CD (optional/planned): GitHub Actions builds and tests each module, pushes to a registry, then deploys via Docker Compose or Kubernetes. This may not be enabled in this repo yet.
-
-
-```
-+-------------------------------+
-|         Client Side           |
-|  (Vite + React Frontend)      |
-|     /Frontend                 |
-+-------------------------------+
-              |
-              v
-+-------------------------------+
-|         API Gateway /         |
-|        Reverse Proxy          |
-|    (NGINX / Express Proxy)    |
-+-------------------------------+
-              |
-              v
-__________________________________________________________________________
-|    +-----------------+    +------------------+    +------------------+  |
-|    | Backend Service |    |  ML Service      |    | Notification Svc |  |
-|    | (Node + Express)|    |  (/ML)           |    | (Socket.io/FCM)  |  |
-|    |   /Backend      |    |                  |    |                  |  |
-|    +-----------------+    +------------------+    +------------------+  |
-|        |                      |                      |                  |
-|    +-----------------+    +------------------+    +------------------+  |
-|    | MongoDB Atlas   |    | MongoDB for ML   |    | Redis (optional)|   |
-|    | users, events,  |    | analytics, recs  |    | sessions, cache |   |
-|    | certs, logs     |    +------------------+    +------------------+  |
-|    +-----------------+                                                  |
-|_________________________________________________________________________|
-             +-----------------------------------------+
-             |  External Integrations                 |
-             | - Payment (Stripe/UPI)                 |
-             | - Email/FCM for notifications          |
-             | - Github Actions (CI/CD) + Docker Hub  |
-             | - Kubernetes / ECS for deployments     |
-             +-----------------------------------------+
-
-
-#  Responsibilities mapped to your repo
-
-| Folder     | Description      | What it handles                                        |
-|------------|------------------|-------------------------------------------------------|
-| `/Frontend` | Vite + React app | Auth flows, event discovery, user profiles, admin dashboards |
-| `/Backend` | Node + Express    | All REST APIs: auth, roles, events, participation, certificates |
-| `/ML`      | ML microservice   | Recommendations, personalization, trending analysis (optional; disabled by default)   |
-
- **Each one independently tested, containerized, and deployed.**  
-Your CI/CD can loop through these or trigger based on changes.
+CampVerse is a comprehensive full-stack ecosystem designed to revolutionize event management and discovery within academic institutions. It provides a seamless experience for students, hosts, and institutional administrators to coordinate, verify, and celebrate campus activities.
 
 ---
 
-## Project Overview
+## 🌟 Key Features
 
-CampVerse is a full-stack platform for event discovery and management with certificates, support ticketing, and institution verification workflows.
+### 🎓 For Students
+- **Event Discovery**: Easily find and register for academic and social events.
+- **Digital Certificates**: Automatically receive and manage verifiable event certificates.
+- **Participation Logs**: Keep track of your academic and extracurricular involvement.
+- **Notifications**: Stay updated with real-time alerts for registered events.
 
-Frontend: React (Vite) under `Frontend/`.
-Backend: Node + Express under `Backend/` with MongoDB and Redis. ML service optional under `ML/`.
+### 🎤 For Hosts
+- **Event Management**: Complete CRUD operations for event lifecycle.
+- **RSVP Tracking**: Monitor registrations and attendance in real-time.
+- **Co-hosting**: Collaborate with others to manage larger events.
+- **Analytics**: Gain insights into event performance and audience engagement.
 
-API docs: when backend is running, visit `/api-docs`.
+### 🏛️ For Institutions
+- **Verification Workflow**: Ensure the authenticity of events and certificates.
+- **Institution Dashboards**: Manage institutional profiles and oversee campus activity.
+- **Approval System**: Streamlined process for authorizing host status & event requests.
 
-## Environment setup (local)
+### 🛠️ Platform Features
+- **Support Ticketing**: Integrated system for resolving user queries.
+- **RBAC Security**: Granular Role-Based Access Control using JWT.
+- **Search & Trends**: ML-powered discovery (optional) to highlight popular activities.
 
-1. Prerequisites: Node.js LTS, npm, Docker (optional), MongoDB, Redis.
-2. Backend env: copy `Backend/env.test.example` to `Backend/.env` and fill values; keep existing hard-coded values in code unchanged.
-3. Install deps:
+---
+
+## 🏗️ System Architecture
+
+CampVerse is built with a microservice-oriented mindset, ensuring scalability and separation of concerns.
+
+```mermaid
+graph TD
+    User([User Client]) <--> Frontend[Vite + React Frontend]
+    Frontend <--> Backend[Node + Express Backend]
+    Backend <--> MongoDB[(MongoDB Atlas)]
+    Backend <--> Redis[(Redis Cache)]
+    Backend -.-> ML[ML Service - Optional]
+    ML <--> MongoDB
+    Backend -.-> Services[Email/FCM Notifications]
+```
+
+### Component Breakdown
+- **Frontend**: (`/Frontend`) A high-performance React application built with Vite.
+- **Backend**: (`/Backend`) The core RESTful API handling business logic, Auth, and DB interactions.
+- **ML Service**: (`/ML`) Optional Python-based service for recommendations and analytics.
+
+---
+
+## �️ Tech Stack
+
+- **Frontend**: React, Vite, CSS Modules, JWT Auth.
+- **Backend**: Node.js, Express, Mongoose (MongoDB), Redis.
+- **ML/Analytics**: Python (FastAPI/Flask), pandas, scikit-learn.
+- **Infrastructure**: Docker & Docker Compose, Nginx.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js LTS & npm
+- MongoDB & Redis (running locally or via Atlas)
+- Docker (optional, for containerized setup)
+
+### Local Development (Manual)
+
+1. **Clone the repository**
    ```bash
-   cd Backend && npm install
-   cd ../Frontend && npm install
+   git clone https://github.com/your-repo/CampVerse.git
+   cd CampVerse
    ```
-4. Run locally:
+
+2. **Backend Setup**
    ```bash
-   # Backend
-   cd Backend && npm run dev
-   # Frontend
-   cd ../Frontend && npm run dev
+   cd Backend
+   npm install
+   cp .env.example .env  # Configure your MongoDB/Redis/JWT secrets
+   npm run dev
    ```
 
-Backends runs on http://localhost:5001, Frontend on http://localhost:5173 by default.
+3. **Frontend Setup**
+   ```bash
+   cd ../Frontend
+   npm install
+   npm run dev
+   ```
 
-## Folder structure
+### Quick Start with Docker 🐳
 
-- `Frontend/` React app (Vite)
-  - `src/api/` API wrappers: events, certificates, support, host, institution, user, notification
-  - `src/components`, `src/pages`, `src/userdashboard`, etc.
-- `Backend/` Node + Express API
-  - `Routes/`, `Controller/`, `Models/`, `Services/`, `Middleware/`
-- `ML/` Optional recommendation service
-- `docs/` Documentation including `backend-overview.md`
-
-## Backend endpoints and frontend usage
-
-- Events (`/api/events`): list/create/get/update/delete, RSVP, participants, analytics, co-host, search. Use `src/api/events.js`.
-- Hosts (`/api/hosts`): dashboard, my-events, CRUD, participants. Use `src/api/host.js`.
-- Institutions (`/api/institutions`): search, request-new, approvals, analytics, dashboard. Use `src/api/institution.js`.
-- Certificates (`/api/certificates`): generate, stats, verify, progress, dashboard. Use `src/api/certificates.js`.
-- Support (`/api/support`): tickets, admin operations, analytics. Use `src/api/support.js`.
-- Feedback (`/api/feedback`): submit from UI (multipart if attachment). Use a simple fetch from components or add wrapper if needed.
-- Users (`/api/users`): auth/profile/notifications. Use `src/api/user.js` and `src/api/notification.js`.
-
-## Changes and fixes from latest audit
-
-- Added frontend API wrappers aligned with backend:
-  - `src/api/events.js`, `src/api/certificates.js`, `src/api/support.js`, completed `src/api/host.js`, extended `src/api/institution.js`.
-  - Updated `src/api/index.js` to export all wrappers.
-- Safe handling of removed backend endpoint: institution `request-verification` now a no-op on frontend to avoid crashes.
-- No code style changes to hard-coded values; deployment configuration preserved for Render.
-
-See `docs/backend-overview.md` for a concise backend module and endpoint summary.
-
-## 🚀 Quick Start with Docker Compose
-
-### 1. Build and Start All Services
+The easiest way to get the full stack running:
 ```bash
 docker-compose up --build
 ```
-- Builds and starts frontend, backend, MongoDB, and Redis containers.
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5001
-
-### 2. Stop All Services
-```bash
-docker-compose down
-```
-
-### 3. Rebuild a Specific Service
-```bash
-docker-compose build backend
-# or
-docker-compose build frontend
-```
-
-### 4. View Logs
-```bash
-docker-compose logs backend
-# or
-docker-compose logs frontend
-```
-
-### 5. Troubleshooting
-- Ensure ports 3000 (frontend) and 5001 (backend) are free.
-- If you change Dockerfile, nginx.conf, or package.json, always rebuild the image.
-- API docs available at: http://localhost:5001/api-docs (when backend is running)
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:5001
+- **API Docs**: http://localhost:5001/api-docs
 
 ---
 
-## 🔐 Google OAuth & Academic Email Enforcement
-- Google login uses the OAuth **access token** to fetch user info from Google.
-- Only academic emails are allowed for Google login. Supported formats:
-  - `.ac.in`, `.edu.in` (Indian academic)
-  - `.edu` (US/international academic)
-  - `.edu.co.in`, `.edu.pk`, etc. (academic domains with country TLDs)
-  - Any domain containing `.edu.` or `.ac.` followed by TLD
-- If a non-academic email is used, the user will see an error and a Logout/Back button in the UI.
-- All debug logs have been removed from production code; only errors are logged.
+## 🔐 Security & Governance
+
+- **Authenticated Access**: Google OAuth 2.0 restricted to academic domains (`.edu`, `.ac.in`, etc.).
+- **RBAC**: Implementation of roles like `student`, `host`, `verifier`, and `platformAdmin`.
+- **Audit Trails**: Detailed logs for event verifications and certificate issuances.
 
 ---
 
-## 🛠️ Error Handling & User Experience
-- All authentication errors are clearly shown in the UI.
-- If Google login fails (invalid token, non-academic email), the user is prompted to log out or go back and try again.
+## 📄 Documentation & Support
 
----
+Detailed backend documentation can be found in `docs/backend-overview.md`. For technical support or bug reports, please use the integrated Support Ticket system or open a GitHub issue.
 
-## 🚀 Local Development with Docker Compose
+## 📜 License
 
-1. **Build and start all services:**
-   ```bash
-   docker-compose up --build
-   ```
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5001
-   - ML Service (optional, disabled by default): http://localhost:5002
-   - MongoDB: localhost:27017
-   - Redis: localhost:6379
-
-## Activating the ML recommendation service
-
-The ML recommendation microservice lives in `ML/Recommendation` and is optional by default. To activate it you can either start it via Docker Compose or run it locally.
-
-- Start the ML service with Docker Compose (recommended):
-
-```bash
-# Build and start the full stack (frontend, backend, ML, DBs)
-docker-compose up --build
-
-# Or build and start only backend + ML service
-docker-compose up --build backend ml-recommendation
-```
-
-- Run the ML service locally (without Docker):
-
-```bash
-cd ML/Recommendation
-python -m pip install -r requirements_server.txt
-python server.py
-```
-
-The ML API exposes:
-- POST /recommend — generates recommendations
-- GET /health — health check (used by Docker healthcheck)
-
-If you enable the ML service, ensure `ML_RECOMMENDATION_ENABLED=true` and `ML_API_URL` are set in your backend environment (these are set in the `docker-compose.yml` for the backend service by default).
-
-2. **Environment Variables:**
-   - Copy `.env.example` to `.env` in each service directory and fill in secrets as needed.
-      - Note: Docker Compose sets most required env vars for the backend. If running services without Docker, create `.env` files accordingly.
-
-3. **Stopping services:**
-   ```bash
-   docker-compose down
-   ```
-
----
-
-# How security & RBAC fits in
-
-- JWTs issued by `/Backend` (user service).
-- Frontend stores in secure cookies / localStorage.
-- Middleware in `/Backend` checks:
-  - `roles.includes("platformAdmin")` for sensitive admin actions.
-  - `canHost` and `isVerified` for event creation.
-- Audit trail logged in `eventVerifications` for all approvals.
-
----
-
-# How data is laid out (DB)
-
-| Service         | DB Collections                                                                 |
-|-----------------|--------------------------------------------------------------------------------|
-| `/Backend`      | `users`, `institutions`, `events`, `eventParticipationLogs`, `eventVerifications`, `userCertificates`, `notifications`, `achievements` |
-| `/ML`           |  Reads `eventParticipationLogs` for trends          |
-| `/Backend`/`ML` | Redis for: active sessions, popular events caching                             |
+Distributed under the MIT License. See `LICENSE` for more information.
