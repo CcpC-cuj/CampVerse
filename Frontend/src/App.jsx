@@ -52,7 +52,8 @@ const HostAnalytics = lazy(() => import("./hostdashboard/HostAnalytics"));
 const QRScanner = lazy(() => import("./hostdashboard/QRScanner"));
 const BulkAttendance = lazy(() => import("./hostdashboard/BulkAttendance"));
 const AttendanceDashboard = lazy(() => import("./hostdashboard/AttendanceDashboard"));
-const CertificateManagement = lazy(() => import("./hostdashboard/CertificateManagement"));
+const CertificateManagement = lazy(() => import("./hostdashboard/CertificateManagementTW"));
+const CertificateDesigner = lazy(() => import("./hostdashboard/CertificateDesigner"));
 const CreateEventForm = lazy(() => import("./hostdashboard/CreateEventForm"));
 
 // Loading fallback component
@@ -218,6 +219,9 @@ function App() {
                   
                   {/* Event details route */}
                   <Route path="/events/:id" element={<EventDetailsPage />} />
+
+                  {/* Certificate Designer route */}
+                  <Route path="/certificate-designer" element={<CertificateDesigner />} />
                   
                   {/* QR Code viewer route */}
                   <Route 
