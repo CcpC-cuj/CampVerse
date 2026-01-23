@@ -3,46 +3,124 @@ const router = express.Router();
 const { authenticateToken, requireRole } = require('../Middleware/Auth');
 const upload = require('../Middleware/upload');
 const { storageService } = require('../Services/storageService');
+const CertificateTemplate = require('../Models/CertificateTemplate');
 
-// In-memory store for predefined templates (in production, use database)
-let CERTIFICATE_TEMPLATES = [
+const SYSTEM_TEMPLATES = [
   {
-    id: 'classic-blue',
+    templateId: 'classic-blue',
     name: 'Classic Blue',
     preview: 'https://storage.campverse.com/templates/previews/classic-blue.png',
     url: 'https://storage.campverse.com/templates/classic-blue.png',
     type: 'participation',
     uploadedAt: new Date('2024-01-01'),
     uploadedBy: 'system',
+    isSystem: true,
   },
   {
-    id: 'modern-purple',
+    templateId: 'modern-purple',
     name: 'Modern Purple',
     preview: 'https://storage.campverse.com/templates/previews/modern-purple.png',
     url: 'https://storage.campverse.com/templates/modern-purple.png',
     type: 'participation',
     uploadedAt: new Date('2024-01-01'),
     uploadedBy: 'system',
+    isSystem: true,
   },
   {
-    id: 'elegant-gold',
+    templateId: 'elegant-gold',
     name: 'Elegant Gold',
     preview: 'https://storage.campverse.com/templates/previews/elegant-gold.png',
     url: 'https://storage.campverse.com/templates/elegant-gold.png',
     type: 'achievement',
     uploadedAt: new Date('2024-01-01'),
     uploadedBy: 'system',
+    isSystem: true,
   },
   {
-    id: 'minimal-dark',
+    templateId: 'minimal-dark',
     name: 'Minimal Dark',
     preview: 'https://storage.campverse.com/templates/previews/minimal-dark.png',
     url: 'https://storage.campverse.com/templates/minimal-dark.png',
     type: 'participation',
     uploadedAt: new Date('2024-01-01'),
     uploadedBy: 'system',
+    isSystem: true,
   },
 ];
+
+const mapTemplateResponse = (template) => ({
+  id: template.templateId,
+  name: template.name,
+  preview: template.preview,
+  url: template.url,
+  type: template.type,
+  uploadedAt: template.uploadedAt,
+  uploadedBy: template.uploadedBy,
+  isSystem: template.isSystem,
+});
+
+const ensureSystemTemplates = async () => {
+  const count = await CertificateTemplate.countDocuments();
+  if (count === 0) {
+    await CertificateTemplate.insertMany(SYSTEM_TEMPLATES);
+  }
+};
+
+const deriveTemplateMeta = (file) => {
+  const filename = file.name || file.path || '';
+  const base = filename.split('/').pop() || filename;
+  const withoutExt = base.replace(/\.[^/.]+$/, '');
+  const match = withoutExt.match(/^(participation|achievement)_\d+_(.+)$/i);
+  const type = match ? match[1].toLowerCase() : 'participation';
+  const rawName = match ? match[2] : withoutExt;
+  const name = rawName.replace(/[-_]+/g, ' ').trim();
+
+  return {
+    templateId: withoutExt,
+    name: name || withoutExt,
+    type,
+  };
+};
+
+const syncTemplatesFromStorage = async () => {
+  if (storageService.getProvider() !== 'supabase') return;
+
+  try {
+    const files = await storageService.listFiles('certificates/assets/global/templates');
+    if (!Array.isArray(files) || files.length === 0) return;
+
+    const existing = await CertificateTemplate.find({
+      templateId: { $in: files.map((file) => (file.name || '').replace(/\.[^/.]+$/, '')) },
+    }).lean();
+
+    const existingIds = new Set(existing.map((t) => t.templateId));
+
+    const toInsert = files
+      .filter((file) => {
+        const id = (file.name || '').replace(/\.[^/.]+$/, '');
+        return id && !existingIds.has(id);
+      })
+      .map((file) => {
+        const meta = deriveTemplateMeta(file);
+        return {
+          templateId: meta.templateId,
+          name: meta.name,
+          preview: file.url,
+          url: file.url,
+          type: meta.type,
+          uploadedAt: file.timeCreated ? new Date(file.timeCreated) : new Date(),
+          uploadedBy: 'migration',
+          isSystem: false,
+        };
+      });
+
+    if (toInsert.length > 0) {
+      await CertificateTemplate.insertMany(toInsert, { ordered: false });
+    }
+  } catch (error) {
+    console.error('Failed to sync templates from storage:', error);
+  }
+};
 
 /**
  * @swagger
@@ -61,9 +139,12 @@ router.get(
   authenticateToken,
   async (req, res) => {
     try {
+      await ensureSystemTemplates();
+      await syncTemplatesFromStorage();
+      const templates = await CertificateTemplate.find().sort({ uploadedAt: -1 });
       res.json({
-        templates: CERTIFICATE_TEMPLATES,
-        total: CERTIFICATE_TEMPLATES.length,
+        templates: templates.map(mapTemplateResponse),
+        total: templates.length,
       });
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -152,29 +233,27 @@ router.post(
       if (previewFile) {
         const previewUpload = await storageService.uploadFile(
           previewFile.buffer,
+          previewFile.originalname,
           `templates/previews/${templateId}.png`,
           previewFile.mimetype
         );
         previewUrl = previewUpload.url;
       }
 
-      // Create new template entry
-      const newTemplate = {
-        id: templateId,
+      const newTemplate = await CertificateTemplate.create({
+        templateId,
         name,
         preview: previewUrl,
         url: templateUpload.url,
         type,
         uploadedAt: new Date(),
         uploadedBy: adminId,
-      };
-
-      // Add to templates list
-      CERTIFICATE_TEMPLATES.push(newTemplate);
+        isSystem: false,
+      });
 
       res.status(201).json({
         message: 'Template uploaded successfully',
-        template: newTemplate,
+        template: mapTemplateResponse(newTemplate),
       });
     } catch (error) {
       console.error('Error uploading template:', error);
@@ -213,19 +292,23 @@ router.delete(
     try {
       const { templateId } = req.params;
 
-      const templateIndex = CERTIFICATE_TEMPLATES.findIndex(t => t.id === templateId);
-      if (templateIndex === -1) {
+      const template = await CertificateTemplate.findOne({ templateId });
+      if (!template) {
         return res.status(404).json({ error: 'Template not found' });
       }
 
-      // Don't allow deleting system templates
-      const template = CERTIFICATE_TEMPLATES[templateIndex];
-      if (template.uploadedBy === 'system') {
+      if (template.isSystem) {
         return res.status(403).json({ error: 'Cannot delete system templates' });
       }
 
-      // Remove from list
-      CERTIFICATE_TEMPLATES.splice(templateIndex, 1);
+      if (template.url) {
+        await storageService.deleteFile(template.url).catch(() => null);
+      }
+      if (template.preview) {
+        await storageService.deleteFile(template.preview).catch(() => null);
+      }
+
+      await CertificateTemplate.deleteOne({ templateId });
 
       res.json({
         message: 'Template deleted successfully',
@@ -242,13 +325,14 @@ router.delete(
  * Get templates lookup map for other services
  */
 function getTemplatesMap() {
-  const map = {};
-  CERTIFICATE_TEMPLATES.forEach(t => {
-    map[t.id] = t.url;
+  return CertificateTemplate.find().then((templates) => {
+    const map = {};
+    templates.forEach((template) => {
+      map[template.templateId] = template.url;
+    });
+    return map;
   });
-  return map;
 }
 
 module.exports = router;
 module.exports.getTemplatesMap = getTemplatesMap;
-module.exports.CERTIFICATE_TEMPLATES = CERTIFICATE_TEMPLATES;

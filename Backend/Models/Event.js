@@ -106,6 +106,26 @@ const eventSchema = new mongoose.Schema({
     },
     generatedAt: { type: Date },
     totalGenerated: { type: Number, default: 0 },
+    // Preview configuration (client-side editor state)
+    previewConfig: {
+      previewName: { type: String },
+      previewRole: { type: String },
+      accentColor: { type: String },
+      layers: [
+        {
+          id: { type: String },
+          name: { type: String },
+          type: { type: String, default: 'text' },
+          text: { type: String },
+          x: { type: Number },
+          y: { type: Number },
+          fontSize: { type: Number },
+          fontWeight: { type: Number },
+          color: { type: String },
+          align: { type: String, enum: ['left', 'center', 'right'], default: 'left' },
+        },
+      ],
+    },
   },
   title: { type: String, required: true },
   description: { type: String, required: true },

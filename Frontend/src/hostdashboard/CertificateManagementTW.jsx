@@ -14,6 +14,57 @@ import {
 
 const CAMPVERSE_LOGO_URL = "/logo.png";
 
+const createDefaultLayers = () => [
+  {
+    id: "title",
+    name: "Title",
+    type: "text",
+    text: "Certificate of {event_name}",
+    x: 8,
+    y: 10,
+    fontSize: 18,
+    fontWeight: 600,
+    color: "#6b7280",
+    align: "left",
+  },
+  {
+    id: "recipient",
+    name: "Recipient Name",
+    type: "text",
+    text: "{name}",
+    x: 8,
+    y: 28,
+    fontSize: 32,
+    fontWeight: 700,
+    color: "#7c3aed",
+    align: "left",
+  },
+  {
+    id: "role",
+    name: "Role",
+    type: "text",
+    text: "{role}",
+    x: 8,
+    y: 38,
+    fontSize: 14,
+    fontWeight: 500,
+    color: "#6b7280",
+    align: "left",
+  },
+  {
+    id: "award",
+    name: "Award Text",
+    type: "text",
+    text: "{award_text}",
+    x: 8,
+    y: 52,
+    fontSize: 16,
+    fontWeight: 400,
+    color: "#374151",
+    align: "left",
+  },
+];
+
 const badgeStyles = {
   approved: "bg-emerald-500/20 text-emerald-200 border-emerald-400/40",
   pending: "bg-amber-500/20 text-amber-200 border-amber-400/40",
@@ -86,6 +137,9 @@ const CertificateManagement = () => {
   const [previewName, setPreviewName] = useState("Alex Johnson");
   const [previewRole, setPreviewRole] = useState("Participant");
   const [previewAccent, setPreviewAccent] = useState("#7c3aed");
+  const [layers, setLayers] = useState(() => createDefaultLayers());
+  const [activeLayerId, setActiveLayerId] = useState("recipient");
+  const [draggingLayer, setDraggingLayer] = useState(null);
 
   useEffect(() => {
     fetchEventDetails();
@@ -177,6 +231,17 @@ const CertificateManagement = () => {
           eventData.certificateSettings.verificationStatus || VERIFICATION_STATUS.NOT_CONFIGURED
         );
         setRejectionReason(eventData.certificateSettings.rejectionReason || "");
+        if (eventData.certificateSettings.previewConfig) {
+          const previewConfig = eventData.certificateSettings.previewConfig;
+          setPreviewName(previewConfig.previewName || "Alex Johnson");
+          setPreviewRole(previewConfig.previewRole || "Participant");
+          setPreviewAccent(previewConfig.accentColor || "#7c3aed");
+          setLayers(
+            Array.isArray(previewConfig.layers) && previewConfig.layers.length > 0
+              ? previewConfig.layers
+              : createDefaultLayers()
+          );
+        }
         if (eventData.certificateSettings.selectedTemplateId) {
           setSelectedTemplateId(eventData.certificateSettings.selectedTemplateId);
         } else {
@@ -211,6 +276,12 @@ const CertificateManagement = () => {
         leftSignatory,
         rightSignatory,
         selectedTemplateId: selectedTemplate?.id || selectedTemplate?._id,
+        previewConfig: {
+          previewName,
+          previewRole,
+          accentColor: previewAccent,
+          layers,
+        },
       });
       toast.success("Certificate settings updated successfully!");
       setSettingsDialogOpen(false);
@@ -363,6 +434,76 @@ const CertificateManagement = () => {
     }
   };
 
+  const resolveLayerText = (text) => {
+    if (!text) return "";
+    return text
+      .replaceAll("{name}", previewName)
+      .replaceAll("{event_name}", event?.title || "Sample Event")
+      .replaceAll("{role}", previewRole)
+      .replaceAll("{award_text}", awardText || "");
+  };
+
+  const updateLayer = (layerId, updates) => {
+    setLayers((prev) =>
+      prev.map((layer) =>
+        layer.id === layerId ? { ...layer, ...updates } : layer
+      )
+    );
+  };
+
+  const handleAddTextLayer = () => {
+    const newLayer = {
+      id: `layer-${Date.now()}`,
+      name: "New Text",
+      type: "text",
+      text: "Custom text",
+      x: 10,
+      y: 70,
+      fontSize: 16,
+      fontWeight: 500,
+      color: previewAccent,
+      align: "left",
+    };
+    setLayers((prev) => [...prev, newLayer]);
+    setActiveLayerId(newLayer.id);
+  };
+
+  const handleLayerPointerDown = (event, layerId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.currentTarget;
+    const container = target.parentElement;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    setDraggingLayer({
+      id: layerId,
+      offsetX,
+      offsetY,
+      containerWidth: rect.width,
+      containerHeight: rect.height,
+    });
+    setActiveLayerId(layerId);
+  };
+
+  const handlePreviewPointerMove = (event) => {
+    if (!draggingLayer) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    updateLayer(draggingLayer.id, {
+      x: Math.max(0, Math.min(100, x)),
+      y: Math.max(0, Math.min(100, y)),
+    });
+  };
+
+  const handlePreviewPointerUp = () => {
+    if (draggingLayer) {
+      setDraggingLayer(null);
+    }
+  };
+
   const progressStats = useMemo(() => {
     const total =
       progressData?.total ||
@@ -390,10 +531,7 @@ const CertificateManagement = () => {
     return { total, generated, percentage, rawStatus, isComplete, isActive };
   }, [progressData, certificateStatus]);
 
-  const previewAwardText = awardText
-    .replaceAll("{name}", previewName)
-    .replaceAll("{event_name}", event?.title || "Sample Event")
-    .replaceAll("{role}", previewRole);
+  const activeLayer = layers.find((layer) => layer.id === activeLayerId);
 
   if (loading) {
     return (
@@ -630,35 +768,67 @@ const CertificateManagement = () => {
                       opacity: selectedTemplate?.preview ? 0.25 : 1,
                     }}
                   />
-                  <div className="relative z-10 p-8">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        Certificate of {certificateType}
-                      </div>
-                      <img src={CAMPVERSE_LOGO_URL} alt="CampVerse" className="h-10" />
+                  <div
+                    className="relative z-10 h-[420px] w-full"
+                    onPointerMove={handlePreviewPointerMove}
+                    onPointerUp={handlePreviewPointerUp}
+                    onPointerLeave={handlePreviewPointerUp}
+                  >
+                    <div className="absolute left-6 top-6 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                      Certificate of {certificateType}
                     </div>
-                    <div className="mt-6">
-                      <h3 className="text-3xl font-bold" style={{ color: previewAccent }}>
-                        {previewName}
-                      </h3>
-                      <p className="mt-2 text-sm text-slate-600">{previewRole}</p>
-                      <p className="mt-6 text-base leading-relaxed text-slate-700">
-                        {previewAwardText || "This certificate acknowledges your participation."}
-                      </p>
-                    </div>
-                    <div className="mt-8 flex items-center justify-between text-xs text-slate-500">
+                    <img
+                      src={CAMPVERSE_LOGO_URL}
+                      alt="CampVerse"
+                      className="absolute right-6 top-6 h-10"
+                    />
+                    {layers.map((layer) => {
+                      const isActive = layer.id === activeLayerId;
+                      const alignment =
+                        layer.align === "center"
+                          ? "translate(-50%, -50%)"
+                          : layer.align === "right"
+                          ? "translate(-100%, -50%)"
+                          : "translate(0, -50%)";
+                      return (
+                        <div
+                          key={layer.id}
+                          role="button"
+                          tabIndex={0}
+                          onPointerDown={(event) => handleLayerPointerDown(event, layer.id)}
+                          onClick={() => setActiveLayerId(layer.id)}
+                          className={`absolute cursor-move select-none rounded-md px-2 py-1 text-sm outline-none ring-purple-400/60 transition ${
+                            isActive ? "ring-2" : "ring-0"
+                          }`}
+                          style={{
+                            left: `${layer.x}%`,
+                            top: `${layer.y}%`,
+                            transform: alignment,
+                            color: layer.color,
+                            fontSize: `${layer.fontSize}px`,
+                            fontWeight: layer.fontWeight,
+                            textAlign: layer.align,
+                            backgroundColor: isActive ? "rgba(139,92,246,0.08)" : "transparent",
+                          }}
+                        >
+                          {resolveLayerText(layer.text) || "Layer"}
+                        </div>
+                      );
+                    })}
+
+                    <div className="absolute bottom-6 left-6 text-xs text-slate-500">
                       <div>
                         <p className="font-semibold">{leftSignatory.name || "Left Signatory"}</p>
                         <p>{leftSignatory.title || "Title"}</p>
                       </div>
-                      <div className="text-center">
-                        <p>{event?.title || "Event"}</p>
-                        <p>{new Date().toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold">{rightSignatory.name || "Right Signatory"}</p>
-                        <p>{rightSignatory.title || "Title"}</p>
-                      </div>
+                    </div>
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-xs text-slate-500">
+                      <p>{event?.title || "Event"}</p>
+                      <p>{new Date().toLocaleDateString()}</p>
+                    </div>
+                    <div className="absolute bottom-6 right-6 text-right text-xs text-slate-500">
+                      <p className="font-semibold">{rightSignatory.name || "Right Signatory"}</p>
+                      <p>{rightSignatory.title || "Title"}</p>
                     </div>
                   </div>
                 </div>
@@ -680,6 +850,148 @@ const CertificateManagement = () => {
                     onChange={(e) => setPreviewRole(e.target.value)}
                     className="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm"
                   />
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">Layers</p>
+                    <p className="text-xs text-slate-400">
+                      Drag text layers inside the preview. Select a layer to edit.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddTextLayer}
+                    className="rounded-full border border-purple-500/40 px-4 py-2 text-xs text-purple-200 hover:border-purple-400"
+                  >
+                    Add Text Layer
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+                  <div className="space-y-2">
+                    {layers.map((layer) => (
+                      <button
+                        key={layer.id}
+                        type="button"
+                        onClick={() => setActiveLayerId(layer.id)}
+                        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition ${
+                          layer.id === activeLayerId
+                            ? "border-purple-400 bg-purple-500/10 text-purple-100"
+                            : "border-slate-800 text-slate-300 hover:border-slate-700"
+                        }`}
+                      >
+                        <span>{layer.name}</span>
+                        <span className="text-xs text-slate-500">{layer.type}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                    {activeLayer ? (
+                      <div className="grid gap-3">
+                        <div>
+                          <label className="text-xs text-slate-400">Layer Name</label>
+                          <input
+                            value={activeLayer.name}
+                            onChange={(e) => updateLayer(activeLayer.id, { name: e.target.value })}
+                            className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400">Text</label>
+                          <input
+                            value={activeLayer.text}
+                            onChange={(e) => updateLayer(activeLayer.id, { text: e.target.value })}
+                            className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                          />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-xs text-slate-400">Font Size</label>
+                            <input
+                              type="number"
+                              value={activeLayer.fontSize}
+                              onChange={(e) =>
+                                updateLayer(activeLayer.id, {
+                                  fontSize: Number(e.target.value) || 12,
+                                })
+                              }
+                              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-400">Font Weight</label>
+                            <input
+                              type="number"
+                              value={activeLayer.fontWeight}
+                              onChange={(e) =>
+                                updateLayer(activeLayer.id, {
+                                  fontWeight: Number(e.target.value) || 400,
+                                })
+                              }
+                              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-xs text-slate-400">Color</label>
+                            <input
+                              type="color"
+                              value={activeLayer.color}
+                              onChange={(e) => updateLayer(activeLayer.id, { color: e.target.value })}
+                              className="mt-2 h-10 w-full rounded-lg border border-slate-800 bg-slate-950"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-400">Align</label>
+                            <select
+                              value={activeLayer.align}
+                              onChange={(e) => updateLayer(activeLayer.id, { align: e.target.value })}
+                              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            >
+                              <option value="left">Left</option>
+                              <option value="center">Center</option>
+                              <option value="right">Right</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="text-xs text-slate-400">X Position (%)</label>
+                            <input
+                              type="number"
+                              value={Math.round(activeLayer.x)}
+                              onChange={(e) =>
+                                updateLayer(activeLayer.id, {
+                                  x: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                                })
+                              }
+                              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-400">Y Position (%)</label>
+                            <input
+                              type="number"
+                              value={Math.round(activeLayer.y)}
+                              onChange={(e) =>
+                                updateLayer(activeLayer.id, {
+                                  y: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                                })
+                              }
+                              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400">Select a layer to edit.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>

@@ -23,6 +23,7 @@ async function updateCertificateSettings(req, res) {
       leftSignatory,
       rightSignatory,
       selectedTemplateId, // Template ID assigned by Admin/Verifier
+      previewConfig,
     } = req.body;
 
     // Find event and verify host permission
@@ -62,6 +63,9 @@ async function updateCertificateSettings(req, res) {
     }
     if (selectedTemplateId) {
       event.certificateSettings.selectedTemplateId = selectedTemplateId;
+    }
+    if (previewConfig !== undefined) {
+      event.certificateSettings.previewConfig = previewConfig;
     }
 
     await event.save();

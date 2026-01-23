@@ -61,6 +61,27 @@ class UnifiedStorageService {
   // EVENT UPLOADS
   // ============================================================================
 
+  async uploadFile(fileBuffer, filename, filePath, mimetype, metadata = {}) {
+    if (!this.service.uploadFile) {
+      throw new Error('uploadFile not implemented for this storage provider');
+    }
+    return this.service.uploadFile(fileBuffer, filename, filePath, mimetype, metadata);
+  }
+
+  async listFiles(folderPath) {
+    if (!this.service.listFiles) {
+      throw new Error('listFiles not implemented for this storage provider');
+    }
+    return this.service.listFiles(folderPath);
+  }
+
+  async listFiles(folderPath) {
+    if (!this.service.listFiles) {
+      throw new Error('listFiles not implemented for this storage provider');
+    }
+    return this.service.listFiles(folderPath);
+  }
+
   async uploadEventImage(fileBuffer, filename, type, mimetype) {
     return this.service.uploadEventImage(fileBuffer, filename, type, mimetype);
   }
