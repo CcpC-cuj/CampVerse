@@ -203,6 +203,7 @@ async function generateCertificate(req, res) {
           userId,
           type: 'certificate',
           message: `Your certificate for ${event.title} is ready!`,
+          link: '/dashboard/certificates',
           data: {
             eventId,
             certificateId: certificate._id,
@@ -211,7 +212,21 @@ async function generateCertificate(req, res) {
           emailOptions: {
             to: user.email,
             subject: `Your Certificate for ${event.title} is Ready!`,
-            html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${user.name},</p><p>Your certificate for <strong>${event.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                <h2 style="color: #9b5de5; text-align: center;">🎉 Your Certificate is Ready!</h2>
+                <p>Dear ${user.name},</p>
+                <p>Your certificate for <strong>${event.title}</strong> has been generated and is now available.</p>
+                <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                  <p><strong>Certificate Type:</strong> ${certificate.type}</p>
+                  <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/certificates" 
+                     style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+                    View My Certificates
+                  </a>
+                </div>
+                <p>Best regards,<br>CampVerse Team</p>
+              </div>
+            `,
           },
         });
       }
@@ -757,6 +772,7 @@ async function sendCertificateNotification(req, res) {
       userId: certificate.userId._id,
       type: 'certificate',
       message: `Your certificate for ${certificate.eventId.title} is ready!`,
+      link: '/dashboard/certificates',
       data: {
         eventId: certificate.eventId._id,
         certificateId: certificate._id,
@@ -765,7 +781,21 @@ async function sendCertificateNotification(req, res) {
       emailOptions: {
         to: certificate.userId.email,
         subject: `Your Certificate for ${certificate.eventId.title} is Ready!`,
-        html: `<h2>🎉 Your Certificate is Ready!</h2><p>Dear ${certificate.userId.name},</p><p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p><p><strong>Certificate Type:</strong> ${certificate.type}</p><p>You can view and download your certificate from your CampVerse dashboard.</p><br><p>Best regards,<br>CampVerse Team</p>`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+            <h2 style="color: #9b5de5; text-align: center;">🎉 Your Certificate is Ready!</h2>
+            <p>Dear ${certificate.userId.name},</p>
+            <p>Your certificate for <strong>${certificate.eventId.title}</strong> has been generated and is now available.</p>
+            <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+              <p><strong>Certificate Type:</strong> ${certificate.type}</p>
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard/certificates" 
+                 style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+                View My Certificates
+              </a>
+            </div>
+            <p>Best regards,<br>CampVerse Team</p>
+          </div>
+        `,
       },
     });
 

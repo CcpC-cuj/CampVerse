@@ -133,7 +133,19 @@ export default function EventVerificationQueue() {
                         <div className="mb-4 text-sm text-gray-400"><span className="font-medium text-gray-300">Description:</span> {event.description || "No description provided"}</div>
                         {event.about && (<div className="mb-4 text-sm text-gray-400"><span className="font-medium text-gray-300">About:</span> {event.about}</div>)}
                         <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div className="text-sm text-gray-300"><span className="font-medium">Date:</span> {event.date ? new Date(event.date).toLocaleString('en-IN') : "TBD"}</div>
+                          <div className="text-sm text-gray-300">
+                            <span className="font-medium">Date:</span> {event.date ? (
+                              new Date(event.date).toLocaleString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                hour12: true,
+                                timeZone: 'UTC'
+                              })
+                            ) : "TBD"}
+                          </div>
                           <div className="text-sm text-gray-300"><span className="font-medium">Location:</span> {event.location?.venue || event.location?.type || "TBD"}</div>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mb-4">

@@ -128,6 +128,7 @@ async function notifyHostStatusUpdate(
       'host_status_update',
       `Your host request has been ${status}`,
       { status, remarks },
+      '/settings'
     );
 
     // Send email notification
@@ -190,7 +191,12 @@ async function sendHostRequestEmail(
           <li><strong>Email:</strong> ${userEmail}</li>
           <li><strong>Requested At:</strong> ${new Date().toLocaleString()}</li>
         </ul>
-        <p>Please review and approve/reject this request in the admin panel.</p>
+        <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verifier/dashboard" 
+             style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            Review Request
+          </a>
+        </div>
         <p>Best regards,<br>CampVerse Team</p>
       `,
     });
@@ -215,12 +221,18 @@ async function sendHostStatusEmail(userEmail, userName, status, remarks) {
         <h2>Host Request ${status === 'approved' ? 'Approved' : 'Rejected'}</h2>
         <p>Hello ${userName},</p>
         <p>Your request to become a host has been <strong>${statusText}</strong>.</p>
-        ${remarks ? `<p><strong>Remarks:</strong> ${remarks}</p>` : ''}
-        ${
-  status === 'approved'
-    ? '<p>You can now create and manage events on CampVerse!</p>'
-    : '<p>You can submit a new request in the future if your circumstances change.</p>'
-}
+        ${remarks ? `<div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0;"><strong>Remarks:</strong> ${remarks}</div>` : ''}
+        <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+          ${status === 'approved' 
+            ? `<a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/host/manage-events" 
+                  style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                 Start Hosting Now
+               </a>`
+            : `<a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" 
+                  style="display: inline-block; background: #666; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                 View Profile
+               </a>`}
+        </div>
         <p>Best regards,<br>CampVerse Team</p>
       `,
     });
@@ -352,7 +364,8 @@ async function notifyInstitutionStatusUpdate({
         user._id,
         'institution_status_update',
         message,
-        { institutionName, status, remarks, verifierName }
+        { institutionName, status, remarks, verifierName },
+        '/colleges'
       );
       
       // Email notification
@@ -388,26 +401,32 @@ async function sendInstitutionStatusEmail(userEmail, userName, institutionName, 
           </div>` : ''}
           ${
   status === 'approved'
-    ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724;">
+    ? `<div style="background: #d4edda; padding: 15px; border-radius: 5px; color: #155724; text-align: center;">
                    🎉 <strong>Great news!</strong> You can now:
-                   <ul>
+                   <ul style="text-align: left;">
                      <li>Host events on CampVerse</li>
                      <li>Access all platform features</li>
                      <li>Generate certificates for participants</li>
                      <li>View institution analytics</li>
                    </ul>
+                   <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/colleges" 
+                      style="display: inline-block; background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+                     Go to My Institution
+                   </a>
                  </div>`
-    : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+    : `<div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24; text-align: center;">
                    😔 <strong>Unfortunately, we could not verify this institution at this time.</strong>
                    <br><br>
-                   <strong>What you can do:</strong>
-                   <ul>
+                   <ul style="text-align: left;">
                      <li>Contact our support team if you believe this is an error</li>
                      <li>Request a different institution if you have access to another academic email</li>
                      <li>Wait for your institution to be added officially by administrators</li>
                      <li>Continue using the platform with limited features</li>
                    </ul>
-                   <p>You can still discover and join events, but hosting will require institution verification.</p>
+                   <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" 
+                      style="display: inline-block; background: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">
+                     View Settings
+                   </a>
                  </div>`
 }
           <hr style="margin: 25px 0; border: none; height: 1px; background: #dee2e6;">

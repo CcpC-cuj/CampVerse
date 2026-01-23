@@ -151,6 +151,7 @@ const createEvent = asyncHandler(async (req, res) => {
           userId: verifier._id,
           type: 'event_verification',
           message: `New event "${event.title}" submitted by ${host?.name || 'Unknown'} requires verification`,
+          link: `/verifier/event-queue?eventId=${event._id}`,
           data: { 
             eventId: event._id, 
             eventTitle: event.title,
@@ -670,7 +671,20 @@ async function cancelRsvp(req, res) {
             emailOptions: {
               to: promotedUser.email,
               subject: `You're Registered for ${event.title}!`,
-              html: `<p>Hi ${promotedUser.name},<br>You have been promoted from the waitlist and are now registered for <b>${event.title}</b>!</p>`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                  <h2 style="color: #9b5de5; text-align: center;">🎉 You're Registered!</h2>
+                  <p>Hi ${promotedUser.name},</p>
+                  <p>You have been promoted from the waitlist and are now registered for <b>${event.title}</b>!</p>
+                  <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/events/${eventId}" 
+                       style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                      View Event Details
+                    </a>
+                  </div>
+                  <p>Best regards,<br>CampVerse Team</p>
+                </div>
+              `,
             },
           });
         }
@@ -1436,7 +1450,7 @@ async function nominateCoHost(req, res) {
           needsIdCard,
           isHost 
         },
-        link: needsIdCard ? `/profile/host-request` : acceptanceLink,
+        link: needsIdCard ? `/host/registration` : `/accept-nomination?token=${token}&eventId=${eventId}`,
         emailOptions: nominatedUser.notificationPreferences?.email?.cohost !== false ? {
           to: nominatedUser.email,
           subject: `Co-host Nomination for ${event.title}`,
@@ -1595,11 +1609,26 @@ async function rejectCoHost(req, res) {
         userId,
         type: 'cohost',
         message: `Your co-host nomination for ${event.title} has been rejected.`,
+        link: '/settings',
         data: { eventId, eventTitle: event.title },
         emailOptions: {
           to: rejectedUser.email,
           subject: `Co-host Nomination Rejected for ${event.title}`,
-          html: `<p>Hi ${rejectedUser.name},<br>Your nomination as a co-host for <b>${event.title}</b> has been rejected by a verifier.</p>`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #666; text-align: center;">Nomination Rejected</h2>
+              <p>Hi ${rejectedUser.name},</p>
+              <p>Your nomination as a co-host for <b>${event.title}</b> has been rejected by a verifier.</p>
+              <p>If you have any questions, please contact the event host or our support team.</p>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings" 
+                   style="display: inline-block; background: #666; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  View Your Profile
+                </a>
+              </div>
+              <p>Best regards,<br>CampVerse Team</p>
+            </div>
+          `,
         },
       });
     }
@@ -1629,11 +1658,25 @@ async function verifyEvent(req, res) {
         userId: event.hostUserId,
         type: 'event_verification',
         message: `Your event '${event.title}' has been approved.`,
+        link: `/host/manage-events`,
         data: { eventId: event._id, status: 'approved' },
         emailOptions: {
           to: host.email,
           subject: `Event Verification Approved: ${event.title}`,
-          html: `<p>Hi ${host.name},<br>Your event <b>${event.title}</b> has been <b>approved</b> by a verifier.</p>`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #9b5de5; text-align: center;">✅ Event Approved</h2>
+              <p>Hi ${host.name},</p>
+              <p>Your event <b>${event.title}</b> has been <b>approved</b> by a verifier.</p>
+              <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/host/manage-events" 
+                   style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  Manage Your Events
+                </a>
+              </div>
+              <p>Best regards,<br>CampVerse Team</p>
+            </div>
+          `,
         },
       });
     }
@@ -1677,11 +1720,30 @@ async function rejectEvent(req, res) {
         userId: event.hostUserId,
         type: 'event_verification',
         message: `Your event '${event.title}' has been rejected.`,
+        link: `/host/manage-events`,
         data: { eventId: event._id, status: 'rejected', reason: event.rejectionReason },
         emailOptions: {
           to: host.email,
           subject: `Event Verification Rejected: ${event.title}`,
-          html: `<p>Hi ${host.name},<br>Your event <b>${event.title}</b> has been <b>rejected</b> by a verifier.</p><p><strong>Reason:</strong> ${event.rejectionReason}</p><p>Please contact support if you believe this is an error.</p>`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+              <h2 style="color: #ff6b6b; text-align: center;">❌ Event Rejected</h2>
+              <p>Hi ${host.name},</p>
+              <p>Your event <b>${event.title}</b> has been <b>rejected</b> by a verifier.</p>
+              <div style="background: #fff5f5; padding: 15px; border-left: 4px solid #ff6b6b; margin: 15px 0;">
+                <p><strong>Reason for rejection:</strong></p>
+                <p>${event.rejectionReason || 'No specific reason provided.'}</p>
+              </div>
+              <p>Please address these concerns and update your event for re-verification.</p>
+              <div style="background: #fdf6ff; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/host/manage-events" 
+                   style="display: inline-block; background: #9b5de5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  Edit Your Event
+                </a>
+              </div>
+              <p>Best regards,<br>CampVerse Team</p>
+            </div>
+          `,
         },
       });
     }

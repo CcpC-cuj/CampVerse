@@ -1,10 +1,12 @@
 // components/RecentNotifications.jsx
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { getNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../api';
 import { useSocket } from '../hooks/useSocket';
 
 const RecentNotifications = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const socketRef = useSocket();
@@ -14,7 +16,7 @@ const RecentNotifications = () => {
       setLoading(true);
       const data = await getNotifications(20);
       setNotifications(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch {
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -65,16 +67,21 @@ const RecentNotifications = () => {
     try {
       await markAllNotificationsAsRead();
       load();
-    } catch (error) {
+    } catch {
       // Failed to mark all as read - silently ignore
     }
   };
 
-  const handleMarkAsRead = async (notificationId) => {
+  const handleMarkAsRead = async (notification) => {
     try {
-      await markNotificationAsRead(notificationId);
-      load();
-    } catch (error) {
+      if (!notification.isRead) {
+        await markNotificationAsRead(notification._id);
+        load();
+      }
+      if (notification.link) {
+        navigate(notification.link);
+      }
+    } catch {
       // Failed to mark notification as read - silently ignore
     }
   };
@@ -112,7 +119,7 @@ const RecentNotifications = () => {
             notifications.map((n) => (
               <li
                 key={n._id}
-                onClick={() => !n.isRead && handleMarkAsRead(n._id)}
+                onClick={() => handleMarkAsRead(n)}
                 className={`px-4 py-3 rounded-lg shadow-sm border transition-all cursor-pointer ${
                   n.isRead
                     ? 'bg-gray-800/60 text-gray-200 border-gray-700/60'

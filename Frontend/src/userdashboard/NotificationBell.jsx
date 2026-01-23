@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getNotifications, markNotificationAsRead } from "../api";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from '../hooks/useSocket';
 import "./NotificationBell.css";
 
 const NotificationBell = () => {
+  const navigate = useNavigate();
   const { refreshUserSilently } = useAuth();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -22,7 +24,7 @@ const NotificationBell = () => {
       }
       const data = await getNotifications(10); // Get latest 10 notifications
       setNotifications(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch {
       setNotifications([]);
     } finally {
       if (!silent) {
@@ -166,9 +168,9 @@ const NotificationBell = () => {
       
       // Navigate to link if available
       if (notification.link) {
-        window.location.href = notification.link;
+        navigate(notification.link);
       }
-    } catch (error) {
+    } catch {
       // Failed to handle notification click - silently ignore
     }
   };
