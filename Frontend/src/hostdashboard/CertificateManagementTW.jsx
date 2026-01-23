@@ -533,6 +533,8 @@ const CertificateManagement = () => {
   const leftSignatureUrl = leftSignatory?.signatureUrl || uploadedAssets.leftSignature;
   const rightSignatureUrl = rightSignatory?.signatureUrl || uploadedAssets.rightSignature;
   const orgLogoUrl = uploadedAssets.organizationLogo;
+  const awardHasName = awardText?.includes("{name}");
+  const awardHasRole = awardText?.includes("{role}");
 
   if (loading) {
     return (
@@ -675,6 +677,25 @@ const CertificateManagement = () => {
                         className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm"
                       />
                     </div>
+                    <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                      <p className="text-xs text-slate-400">Signature Preview</p>
+                      {leftSignatureUrl ? (
+                        <img
+                          src={leftSignatureUrl}
+                          alt="Left Signature"
+                          className="mt-2 h-12 w-auto object-contain"
+                        />
+                      ) : (
+                        <p className="mt-2 text-xs text-slate-500">No signature uploaded.</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setUploadDialogOpen(true)}
+                        className="mt-3 rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-purple-400"
+                      >
+                        Upload Signature
+                      </button>
+                    </div>
                   </div>
                   <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
                     <p className="text-sm font-semibold text-slate-200">Right Signatory</p>
@@ -697,6 +718,25 @@ const CertificateManagement = () => {
                         }
                         className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm"
                       />
+                    </div>
+                    <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                      <p className="text-xs text-slate-400">Signature Preview</p>
+                      {rightSignatureUrl ? (
+                        <img
+                          src={rightSignatureUrl}
+                          alt="Right Signature"
+                          className="mt-2 h-12 w-auto object-contain"
+                        />
+                      ) : (
+                        <p className="mt-2 text-xs text-slate-500">No signature uploaded.</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setUploadDialogOpen(true)}
+                        className="mt-3 rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200 hover:border-purple-400"
+                      >
+                        Upload Signature
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -807,13 +847,17 @@ const CertificateManagement = () => {
                       }}
                     />
                     <div className="absolute left-1/2 top-28 w-[80%] -translate-x-1/2 text-center">
-                      <h3
-                        className="text-3xl font-bold"
-                        style={{ color: previewAccent }}
-                      >
-                        {previewName}
-                      </h3>
-                      <p className="mt-2 text-sm text-slate-600">{previewRole}</p>
+                      {!awardHasName && (
+                        <h3
+                          className="text-3xl font-bold"
+                          style={{ color: previewAccent }}
+                        >
+                          {previewName}
+                        </h3>
+                      )}
+                      {!awardHasRole && (
+                        <p className="mt-2 text-sm text-slate-600">{previewRole}</p>
+                      )}
                       <p className="mt-6 text-base leading-relaxed text-slate-700">
                         {resolveLayerText(awardText) ||
                           "This certificate acknowledges your participation."}
