@@ -111,6 +111,24 @@ const eventSchema = new mongoose.Schema({
       previewName: { type: String },
       previewRole: { type: String },
       accentColor: { type: String },
+      assetPositions: {
+        orgLogo: {
+          x: { type: Number },
+          y: { type: Number },
+        },
+        campverseLogo: {
+          x: { type: Number },
+          y: { type: Number },
+        },
+        leftSignature: {
+          x: { type: Number },
+          y: { type: Number },
+        },
+        rightSignature: {
+          x: { type: Number },
+          y: { type: Number },
+        },
+      },
       layers: [
         {
           id: { type: String },

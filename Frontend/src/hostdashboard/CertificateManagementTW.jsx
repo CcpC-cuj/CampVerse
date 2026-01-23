@@ -140,6 +140,14 @@ const CertificateManagement = () => {
   const [layers, setLayers] = useState(() => createDefaultLayers());
   const [activeLayerId, setActiveLayerId] = useState("recipient");
   const [draggingLayer, setDraggingLayer] = useState(null);
+  const [activeAssetId, setActiveAssetId] = useState(null);
+  const [draggingAsset, setDraggingAsset] = useState(null);
+  const [assetPositions, setAssetPositions] = useState({
+    orgLogo: { x: 10, y: 18 },
+    campverseLogo: { x: 90, y: 10 },
+    leftSignature: { x: 15, y: 86 },
+    rightSignature: { x: 85, y: 86 },
+  });
 
   useEffect(() => {
     fetchEventDetails();
@@ -241,6 +249,12 @@ const CertificateManagement = () => {
               ? previewConfig.layers
               : createDefaultLayers()
           );
+          if (previewConfig.assetPositions) {
+            setAssetPositions((prev) => ({
+              ...prev,
+              ...previewConfig.assetPositions,
+            }));
+          }
         }
         if (eventData.certificateSettings.selectedTemplateId) {
           setSelectedTemplateId(eventData.certificateSettings.selectedTemplateId);
@@ -281,6 +295,7 @@ const CertificateManagement = () => {
           previewRole,
           accentColor: previewAccent,
           layers,
+          assetPositions,
         },
       });
       toast.success("Certificate settings updated successfully!");
@@ -500,20 +515,55 @@ const CertificateManagement = () => {
     setActiveLayerId(layerId);
   };
 
+  const handleAssetPointerDown = (event, assetId) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const container = event.currentTarget.parentElement;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    setDraggingAsset({
+      id: assetId,
+      offsetX,
+      offsetY,
+      containerWidth: rect.width,
+      containerHeight: rect.height,
+    });
+    setActiveAssetId(assetId);
+    setActiveLayerId(null);
+  };
+
   const handlePreviewPointerMove = (event) => {
-    if (!draggingLayer) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
-    updateLayer(draggingLayer.id, {
-      x: Math.max(0, Math.min(100, x)),
-      y: Math.max(0, Math.min(100, y)),
-    });
+
+    if (draggingLayer) {
+      updateLayer(draggingLayer.id, {
+        x: Math.max(0, Math.min(100, x)),
+        y: Math.max(0, Math.min(100, y)),
+      });
+      return;
+    }
+
+    if (draggingAsset) {
+      setAssetPositions((prev) => ({
+        ...prev,
+        [draggingAsset.id]: {
+          x: Math.max(0, Math.min(100, x)),
+          y: Math.max(0, Math.min(100, y)),
+        },
+      }));
+    }
   };
 
   const handlePreviewPointerUp = () => {
     if (draggingLayer) {
       setDraggingLayer(null);
+    }
+    if (draggingAsset) {
+      setDraggingAsset(null);
     }
   };
 
@@ -795,13 +845,29 @@ const CertificateManagement = () => {
                       <img
                         src={uploadedAssets.organizationLogo}
                         alt="Organization Logo"
-                        className="absolute left-6 top-14 h-12 object-contain"
+                        onPointerDown={(event) => handleAssetPointerDown(event, "orgLogo")}
+                        className={`absolute h-12 cursor-move object-contain ${
+                          activeAssetId === "orgLogo" ? "ring-2 ring-purple-400/60" : ""
+                        }`}
+                        style={{
+                          left: `${assetPositions.orgLogo?.x ?? 10}%`,
+                          top: `${assetPositions.orgLogo?.y ?? 18}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
                       />
                     )}
                     <img
                       src={CAMPVERSE_LOGO_URL}
                       alt="CampVerse"
-                      className="absolute right-6 top-6 h-10"
+                      onPointerDown={(event) => handleAssetPointerDown(event, "campverseLogo")}
+                      className={`absolute h-10 cursor-move ${
+                        activeAssetId === "campverseLogo" ? "ring-2 ring-purple-400/60" : ""
+                      }`}
+                      style={{
+                        left: `${assetPositions.campverseLogo?.x ?? 90}%`,
+                        top: `${assetPositions.campverseLogo?.y ?? 10}%`,
+                        transform: "translate(-50%, -50%)",
+                      }}
                     />
                     {layers.map((layer) => {
                       const isActive = layer.id === activeLayerId;
@@ -837,14 +903,22 @@ const CertificateManagement = () => {
                       );
                     })}
 
+                    {uploadedAssets.leftSignature && (
+                      <img
+                        src={uploadedAssets.leftSignature}
+                        alt="Left Signature"
+                        onPointerDown={(event) => handleAssetPointerDown(event, "leftSignature")}
+                        className={`absolute h-10 cursor-move object-contain ${
+                          activeAssetId === "leftSignature" ? "ring-2 ring-purple-400/60" : ""
+                        }`}
+                        style={{
+                          left: `${assetPositions.leftSignature?.x ?? 15}%`,
+                          top: `${assetPositions.leftSignature?.y ?? 86}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      />
+                    )}
                     <div className="absolute bottom-6 left-6 text-xs text-slate-500">
-                      {uploadedAssets.leftSignature && (
-                        <img
-                          src={uploadedAssets.leftSignature}
-                          alt="Left Signature"
-                          className="mb-2 h-10 object-contain"
-                        />
-                      )}
                       <div>
                         <p className="font-semibold">{leftSignatory.name || "Left Signatory"}</p>
                         <p>{leftSignatory.title || "Title"}</p>
@@ -854,14 +928,22 @@ const CertificateManagement = () => {
                       <p>{event?.title || "Event"}</p>
                       <p>{new Date().toLocaleDateString()}</p>
                     </div>
+                    {uploadedAssets.rightSignature && (
+                      <img
+                        src={uploadedAssets.rightSignature}
+                        alt="Right Signature"
+                        onPointerDown={(event) => handleAssetPointerDown(event, "rightSignature")}
+                        className={`absolute h-10 cursor-move object-contain ${
+                          activeAssetId === "rightSignature" ? "ring-2 ring-purple-400/60" : ""
+                        }`}
+                        style={{
+                          left: `${assetPositions.rightSignature?.x ?? 85}%`,
+                          top: `${assetPositions.rightSignature?.y ?? 86}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      />
+                    )}
                     <div className="absolute bottom-6 right-6 text-right text-xs text-slate-500">
-                      {uploadedAssets.rightSignature && (
-                        <img
-                          src={uploadedAssets.rightSignature}
-                          alt="Right Signature"
-                          className="mb-2 h-10 object-contain"
-                        />
-                      )}
                       <p className="font-semibold">{rightSignatory.name || "Right Signatory"}</p>
                       <p>{rightSignatory.title || "Title"}</p>
                     </div>
