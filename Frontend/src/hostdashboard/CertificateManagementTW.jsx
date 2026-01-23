@@ -468,6 +468,19 @@ const CertificateManagement = () => {
     setActiveLayerId(newLayer.id);
   };
 
+  const handleRemoveLayer = (layerId) => {
+    setLayers((prev) => {
+      const filtered = prev.filter((layer) => layer.id !== layerId);
+      setActiveLayerId((current) => {
+        if (current === layerId) {
+          return filtered.length > 0 ? filtered[0].id : null;
+        }
+        return current;
+      });
+      return filtered;
+    });
+  };
+
   const handleLayerPointerDown = (event, layerId) => {
     event.preventDefault();
     event.stopPropagation();
@@ -532,6 +545,7 @@ const CertificateManagement = () => {
   }, [progressData, certificateStatus]);
 
   const activeLayer = layers.find((layer) => layer.id === activeLayerId);
+  const uploadedAssets = event?.certificateSettings?.uploadedAssets || {};
 
   if (loading) {
     return (
@@ -769,7 +783,7 @@ const CertificateManagement = () => {
                     }}
                   />
                   <div
-                    className="relative z-10 h-[420px] w-full"
+                    className="relative z-10 w-full aspect-[1.414]"
                     onPointerMove={handlePreviewPointerMove}
                     onPointerUp={handlePreviewPointerUp}
                     onPointerLeave={handlePreviewPointerUp}
@@ -777,6 +791,13 @@ const CertificateManagement = () => {
                     <div className="absolute left-6 top-6 text-xs font-semibold uppercase tracking-widest text-slate-500">
                       Certificate of {certificateType}
                     </div>
+                    {uploadedAssets.organizationLogo && (
+                      <img
+                        src={uploadedAssets.organizationLogo}
+                        alt="Organization Logo"
+                        className="absolute left-6 top-14 h-12 object-contain"
+                      />
+                    )}
                     <img
                       src={CAMPVERSE_LOGO_URL}
                       alt="CampVerse"
@@ -817,6 +838,13 @@ const CertificateManagement = () => {
                     })}
 
                     <div className="absolute bottom-6 left-6 text-xs text-slate-500">
+                      {uploadedAssets.leftSignature && (
+                        <img
+                          src={uploadedAssets.leftSignature}
+                          alt="Left Signature"
+                          className="mb-2 h-10 object-contain"
+                        />
+                      )}
                       <div>
                         <p className="font-semibold">{leftSignatory.name || "Left Signatory"}</p>
                         <p>{leftSignatory.title || "Title"}</p>
@@ -827,6 +855,13 @@ const CertificateManagement = () => {
                       <p>{new Date().toLocaleDateString()}</p>
                     </div>
                     <div className="absolute bottom-6 right-6 text-right text-xs text-slate-500">
+                      {uploadedAssets.rightSignature && (
+                        <img
+                          src={uploadedAssets.rightSignature}
+                          alt="Right Signature"
+                          className="mb-2 h-10 object-contain"
+                        />
+                      )}
                       <p className="font-semibold">{rightSignatory.name || "Right Signatory"}</p>
                       <p>{rightSignatory.title || "Title"}</p>
                     </div>
@@ -866,26 +901,38 @@ const CertificateManagement = () => {
                     onClick={handleAddTextLayer}
                     className="rounded-full border border-purple-500/40 px-4 py-2 text-xs text-purple-200 hover:border-purple-400"
                   >
-                    Add Text Layer
+                    + Add Text Layer
                   </button>
                 </div>
 
                 <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.2fr]">
                   <div className="space-y-2">
                     {layers.map((layer) => (
-                      <button
+                      <div
                         key={layer.id}
-                        type="button"
-                        onClick={() => setActiveLayerId(layer.id)}
                         className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm transition ${
                           layer.id === activeLayerId
                             ? "border-purple-400 bg-purple-500/10 text-purple-100"
                             : "border-slate-800 text-slate-300 hover:border-slate-700"
                         }`}
                       >
-                        <span>{layer.name}</span>
-                        <span className="text-xs text-slate-500">{layer.type}</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setActiveLayerId(layer.id)}
+                          className="flex flex-1 items-center justify-between text-left"
+                        >
+                          <span>{layer.name}</span>
+                          <span className="text-xs text-slate-500">{layer.type}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLayer(layer.id)}
+                          className="ml-2 rounded-full border border-rose-500/40 px-2 py-1 text-xs text-rose-200 hover:border-rose-400"
+                          title="Remove layer"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
                   </div>
 
