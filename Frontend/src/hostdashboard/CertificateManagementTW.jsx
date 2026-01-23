@@ -344,6 +344,7 @@ const CertificateManagement = () => {
 
       toast.success("Assets uploaded successfully!");
       setUploadDialogOpen(false);
+      await fetchEventDetails();
       setLeftLogoFile(null);
       setLeftSignatureFile(null);
       setRightSignatureFile(null);
@@ -530,8 +531,14 @@ const CertificateManagement = () => {
   }, [progressData, certificateStatus]);
 
   const uploadedAssets = event?.certificateSettings?.uploadedAssets || {};
-  const leftSignatureUrl = leftSignatory?.signatureUrl || uploadedAssets.leftSignature;
-  const rightSignatureUrl = rightSignatory?.signatureUrl || uploadedAssets.rightSignature;
+  const leftSignatureUrl =
+    leftSignatory?.signatureUrl ||
+    uploadedAssets.leftSignature ||
+    uploadedAssets.leftSignatureUrl;
+  const rightSignatureUrl =
+    rightSignatory?.signatureUrl ||
+    uploadedAssets.rightSignature ||
+    uploadedAssets.rightSignatureUrl;
   const orgLogoUrl = uploadedAssets.organizationLogo;
   const awardHasName = awardText?.includes("{name}");
   const awardHasRole = awardText?.includes("{role}");
